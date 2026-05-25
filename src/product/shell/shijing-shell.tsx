@@ -8,18 +8,21 @@ import { SHIJING_IA_TABS, type ShijingTabId } from '../../contracts/ia-contract.
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { TabRouter } from '../navigation/tab-router.tsx';
 import { SubjectSwitcher } from './subject-switcher.tsx';
+import { formatValidatorRefusal } from '../i18n/format-failure.ts';
+import { TechnicalDetails } from '../components/technical-details.tsx';
 
 export function ShijingShell() {
   const { state, dispatch } = useShijingStore();
 
   if (state.snapshot_status.kind === 'invalid') {
+    const formatted = formatValidatorRefusal(state.snapshot_status.error.code);
     return (
       <div className="shijing-shell shijing-shell--error" role="alert">
         <Surface tone="card" material="glass-thin" padding="md">
           <InlineAlert tone="danger">
-            <strong>ShiJingSpace snapshot rejected by validator</strong>
-            <span>{state.snapshot_status.error.code}</span>
+            <strong>{formatted.headline}</strong>
           </InlineAlert>
+          <TechnicalDetails content={formatted.technical} />
         </Surface>
       </div>
     );
@@ -44,7 +47,7 @@ export function ShijingShell() {
             items={tabItems}
             value={state.active_tab}
             onValueChange={(value) => dispatch({ type: 'tab/activate', tab: value as ShijingTabId })}
-            ariaLabel="ShiJing primary navigation"
+            ariaLabel="时镜主导航"
             className="shijing-shell__tabs"
           />
         </div>

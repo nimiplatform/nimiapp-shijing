@@ -9,6 +9,9 @@ import { useShijingStore } from '../state/shijing-store.tsx';
 import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts';
 import type { Conversation } from '../../domain/conversation.ts';
 import { newConversationId } from './conversation-id.ts';
+import { BUTTONS, EMPTY_STATES, HEADINGS } from '../i18n/copy.ts';
+import { formatCreateRefusal } from '../i18n/format-failure.ts';
+import { TechnicalDetails } from '../components/technical-details.tsx';
 
 export interface ConversationListProps {
   readonly selectedConversationId: string | null;
@@ -19,6 +22,22 @@ export interface ConversationListProps {
 function lastTurnTime(conversation: Conversation): string {
   if (conversation.turns.length === 0) return conversation.created_at;
   return conversation.turns[conversation.turns.length - 1]!.created_at;
+}
+
+function shortenConversationId(id: string): string {
+  if (id.length <= 8) return id;
+  return id.slice(-8);
+}
+
+function formatTimestamp(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString('zh-CN', {
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 export function ConversationList(props: ConversationListProps) {
@@ -50,13 +69,13 @@ export function ConversationList(props: ConversationListProps) {
   }
 
   return (
-    <section className="shijing-conversation-list" aria-label="ShiJing conversations">
+    <section className="shijing-conversation-list" aria-label="会话列表">
       <header>
-        <h3>会话 Conversations</h3>
-        <button type="button" onClick={onCreate}>新建会话</button>
+        <h3>{HEADINGS.conversations}</h3>
+        <button type="button" onClick={onCreate}>{BUTTONS.new_conversation}</button>
       </header>
       {state.snapshot.conversations.length === 0 ? (
-        <p>No conversations yet.</p>
+        <p>{EMPTY_STATES.conversations}</p>
       ) : (
         <ul>
           {state.snapshot.conversations.map((conversation) => {
@@ -67,20 +86,26 @@ export function ConversationList(props: ConversationListProps) {
                   type="button"
                   onClick={() => props.onSelectConversation(conversation.id)}
                 >
-                  <span>conversation:{conversation.id}</span>
-                  <small> ({conversation.turns.length} turns, last {lastTurnTime(conversation)})</small>
+                  <span>会话 #{shortenConversationId(conversation.id)}</span>
+                  <small> （{conversation.turns.length} 条消息 · 最后更新于 {formatTimestamp(lastTurnTime(conversation))}）</small>
                 </button>
                 <button type="button" onClick={() => props.onOpenThread(conversation.id)}>
-                  打开会话
+                  {BUTTONS.open_conversation}
                 </button>
               </li>
             );
           })}
         </ul>
       )}
-      {createError.kind === 'refused_validator' ? (
-        <p role="alert">Create refused by space validator: {createError.code}</p>
-      ) : null}
+      {createError.kind === 'refused_validator' ? (() => {
+        const formatted = formatCreateRefusal(createError.code);
+        return (
+          <>
+            <p role="alert">{formatted.headline}</p>
+            <TechnicalDetails content={formatted.technical} />
+          </>
+        );
+      })() : null}
     </section>
   );
 }

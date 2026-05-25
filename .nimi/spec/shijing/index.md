@@ -9,6 +9,7 @@ Reading path:
 |----------|------|
 | [kernel/index.md](kernel/index.md) | ShiJing kernel authority map (SJG-* rule families) |
 | [shijing.md](shijing.md) | Product overview, positioning, root model snapshot |
+| [design-system.md](design-system.md) | Design System (color / type / spacing / components / brand signatures) |
 | [AGENTS.md](AGENTS.md) | Authoring rules for AI agents editing this spec |
 | [kernel/product-contract.md](kernel/product-contract.md) | `SJG-PROD-*` invariants |
 | [kernel/data-model-contract.md](kernel/data-model-contract.md) | `SJG-DATA-*` entities |

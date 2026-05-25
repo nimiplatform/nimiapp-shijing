@@ -10,12 +10,12 @@ import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts
 import type { Relation } from '../../domain/relation.ts';
 import { RelationForm } from './relation-form.tsx';
 import { findReferencesToRelation, type RelationReference } from './relation-dangling-reference.ts';
+import { BUTTONS, EMPTY_STATES, HEADINGS } from '../i18n/copy.ts';
+import { subjectDisplayName } from '../i18n/subject-display-name.ts';
+import { formatDanglingRefusal, formatDeleteValidatorRefusal } from '../i18n/format-failure.ts';
+import { TechnicalDetails } from '../components/technical-details.tsx';
 
 type EditorMode = null | { kind: 'create' } | { kind: 'edit'; relation: Relation };
-
-function describeRef(ref: Relation['from_subject']): string {
-  return ref === 'self' ? 'self' : `person:${ref.id}`;
-}
 
 export function RelationList() {
   const { state, dispatch } = useShijingStore();
@@ -46,37 +46,50 @@ export function RelationList() {
   }
 
   return (
-    <section className="shijing-relation-list" aria-label="ShiJing relations">
+    <section className="shijing-relation-list" aria-label="人物关系列表">
       <header>
-        <h3>关系 Relations</h3>
+        <h3>{HEADINGS.relations}</h3>
         <button type="button" onClick={() => setEditor({ kind: 'create' })}>
-          Add Relation
+          {BUTTONS.add_relation}
         </button>
       </header>
       {state.snapshot.relations.length === 0 ? (
-        <p>No relations recorded yet.</p>
+        <p>{EMPTY_STATES.relations}</p>
       ) : (
         <ul>
           {state.snapshot.relations.map((relation) => (
             <li key={relation.id}>
               <span>
-                {describeRef(relation.from_subject)} → {describeRef(relation.to_subject)} ({relation.relation_kind})
+                {subjectDisplayName(relation.from_subject, state.snapshot)}
+                {' → '}
+                {subjectDisplayName(relation.to_subject, state.snapshot)}
+                {'（'}{relation.relation_kind}{'）'}
               </span>
-              <button type="button" onClick={() => setEditor({ kind: 'edit', relation })}>Edit</button>
-              <button type="button" onClick={() => onDelete(relation)}>Delete</button>
+              <button type="button" onClick={() => setEditor({ kind: 'edit', relation })}>{BUTTONS.edit}</button>
+              <button type="button" onClick={() => onDelete(relation)}>{BUTTONS.delete}</button>
             </li>
           ))}
         </ul>
       )}
-      {deletionError.kind === 'refused_dangling' ? (
-        <p role="alert">
-          Delete refused: {deletionError.refs.length} dangling reference(s) — first via {deletionError.refs[0]!.via}.
-          Re-point or remove the referencing entries first.
-        </p>
-      ) : null}
-      {deletionError.kind === 'refused_validator' ? (
-        <p role="alert">Delete refused by space validator: {deletionError.code}</p>
-      ) : null}
+      {deletionError.kind === 'refused_dangling' ? (() => {
+        const first = deletionError.refs[0]!;
+        const formatted = formatDanglingRefusal(deletionError.refs.length, first.via);
+        return (
+          <>
+            <p role="alert">{formatted.headline}</p>
+            <TechnicalDetails content={formatted.technical} />
+          </>
+        );
+      })() : null}
+      {deletionError.kind === 'refused_validator' ? (() => {
+        const formatted = formatDeleteValidatorRefusal(deletionError.code);
+        return (
+          <>
+            <p role="alert">{formatted.headline}</p>
+            <TechnicalDetails content={formatted.technical} />
+          </>
+        );
+      })() : null}
       {editor !== null ? (
         editor.kind === 'create' ? (
           <RelationForm mode="create" onClose={() => setEditor(null)} />

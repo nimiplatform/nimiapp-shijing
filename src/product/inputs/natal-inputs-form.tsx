@@ -22,6 +22,9 @@ import {
   natalInputsDraftReducer,
 } from './natal-inputs-state.ts';
 import { userMessageForValidationError, validateDraft } from './natal-inputs-validate.ts';
+import { BUTTONS, FIELD_LABELS, FIELD_PLACEHOLDERS, HEADINGS, SELECT_OPTIONAL_PLACEHOLDER } from '../i18n/copy.ts';
+import { enumLabel } from '../i18n/enum-label.ts';
+import { TechnicalDetails } from '../components/technical-details.tsx';
 
 export function NatalInputsForm() {
   const { state, dispatch } = useShijingStore();
@@ -59,54 +62,57 @@ export function NatalInputsForm() {
   return (
     <form className="shijing-natal-inputs-form" onSubmit={onSubmit} noValidate>
       <fieldset>
-        <legend>Birth evidence (RawBirthInput)</legend>
+        <legend>{HEADINGS.natal_section_raw}</legend>
         <SelectField
           id="natal-inputs-calendar-system"
-          label="calendar_system"
+          label={FIELD_LABELS.calendar_system}
           value={draft.calendar_system}
           options={CALENDAR_OPTIONS}
+          optionLabel={(v) => enumLabel('calendar_system', v)}
           required
           onChange={(value) => draftDispatch({ type: 'set_calendar_system', value })}
         />
         <TextField
           id="natal-inputs-raw-local-date-text"
-          label="local_date_text"
+          label={FIELD_LABELS.local_date_text}
           value={draft.raw_local_date_text}
           required
-          placeholder="user-typed local date as recorded"
+          placeholder={FIELD_PLACEHOLDERS.local_date_text}
           onChange={(value) => draftDispatch({ type: 'set_raw_local_date_text', value })}
         />
         <TextField
           id="natal-inputs-raw-local-time-text"
-          label="local_time_text"
+          label={FIELD_LABELS.local_time_text}
           value={draft.raw_local_time_text}
+          placeholder={FIELD_PLACEHOLDERS.local_time_text}
           onChange={(value) => draftDispatch({ type: 'set_raw_local_time_text', value })}
         />
         <TextField
           id="natal-inputs-raw-place-text"
-          label="place_text"
+          label={FIELD_LABELS.place_text}
           value={draft.raw_place_text}
+          placeholder={FIELD_PLACEHOLDERS.place_text}
           onChange={(value) => draftDispatch({ type: 'set_raw_place_text', value })}
         />
         {draft.calendar_system === 'lunar_chinese' ? (
           <>
             <TextField
               id="natal-inputs-raw-lunar-year"
-              label="lunar_year"
+              label={FIELD_LABELS.lunar_year}
               value={draft.raw_lunar_year}
               required
               onChange={(value) => draftDispatch({ type: 'set_raw_lunar_year', value })}
             />
             <TextField
               id="natal-inputs-raw-lunar-month"
-              label="lunar_month"
+              label={FIELD_LABELS.lunar_month}
               value={draft.raw_lunar_month}
               required
               onChange={(value) => draftDispatch({ type: 'set_raw_lunar_month', value })}
             />
             <TextField
               id="natal-inputs-raw-lunar-day"
-              label="lunar_day"
+              label={FIELD_LABELS.lunar_day}
               value={draft.raw_lunar_day}
               required
               onChange={(value) => draftDispatch({ type: 'set_raw_lunar_day', value })}
@@ -121,95 +127,101 @@ export function NatalInputsForm() {
       </fieldset>
 
       <fieldset>
-        <legend>Canonical birth (NatalInputs)</legend>
+        <legend>{HEADINGS.natal_section_canonical}</legend>
         <TextField
           id="natal-inputs-birth-datetime-utc"
-          label="birth_datetime_utc"
+          label={FIELD_LABELS.birth_datetime_utc}
           value={draft.birth_datetime_utc}
           required
-          placeholder="ISO-8601 UTC instant"
+          placeholder={FIELD_PLACEHOLDERS.birth_datetime_utc}
           onChange={(value) => draftDispatch({ type: 'set_birth_datetime_utc', value })}
         />
         <SelectField
           id="natal-inputs-birth-precision"
-          label="birth_precision"
+          label={FIELD_LABELS.birth_precision}
           value={draft.birth_precision}
           options={BIRTH_PRECISION_OPTIONS}
+          optionLabel={(v) => enumLabel('birth_precision', v)}
           required
           onChange={(value) => draftDispatch({ type: 'set_birth_precision', value })}
         />
         <SelectField
           id="natal-inputs-calculation-sex"
-          label="calculation_sex"
+          label={FIELD_LABELS.calculation_sex}
           value={draft.calculation_sex}
           options={CALCULATION_SEX_OPTIONS}
+          optionLabel={(v) => enumLabel('calculation_sex', v)}
           required
           onChange={(value) => draftDispatch({ type: 'set_calculation_sex', value })}
         />
         <SelectField
           id="natal-inputs-cultural-marker"
-          label="cultural_marker"
+          label={FIELD_LABELS.cultural_marker}
           value={draft.cultural_marker}
           options={CULTURAL_MARKER_OPTIONS}
-          emptyLabel="(unspecified)"
+          optionLabel={(v) => enumLabel('cultural_marker', v)}
+          emptyLabel={SELECT_OPTIONAL_PLACEHOLDER}
           onChange={(value) => draftDispatch({ type: 'set_cultural_marker', value })}
         />
       </fieldset>
 
       <fieldset>
-        <legend>Birth location (BirthLocation)</legend>
+        <legend>{HEADINGS.natal_section_location}</legend>
         <TextField
           id="natal-inputs-latitude"
-          label="latitude"
+          label={FIELD_LABELS.latitude}
           value={draft.latitude_text}
           required
-          placeholder="-90..90 inclusive"
+          placeholder={FIELD_PLACEHOLDERS.latitude}
           onChange={(value) => draftDispatch({ type: 'set_latitude_text', value })}
         />
         <TextField
           id="natal-inputs-longitude"
-          label="longitude"
+          label={FIELD_LABELS.longitude}
           value={draft.longitude_text}
           required
-          placeholder="-180..180 inclusive"
+          placeholder={FIELD_PLACEHOLDERS.longitude}
           onChange={(value) => draftDispatch({ type: 'set_longitude_text', value })}
         />
         <TextField
           id="natal-inputs-iana-time-zone"
-          label="iana_time_zone"
+          label={FIELD_LABELS.iana_time_zone}
           value={draft.iana_time_zone}
           required
-          placeholder="IANA timezone id"
+          placeholder={FIELD_PLACEHOLDERS.iana_time_zone}
           onChange={(value) => draftDispatch({ type: 'set_iana_time_zone', value })}
         />
         <TextField
           id="natal-inputs-place-name"
-          label="place_name"
+          label={FIELD_LABELS.place_name}
           value={draft.place_name}
           onChange={(value) => draftDispatch({ type: 'set_place_name', value })}
         />
       </fieldset>
 
       <fieldset>
-        <legend>Notes</legend>
+        <legend>{HEADINGS.natal_section_notes}</legend>
         <TextField
           id="natal-inputs-notes"
-          label="notes"
+          label={FIELD_LABELS.notes}
           value={draft.notes}
           onChange={(value) => draftDispatch({ type: 'set_notes', value })}
         />
       </fieldset>
 
-      <button type="submit">Save self_subject NatalInputs</button>
+      <button type="submit">{BUTTONS.save_natal}</button>
 
       {submission.kind === 'invalid' ? (
-        <p role="alert" className="shijing-natal-inputs-form__error">
-          {submission.message} (code: {submission.code})
-        </p>
+        <>
+          <p role="alert" className="shijing-natal-inputs-form__error">
+            {submission.message}
+          </p>
+          <TechnicalDetails content={submission.code} />
+        </>
       ) : null}
       {submission.kind === 'saved' ? (
         <p role="status" className="shijing-natal-inputs-form__status">
-          Saved at {submission.at} (debounced persistence will follow).
+          已保存。
         </p>
       ) : null}
     </form>

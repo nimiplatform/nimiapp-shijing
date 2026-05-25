@@ -5,12 +5,14 @@
 import { useState } from 'react';
 
 import { useShijingStore } from '../state/shijing-store.tsx';
-import { subjectRefKey } from '../../domain/subject-ref.ts';
 import { describeTab } from '../navigation/tab-descriptor.ts';
 import { generateReadingForStorage } from '../reading/generate-and-store.ts';
 import type { ReadingTimeWindow } from '../../domain/reading.ts';
-import type { GenerateReadingFailure } from '../astrology/generate-reading.ts';
 import { inputsSummaryExpired } from '../astrology/inputs-summary-expiry.ts';
+import { BODY, BUTTONS, EMPTY_STATES, HEADINGS, STATUS } from '../i18n/copy.ts';
+import { subjectDisplayName } from '../i18n/subject-display-name.ts';
+import { formatGenerateReadingFailure } from '../i18n/format-failure.ts';
+import { TechnicalDetails } from '../components/technical-details.tsx';
 
 const TAB = describeTab('today');
 
@@ -31,18 +33,6 @@ function todayTimeWindow(basisTimeZone: string): ReadingTimeWindow {
   };
 }
 
-function describeGenerateFailure(error: GenerateReadingFailure): string {
-  if (error.kind === 'pipeline_stage_failed') {
-    const detail = error.stage_failure.detail ? `: ${error.stage_failure.detail}` : '';
-    return `pipeline_stage_failed: ${error.stage_failure.stage} / ${error.stage_failure.kind}${detail}`;
-  }
-  if (error.kind === 'runtime_ai_failed') {
-    const detail = error.ai_failure.detail ? `: ${error.ai_failure.detail}` : '';
-    return `runtime_ai_failed: ${error.ai_failure.kind}${detail}`;
-  }
-  return `reading_validation_failed: ${error.validation_error.code}`;
-}
-
 function todayDateLabel(): string {
   const now = new Date();
   return now.toLocaleDateString('zh-CN', {
@@ -55,7 +45,7 @@ export function TodayTab() {
   const [submission, setSubmission] = useState<
     | { kind: 'idle' }
     | { kind: 'running' }
-    | { kind: 'failed'; detail: string }
+    | { kind: 'failed'; headline: string; technical: string }
     | { kind: 'saved'; reading_id: string }
   >({ kind: 'idle' });
 
@@ -75,7 +65,8 @@ export function TodayTab() {
       runtime_ai_client,
     });
     if (!outcome.ok) {
-      setSubmission({ kind: 'failed', detail: describeGenerateFailure(outcome.error) });
+      const formatted = formatGenerateReadingFailure(outcome.error);
+      setSubmission({ kind: 'failed', headline: formatted.headline, technical: formatted.technical });
       return;
     }
     dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
@@ -97,43 +88,43 @@ export function TodayTab() {
           <p className="shijing-tab__eyebrow">{todayDateLabel()}</p>
           <h2 id="shijing-today-heading">{TAB.chinese_label}</h2>
         </div>
-        <span className="shijing-chip">观察对象 · {subjectRefKey(state.observation_target)}</span>
+        <span className="shijing-chip">查看：{subjectDisplayName(state.observation_target, state.snapshot)}</span>
       </header>
 
       <div className="shijing-card shijing-card--action">
         <div className="shijing-card__copy">
-          <h3>生成今日时镜</h3>
-          <p>
-            基于 deterministic 八字 / 干支 / 节气 / 大运管线 + Runtime AI 落字层，
-            为观察对象产出今日读取。失败状态原样回显，不会合成替代文本。
-          </p>
+          <h3>{HEADINGS.today_card_title}</h3>
+          <p>{BODY.today_intro}</p>
         </div>
         <div className="shijing-card__action">
           <button type="button" onClick={onGenerate} disabled={submission.kind === 'running'}>
-            {submission.kind === 'running' ? '生成中…' : '生成今日 Reading'}
+            {submission.kind === 'running' ? BUTTONS.generating : BUTTONS.generate_today}
           </button>
         </div>
       </div>
 
       {submission.kind === 'running' ? (
-        <p className="shijing-status" role="status">Generating…</p>
+        <p className="shijing-status" role="status">{STATUS.generating}</p>
       ) : null}
       {submission.kind === 'failed' ? (
-        <p className="shijing-status shijing-status--alert" role="alert">Generation refused: {submission.detail}</p>
+        <>
+          <p className="shijing-status shijing-status--alert" role="alert">{submission.headline}</p>
+          <TechnicalDetails content={submission.technical} />
+        </>
       ) : null}
       {submission.kind === 'saved' ? (
-        <p className="shijing-status shijing-status--success" role="status">Saved reading {submission.reading_id}.</p>
+        <p className="shijing-status shijing-status--success" role="status">{STATUS.saved_reading}</p>
       ) : null}
 
       {latestToday ? (
         <article className="shijing-card shijing-card--reading">
           <header className="shijing-card__head">
-            <h3>最新今日 Reading</h3>
+            <h3>{HEADINGS.today_latest}</h3>
             <small>{new Date(latestToday.created_at).toLocaleString('zh-CN')}</small>
           </header>
           {latestTodayExpired ? (
             <p className="shijing-status shijing-status--alert" role="status">
-              此 Reading 已超过 24h 的快照新鲜窗口,建议重新生成 (SJG-ASTRO-09)。
+              {BODY.reading_expired_24h}
             </p>
           ) : null}
           <p className="shijing-reading__summary">{latestToday.output.summary}</p>
@@ -150,7 +141,7 @@ export function TodayTab() {
         </article>
       ) : (
         <div className="shijing-card shijing-card--empty">
-          <p>尚无今日 Reading。点击上方按钮生成。</p>
+          <p>{EMPTY_STATES.today_reading}</p>
         </div>
       )}
     </section>

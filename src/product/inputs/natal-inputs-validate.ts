@@ -21,35 +21,46 @@ export function validateDraft(draft: NatalInputsDraft): DraftValidationOutcome {
   return { ok: false, inputs, error: result.error };
 }
 
+// User-facing messages keyed by validator code. Field references use
+// human field names; format examples are illustrative. The raw code
+// stays available to the caller for placement inside <TechnicalDetails>.
 const ERROR_CODE_TO_USER_MESSAGE: Readonly<Record<string, string>> = {
   natal_inputs_birth_datetime_utc_invalid:
-    'birth_datetime_utc must be an ISO-8601 UTC instant (e.g. 1990-04-12T08:30:00Z).',
-  natal_inputs_birth_precision_invalid: 'birth_precision must be one of the admitted enum values.',
-  natal_inputs_calendar_system_invalid: 'calendar_system must be gregorian or lunar_chinese.',
-  natal_inputs_calculation_sex_invalid: 'calculation_sex must be male / female / unspecified.',
+    '「出生时刻」格式不正确，请使用标准 UTC 时间格式（示例：1990-04-12T08:30:00Z）。',
+  natal_inputs_birth_precision_invalid:
+    '请选择有效的「时间精度」。',
+  natal_inputs_calendar_system_invalid:
+    '「历法」必须为公历或农历。',
+  natal_inputs_calculation_sex_invalid:
+    '请选择有效的「用于推算的性别」。',
   natal_inputs_cultural_marker_invalid:
-    'cultural_marker must be natal_yang / natal_yin / unspecified (or leave empty).',
-  natal_inputs_birth_location_missing: 'birth_location is required.',
-  natal_inputs_raw_birth_input_missing: 'raw_birth_input is required.',
+    '请选择有效的「文化标记」，或留空。',
+  natal_inputs_birth_location_missing:
+    '「出生地点」是必填项。',
+  natal_inputs_raw_birth_input_missing:
+    '「原始记录」是必填项。',
   natal_inputs_calendar_system_mismatch_raw_and_canonical:
-    'calendar_system must agree between raw_birth_input and the canonical record.',
+    '「历法」在原始记录与标准化时刻中需保持一致。',
   raw_birth_input_calendar_system_invalid:
-    'raw_birth_input.calendar_system must be gregorian or lunar_chinese.',
-  raw_birth_input_local_date_text_empty: 'raw_birth_input.local_date_text must not be empty.',
+    '「历法」必须为公历或农历。',
+  raw_birth_input_local_date_text_empty:
+    '「出生日期（按记录原文）」不能为空。',
   raw_birth_input_lunar_missing_leap_month_evidence:
-    'Chinese lunar inputs require an explicit lunar_is_leap_month checkbox.',
+    '农历输入必须明确选择「是否闰月」。',
   raw_birth_input_lunar_field_invalid:
-    'lunar_year / lunar_month / lunar_day must be integers within admitted ranges.',
+    '「农历年 / 月 / 日」必须为有效整数（年 1–9999，月 1–12，日 1–30）。',
   raw_birth_input_gregorian_must_not_carry_lunar_fields:
-    'Gregorian inputs must not carry lunar fields; switch the calendar to lunar_chinese first.',
-  birth_location_latitude_invalid: 'latitude must be a finite number in [-90, 90].',
-  birth_location_longitude_invalid: 'longitude must be a finite number in [-180, 180].',
+    '公历不应包含农历字段；如需录入农历，请先将「历法」切换为农历。',
+  birth_location_latitude_invalid:
+    '「出生地纬度」必须是 -90 到 90 之间的数。',
+  birth_location_longitude_invalid:
+    '「出生地经度」必须是 -180 到 180 之间的数。',
   birth_location_iana_time_zone_invalid:
-    'iana_time_zone must be an IANA timezone id such as Asia/Shanghai.',
+    '「时区」必须是 IANA 标准时区，例如 Asia/Shanghai。',
   birth_location_iana_time_zone_offset_only_forbidden:
-    'Offset-only strings (UTC+08, +08:00, Etc/GMT+8) are not accepted; use an IANA timezone id.',
+    '「时区」不接受 UTC+08、+08:00 等偏移格式，请使用 Asia/Shanghai 这样的标准时区。',
 };
 
 export function userMessageForValidationError(error: NatalInputsValidationError): string {
-  return ERROR_CODE_TO_USER_MESSAGE[error.code] ?? `Invalid input: ${error.code}`;
+  return ERROR_CODE_TO_USER_MESSAGE[error.code] ?? '生辰输入有误，请检查表单。';
 }

@@ -8,8 +8,19 @@ import { useShijingStore } from '../state/shijing-store.tsx';
 import { describeTab } from '../navigation/tab-descriptor.ts';
 import { generateReadingForStorage } from '../reading/generate-and-store.ts';
 import type { ReadingTimeWindow } from '../../domain/reading.ts';
-import type { GenerateReadingFailure } from '../astrology/generate-reading.ts';
 import { inputsSummaryExpired } from '../astrology/inputs-summary-expiry.ts';
+import {
+  BODY,
+  BUTTONS,
+  EMPTY_STATES,
+  FAILURE_HEADLINES,
+  FIELD_PLACEHOLDERS,
+  HEADINGS,
+  STATUS,
+  TAB_EYEBROWS,
+} from '../i18n/copy.ts';
+import { formatGenerateReadingFailure } from '../i18n/format-failure.ts';
+import { TechnicalDetails } from '../components/technical-details.tsx';
 
 const TAB = describeTab('consultation');
 
@@ -28,29 +39,19 @@ function adHocTimeWindow(basisTimeZone: string): ReadingTimeWindow {
   };
 }
 
-function describeGenerateFailure(error: GenerateReadingFailure): string {
-  if (error.kind === 'pipeline_stage_failed') {
-    return `pipeline_stage_failed: ${error.stage_failure.stage} / ${error.stage_failure.kind}`;
-  }
-  if (error.kind === 'runtime_ai_failed') {
-    return `runtime_ai_failed: ${error.ai_failure.kind}`;
-  }
-  return `reading_validation_failed: ${error.validation_error.code}`;
-}
-
 export function ConsultationTab() {
   const { state, dispatch, runtime_ai_client } = useShijingStore();
   const [questionText, setQuestionText] = useState('');
   const [submission, setSubmission] = useState<
     | { kind: 'idle' }
     | { kind: 'running' }
-    | { kind: 'failed'; detail: string }
+    | { kind: 'failed'; headline: string; technical: string }
     | { kind: 'saved'; reading_id: string }
   >({ kind: 'idle' });
 
   async function onAsk() {
     if (questionText.trim().length === 0) {
-      setSubmission({ kind: 'failed', detail: 'question text required' });
+      setSubmission({ kind: 'failed', headline: FAILURE_HEADLINES.consultation_empty, technical: '' });
       return;
     }
     setSubmission({ kind: 'running' });
@@ -69,7 +70,8 @@ export function ConsultationTab() {
       runtime_ai_client,
     });
     if (!outcome.ok) {
-      setSubmission({ kind: 'failed', detail: describeGenerateFailure(outcome.error) });
+      const formatted = formatGenerateReadingFailure(outcome.error);
+      setSubmission({ kind: 'failed', headline: formatted.headline, technical: formatted.technical });
       return;
     }
     dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
@@ -88,58 +90,58 @@ export function ConsultationTab() {
     <section className="shijing-tab shijing-tab--consultation" aria-labelledby="shijing-consultation-heading">
       <header className="shijing-tab__header">
         <div>
-          <p className="shijing-tab__eyebrow">Ad-hoc · 当下问题</p>
+          <p className="shijing-tab__eyebrow">{TAB_EYEBROWS.consultation}</p>
           <h2 id="shijing-consultation-heading">{TAB.chinese_label}</h2>
         </div>
       </header>
 
       <div className="shijing-card shijing-card--form">
-        <h3>提出你的问题</h3>
-        <p>
-          描述当下的具体情境或决策困惑。生成器会基于观察对象的 deterministic
-          特征 + 你提供的语境，给出一份 Reading；失败状态原样回显。
-        </p>
-        <label htmlFor="consultation-question">问题描述</label>
+        <h3>{HEADINGS.consultation_card_title}</h3>
+        <p>{BODY.consultation_intro}</p>
+        <label htmlFor="consultation-question">{BODY.consultation_label}</label>
         <textarea
           id="consultation-question"
           value={questionText}
           onChange={(event) => setQuestionText(event.target.value)}
           rows={4}
-          placeholder="例如：下个月要不要换工作？目前的犹豫主要是…"
+          placeholder={FIELD_PLACEHOLDERS.consultation_question}
         />
         <div className="shijing-card__action">
           <button type="button" onClick={onAsk} disabled={submission.kind === 'running'}>
-            {submission.kind === 'running' ? '生成中…' : '生成 Consultation Reading'}
+            {submission.kind === 'running' ? BUTTONS.asking : BUTTONS.ask}
           </button>
         </div>
       </div>
 
       {submission.kind === 'running' ? (
-        <p className="shijing-status" role="status">Generating…</p>
+        <p className="shijing-status" role="status">{STATUS.generating}</p>
       ) : null}
       {submission.kind === 'failed' ? (
-        <p className="shijing-status shijing-status--alert" role="alert">Generation refused: {submission.detail}</p>
+        <>
+          <p className="shijing-status shijing-status--alert" role="alert">{submission.headline}</p>
+          <TechnicalDetails content={submission.technical} />
+        </>
       ) : null}
       {submission.kind === 'saved' ? (
-        <p className="shijing-status shijing-status--success" role="status">Saved consultation {submission.reading_id}.</p>
+        <p className="shijing-status shijing-status--success" role="status">{STATUS.saved_consultation}</p>
       ) : null}
 
       {latestConsultation ? (
         <article className="shijing-card shijing-card--reading">
           <header className="shijing-card__head">
-            <h3>最新 Consultation</h3>
+            <h3>{HEADINGS.consultation_latest}</h3>
             <small>{new Date(latestConsultation.created_at).toLocaleString('zh-CN')}</small>
           </header>
           {latestConsultationExpired ? (
             <p className="shijing-status shijing-status--alert" role="status">
-              此 Reading 已超过 7d 的快照新鲜窗口,建议重新生成 (SJG-ASTRO-09)。
+              {BODY.reading_expired_7d}
             </p>
           ) : null}
           <p className="shijing-reading__summary">{latestConsultation.output.summary}</p>
         </article>
       ) : (
         <div className="shijing-card shijing-card--empty">
-          <p>尚无 Consultation Reading。</p>
+          <p>{EMPTY_STATES.consultation_reading}</p>
         </div>
       )}
     </section>

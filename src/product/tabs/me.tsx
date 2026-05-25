@@ -8,7 +8,6 @@ import { NatalInputsForm } from '../inputs/natal-inputs-form.tsx';
 import { PersonList } from '../persons/person-list.tsx';
 import { RelationList } from '../relations/relation-list.tsx';
 import { SettingsForm } from '../settings/settings-form.tsx';
-import { ReadingHistory } from '../reading-history/reading-history.tsx';
 import { ConversationList } from '../conversations/conversation-list.tsx';
 import { ConversationThreadOverlay } from '../conversations/conversation-thread.tsx';
 
@@ -36,7 +35,6 @@ export function MeTab() {
       <PersonList />
       <RelationList />
       <SettingsForm />
-      <ReadingHistory />
 
       <ConversationList
         selectedConversationId={selectedConversationId}

@@ -9,6 +9,10 @@ import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts
 import type { View } from '../../domain/view.ts';
 import { ViewForm } from './view-form.tsx';
 import { findReferencesToView, type ViewReference } from './view-dangling-reference.ts';
+import { BUTTONS, EMPTY_STATES, HEADINGS } from '../i18n/copy.ts';
+import { enumLabel } from '../i18n/enum-label.ts';
+import { formatDanglingRefusal, formatDeleteValidatorRefusal } from '../i18n/format-failure.ts';
+import { TechnicalDetails } from '../components/technical-details.tsx';
 
 type EditorMode = null | { kind: 'create' } | { kind: 'edit'; view: View };
 
@@ -41,39 +45,48 @@ export function ViewList() {
   }
 
   return (
-    <section className="shijing-view-list" aria-label="ShiJing views">
+    <section className="shijing-view-list" aria-label="观察视角列表">
       <header>
-        <h3>Views</h3>
+        <h3>{HEADINGS.views}</h3>
         <button type="button" onClick={() => setEditor({ kind: 'create' })}>
-          Add View
+          {BUTTONS.add_view}
         </button>
       </header>
       {state.snapshot.views.length === 0 ? (
-        <p>No views recorded yet.</p>
+        <p>{EMPTY_STATES.views}</p>
       ) : (
         <ul>
           {state.snapshot.views.map((view) => (
             <li key={view.id}>
               <span>{view.title}</span>
               <small>
-                {' '}
-                (time_scope: {view.time_scope}, display_state: {view.display_state})
+                （{enumLabel('time_scope', view.time_scope)} · {enumLabel('display_state', view.display_state)}）
               </small>
-              <button type="button" onClick={() => setEditor({ kind: 'edit', view })}>Edit</button>
-              <button type="button" onClick={() => onDelete(view)}>Delete</button>
+              <button type="button" onClick={() => setEditor({ kind: 'edit', view })}>{BUTTONS.edit}</button>
+              <button type="button" onClick={() => onDelete(view)}>{BUTTONS.delete}</button>
             </li>
           ))}
         </ul>
       )}
-      {deletionError.kind === 'refused_dangling' ? (
-        <p role="alert">
-          Delete refused: {deletionError.refs.length} dangling reference(s) — first via {deletionError.refs[0]!.via}.
-          Re-point or remove the referencing entries first.
-        </p>
-      ) : null}
-      {deletionError.kind === 'refused_validator' ? (
-        <p role="alert">Delete refused by space validator: {deletionError.code}</p>
-      ) : null}
+      {deletionError.kind === 'refused_dangling' ? (() => {
+        const first = deletionError.refs[0]!;
+        const formatted = formatDanglingRefusal(deletionError.refs.length, first.via);
+        return (
+          <>
+            <p role="alert">{formatted.headline}</p>
+            <TechnicalDetails content={formatted.technical} />
+          </>
+        );
+      })() : null}
+      {deletionError.kind === 'refused_validator' ? (() => {
+        const formatted = formatDeleteValidatorRefusal(deletionError.code);
+        return (
+          <>
+            <p role="alert">{formatted.headline}</p>
+            <TechnicalDetails content={formatted.technical} />
+          </>
+        );
+      })() : null}
       {editor !== null ? (
         editor.kind === 'create' ? (
           <ViewForm mode="create" onClose={() => setEditor(null)} />

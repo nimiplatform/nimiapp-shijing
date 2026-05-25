@@ -11,6 +11,7 @@ import {
   CALENDAR_SYSTEMS,
   CULTURAL_MARKERS,
 } from '../../domain/person.ts';
+import { FIELD_LABELS, LEAP_MONTH_LABELS } from '../i18n/copy.ts';
 
 export interface TextFieldProps {
   readonly id: string;
@@ -44,6 +45,7 @@ export interface SelectFieldProps<T extends string> {
   readonly options: readonly T[];
   readonly required?: boolean;
   readonly emptyLabel?: string;
+  readonly optionLabel?: (value: T) => string;
   readonly onChange: (value: T) => void;
 }
 
@@ -60,7 +62,7 @@ export function SelectField<T extends string>(props: SelectFieldProps<T>) {
         {props.emptyLabel !== undefined ? <option value="">{props.emptyLabel}</option> : null}
         {props.options.map((option) => (
           <option key={option} value={option}>
-            {option}
+            {props.optionLabel ? props.optionLabel(option) : option}
           </option>
         ))}
       </select>
@@ -77,7 +79,7 @@ export interface LeapMonthCheckboxProps {
 export function LeapMonthCheckbox(props: LeapMonthCheckboxProps) {
   return (
     <label htmlFor={props.id} className="shijing-input-field shijing-input-field--lunar-leap">
-      <span>lunar_is_leap_month *</span>
+      <span>{FIELD_LABELS.lunar_is_leap_month} *</span>
       <select
         id={props.id}
         value={props.value === null ? 'unanswered' : props.value ? 'leap' : 'normal'}
@@ -87,9 +89,9 @@ export function LeapMonthCheckbox(props: LeapMonthCheckboxProps) {
           else if (event.target.value === 'normal') props.onChange(false);
         }}
       >
-        <option value="unanswered">— (required)</option>
-        <option value="normal">normal (not a leap month)</option>
-        <option value="leap">leap month</option>
+        <option value="unanswered">{LEAP_MONTH_LABELS.unanswered}</option>
+        <option value="normal">{LEAP_MONTH_LABELS.normal}</option>
+        <option value="leap">{LEAP_MONTH_LABELS.leap}</option>
       </select>
     </label>
   );

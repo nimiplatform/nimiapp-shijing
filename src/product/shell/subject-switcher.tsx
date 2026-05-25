@@ -14,6 +14,7 @@ import {
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { subjectRefKey } from '../../domain/subject-ref.ts';
 import type { SubjectRef } from '../../domain/subject-ref.ts';
+import { SELF_DISPLAY_NAME } from '../i18n/copy.ts';
 
 interface SubjectOption {
   readonly ref: SubjectRef;
@@ -29,22 +30,29 @@ function initialOf(label: string): string {
   return cp ? String.fromCodePoint(cp).toUpperCase() : '?';
 }
 
+function birthDateLabel(birthDatetimeUtc: string): string {
+  if (!birthDatetimeUtc) return '';
+  const d = new Date(birthDatetimeUtc);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
 export function SubjectSwitcher() {
   const { state, dispatch } = useShijingStore();
   const options = useMemo<SubjectOption[]>(() => {
     const list: SubjectOption[] = [];
     list.push({
       ref: 'self',
-      label: '本人',
+      label: SELF_DISPLAY_NAME,
       initial: '我',
-      meta: state.snapshot.self_subject.natal_inputs.birth_datetime_utc,
+      meta: birthDateLabel(state.snapshot.self_subject.natal_inputs.birth_datetime_utc),
     });
     for (const person of state.snapshot.persons) {
       list.push({
         ref: { kind: 'person', id: person.id },
         label: person.display_name,
         initial: initialOf(person.display_name),
-        meta: person.natal_inputs?.birth_datetime_utc || person.consent_state,
+        meta: birthDateLabel(person.natal_inputs?.birth_datetime_utc ?? ''),
       });
     }
     return list;
@@ -62,11 +70,13 @@ export function SubjectSwitcher() {
     <div className="shijing-subject-switcher">
       <Popover>
         <PopoverTrigger asChild>
-          <button type="button" className="shijing-subject-switcher__trigger" aria-label="切换观察对象">
+          <button type="button" className="shijing-subject-switcher__trigger" aria-label="切换查看的人">
             <Avatar size="sm" shape="circle" tone="accent" alt={current.label} fallback={current.initial} />
             <span className="shijing-subject-switcher__current">
               <span className="shijing-subject-switcher__label">{current.label}</span>
-              <span className="shijing-subject-switcher__meta">观察对象 · {subjectRefKey(current.ref)}</span>
+              {current.meta ? (
+                <span className="shijing-subject-switcher__meta">{current.meta}</span>
+              ) : null}
             </span>
             <span className="shijing-subject-switcher__chevron" aria-hidden>›</span>
           </button>
@@ -86,7 +96,7 @@ export function SubjectSwitcher() {
                   <Avatar size="sm" shape="circle" tone={isActive ? 'accent' : 'neutral'} alt={option.label} fallback={option.initial} />
                   <span className="shijing-subject-switcher__option-text">
                     <span>{option.label}</span>
-                    <small>{option.meta}</small>
+                    {option.meta ? <small>{option.meta}</small> : null}
                   </span>
                 </button>
               );

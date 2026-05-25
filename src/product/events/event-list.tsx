@@ -10,8 +10,17 @@ import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts
 import type { Event } from '../../domain/event.ts';
 import { EventForm } from './event-form.tsx';
 import { findReferencesToEvent, type EventReference } from './event-dangling-reference.ts';
+import { BUTTONS, EMPTY_STATES, HEADINGS } from '../i18n/copy.ts';
+import { formatDanglingRefusal, formatDeleteValidatorRefusal } from '../i18n/format-failure.ts';
+import { TechnicalDetails } from '../components/technical-details.tsx';
 
 type EditorMode = null | { kind: 'create' } | { kind: 'edit'; event: Event };
+
+function formatOccurredAt(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+}
 
 export function EventList() {
   const { state, dispatch } = useShijingStore();
@@ -42,36 +51,46 @@ export function EventList() {
   }
 
   return (
-    <section className="shijing-event-list" aria-label="ShiJing events">
+    <section className="shijing-event-list" aria-label="事件列表">
       <header>
-        <h3>事件 Events</h3>
+        <h3>{HEADINGS.events}</h3>
         <button type="button" onClick={() => setEditor({ kind: 'create' })}>
-          Add Event
+          {BUTTONS.add_event}
         </button>
       </header>
       {state.snapshot.events.length === 0 ? (
-        <p>No events recorded yet.</p>
+        <p>{EMPTY_STATES.events}</p>
       ) : (
         <ul>
           {state.snapshot.events.map((event) => (
             <li key={event.id}>
               <span>{event.title}</span>
-              <small> (occurred_at: {event.occurred_at}, view_refs: {event.view_refs.length})</small>
-              <button type="button" onClick={() => setEditor({ kind: 'edit', event })}>Edit</button>
-              <button type="button" onClick={() => onDelete(event)}>Delete</button>
+              <small>（发生于 {formatOccurredAt(event.occurred_at)} · 关联 {event.view_refs.length} 个视角）</small>
+              <button type="button" onClick={() => setEditor({ kind: 'edit', event })}>{BUTTONS.edit}</button>
+              <button type="button" onClick={() => onDelete(event)}>{BUTTONS.delete}</button>
             </li>
           ))}
         </ul>
       )}
-      {deletionError.kind === 'refused_dangling' ? (
-        <p role="alert">
-          Delete refused: {deletionError.refs.length} dangling reference(s) — first via {deletionError.refs[0]!.via}.
-          Re-point or remove the referencing entries first.
-        </p>
-      ) : null}
-      {deletionError.kind === 'refused_validator' ? (
-        <p role="alert">Delete refused by space validator: {deletionError.code}</p>
-      ) : null}
+      {deletionError.kind === 'refused_dangling' ? (() => {
+        const first = deletionError.refs[0]!;
+        const formatted = formatDanglingRefusal(deletionError.refs.length, first.via);
+        return (
+          <>
+            <p role="alert">{formatted.headline}</p>
+            <TechnicalDetails content={formatted.technical} />
+          </>
+        );
+      })() : null}
+      {deletionError.kind === 'refused_validator' ? (() => {
+        const formatted = formatDeleteValidatorRefusal(deletionError.code);
+        return (
+          <>
+            <p role="alert">{formatted.headline}</p>
+            <TechnicalDetails content={formatted.technical} />
+          </>
+        );
+      })() : null}
       {editor !== null ? (
         editor.kind === 'create' ? (
           <EventForm mode="create" onClose={() => setEditor(null)} />

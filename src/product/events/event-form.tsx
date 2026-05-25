@@ -18,6 +18,9 @@ import {
 } from './event-form-state.ts';
 import { buildSubjectRoster, findRosterEntry, type SubjectRosterEntry } from '../views/subject-roster.ts';
 import { newEventId } from './event-id.ts';
+import { BUTTONS, EMPTY_STATES, FAILURE_HEADLINES, FIELD_LABELS, HEADINGS, SELECT_REQUIRED_PLACEHOLDER } from '../i18n/copy.ts';
+import { formatSaveRefusal } from '../i18n/format-failure.ts';
+import { TechnicalDetails } from '../components/technical-details.tsx';
 
 export interface EventFormProps {
   readonly mode: 'create' | { kind: 'edit'; event: Event };
@@ -39,6 +42,10 @@ export function EventForm(props: EventFormProps) {
     () => buildSubjectRoster(state.snapshot),
     [state.snapshot],
   );
+  const rosterLabelOf = useMemo(() => {
+    const map = new Map(roster.map((entry) => [entry.key, entry.label]));
+    return (key: string) => map.get(key) ?? key;
+  }, [roster]);
 
   useEffect(() => {
     draftDispatch({ type: 'reset' });
@@ -91,32 +98,33 @@ export function EventForm(props: EventFormProps) {
   return (
     <form className="shijing-event-form" onSubmit={onSubmit} noValidate>
       <fieldset>
-        <legend>{typeof props.mode === 'object' ? 'Edit Event' : 'Add Event'}</legend>
+        <legend>{typeof props.mode === 'object' ? HEADINGS.edit_event : HEADINGS.add_event}</legend>
         <TextField
           id="event-title"
-          label="title"
+          label={FIELD_LABELS.event_title}
           value={draft.title}
           required
           onChange={(value) => draftDispatch({ type: 'set_title', value })}
         />
         <TextField
           id="event-occurred-at"
-          label="occurred_at (ISO-8601 UTC)"
+          label={FIELD_LABELS.occurred_at}
           value={draft.occurred_at_utc}
           required
           onChange={(value) => draftDispatch({ type: 'set_occurred_at_utc', value })}
         />
         <SelectField
           id="event-primary-subject"
-          label="primary_subject"
+          label={FIELD_LABELS.primary_subject}
           value={draft.primary_subject_key}
           options={roster.map((entry) => entry.key)}
+          optionLabel={rosterLabelOf}
           required
-          emptyLabel="— (required, no implicit default)"
+          emptyLabel={SELECT_REQUIRED_PLACEHOLDER}
           onChange={(value) => draftDispatch({ type: 'set_primary_subject_key', value })}
         />
         <fieldset>
-          <legend>participants[] (primary_subject auto-excluded)</legend>
+          <legend>{FIELD_LABELS.participants}（主要相关人物自动排除）</legend>
           {roster.map((entry) => (
             <label key={entry.key} className="shijing-input-field">
               <input
@@ -130,9 +138,9 @@ export function EventForm(props: EventFormProps) {
           ))}
         </fieldset>
         <fieldset>
-          <legend>view_refs[]</legend>
+          <legend>{FIELD_LABELS.view_refs}</legend>
           {state.snapshot.views.length === 0 ? (
-            <p>No views available to reference.</p>
+            <p>{EMPTY_STATES.views_to_reference}</p>
           ) : (
             state.snapshot.views.map((view) => (
               <label key={view.id} className="shijing-input-field">
@@ -141,39 +149,45 @@ export function EventForm(props: EventFormProps) {
                   checked={draft.view_ref_ids.includes(view.id)}
                   onChange={() => draftDispatch({ type: 'toggle_view_ref_id', value: view.id })}
                 />
-                <span>{view.title} (view:{view.id})</span>
+                <span>{view.title}</span>
               </label>
             ))
           )}
         </fieldset>
         <TextField
           id="event-recap"
-          label="recap"
+          label={FIELD_LABELS.recap}
           value={draft.recap}
           onChange={(value) => draftDispatch({ type: 'set_recap', value })}
         />
         <TextField
           id="event-notes"
-          label="notes"
+          label={FIELD_LABELS.notes}
           value={draft.notes}
           onChange={(value) => draftDispatch({ type: 'set_notes', value })}
         />
       </fieldset>
       <div className="shijing-form-actions">
-        <button type="button" data-variant="ghost" onClick={props.onClose}>Cancel</button>
-        <button type="submit">Save</button>
+        <button type="button" data-variant="ghost" onClick={props.onClose}>{BUTTONS.cancel}</button>
+        <button type="submit">{BUTTONS.save}</button>
       </div>
-      {submission.kind === 'invalid_draft' ? (
-        <p role="alert">Event draft invalid: {submission.code}</p>
+      {submission.kind === 'invalid_draft' || submission.kind === 'invalid_event' ? (
+        <>
+          <p role="alert">{FAILURE_HEADLINES.event_invalid}</p>
+          <TechnicalDetails content={submission.code} />
+        </>
       ) : null}
-      {submission.kind === 'invalid_event' ? (
-        <p role="alert">validateEvent refused: {submission.code}</p>
-      ) : null}
-      {submission.kind === 'invalid_space' ? (
-        <p role="alert">validateShiJingSpace refused: {submission.code}</p>
-      ) : null}
+      {submission.kind === 'invalid_space' ? (() => {
+        const formatted = formatSaveRefusal(submission.code);
+        return (
+          <>
+            <p role="alert">{formatted.headline}</p>
+            <TechnicalDetails content={formatted.technical} />
+          </>
+        );
+      })() : null}
       {submission.kind === 'saved' ? (
-        <p role="status">Saved at {submission.at}.</p>
+        <p role="status">已保存。</p>
       ) : null}
     </form>
   );

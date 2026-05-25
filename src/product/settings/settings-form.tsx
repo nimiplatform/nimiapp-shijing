@@ -11,6 +11,9 @@ import {
   type ResponseLength,
   type ResponseTone,
 } from '../../domain/settings.ts';
+import { BUTTONS, FAILURE_HEADLINES, FIELD_LABELS, FIELD_PLACEHOLDERS, HEADINGS } from '../i18n/copy.ts';
+import { enumLabel } from '../i18n/enum-label.ts';
+import { TechnicalDetails } from '../components/technical-details.tsx';
 
 const HHMM_RE = /^\d{2}:\d{2}$/;
 
@@ -94,46 +97,45 @@ export function SettingsForm() {
   return (
     <form className="shijing-settings-form" onSubmit={onSubmit} noValidate>
       <header className="shijing-card__head">
-        <h3>Workspace Settings</h3>
-        <small>response_preferences + notification_preferences</small>
+        <h3>{HEADINGS.settings}</h3>
       </header>
 
       <label>
-        <span>Response tone</span>
+        <span>{FIELD_LABELS.response_tone}</span>
         <select value={draft.tone} onChange={(e) => setDraft({ ...draft, tone: e.target.value as ResponseTone })}>
           {RESPONSE_TONES.map((tone) => (
-            <option key={tone} value={tone}>{tone}</option>
+            <option key={tone} value={tone}>{enumLabel('response_tone', tone)}</option>
           ))}
         </select>
       </label>
 
       <label>
-        <span>Response length</span>
+        <span>{FIELD_LABELS.response_length}</span>
         <select value={draft.length} onChange={(e) => setDraft({ ...draft, length: e.target.value as ResponseLength })}>
           {RESPONSE_LENGTHS.map((len) => (
-            <option key={len} value={len}>{len}</option>
+            <option key={len} value={len}>{enumLabel('response_length', len)}</option>
           ))}
         </select>
       </label>
 
       <label>
-        <span>Response language (BCP-47, e.g. zh-Hans, en, ja)</span>
+        <span>{FIELD_LABELS.response_language}</span>
         <input
           type="text"
           value={draft.language}
           onChange={(e) => setDraft({ ...draft, language: e.target.value })}
-          placeholder="zh-Hans"
+          placeholder={FIELD_PLACEHOLDERS.response_language}
           required
         />
       </label>
 
       <label>
-        <span>Extra instructions (optional)</span>
+        <span>{FIELD_LABELS.extra_instructions}</span>
         <textarea
           value={draft.extra_instructions}
           onChange={(e) => setDraft({ ...draft, extra_instructions: e.target.value })}
           rows={3}
-          placeholder="e.g. 偏好引用 Carl Jung 的视角"
+          placeholder={FIELD_PLACEHOLDERS.extra_instructions}
         />
       </label>
 
@@ -143,11 +145,11 @@ export function SettingsForm() {
           checked={draft.daily_today_card_enabled}
           onChange={(e) => setDraft({ ...draft, daily_today_card_enabled: e.target.checked })}
         />
-        <span>Daily today-card 通知</span>
+        <span>{FIELD_LABELS.daily_today_card_enabled}</span>
       </label>
 
       <label>
-        <span>Daily today-card local time (HH:MM)</span>
+        <span>{FIELD_LABELS.daily_today_card_local_time}</span>
         <input
           type="time"
           value={draft.daily_today_card_local_time}
@@ -156,14 +158,17 @@ export function SettingsForm() {
       </label>
 
       {submission.kind === 'invalid' ? (
-        <p role="alert">Settings invalid: {submission.code}</p>
+        <>
+          <p role="alert">{FAILURE_HEADLINES.settings_invalid}</p>
+          <TechnicalDetails content={submission.code} />
+        </>
       ) : null}
       {submission.kind === 'saved' ? (
-        <p role="status">Saved at {submission.at}.</p>
+        <p role="status">已保存。</p>
       ) : null}
 
       <div className="shijing-form-actions">
-        <button type="submit">Save Settings</button>
+        <button type="submit">{BUTTONS.save_settings}</button>
       </div>
     </form>
   );

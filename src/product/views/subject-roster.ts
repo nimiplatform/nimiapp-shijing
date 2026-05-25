@@ -5,6 +5,7 @@
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import type { SubjectRef } from '../../domain/subject-ref.ts';
 import { subjectRefKey } from '../../domain/subject-ref.ts';
+import { SELF_DISPLAY_NAME, UNKNOWN_SUBJECT_DISPLAY_NAME } from '../i18n/copy.ts';
 
 export interface SubjectRosterEntry {
   readonly key: string;
@@ -14,11 +15,12 @@ export interface SubjectRosterEntry {
 
 export function buildSubjectRoster(space: ShiJingSpace): readonly SubjectRosterEntry[] {
   const roster: SubjectRosterEntry[] = [
-    { key: subjectRefKey('self'), label: 'self', ref: 'self' },
+    { key: subjectRefKey('self'), label: SELF_DISPLAY_NAME, ref: 'self' },
   ];
   for (const person of space.persons) {
     const ref: SubjectRef = { kind: 'person', id: person.id };
-    roster.push({ key: subjectRefKey(ref), label: `${person.display_name} (person:${person.id})`, ref });
+    const label = person.display_name.trim().length > 0 ? person.display_name : UNKNOWN_SUBJECT_DISPLAY_NAME;
+    roster.push({ key: subjectRefKey(ref), label, ref });
   }
   return roster;
 }

@@ -7,8 +7,6 @@ import type {
   AstrologyFeatureSnapshot,
   AstrologyMethodProfile,
   ReadingTimeWindow,
-  ReadingTimeWindowMode,
-  ReadingTimeWindowSource,
 } from './algorithm.ts';
 import { READING_TIME_WINDOW_MODES, READING_TIME_WINDOW_SOURCES } from './algorithm.ts';
 

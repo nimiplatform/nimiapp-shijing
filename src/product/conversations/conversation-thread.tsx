@@ -13,6 +13,11 @@ import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts
 import type { Conversation, ConversationTurn } from '../../domain/conversation.ts';
 import { newConversationTurnId } from './conversation-id.ts';
 import { ConversationList } from './conversation-list.tsx';
+import { BUTTONS, EMPTY_STATES, HEADINGS, STATUS } from '../i18n/copy.ts';
+import { enumLabel } from '../i18n/enum-label.ts';
+import { subjectDisplayName } from '../i18n/subject-display-name.ts';
+import { formatChatFailure, formatValidatorRefusal } from '../i18n/format-failure.ts';
+import { TechnicalDetails } from '../components/technical-details.tsx';
 
 const SHIJING_CONVERSATION_MODEL_ID = 'auto';
 
@@ -26,6 +31,22 @@ type SendStatus =
   | { kind: 'sending' }
   | { kind: 'refused_validator'; code: string }
   | { kind: 'generator_failed'; code: string; detail: string };
+
+function shortenConversationId(id: string): string {
+  if (id.length <= 8) return id;
+  return id.slice(-8);
+}
+
+function formatTimestamp(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString('zh-CN', {
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 export function ConversationThread(props: ConversationThreadProps) {
   const { state, dispatch, conversation_chat_bridge } = useShijingStore();
@@ -103,48 +124,58 @@ export function ConversationThread(props: ConversationThreadProps) {
   }
 
   return (
-    <section className="shijing-conversation-thread" aria-label="ShiJing conversation thread">
+    <section className="shijing-conversation-thread" aria-label="会话内容">
       {selected === null ? (
-        <p>选择一个会话以开始对话。</p>
+        <p>{EMPTY_STATES.conversation_select}</p>
       ) : (
         <>
           <header>
-            <h4>conversation:{selected.id}</h4>
-            <small>anchor: {selected.subject_anchor === 'self' ? 'self' : `person:${selected.subject_anchor.id}`}</small>
+            <h4>会话 #{shortenConversationId(selected.id)}</h4>
+            <small>围绕：{subjectDisplayName(selected.subject_anchor, state.snapshot)}</small>
           </header>
           <ol className="shijing-conversation-turns">
             {selected.turns.length === 0 ? (
-              <li>No turns yet.</li>
+              <li>{EMPTY_STATES.conversation_turns}</li>
             ) : (
               selected.turns.map((turn) => (
                 <li key={turn.id} className={`shijing-conversation-turn shijing-conversation-turn--${turn.role}`}>
-                  <span>{turn.role}:</span>
+                  <span>{enumLabel('conversation_role', turn.role)}：</span>
                   <span>{turn.body}</span>
-                  <small> {turn.created_at}</small>
+                  <small> {formatTimestamp(turn.created_at)}</small>
                 </li>
               ))
             )}
           </ol>
           <form className="shijing-conversation-composer" onSubmit={onSend} noValidate>
             <textarea
-              aria-label="user message"
+              aria-label="消息内容"
               value={composer}
               onChange={(event) => setComposer(event.target.value)}
               disabled={status.kind === 'sending'}
             />
             <button type="submit" disabled={status.kind === 'sending' || composer.trim().length === 0}>
-              发送
+              {BUTTONS.send}
             </button>
           </form>
-          {status.kind === 'sending' ? <p role="status">发送中…</p> : null}
-          {status.kind === 'refused_validator' ? (
-            <p role="alert">Snapshot rejected by space validator: {status.code}</p>
-          ) : null}
-          {status.kind === 'generator_failed' ? (
-            <p role="alert">
-              Runtime chat generator failed: {status.code} — {status.detail}
-            </p>
-          ) : null}
+          {status.kind === 'sending' ? <p role="status">{STATUS.sending}</p> : null}
+          {status.kind === 'refused_validator' ? (() => {
+            const formatted = formatValidatorRefusal(status.code);
+            return (
+              <>
+                <p role="alert">{formatted.headline}</p>
+                <TechnicalDetails content={formatted.technical} />
+              </>
+            );
+          })() : null}
+          {status.kind === 'generator_failed' ? (() => {
+            const formatted = formatChatFailure(status.code, status.detail);
+            return (
+              <>
+                <p role="alert">{formatted.headline}</p>
+                <TechnicalDetails content={formatted.technical} />
+              </>
+            );
+          })() : null}
         </>
       )}
     </section>
@@ -165,7 +196,7 @@ export function ConversationThreadOverlay(props: ConversationThreadOverlayProps)
       kind="dialog"
       size="L"
       onClose={props.onClose}
-      title="会话 Conversation"
+      title={HEADINGS.conversation_dialog}
       sidebar={
         <ConversationList
           selectedConversationId={props.conversationId}

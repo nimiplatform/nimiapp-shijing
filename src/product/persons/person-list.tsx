@@ -9,12 +9,14 @@ import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts
 import type { Person } from '../../domain/person.ts';
 import { PersonForm } from './person-form.tsx';
 import { findReferencesToPerson, type DanglingReference } from './dangling-reference.ts';
-
-type EditorMode = null | { kind: 'create' } | { kind: 'edit'; person: Person };
+import { BUTTONS, EMPTY_STATES, HEADINGS } from '../i18n/copy.ts';
+import { enumLabel } from '../i18n/enum-label.ts';
+import { formatDanglingRefusal, formatDeleteValidatorRefusal } from '../i18n/format-failure.ts';
+import { TechnicalDetails } from '../components/technical-details.tsx';
 
 export function PersonList() {
   const { state, dispatch } = useShijingStore();
-  const [editor, setEditor] = useState<EditorMode>(null);
+  const [editor, setEditor] = useState<null | { kind: 'create' } | { kind: 'edit'; person: Person }>(null);
   const [deletionError, setDeletionError] = useState<
     | { kind: 'idle' }
     | { kind: 'refused_dangling'; refs: readonly DanglingReference[] }
@@ -41,36 +43,46 @@ export function PersonList() {
   }
 
   return (
-    <section className="shijing-person-list" aria-label="ShiJing persons">
+    <section className="shijing-person-list" aria-label="人物列表">
       <header>
-        <h3>Persons</h3>
+        <h3>{HEADINGS.persons}</h3>
         <button type="button" onClick={() => setEditor({ kind: 'create' })}>
-          Add Person
+          {BUTTONS.add_person}
         </button>
       </header>
       {state.snapshot.persons.length === 0 ? (
-        <p>No persons recorded yet.</p>
+        <p>{EMPTY_STATES.persons}</p>
       ) : (
         <ul>
           {state.snapshot.persons.map((person) => (
             <li key={person.id}>
               <span>{person.display_name}</span>
-              <small> (consent: {person.consent_state})</small>
-              <button type="button" onClick={() => setEditor({ kind: 'edit', person })}>Edit</button>
-              <button type="button" onClick={() => onDelete(person)}>Delete</button>
+              <small>（同意状态：{enumLabel('consent_state', person.consent_state)}）</small>
+              <button type="button" onClick={() => setEditor({ kind: 'edit', person })}>{BUTTONS.edit}</button>
+              <button type="button" onClick={() => onDelete(person)}>{BUTTONS.delete}</button>
             </li>
           ))}
         </ul>
       )}
-      {deletionError.kind === 'refused_dangling' ? (
-        <p role="alert">
-          Delete refused: {deletionError.refs.length} dangling reference(s) — first via {deletionError.refs[0]!.via}.
-          Re-point or remove the referencing entries first.
-        </p>
-      ) : null}
-      {deletionError.kind === 'refused_validator' ? (
-        <p role="alert">Delete refused by space validator: {deletionError.code}</p>
-      ) : null}
+      {deletionError.kind === 'refused_dangling' ? (() => {
+        const first = deletionError.refs[0]!;
+        const formatted = formatDanglingRefusal(deletionError.refs.length, first.via);
+        return (
+          <>
+            <p role="alert">{formatted.headline}</p>
+            <TechnicalDetails content={formatted.technical} />
+          </>
+        );
+      })() : null}
+      {deletionError.kind === 'refused_validator' ? (() => {
+        const formatted = formatDeleteValidatorRefusal(deletionError.code);
+        return (
+          <>
+            <p role="alert">{formatted.headline}</p>
+            <TechnicalDetails content={formatted.technical} />
+          </>
+        );
+      })() : null}
       {editor !== null ? (
         editor.kind === 'create' ? (
           <PersonForm mode="create" onClose={() => setEditor(null)} />

@@ -8,7 +8,6 @@ import { useShijingStore } from '../state/shijing-store.tsx';
 import { TextField, SelectField } from '../inputs/natal-inputs-fields.tsx';
 import {
   createEmptyDraft,
-  natalInputsDraftReducer,
   type NatalInputsDraft,
 } from '../inputs/natal-inputs-state.ts';
 import { validateDraft, userMessageForValidationError } from '../inputs/natal-inputs-validate.ts';
@@ -23,6 +22,10 @@ import {
 } from './person-form-state.ts';
 import { NatalInputsEditor } from './natal-inputs-editor.tsx';
 import { newPersonId } from './person-id.ts';
+import { BUTTONS, FAILURE_HEADLINES, FIELD_LABELS, HEADINGS, SELECT_REQUIRED_PLACEHOLDER } from '../i18n/copy.ts';
+import { enumLabel } from '../i18n/enum-label.ts';
+import { formatSaveRefusal } from '../i18n/format-failure.ts';
+import { TechnicalDetails } from '../components/technical-details.tsx';
 
 export interface PersonFormProps {
   readonly mode: 'create' | { kind: 'edit'; person: Person };
@@ -91,38 +94,39 @@ export function PersonForm(props: PersonFormProps) {
   return (
     <form className="shijing-person-form" onSubmit={onSubmit} noValidate>
       <fieldset>
-        <legend>{typeof props.mode === 'object' ? 'Edit Person' : 'Add Person'}</legend>
+        <legend>{typeof props.mode === 'object' ? HEADINGS.edit_person : HEADINGS.add_person}</legend>
         <TextField
           id="person-display-name"
-          label="display_name"
+          label={FIELD_LABELS.display_name}
           value={personDraft.display_name}
           required
           onChange={(value) => personDispatch({ type: 'set_display_name', value })}
         />
         <TextField
           id="person-relation-hint"
-          label="relation_hint"
+          label={FIELD_LABELS.relation_hint}
           value={personDraft.relation_hint}
           onChange={(value) => personDispatch({ type: 'set_relation_hint', value })}
         />
         <SelectField
           id="person-consent-state"
-          label="consent_state"
+          label={FIELD_LABELS.consent_state}
           value={personDraft.consent_state}
           options={CONSENT_STATE_OPTIONS}
+          optionLabel={(v) => enumLabel('consent_state', v)}
           required
-          emptyLabel="— (required, no implicit default)"
+          emptyLabel={SELECT_REQUIRED_PLACEHOLDER}
           onChange={(value) => personDispatch({ type: 'set_consent_state', value })}
         />
         <TextField
           id="person-subject-context"
-          label="subject_context"
+          label={FIELD_LABELS.subject_context}
           value={personDraft.subject_context}
           onChange={(value) => personDispatch({ type: 'set_subject_context', value })}
         />
         <TextField
           id="person-notes"
-          label="notes"
+          label={FIELD_LABELS.notes}
           value={personDraft.notes}
           onChange={(value) => personDispatch({ type: 'set_notes', value })}
         />
@@ -133,20 +137,32 @@ export function PersonForm(props: PersonFormProps) {
         onDraftChange={setNatalDraft}
       />
       <div className="shijing-form-actions">
-        <button type="button" data-variant="ghost" onClick={props.onClose}>Cancel</button>
-        <button type="submit">Save</button>
+        <button type="button" data-variant="ghost" onClick={props.onClose}>{BUTTONS.cancel}</button>
+        <button type="submit">{BUTTONS.save}</button>
       </div>
       {submission.kind === 'invalid_person' ? (
-        <p role="alert">Person field invalid: {submission.code}</p>
+        <>
+          <p role="alert">{FAILURE_HEADLINES.person_invalid}</p>
+          <TechnicalDetails content={submission.code} />
+        </>
       ) : null}
       {submission.kind === 'invalid_natal' ? (
-        <p role="alert">Natal inputs invalid: {submission.message} (code: {submission.code})</p>
+        <>
+          <p role="alert">{FAILURE_HEADLINES.natal_invalid} {submission.message}</p>
+          <TechnicalDetails content={submission.code} />
+        </>
       ) : null}
-      {submission.kind === 'invalid_space' ? (
-        <p role="alert">ShiJingSpace rejected the change: {submission.code}</p>
-      ) : null}
+      {submission.kind === 'invalid_space' ? (() => {
+        const formatted = formatSaveRefusal(submission.code);
+        return (
+          <>
+            <p role="alert">{formatted.headline}</p>
+            <TechnicalDetails content={formatted.technical} />
+          </>
+        );
+      })() : null}
       {submission.kind === 'saved' ? (
-        <p role="status">Saved at {submission.at}.</p>
+        <p role="status">已保存。</p>
       ) : null}
     </form>
   );

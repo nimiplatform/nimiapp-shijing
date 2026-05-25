@@ -19,6 +19,9 @@ import {
 } from './relation-form-state.ts';
 import { buildSubjectRoster, findRosterEntry, type SubjectRosterEntry } from '../views/subject-roster.ts';
 import { newRelationId } from './relation-id.ts';
+import { BUTTONS, FAILURE_HEADLINES, FIELD_LABELS, HEADINGS, SELECT_REQUIRED_PLACEHOLDER } from '../i18n/copy.ts';
+import { formatSaveRefusal } from '../i18n/format-failure.ts';
+import { TechnicalDetails } from '../components/technical-details.tsx';
 
 export interface RelationFormProps {
   readonly mode: 'create' | { kind: 'edit'; relation: Relation };
@@ -39,6 +42,10 @@ export function RelationForm(props: RelationFormProps) {
     () => buildSubjectRoster(state.snapshot),
     [state.snapshot],
   );
+  const rosterLabelOf = useMemo(() => {
+    const map = new Map(roster.map((entry) => [entry.key, entry.label]));
+    return (key: string) => map.get(key) ?? key;
+  }, [roster]);
 
   useEffect(() => {
     draftDispatch({ type: 'reset' });
@@ -92,55 +99,66 @@ export function RelationForm(props: RelationFormProps) {
   return (
     <form className="shijing-relation-form" onSubmit={onSubmit} noValidate>
       <fieldset>
-        <legend>{typeof props.mode === 'object' ? 'Edit Relation' : 'Add Relation'}</legend>
+        <legend>{typeof props.mode === 'object' ? HEADINGS.edit_relation : HEADINGS.add_relation}</legend>
         <SelectField
           id="relation-from-subject"
-          label="from_subject"
+          label={FIELD_LABELS.from_subject}
           value={draft.from_subject_key}
           options={roster.map((entry) => entry.key)}
+          optionLabel={rosterLabelOf}
           required
-          emptyLabel="— (required, no implicit default)"
+          emptyLabel={SELECT_REQUIRED_PLACEHOLDER}
           onChange={(value) => draftDispatch({ type: 'set_from_subject_key', value })}
         />
         <SelectField
           id="relation-to-subject"
-          label="to_subject"
+          label={FIELD_LABELS.to_subject}
           value={draft.to_subject_key}
           options={roster.map((entry) => entry.key)}
+          optionLabel={rosterLabelOf}
           required
-          emptyLabel="— (required, no implicit default)"
+          emptyLabel={SELECT_REQUIRED_PLACEHOLDER}
           onChange={(value) => draftDispatch({ type: 'set_to_subject_key', value })}
         />
         <SelectField
           id="relation-kind"
-          label="relation_kind"
+          label={FIELD_LABELS.relation_kind}
           value={draft.relation_kind}
           options={RELATION_KIND_OPTIONS}
           required
-          emptyLabel="— (required, no implicit default)"
+          emptyLabel={SELECT_REQUIRED_PLACEHOLDER}
           onChange={(value) =>
             draftDispatch({ type: 'set_relation_kind', value: value as RelationKindOption | '' })
           }
         />
         <TextField
           id="relation-notes"
-          label="notes"
+          label={FIELD_LABELS.notes}
           value={draft.notes}
           onChange={(value) => draftDispatch({ type: 'set_notes', value })}
         />
       </fieldset>
       <div className="shijing-form-actions">
-        <button type="button" data-variant="ghost" onClick={props.onClose}>Cancel</button>
-        <button type="submit">Save</button>
+        <button type="button" data-variant="ghost" onClick={props.onClose}>{BUTTONS.cancel}</button>
+        <button type="submit">{BUTTONS.save}</button>
       </div>
       {submission.kind === 'invalid_draft' ? (
-        <p role="alert">Relation draft invalid: {submission.code}</p>
+        <>
+          <p role="alert">{FAILURE_HEADLINES.relation_invalid}</p>
+          <TechnicalDetails content={submission.code} />
+        </>
       ) : null}
-      {submission.kind === 'invalid_space' ? (
-        <p role="alert">validateShiJingSpace refused: {submission.code}</p>
-      ) : null}
+      {submission.kind === 'invalid_space' ? (() => {
+        const formatted = formatSaveRefusal(submission.code);
+        return (
+          <>
+            <p role="alert">{formatted.headline}</p>
+            <TechnicalDetails content={formatted.technical} />
+          </>
+        );
+      })() : null}
       {submission.kind === 'saved' ? (
-        <p role="status">Saved at {submission.at}.</p>
+        <p role="status">已保存。</p>
       ) : null}
     </form>
   );
