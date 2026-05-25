@@ -60,7 +60,7 @@ test('SJG-DATA-10: in-memory catalog matches the kernel yaml seed_templates exac
   // Cross-check: the bundled JSON must list the same ids in the same
   // order as kernel/tables/view-template-catalog.yaml seed_templates.
   const yaml = readFileSync(
-    new URL('../spec/kernel/tables/view-template-catalog.yaml', import.meta.url),
+    new URL('../.nimi/spec/shijing/kernel/tables/view-template-catalog.yaml', import.meta.url),
     'utf8',
   );
   const yamlIds = [];

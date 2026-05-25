@@ -83,7 +83,7 @@ test('canonical ShiJing identifiers are not flagged as removed', () => {
 });
 
 test('guard set exactly mirrors yaml authority', () => {
-  const yamlPath = new URL('../spec/kernel/tables/removed-surface-names.yaml', import.meta.url);
+  const yamlPath = new URL('../.nimi/spec/shijing/kernel/tables/removed-surface-names.yaml', import.meta.url);
   const yamlText = readFileSync(yamlPath, 'utf8');
   const yamlNames = new Set();
   for (const line of yamlText.split('\n')) {

@@ -2,7 +2,8 @@
 // numbered gap from the wave-13 brief; each test name cites the
 // spec rule(s) it enforces. The brief itself lives in the project's
 // `.nimi` wave admission packet; the spec line citations refer to
-// `spec/kernel/algorithm-contract.md` and `spec/kernel/astrology-contract.md`.
+// `.nimi/spec/shijing/kernel/algorithm-contract.md` and
+// `.nimi/spec/shijing/kernel/astrology-contract.md`.
 
 import assert from 'node:assert/strict';
 import test from 'node:test';

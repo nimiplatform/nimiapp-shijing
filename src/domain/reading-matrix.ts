@@ -1,8 +1,9 @@
 // SJG-ASTRO-01..03 — Reading kind/scope enums plus the kind/scope matrix
-// mirror. The yaml under spec/kernel/tables/reading-kind-scope-matrix.yaml
-// is the human source of truth; this constant is the machine consumer.
-// They are kept in sync by the matrix test under
-// test/reading.test.mjs (matrix-coverage assertion).
+// mirror. The yaml under
+// .nimi/spec/shijing/kernel/tables/reading-kind-scope-matrix.yaml is the
+// human source of truth; this constant is the machine consumer. They are
+// kept in sync by the matrix test under test/reading.test.mjs
+// (matrix-coverage assertion).
 
 export type ReadingKind =
   | 'today'

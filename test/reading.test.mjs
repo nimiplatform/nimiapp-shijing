@@ -341,7 +341,7 @@ test('matrix-source-of-truth: every kind x scope cell evaluates', () => {
 });
 
 test('matrix mirrors yaml spec table', () => {
-  const yamlPath = new URL('../spec/kernel/tables/reading-kind-scope-matrix.yaml', import.meta.url);
+  const yamlPath = new URL('../.nimi/spec/shijing/kernel/tables/reading-kind-scope-matrix.yaml', import.meta.url);
   const yamlText = readFileSync(yamlPath, 'utf8');
   const lines = yamlText.split('\n');
   for (const kind of READING_KINDS) {

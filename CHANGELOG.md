@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial standalone project layout migrated from `apps/shijing` in the
   `nimi-realm` monorepo.
-- `spec/kernel/**` host-authored product authority (SJG-PROD / SJG-DATA /
+- `.nimi/spec/shijing/kernel/**` host-authored product authority (SJG-PROD / SJG-DATA /
   SJG-ASTRO / SJG-ALGO / SJG-IA / SJG-REMOVED contract families).
 - `@nimiplatform/nimi-coding` governance projection under
   `.nimi/{config,contracts,methodology}/**`.

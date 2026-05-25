@@ -34,27 +34,29 @@ Four primary tabs (`SJG-IA-*`):
 
 The data root is `ShiJingSpace`: `self_subject`, `persons[]`, `relations[]`,
 `events[]`, `views[]`, `readings[]`, `conversations[]`, `settings`. See
-`spec/kernel/data-model-contract.md`.
+`.nimi/spec/shijing/kernel/data-model-contract.md`.
 
 ## Spec Authority
 
-Normative product authority lives under `spec/kernel/**` (markdown contracts
-+ typed YAML tables). Guides:
+Normative product authority lives under `.nimi/spec/shijing/kernel/**`
+(markdown contracts + typed YAML tables). Guides:
 
-- `spec/INDEX.md` — reading path
-- `spec/shijing.md` — top-level product positioning
-- `spec/AGENTS.md` — authoring rules + admitted scaffold drift
+- `.nimi/spec/INDEX.md` — cross-domain reading path
+- `.nimi/spec/shijing/index.md` — domain reading guide
+- `.nimi/spec/shijing/shijing.md` — top-level product positioning
+- `.nimi/spec/shijing/AGENTS.md` — authoring rules + admitted drift
+- `.nimi/spec/shijing/kernel/index.md` — kernel authority map
 
 Contract families:
 
 | Family | File |
 |--------|------|
-| `SJG-PROD-*` | `spec/kernel/product-contract.md` |
-| `SJG-DATA-*` | `spec/kernel/data-model-contract.md` |
-| `SJG-ASTRO-*` | `spec/kernel/astrology-contract.md` |
-| `SJG-ALGO-*` | `spec/kernel/algorithm-contract.md` |
-| `SJG-IA-*` | `spec/kernel/ia-contract.md` |
-| `SJG-REMOVED-*` | `spec/kernel/removed-surfaces-contract.md` |
+| `SJG-PROD-*` | `.nimi/spec/shijing/kernel/product-contract.md` |
+| `SJG-DATA-*` | `.nimi/spec/shijing/kernel/data-model-contract.md` |
+| `SJG-ASTRO-*` | `.nimi/spec/shijing/kernel/astrology-contract.md` |
+| `SJG-ALGO-*` | `.nimi/spec/shijing/kernel/algorithm-contract.md` |
+| `SJG-IA-*` | `.nimi/spec/shijing/kernel/ia-contract.md` |
+| `SJG-REMOVED-*` | `.nimi/spec/shijing/kernel/removed-surfaces-contract.md` |
 
 `.nimi/{config,contracts,methodology}/**` are projections from
 `@nimiplatform/nimi-coding`; they are managed by `pnpm nimicoding sync` and
@@ -125,7 +127,7 @@ Persisted Reading
 
 The Runtime AI layer is an **explanation layer only**. Pillars, DaYun,
 true-solar canonicalization, stage labels, and key windows are owned by the
-deterministic pipeline. See `spec/kernel/algorithm-contract.md`.
+deterministic pipeline. See `.nimi/spec/shijing/kernel/algorithm-contract.md`.
 
 Canonical hashing (`SJG-ALGO-11`) uses sha256 + json-c14n-v1 + NFC + utf-8 +
 hex-lowercase. The implementation lives in

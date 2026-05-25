@@ -27,45 +27,54 @@
 
 ## Spec Authority & Sync
 
-`spec/**` is ShiJing's project-local product authority. Normative product
-authority belongs only in `spec/kernel/*.md` and `spec/kernel/tables/**`;
-`spec/INDEX.md`, `spec/shijing.md`, and `spec/AGENTS.md` are guides /
-authoring rules.
+`.nimi/spec/shijing/**` is ShiJing's project-local product authority.
+Normative product authority belongs only in
+`.nimi/spec/shijing/kernel/*.md` and `.nimi/spec/shijing/kernel/tables/**`;
+`.nimi/spec/INDEX.md`, `.nimi/spec/shijing/index.md`,
+`.nimi/spec/shijing/shijing.md`, and `.nimi/spec/shijing/AGENTS.md` are
+reading guides / authoring rules.
+
+`.nimi/{methodology,contracts,config}/**` is the nimicoding governance
+projection — owned by `@nimiplatform/nimi-coding`, managed by
+`pnpm nimicoding sync`, and never hand-edited.
 
 When spec and code conflict, first classify the implementation behavior
-against the kernel authority. Retained behavior may update spec only through
-an explicit redesign/admission decision that cites the affected kernel
-authority; otherwise align the implementation to the existing kernel
-authority or track the mismatch as a defect. Do not promote bugs, fail-open
-behavior, placeholder data writes, orphan surfaces, or implementation-only
-behavior into authority.
+against the kernel authority. Retained behavior may update spec only
+through an explicit redesign/admission decision that cites the affected
+kernel authority; otherwise align the implementation to the existing
+kernel authority or track the mismatch as a defect. Do not promote bugs,
+fail-open behavior, placeholder data writes, orphan surfaces, or
+implementation-only behavior into authority.
 
 Before making any change:
 
-1. Read `spec/INDEX.md` for the reading path.
-2. Read `spec/AGENTS.md` for the rule-ID format and hard editing rules.
-3. Read the relevant `spec/kernel/*.md` contract and its referenced
-   `spec/kernel/tables/*.yaml`.
-4. Read source code to verify behavior or identify defects.
+1. Read `.nimi/spec/INDEX.md` for the cross-domain reading path.
+2. Read `.nimi/spec/shijing/AGENTS.md` for the rule-ID format and hard
+   editing rules.
+3. Read `.nimi/spec/shijing/kernel/index.md` for the authority map, then
+   the relevant `kernel/*.md` contract and its referenced
+   `kernel/tables/*.yaml`.
+4. Read source code under `src/{domain,contracts,product}/**` to verify
+   behavior or identify defects.
 
 ### Key Contracts
 
 | Contract | Rule Family | Governs |
 |----------|-------------|---------|
-| `product-contract.md` | `SJG-PROD-*` | Product-level invariants |
-| `data-model-contract.md` | `SJG-DATA-*` | ShiJingSpace, Subject/Person, View, Reading, Conversation, Settings, ShiJingCatalog |
-| `astrology-contract.md` | `SJG-ASTRO-*` | Astrology Contract v1: kind/scope matrix, output structure, forbidden outputs, uncertainty surface, consultation anchor rules |
-| `algorithm-contract.md` | `SJG-ALGO-*` | Astrology Algorithm Contract v1: method stack, time windows, canonicalization, DaYun, deterministic feature snapshots, Runtime-AI wording boundary, canonical hashing |
-| `ia-contract.md` | `SJG-IA-*` | Information architecture (four primary tabs: `今日`, `视角`, `问时镜`, `我`) |
-| `removed-surfaces-contract.md` | `SJG-REMOVED-*` | Hard removals (Profile, Venture, HuangliDaily, Report, …) |
+| `.nimi/spec/shijing/kernel/product-contract.md` | `SJG-PROD-*` | Product-level invariants |
+| `.nimi/spec/shijing/kernel/data-model-contract.md` | `SJG-DATA-*` | ShiJingSpace, Subject/Person, View, Reading, Conversation, Settings, ShiJingCatalog |
+| `.nimi/spec/shijing/kernel/astrology-contract.md` | `SJG-ASTRO-*` | Astrology Contract v1: kind/scope matrix, output structure, forbidden outputs, uncertainty surface, consultation anchor rules |
+| `.nimi/spec/shijing/kernel/algorithm-contract.md` | `SJG-ALGO-*` | Astrology Algorithm Contract v1: method stack, time windows, canonicalization, DaYun, deterministic feature snapshots, Runtime-AI wording boundary, canonical hashing |
+| `.nimi/spec/shijing/kernel/ia-contract.md` | `SJG-IA-*` | Information architecture (four primary tabs: `今日`, `视角`, `问时镜`, `我`) |
+| `.nimi/spec/shijing/kernel/removed-surfaces-contract.md` | `SJG-REMOVED-*` | Hard removals (Profile, Venture, HuangliDaily, Report, …) |
 
 ### Key Tables
 
 | Table | Governs |
 |-------|---------|
-| `reading-kind-scope-matrix.yaml` | Valid `Reading.kind` × `Reading.scope` combinations and per-cell anchor rules |
-| `view-template-catalog.yaml` | `ShiJingCatalog.view_templates[]` schema and accepted entries |
-| `removed-surface-names.yaml` | Names whose reappearance as active product/source must fail closed |
+| `.nimi/spec/shijing/kernel/tables/reading-kind-scope-matrix.yaml` | Valid `Reading.kind` × `Reading.scope` combinations and per-cell anchor rules |
+| `.nimi/spec/shijing/kernel/tables/view-template-catalog.yaml` | `ShiJingCatalog.view_templates[]` schema and accepted entries |
+| `.nimi/spec/shijing/kernel/tables/removed-surface-names.yaml` | Names whose reappearance as active product/source must fail closed |
 
 ## Development Principles
 

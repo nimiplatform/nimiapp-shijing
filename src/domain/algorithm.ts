@@ -1,10 +1,9 @@
 // SJG-ALGO-* — Astrology Algorithm Contract v1 source mirror.
 //
 // This module exposes ONLY type aliases + closed enums + structural shapes
-// mirroring `apps/shijing/spec/kernel/algorithm-contract.md`. It does NOT
-// implement real bazi / dayun / jieqi calculation; the algorithm itself is
-// admitted by a future implementation packet. Validators that consume these
-// types live in `apps/shijing/src/contracts/**`.
+// mirroring `.nimi/spec/shijing/kernel/algorithm-contract.md`. Validators
+// that consume these types live in `src/contracts/**`; the deterministic
+// pipeline implementation lives in `src/product/astrology/**`.
 
 import type { RawBirthInput } from './person.ts';
 import type { SubjectRef } from './subject-ref.ts';
