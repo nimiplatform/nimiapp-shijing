@@ -1,0 +1,7 @@
+app_id: shijing
+display_name: ShiJing
+npm_package_name: @nimiplatform/shijing
+cargo_package_name: nimiplatform-shijing-shell
+tauri_identifier: ai.nimi.apps.shijing
+package_author: Nimi Team
+identity_role: scaffold-generated-authoring-input

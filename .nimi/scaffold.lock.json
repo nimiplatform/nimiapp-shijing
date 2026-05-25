@@ -1,0 +1,249 @@
+{
+  "lockVersion": 1,
+  "scaffoldVersion": "2026-05-24.wave-4-remediation-b",
+  "profile": "workspace-app",
+  "appId": "shijing",
+  "appTitle": "ShiJing",
+  "packageName": "@nimiplatform/shijing",
+  "packageAuthor": "Nimi Team",
+  "cargoPackageName": "nimiplatform-shijing-shell",
+  "tauriIdentifier": "ai.nimi.apps.shijing",
+  "appIdentity": {
+    "appId": "shijing",
+    "appTitle": "ShiJing",
+    "npmPackageName": "@nimiplatform/shijing",
+    "packageAuthor": "Nimi Team",
+    "cargoPackageName": "nimiplatform-shijing-shell",
+    "tauriIdentifier": "ai.nimi.apps.shijing",
+    "identityRole": "scaffold-generated-authoring-input"
+  },
+  "managedFileTaxonomy": {
+    "packageOwnedProjection": [
+      ".nimi/admission/submission.yaml",
+      ".nimi/config/app-identity.yaml",
+      ".nimi/config/build-profile.yaml",
+      ".nimi/contracts/scaffold-boundary.yaml",
+      ".nimi/methodology/scaffold-managed-files.yaml"
+    ],
+    "scaffoldManagedGlue": [
+      ".github/workflows/ci.yml",
+      ".gitignore",
+      "ADMISSION.md",
+      "AGENTS.md",
+      "apps/@nimiplatform/shijing/spec/app-slice.md",
+      "index.html",
+      "LICENSE",
+      "nimi.app.yaml",
+      "package.json",
+      "README.md",
+      "scripts/local-audit.mjs",
+      "scripts/pack.mjs",
+      "scripts/validate.mjs",
+      "SECURITY.md",
+      "src-tauri/build.rs",
+      "src-tauri/Cargo.toml",
+      "src-tauri/icons/icon.png",
+      "src-tauri/src/main.rs",
+      "src-tauri/tauri.conf.json",
+      "src/main.tsx",
+      "src/shell/App.tsx",
+      "src/shell/auth/auth-gate.tsx",
+      "src/shell/auth/runtime-gate.tsx",
+      "src/shell/auth/runtime-platform.ts",
+      "src/shell/routes/demo-surfaces.tsx",
+      "src/shell/routes/settings.tsx",
+      "src/styles.css",
+      "test/scaffold-boundary.test.mjs",
+      "tsconfig.json",
+      "vite.config.ts"
+    ],
+    "appOwnedProductCode": [
+      "src/shell/routes/product-area.tsx"
+    ]
+  },
+  "managedFileHashes": {
+    "package.json": {
+      "class": "scaffold-managed glue",
+      "sha256": "52afeab0f148a7a15399d2061f39bb7a540624c6f50ff798eaf79f9ddba28ebb"
+    },
+    "tsconfig.json": {
+      "class": "scaffold-managed glue",
+      "sha256": "7f250f2ae99ba0a4ce89f7174a44a221af875d9e3b13c52f2af6420dbb4d07f4"
+    },
+    "index.html": {
+      "class": "scaffold-managed glue",
+      "sha256": "271a629633386f62d2a95a45df6197f18befcfa17a9f8c6952a683a0155d8098"
+    },
+    "vite.config.ts": {
+      "class": "scaffold-managed glue",
+      "sha256": "0709465427668ae85ef999f63762d7a06fd92962363fe8cc142ad656d3548115"
+    },
+    "nimi.app.yaml": {
+      "class": "scaffold-managed glue",
+      "sha256": "474fa45ada686c5fa67a23f237d6c6e6c71f0b91eda25f93181c9ce628d7a7fa"
+    },
+    ".nimi/admission/submission.yaml": {
+      "class": "package-owned projection",
+      "sha256": "d1d98f2836bb6756f9f9cbc75f6c4798af7b2372ac03ad6e0edf8498278d5463"
+    },
+    ".nimi/config/app-identity.yaml": {
+      "class": "package-owned projection",
+      "sha256": "5d4fcc47a304598e1b4221b099e81845b68713580ad221dd930fff6e0b9b79e7"
+    },
+    ".nimi/config/build-profile.yaml": {
+      "class": "package-owned projection",
+      "sha256": "97daae06b622b039aa7a5dd9e864b950f6e3682431b9dd37645ca1d062f9fab7"
+    },
+    ".nimi/contracts/scaffold-boundary.yaml": {
+      "class": "package-owned projection",
+      "sha256": "8f8be388a7dc6084ece0dae366e605456f55688e15aa5e35dcfd274aa040810a"
+    },
+    ".nimi/methodology/scaffold-managed-files.yaml": {
+      "class": "package-owned projection",
+      "sha256": "2ef9f053075a5e9a831c4ec54e8bd5e222156bedcf6d96d169756f91e6a34495"
+    },
+    "AGENTS.md": {
+      "class": "scaffold-managed glue",
+      "sha256": "bab08b492e79b420c46e5926a7a346fbb446edb599b3a1491417798c23c653a3"
+    },
+    ".gitignore": {
+      "class": "scaffold-managed glue",
+      "sha256": "5fb2cf75caeaacd82f0045cd779a13a2da50564e102900c385370b095ddbfeb6"
+    },
+    "README.md": {
+      "class": "scaffold-managed glue",
+      "sha256": "d79626be2274790129c76dc6ae3fc5f7438fb18455a9c6801d930c8387d7c235"
+    },
+    "ADMISSION.md": {
+      "class": "scaffold-managed glue",
+      "sha256": "73f7bc96842cb718a151f55064567852c9c51de7d5410ead72e90e0676ef3466"
+    },
+    "LICENSE": {
+      "class": "scaffold-managed glue",
+      "sha256": "15c4f0aa070459573cf8f824ed37a6beea5881c042e6b12999a719bbbc1897ce"
+    },
+    "SECURITY.md": {
+      "class": "scaffold-managed glue",
+      "sha256": "070ecdd6be44ca13376d0c398a699c4daa776ec2418e42820982085666b7ee2f"
+    },
+    "scripts/validate.mjs": {
+      "class": "scaffold-managed glue",
+      "sha256": "42d9272bd12a6f48f5a73ad8e1ae40b192ad2e004e68fa7dc77ce8098c8bfd04"
+    },
+    "scripts/local-audit.mjs": {
+      "class": "scaffold-managed glue",
+      "sha256": "31031df526d3ab19932ff7b8be97f2a6a175814c9a0a8056b7ad3746d84ce3e0"
+    },
+    "scripts/pack.mjs": {
+      "class": "scaffold-managed glue",
+      "sha256": "19f1c393dcb4688eeca7cd359c5fa5d72888f5091a73b4edc86bf96e4f53ab5b"
+    },
+    "test/scaffold-boundary.test.mjs": {
+      "class": "scaffold-managed glue",
+      "sha256": "4bc8016d82711c44843c7044ee4807cf3963d1a854d6a2d7a5025674efe72a48"
+    },
+    ".github/workflows/ci.yml": {
+      "class": "scaffold-managed glue",
+      "sha256": "da4c6d43b081cfadaacf186ca22ea09254b610865bc3b8f080575eb3563fa673"
+    },
+    "src/main.tsx": {
+      "class": "scaffold-managed glue",
+      "sha256": "23186816a0f907b0e6a940dc7b3a0d50bcf187a9ce51636a9d2335e1fda29d1b"
+    },
+    "src/shell/App.tsx": {
+      "class": "scaffold-managed glue",
+      "sha256": "04a1bd8433c8b1c2248aa6ae52b97f4eb820ccf3039a2f93f0cc6b66bb1f0858"
+    },
+    "src/shell/auth/runtime-platform.ts": {
+      "class": "scaffold-managed glue",
+      "sha256": "5114acd74f22e33e48ac04bbafa1f4f9f01a7f204214774be0c6f4eeca415f16"
+    },
+    "src/shell/auth/auth-gate.tsx": {
+      "class": "scaffold-managed glue",
+      "sha256": "d5854f63fa0a858bc226def9011dc3782d325d3d7f1bda041026419417048673"
+    },
+    "src/shell/auth/runtime-gate.tsx": {
+      "class": "scaffold-managed glue",
+      "sha256": "0b935799ffa0182d458876f63787c8a5c80429257b11c8c739ef6a49d9a46466"
+    },
+    "src/shell/routes/settings.tsx": {
+      "class": "scaffold-managed glue",
+      "sha256": "b756459678a9a66c0ee9e225bc8ce1d941f59fa0fdf9b19e146624647bcf6c52"
+    },
+    "src/shell/routes/demo-surfaces.tsx": {
+      "class": "scaffold-managed glue",
+      "sha256": "512b9264bb03f403c004d7604a5a7a6203fe17c54e40b86a249cadbd1402daa9"
+    },
+    "src/styles.css": {
+      "class": "scaffold-managed glue",
+      "sha256": "41c321ee4898e1c6a28ded2a2a30eed4b84657d7a53e4a7d609e44aa02db5d87"
+    },
+    "src-tauri/Cargo.toml": {
+      "class": "scaffold-managed glue",
+      "sha256": "d67bff3dfce2a3ba59b690e8f80c1f2855f43180fa35631fbb507b5ecf9b2c1a"
+    },
+    "src-tauri/build.rs": {
+      "class": "scaffold-managed glue",
+      "sha256": "6aeeab41bc35efde4e3c2b644a6248f7fc06d24ae30b75c0d33491cbb0c1fa31"
+    },
+    "src-tauri/tauri.conf.json": {
+      "class": "scaffold-managed glue",
+      "sha256": "f50b9d3a14f4a4f5b72c701f25eeeb7225253d9133cc979bc566bf7a1857c98a"
+    },
+    "src-tauri/icons/icon.png": {
+      "class": "scaffold-managed glue",
+      "sha256": "43739c566e26fd7cb88f69d3864ea34740372f5ee99acac169e090beffbce5c6"
+    },
+    "src-tauri/src/main.rs": {
+      "class": "scaffold-managed glue",
+      "sha256": "f033f24d21629152318c664a050e5d7da1afe78d534cd5330c76b19506c40493"
+    },
+    "apps/@nimiplatform/shijing/spec/app-slice.md": {
+      "class": "scaffold-managed glue",
+      "sha256": "27eb194c2449faa866acfcc5f6b7a4abe60e1b4034d31b1a25a163573e08466d"
+    }
+  },
+  "appOwnedInitialHashes": {
+    "src/shell/routes/product-area.tsx": {
+      "class": "app-owned product code",
+      "sha256": "64d885693c9c5c85ab811c5b3522f445a8a8389ed8e4c987ca13f5c0247fe06a"
+    }
+  },
+  "dependencyMatrix": {
+    "npm": {
+      "@nimiplatform/app-tools": "workspace:*",
+      "@nimiplatform/sdk": "workspace:*",
+      "@nimiplatform/kit": "workspace:*",
+      "@tauri-apps/api": "^2.9.1",
+      "react": "^19.1.0",
+      "react-dom": "^19.1.0",
+      "typescript": "^5.9.3",
+      "vite": "^7.2.4",
+      "@tauri-apps/cli": "^2.11.2",
+      "@vitejs/plugin-react": "^5.1.1"
+    },
+    "cargo": {
+      "nimi-shell-tauri": {
+        "path": "../../../kit/shell/tauri"
+      },
+      "tauri": "2",
+      "tauri-build": "2"
+    },
+    "toolchain": {
+      "node": ">=20",
+      "pnpm": ">=9",
+      "rust": ">=1.80",
+      "tauri": "2"
+    }
+  },
+  "semantics": {
+    "doctorAndUpdateRole": "developer-scaffold-check-only",
+    "publicAdmissionTruth": "not-generated",
+    "installedAppUpdateTruth": "not-generated",
+    "permissionGrantTruth": "not-generated",
+    "lockfilePolicy": "author-install-generates-lockfile",
+    "ignoredVerificationArtifacts": [
+      "dist/"
+    ]
+  }
+}

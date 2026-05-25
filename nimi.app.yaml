@@ -1,0 +1,9 @@
+app_id: shijing
+display_name: ShiJing
+profile: workspace-app
+manifest_role: submitted-input
+permissions:
+  declared_nimi_api_scopes:
+    - scope: app.local.drafts
+      qualifier: app-local-drafts
+      purpose: Store drafts owned by this app during author testing.

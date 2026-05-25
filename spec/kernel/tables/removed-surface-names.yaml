@@ -1,0 +1,45 @@
+# SJG-REMOVED-02 — Authoritative removed-surface names.
+# Source guard module: src/contracts/removed-surfaces.ts must export a
+# REMOVED_SURFACE_NAMES set whose membership matches this table; the
+# matching test verifies that guard.
+
+contract: SJG-REMOVED-02
+version: 1
+removed_names:
+  - Profile
+  - profile
+  - profiles
+  - ProfileRef
+  - Venture
+  - venture
+  - ventures
+  - VentureNode
+  - venture_node
+  - venture_nodes
+  - HuangliDaily
+  - huangli_daily
+  - huangli_mode
+  - Report
+  - report
+  - reports
+  - MonthlyReport
+  - monthly_report
+  - monthly_reports
+  - YearlyReport
+  - yearly_report
+  - yearly_reports
+  - TrendChart
+  - trend_chart
+  - trend_charts
+  - LuckScore
+  - luck_score
+  - luck_scores
+  - LuckCurve
+  - luck_curve
+  - ProjectMemory
+  - project_memory
+  - LongLine
+  - long_line
+  - long_lines
+  - GlobalInstructions
+  - global_instructions

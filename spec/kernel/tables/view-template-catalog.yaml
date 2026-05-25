@@ -1,0 +1,55 @@
+# SJG-DATA-10 — ShiJingCatalog.view_templates[] schema and admitted entries.
+# This file freezes the catalog SHAPE in Wave 0. Concrete template content
+# is admitted/extended in a later wave; Wave 0 admits a small seed set to
+# prove the consumer contract and to lock the field shape.
+
+contract: SJG-DATA-10
+version: 1
+schema:
+  required_fields:
+    - id
+    - title
+    - description
+    - default_time_scope
+    - default_instructions
+    - recommended_subjects
+    - category
+  enums:
+    default_time_scope:
+      - bounded
+      - open_ended
+      - rolling
+    recommended_subjects_value:
+      - self
+      - person
+    category:
+      - self_reflection
+      - relation
+      - decision_support
+      - learning
+  id_pattern: "^[a-z][a-z0-9_-]{1,63}$"
+seed_templates:
+  - id: self_weekly_reflection
+    title: 自我观察周
+    description: 以 self 为锚，回顾本周自身状态与节奏。
+    default_time_scope: rolling
+    default_instructions: 以中性温和语气回顾本周节奏，不给打分。
+    recommended_subjects:
+      - self
+    category: self_reflection
+  - id: family_open_window
+    title: 家人长期窗口
+    description: 跟踪一位家人长期状态，主体锚定该家人。
+    default_time_scope: open_ended
+    default_instructions: 关注该家人对应的关系变化与提醒，避免任何运势分数。
+    recommended_subjects:
+      - person
+    category: relation
+  - id: decision_horizon
+    title: 决策时窗
+    description: 围绕一个具体决定，圈出未来观察期。
+    default_time_scope: bounded
+    default_instructions: 围绕决定圈出 5-10 天观察期，输出方向，不给确定结果。
+    recommended_subjects:
+      - self
+    category: decision_support

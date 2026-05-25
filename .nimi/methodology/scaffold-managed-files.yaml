@@ -1,0 +1,19 @@
+mutation_classes:
+  package_owned_projection:
+    - .nimi/config/**
+    - .nimi/contracts/**
+    - .nimi/methodology/**
+    - .nimi/admission/**
+  scaffold_managed_glue:
+    - .github/**
+    - .gitignore
+    - package.json
+    - ADMISSION.md
+    - README.md
+    - SECURITY.md
+    - nimi.app.yaml
+    - src/shell/auth/**
+    - src-tauri/**
+    - scripts/**
+  app_owned_product_code:
+    - src/shell/routes/product-area.tsx
