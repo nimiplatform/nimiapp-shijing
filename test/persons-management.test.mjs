@@ -15,30 +15,31 @@ import {
 import { findReferencesToPerson } from '../src/product/persons/dangling-reference.ts';
 import { newPersonId } from '../src/product/persons/person-id.ts';
 import {
-  buildNatalInputsFromDraft,
-} from '../src/product/inputs/natal-inputs-state.ts';
+  buildNaturalBirthNatalInputs,
+} from '../src/product/inputs/natural-birth-build.ts';
 import { validNatalInputs, validShiJingSpace } from './_fixtures.mjs';
 
 function gregorianNatalDraft() {
   return {
     calendar_system: 'gregorian',
-    raw_local_date_text: '1990-04-12',
-    raw_local_time_text: '08:30',
-    raw_place_text: '',
-    raw_lunar_year: '',
-    raw_lunar_month: '',
-    raw_lunar_day: '',
-    raw_lunar_is_leap_month: null,
-    birth_datetime_utc: '1990-04-12T08:30:00Z',
+    gregorian_date_text: '1990-04-12',
+    lunar_year_text: '',
+    lunar_month_text: '',
+    lunar_day_text: '',
+    lunar_is_leap_month: null,
+    local_time_text: '08:30',
     birth_precision: 'exact',
-    latitude_text: '31.2304',
-    longitude_text: '121.4737',
-    iana_time_zone: 'Asia/Shanghai',
-    place_name: '',
+    place_text: '上海',
     calculation_sex: 'unspecified',
-    cultural_marker: '',
     notes: '',
   };
+}
+
+function buildNatalInputsFromNaturalDraft(draft = gregorianNatalDraft()) {
+  const outcome = buildNaturalBirthNatalInputs(draft);
+  assert.equal(outcome.ok, true);
+  if (!outcome.ok) throw new Error('natural birth draft should build');
+  return outcome.inputs;
 }
 
 test('empty Person draft has no consent_state default', () => {
@@ -103,18 +104,18 @@ test('buildPersonFromDrafts produces a SJG-DATA-03-shaped Person', () => {
   state = personDraftReducer(state, { type: 'set_display_name', value: 'A' });
   state = personDraftReducer(state, { type: 'set_consent_state', value: 'subject_consented' });
   state = personDraftReducer(state, { type: 'set_relation_hint', value: 'friend' });
-  const natalInputs = buildNatalInputsFromDraft(gregorianNatalDraft());
+  const natalInputs = buildNatalInputsFromNaturalDraft();
   const person = buildPersonFromDrafts(state, natalInputs);
   assert.equal(person.id, 'p_uuid');
   assert.equal(person.kind, 'person');
   assert.equal(person.display_name, 'A');
   assert.equal(person.consent_state, 'subject_consented');
   assert.equal(person.relation_hint, 'friend');
-  assert.equal(person.natal_inputs.birth_datetime_utc, '1990-04-12T08:30:00Z');
+  assert.equal(person.natal_inputs.birth_datetime_utc, '1990-04-12T00:30:00.000Z');
 });
 
 test('buildPersonFromDrafts throws if id missing', () => {
-  const natalInputs = buildNatalInputsFromDraft(gregorianNatalDraft());
+  const natalInputs = buildNatalInputsFromNaturalDraft();
   assert.throws(
     () => buildPersonFromDrafts(createEmptyPersonDraft(), natalInputs),
     /Person\.id must be assigned/,
@@ -122,7 +123,7 @@ test('buildPersonFromDrafts throws if id missing', () => {
 });
 
 test('buildPersonFromDrafts throws if consent_state missing', () => {
-  const natalInputs = buildNatalInputsFromDraft(gregorianNatalDraft());
+  const natalInputs = buildNatalInputsFromNaturalDraft();
   let state = personDraftReducer(createEmptyPersonDraft(), { type: 'assign_id', id: 'p_01' });
   state = personDraftReducer(state, { type: 'set_display_name', value: 'X' });
   assert.throws(() => buildPersonFromDrafts(state, natalInputs), /consent_state must be chosen/);
@@ -244,10 +245,10 @@ test('persons UI source has no Math.random() call site', () => {
   }
 });
 
-test('PersonForm calls validatePersonDraft + validateDraft + validateShiJingSpace before dispatch', () => {
+test('PersonForm calls validatePersonDraft + natural birth build + validateShiJingSpace before dispatch', () => {
   const source = readFileSync(new URL('../src/product/persons/person-form.tsx', import.meta.url), 'utf8');
   const personIdx = source.indexOf('validatePersonDraft(personDraft)');
-  const natalIdx = source.indexOf('validateDraft(natalDraft)');
+  const natalIdx = source.indexOf('buildNaturalBirthNatalInputs(natalDraft)');
   const spaceIdx = source.indexOf('validateShiJingSpace(nextSnapshot)');
   const dispatchIdx = source.indexOf("dispatch({ type: 'snapshot/replace'");
   assert.ok(personIdx >= 0);

@@ -14,7 +14,10 @@ import {
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { subjectRefKey } from '../../domain/subject-ref.ts';
 import type { SubjectRef } from '../../domain/subject-ref.ts';
+import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import { SELF_DISPLAY_NAME } from '../i18n/copy.ts';
+import { subjectNatalReadiness } from '../subjects/natal-readiness.ts';
+import { TechnicalDetails } from '../components/technical-details.tsx';
 
 interface SubjectOption {
   readonly ref: SubjectRef;
@@ -37,6 +40,12 @@ function birthDateLabel(birthDatetimeUtc: string): string {
   return d.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+function subjectMeta(ref: SubjectRef, birthDatetimeUtc: string, snapshot: ShiJingSpace): string {
+  const readiness = subjectNatalReadiness(ref, snapshot);
+  if (!readiness.ok) return '生辰未完善';
+  return birthDateLabel(birthDatetimeUtc);
+}
+
 export function SubjectSwitcher() {
   const { state, dispatch } = useShijingStore();
   const options = useMemo<SubjectOption[]>(() => {
@@ -45,21 +54,29 @@ export function SubjectSwitcher() {
       ref: 'self',
       label: SELF_DISPLAY_NAME,
       initial: '我',
-      meta: birthDateLabel(state.snapshot.self_subject.natal_inputs.birth_datetime_utc),
+      meta: subjectMeta('self', state.snapshot.self_subject.natal_inputs.birth_datetime_utc, state.snapshot),
     });
     for (const person of state.snapshot.persons) {
       list.push({
         ref: { kind: 'person', id: person.id },
         label: person.display_name,
         initial: initialOf(person.display_name),
-        meta: birthDateLabel(person.natal_inputs?.birth_datetime_utc ?? ''),
+        meta: subjectMeta({ kind: 'person', id: person.id }, person.natal_inputs?.birth_datetime_utc ?? '', state.snapshot),
       });
     }
     return list;
-  }, [state.snapshot.persons, state.snapshot.self_subject.natal_inputs.birth_datetime_utc]);
+  }, [state.snapshot]);
 
-  const current = options.find((o) => subjectRefKey(o.ref) === subjectRefKey(state.observation_target))
-    ?? options[0]!;
+  const current = options.find((o) => subjectRefKey(o.ref) === subjectRefKey(state.observation_target));
+
+  if (!current) {
+    return (
+      <div className="shijing-subject-switcher shijing-subject-switcher--invalid" role="alert">
+        <span>当前观察对象不存在</span>
+        <TechnicalDetails content={`dangling_observation_target: ${subjectRefKey(state.observation_target)}`} />
+      </div>
+    );
+  }
 
   function onSelect(option: SubjectOption) {
     if (subjectRefKey(option.ref) === subjectRefKey(state.observation_target)) return;

@@ -6,9 +6,11 @@ import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import type { ReadingKind, ReadingScope } from '../../domain/reading-matrix.ts';
 import type { Reading, ReadingTimeWindow } from '../../domain/reading.ts';
 import type { SubjectRef } from '../../domain/subject-ref.ts';
+import { subjectRefKey } from '../../domain/subject-ref.ts';
 import type { View } from '../../domain/view.ts';
 import { generateReading, type GenerateReadingFailure } from '../astrology/generate-reading.ts';
 import type { RuntimeAiClient } from '../astrology/runtime-ai-client.ts';
+import { subjectReadingReadiness, type NatalReadinessReason } from '../subjects/natal-readiness.ts';
 
 export interface GenerateAndStoreInput {
   readonly id: string;
@@ -24,13 +26,43 @@ export interface GenerateAndStoreInput {
   readonly runtime_ai_client?: RuntimeAiClient;
 }
 
+export type GenerateAndStoreFailure =
+  | GenerateReadingFailure
+  | {
+      kind: 'input_readiness_failed';
+      subject: SubjectRef;
+      reason: NatalReadinessReason;
+      detail: string;
+    };
+
 export type GenerateAndStoreOutcome =
   | { ok: true; reading: Reading; next_space: ShiJingSpace }
-  | { ok: false; error: GenerateReadingFailure };
+  | { ok: false; error: GenerateAndStoreFailure };
 
 export async function generateReadingForStorage(
   input: GenerateAndStoreInput,
 ): Promise<GenerateAndStoreOutcome> {
+  for (const subject of input.subjects) {
+    const readiness = subjectReadingReadiness({
+      subject,
+      space: input.space,
+      kind: input.kind,
+      scope: input.scope,
+      time_window: input.time_window,
+      ...(input.view ? { view: input.view } : {}),
+    });
+    if (!readiness.ok) {
+      return {
+        ok: false,
+        error: {
+          kind: 'input_readiness_failed',
+          subject,
+          reason: readiness.reason,
+          detail: `${subjectRefKey(subject)} / ${readiness.detail}`,
+        },
+      };
+    }
+  }
   const result = await generateReading(
     {
       id: input.id,

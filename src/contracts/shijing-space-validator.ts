@@ -21,6 +21,15 @@ export type ShijingSpaceValidationError =
   | { code: 'space_event_invalid'; event_id: string; reason: string }
   | { code: 'space_event_view_ref_unresolvable'; event_id: string; view_id: string }
   | { code: 'space_conversation_view_id_unresolvable'; conversation_id: string; view_id: string }
+  | { code: 'space_conversation_source_reading_unresolvable'; conversation_id: string; reading_id: string }
+  | { code: 'space_conversation_ai_turn_without_source_reading'; conversation_id: string; turn_id: string }
+  | {
+      code: 'space_conversation_source_view_conflict';
+      conversation_id: string;
+      reading_id: string;
+      conversation_view_id: string;
+      reading_view_id: string;
+    }
   | { code: 'space_reading_view_id_unresolvable'; reading_id: string; view_id: string }
   | { code: 'space_self_subject_natal_inputs_invalid'; reason: string }
   | { code: 'space_person_natal_inputs_invalid'; person_id: string; reason: string }
@@ -144,7 +153,9 @@ export function validateShiJingSpace(space: ShiJingSpace): ShijingSpaceValidatio
       return { ok: false, error: { code: 'space_event_invalid', event_id: event.id, reason: eventCheck.error.code } };
     }
   }
+  const readingsById = new Map<string, (typeof space.readings)[number]>();
   for (const reading of space.readings) {
+    readingsById.set(reading.id, reading);
     for (const subject of reading.subjects) {
       if (!subjectExistsInSpace(subject, personIds)) {
         return {
@@ -186,6 +197,48 @@ export function validateShiJingSpace(space: ShiJingSpace): ShijingSpaceValidatio
       return {
         ok: false,
         error: { code: 'space_conversation_view_id_unresolvable', conversation_id: conversation.id, view_id: conversation.view_id },
+      };
+    }
+    const sourceReading = conversation.source_reading_id
+      ? readingsById.get(conversation.source_reading_id)
+      : undefined;
+    if (conversation.source_reading_id && !sourceReading) {
+      return {
+        ok: false,
+        error: {
+          code: 'space_conversation_source_reading_unresolvable',
+          conversation_id: conversation.id,
+          reading_id: conversation.source_reading_id,
+        },
+      };
+    }
+    for (const turn of conversation.turns) {
+      if (turn.role === 'ai' && !sourceReading) {
+        return {
+          ok: false,
+          error: {
+            code: 'space_conversation_ai_turn_without_source_reading',
+            conversation_id: conversation.id,
+            turn_id: turn.id,
+          },
+        };
+      }
+    }
+    if (
+      sourceReading?.scope === 'view' &&
+      sourceReading.view_id &&
+      conversation.view_id &&
+      conversation.view_id !== sourceReading.view_id
+    ) {
+      return {
+        ok: false,
+        error: {
+          code: 'space_conversation_source_view_conflict',
+          conversation_id: conversation.id,
+          reading_id: sourceReading.id,
+          conversation_view_id: conversation.view_id,
+          reading_view_id: sourceReading.view_id,
+        },
       };
     }
   }

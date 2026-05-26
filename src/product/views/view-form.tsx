@@ -3,12 +3,16 @@
 // validateShiJingSpace gate every dispatch.
 
 import { useEffect, useMemo, useReducer, useState, type FormEvent } from 'react';
+import { OverlayShell } from '@nimiplatform/kit/ui';
 
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { SelectField, TextField } from '../inputs/natal-inputs-fields.tsx';
 import { validateView } from '../../contracts/view-validator.ts';
 import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts';
 import { DISPLAY_STATES, TIME_SCOPES, type View } from '../../domain/view.ts';
+import type { ShiJingSpace } from '../../domain/shijing-space.ts';
+import type { SubjectRef } from '../../domain/subject-ref.ts';
+import { isPersonRef } from '../../domain/subject-ref.ts';
 import {
   buildViewFromDraft,
   createEmptyViewDraft,
@@ -30,13 +34,37 @@ import {
 import { enumLabel } from '../i18n/enum-label.ts';
 import { formatSaveRefusal } from '../i18n/format-failure.ts';
 import { TechnicalDetails } from '../components/technical-details.tsx';
+import { subjectNatalReadiness } from '../subjects/natal-readiness.ts';
 
 export interface ViewFormProps {
   readonly mode: 'create' | { kind: 'edit'; view: View };
   readonly onClose: () => void;
 }
 
+export interface ViewFormOverlayProps {
+  readonly open: boolean;
+  readonly mode: ViewFormProps['mode'];
+  readonly onClose: () => void;
+}
+
 const MEMORY_LOCKED_OPTIONS = ['locked', 'unlocked'] as const;
+
+function browserTimeZone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+}
+
+function timeZoneForSubject(subject: SubjectRef, space: ShiJingSpace): string {
+  const readiness = subjectNatalReadiness(subject, space);
+  if (readiness.ok) return readiness.inputs.birth_location.iana_time_zone;
+  if (subject === 'self') {
+    return space.self_subject.natal_inputs.birth_location.iana_time_zone || browserTimeZone();
+  }
+  if (isPersonRef(subject)) {
+    return space.persons.find((person) => person.id === subject.id)?.natal_inputs.birth_location.iana_time_zone
+      || browserTimeZone();
+  }
+  return browserTimeZone();
+}
 
 export function ViewForm(props: ViewFormProps) {
   const { state, dispatch } = useShijingStore();
@@ -63,11 +91,15 @@ export function ViewForm(props: ViewFormProps) {
   useEffect(() => {
     draftDispatch({ type: 'reset' });
     if (typeof props.mode === 'object') {
-      draftDispatch({ type: 'hydrate', view: props.mode.view });
+      draftDispatch({
+        type: 'hydrate',
+        view: props.mode.view,
+        basis_time_zone: timeZoneForSubject(props.mode.view.anchor_subject, state.snapshot),
+      });
     } else {
       draftDispatch({ type: 'assign_id', id: newViewId() });
     }
-  }, [props.mode]);
+  }, [props.mode, state.snapshot]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -85,7 +117,12 @@ export function ViewForm(props: ViewFormProps) {
       .map((key) => findRosterEntry(roster, key))
       .filter((entry): entry is SubjectRosterEntry => Boolean(entry))
       .map((entry) => entry.ref);
-    const view = buildViewFromDraft(draft, { anchor: anchorEntry.ref, subjects });
+    const view = buildViewFromDraft(draft, {
+      anchor: anchorEntry.ref,
+      subjects,
+      basis_time_zone: timeZoneForSubject(anchorEntry.ref, state.snapshot),
+      ...(typeof props.mode === 'object' ? { context_items: props.mode.view.context_items } : {}),
+    });
     const viewCheck = validateView(view);
     if (!viewCheck.ok) {
       setSubmission({ kind: 'invalid_view', code: viewCheck.error.code });
@@ -177,18 +214,20 @@ export function ViewForm(props: ViewFormProps) {
         {draft.time_scope === 'bounded' ? (
           <>
             <TextField
-              id="view-bounded-start-utc"
+              id="view-bounded-start-date"
               label={FIELD_LABELS.bounded_start}
-              value={draft.bounded_start_utc}
+              value={draft.bounded_start_date}
               required
-              onChange={(value) => draftDispatch({ type: 'set_bounded_start_utc', value })}
+              type="date"
+              onChange={(value) => draftDispatch({ type: 'set_bounded_start_date', value })}
             />
             <TextField
-              id="view-bounded-end-utc"
+              id="view-bounded-end-date"
               label={FIELD_LABELS.bounded_end}
-              value={draft.bounded_end_utc}
+              value={draft.bounded_end_date}
               required
-              onChange={(value) => draftDispatch({ type: 'set_bounded_end_utc', value })}
+              type="date"
+              onChange={(value) => draftDispatch({ type: 'set_bounded_end_date', value })}
             />
           </>
         ) : null}
@@ -256,5 +295,23 @@ export function ViewForm(props: ViewFormProps) {
         <p role="status">已保存。</p>
       ) : null}
     </form>
+  );
+}
+
+export function ViewFormOverlay(props: ViewFormOverlayProps) {
+  const title = typeof props.mode === 'object' ? HEADINGS.edit_view : HEADINGS.add_view;
+
+  return (
+    <OverlayShell
+      open={props.open}
+      kind="dialog"
+      size="L"
+      onClose={props.onClose}
+      title={title}
+    >
+      <div className="shijing-view-form-overlay shijing-tab">
+        <ViewForm mode={props.mode} onClose={props.onClose} />
+      </div>
+    </OverlayShell>
   );
 }

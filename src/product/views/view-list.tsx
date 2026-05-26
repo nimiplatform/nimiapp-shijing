@@ -7,18 +7,22 @@ import { useState } from 'react';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts';
 import type { View } from '../../domain/view.ts';
-import { ViewForm } from './view-form.tsx';
 import { findReferencesToView, type ViewReference } from './view-dangling-reference.ts';
 import { BUTTONS, EMPTY_STATES, HEADINGS } from '../i18n/copy.ts';
 import { enumLabel } from '../i18n/enum-label.ts';
 import { formatDanglingRefusal, formatDeleteValidatorRefusal } from '../i18n/format-failure.ts';
 import { TechnicalDetails } from '../components/technical-details.tsx';
 
-type EditorMode = null | { kind: 'create' } | { kind: 'edit'; view: View };
+export interface ViewListProps {
+  readonly selectedViewId?: string | null;
+  readonly onSelectView?: (view: View) => void;
+  readonly onCreateView?: () => void;
+  readonly onEditView?: (view: View) => void;
+  readonly onDeletedView?: (viewId: string) => void;
+}
 
-export function ViewList() {
+export function ViewList(props: ViewListProps = {}) {
   const { state, dispatch } = useShijingStore();
-  const [editor, setEditor] = useState<EditorMode>(null);
   const [deletionError, setDeletionError] = useState<
     | { kind: 'idle' }
     | { kind: 'refused_dangling'; refs: readonly ViewReference[] }
@@ -41,6 +45,7 @@ export function ViewList() {
       return;
     }
     dispatch({ type: 'snapshot/replace', snapshot: nextSnapshot });
+    props.onDeletedView?.(view.id);
     setDeletionError({ kind: 'idle' });
   }
 
@@ -48,7 +53,7 @@ export function ViewList() {
     <section className="shijing-view-list" aria-label="观察视角列表">
       <header>
         <h3>{HEADINGS.views}</h3>
-        <button type="button" onClick={() => setEditor({ kind: 'create' })}>
+        <button type="button" onClick={props.onCreateView}>
           {BUTTONS.add_view}
         </button>
       </header>
@@ -56,16 +61,28 @@ export function ViewList() {
         <p>{EMPTY_STATES.views}</p>
       ) : (
         <ul>
-          {state.snapshot.views.map((view) => (
-            <li key={view.id}>
-              <span>{view.title}</span>
-              <small>
-                （{enumLabel('time_scope', view.time_scope)} · {enumLabel('display_state', view.display_state)}）
-              </small>
-              <button type="button" onClick={() => setEditor({ kind: 'edit', view })}>{BUTTONS.edit}</button>
-              <button type="button" onClick={() => onDelete(view)}>{BUTTONS.delete}</button>
-            </li>
-          ))}
+          {state.snapshot.views.map((view) => {
+            const selected = props.selectedViewId === view.id;
+            return (
+              <li key={view.id} data-selected={selected ? 'true' : 'false'}>
+                <button
+                  type="button"
+                  className="shijing-view-list__select"
+                  aria-current={selected ? 'true' : undefined}
+                  onClick={() => props.onSelectView?.(view)}
+                >
+                  <span>{view.title}</span>
+                  <small>
+                    {enumLabel('time_scope', view.time_scope)} · {enumLabel('display_state', view.display_state)}
+                  </small>
+                </button>
+                <div className="shijing-view-list__actions">
+                  <button type="button" data-variant="secondary" onClick={() => props.onEditView?.(view)}>{BUTTONS.edit}</button>
+                  <button type="button" data-variant="secondary" onClick={() => onDelete(view)}>{BUTTONS.delete}</button>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
       {deletionError.kind === 'refused_dangling' ? (() => {
@@ -87,13 +104,6 @@ export function ViewList() {
           </>
         );
       })() : null}
-      {editor !== null ? (
-        editor.kind === 'create' ? (
-          <ViewForm mode="create" onClose={() => setEditor(null)} />
-        ) : (
-          <ViewForm mode={{ kind: 'edit', view: editor.view }} onClose={() => setEditor(null)} />
-        )
-      ) : null}
     </section>
   );
 }

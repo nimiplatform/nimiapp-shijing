@@ -509,15 +509,17 @@ test('SJG-ALGO-04: NatalCanonicalization preserves raw_birth_input object (spec 
 
 test('SJG-ALGO-03 basis_time_zone: today tab source no longer hardcodes UTC', () => {
   const src = readFileSync(new URL('../src/product/tabs/today.tsx', import.meta.url), 'utf8');
-  assert.doesNotMatch(src, /basis_time_zone:\s*['"]UTC['"]/);
-  assert.match(src, /basis_time_zone:\s*basisTimeZone/);
+  const helperSrc = readFileSync(new URL('../src/product/tabs/today-time-window.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(`${src}\n${helperSrc}`, /basis_time_zone:\s*['"]UTC['"]/);
+  assert.match(helperSrc, /basis_time_zone:\s*basisTimeZone/);
   assert.match(src, /iana_time_zone/);
 });
 
 test('SJG-ALGO-03 basis_time_zone: consultation tab source no longer hardcodes UTC', () => {
   const src = readFileSync(new URL('../src/product/tabs/consultation.tsx', import.meta.url), 'utf8');
-  assert.doesNotMatch(src, /basis_time_zone:\s*['"]UTC['"]/);
-  assert.match(src, /basis_time_zone:\s*basisTimeZone/);
+  const flowSrc = readFileSync(new URL('../src/product/consultation/consultation-flow.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(`${src}\n${flowSrc}`, /basis_time_zone:\s*['"]UTC['"]/);
+  assert.match(flowSrc, /basis_time_zone:\s*basisTimeZone/);
   assert.match(src, /iana_time_zone/);
 });
 

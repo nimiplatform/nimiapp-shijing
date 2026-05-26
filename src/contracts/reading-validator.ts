@@ -16,6 +16,7 @@ import {
   SJG_ASTRO_CONTRACT_VERSION,
   type ReadingTimeWindow,
 } from '../domain/algorithm.ts';
+import { isValidIanaTimeZone, parseIsoUtcInstant } from './time-window-validation.ts';
 
 export type ReadingValidationError =
   | { code: 'reading_kind_scope_forbidden'; kind: string; scope: string }
@@ -35,6 +36,7 @@ export type ReadingValidationError =
   | { code: 'reading_time_window_sign_must_be_natal' }
   | { code: 'reading_time_window_non_sign_must_be_bounded' }
   | { code: 'reading_time_window_bounded_missing_endpoints' }
+  | { code: 'reading_time_window_bounded_endpoint_not_iso_utc'; field: 'start_utc' | 'end_utc' }
   | { code: 'reading_time_window_bounded_start_not_before_end' }
   | { code: 'reading_time_window_natal_must_not_carry_endpoints' }
   | { code: 'reading_inputs_summary_contract_version_mismatch'; received: unknown }
@@ -70,7 +72,7 @@ function validateTimeWindowShape(window: ReadingTimeWindow): ReadingValidationRe
   if (!READING_TIME_WINDOW_SOURCES.includes(window.source)) {
     return { ok: false, error: { code: 'reading_time_window_source_invalid', received: window.source } };
   }
-  if (typeof window.basis_time_zone !== 'string' || window.basis_time_zone.length === 0) {
+  if (!isValidIanaTimeZone(window.basis_time_zone)) {
     return { ok: false, error: { code: 'reading_time_window_basis_time_zone_invalid' } };
   }
   return { ok: true };
@@ -147,7 +149,15 @@ export function validateReading(reading: Reading): ReadingValidationResult {
     if (!reading.time_window.start_utc || !reading.time_window.end_utc) {
       return { ok: false, error: { code: 'reading_time_window_bounded_missing_endpoints' } };
     }
-    if (reading.time_window.start_utc >= reading.time_window.end_utc) {
+    const start = parseIsoUtcInstant(reading.time_window.start_utc);
+    if (!start) {
+      return { ok: false, error: { code: 'reading_time_window_bounded_endpoint_not_iso_utc', field: 'start_utc' } };
+    }
+    const end = parseIsoUtcInstant(reading.time_window.end_utc);
+    if (!end) {
+      return { ok: false, error: { code: 'reading_time_window_bounded_endpoint_not_iso_utc', field: 'end_utc' } };
+    }
+    if (start.ms >= end.ms) {
       return { ok: false, error: { code: 'reading_time_window_bounded_start_not_before_end' } };
     }
   }

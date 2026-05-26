@@ -20,7 +20,15 @@
 // The orchestrator NEVER returns synthesized Reading content on
 // failure and NEVER skips validateReading.
 
-import type { InputsSummary, Reading, ReadingTimeWindow, SubjectSummary, RelationSummary, EventSummary } from '../../domain/reading.ts';
+import type {
+  InputsSummary,
+  Reading,
+  ReadingTimeWindow,
+  SubjectSummary,
+  RelationSummary,
+  EventSummary,
+  ViewSnapshot,
+} from '../../domain/reading.ts';
 import type { ReadingKind, ReadingScope } from '../../domain/reading-matrix.ts';
 import type { Relation } from '../../domain/relation.ts';
 import type { Event } from '../../domain/event.ts';
@@ -224,6 +232,34 @@ export async function generateReading(
     return { ok: false, error: { kind: 'pipeline_stage_failed', stage_failure: featureResult.error } };
   }
   const featureSnapshot = featureResult.value;
+  const canonicalizations = canonicalizationsForSubjects(input.subjects, input.space);
+  const subjectSummaries: SubjectSummary[] = input.subjects.map((s) => buildSubjectSummary(s, input.space));
+  const relationSummaries: RelationSummary[] = buildRelationSummaries(input.subjects, input.space.relations);
+  const eventSummaries: EventSummary[] = buildEventSummaries(input.subjects, input.space.events, input.time_window);
+  const viewSnapshot: ViewSnapshot | undefined =
+    input.scope === 'view' && input.view
+      ? {
+          view_id: input.view.id,
+          anchor_subject: input.view.anchor_subject,
+          subjects: input.view.subjects,
+          time_scope: input.view.time_scope,
+          instructions_hash: computeCanonicalHash(input.view.instructions ?? null),
+          context_items_hash: computeCanonicalHash(input.view.context_items ?? []),
+          memory_summary_hash: computeCanonicalHash(input.view.view_memory?.summary ?? null),
+          memory_locked: input.view.view_memory.locked,
+        }
+      : undefined;
+  const inputHash = computeCanonicalHash({
+    method_profile: featureSnapshot.method_profile,
+    time_window: input.time_window,
+    canonicalizations,
+    relation_summaries: relationSummaries,
+    event_summaries: eventSummaries,
+    view_snapshot: viewSnapshot,
+    ad_hoc_context: input.ad_hoc_context_text,
+  });
+  const featureSnapshotHash = computeCanonicalHash(featureSnapshot);
+
   const runtimeAiClient = deps.runtime_ai_client ?? new NoOpRuntimeAiClient();
   const aiResult = await runtimeAiClient.generate(
     buildRuntimeAiRequest(input, input.view, input.ad_hoc_context_text, featureSnapshot),
@@ -234,22 +270,6 @@ export async function generateReading(
       error: { kind: 'runtime_ai_failed', ai_failure: aiResult.error },
     };
   }
-  // SJG-ALGO-11 — real canonical hashes. `input_hash` covers the
-  // per-subject canonicalizations + the time window + the v1 method
-  // profile (the spec lists this exact set). `feature_snapshot_hash`
-  // covers the whole feature snapshot.
-  const canonicalizations = canonicalizationsForSubjects(input.subjects, input.space);
-  const inputHash = computeCanonicalHash({
-    method_profile: featureSnapshot.method_profile,
-    time_window: input.time_window,
-    canonicalizations,
-  });
-  const featureSnapshotHash = computeCanonicalHash(featureSnapshot);
-
-  const subjectSummaries: SubjectSummary[] = input.subjects.map((s) => buildSubjectSummary(s, input.space));
-  const relationSummaries: RelationSummary[] = buildRelationSummaries(input.subjects, input.space.relations);
-  const eventSummaries: EventSummary[] = buildEventSummaries(input.subjects, input.space.events, input.time_window);
-
   const inputsSummary: InputsSummary = {
     captured_at: input.created_at,
     contract_version: SJG_ASTRO_CONTRACT_VERSION,
@@ -262,18 +282,7 @@ export async function generateReading(
     subject_summaries: subjectSummaries,
     relation_summaries: relationSummaries,
     event_summaries: eventSummaries,
-    view_snapshot: input.view
-      ? {
-          view_id: input.view.id,
-          anchor_subject: input.view.anchor_subject,
-          subjects: input.view.subjects,
-          time_scope: input.view.time_scope,
-          instructions_hash: computeCanonicalHash(input.view.instructions ?? null),
-          context_items_hash: computeCanonicalHash(input.view.context_items ?? []),
-          memory_summary_hash: computeCanonicalHash(input.view.view_memory?.summary ?? null),
-          memory_locked: input.view.view_memory.locked,
-        }
-      : undefined,
+    view_snapshot: viewSnapshot,
     ad_hoc_context: input.ad_hoc_context_text,
   };
 

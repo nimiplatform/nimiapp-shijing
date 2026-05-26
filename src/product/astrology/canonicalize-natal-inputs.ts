@@ -11,6 +11,7 @@ import { type StageResult } from './stage-result.ts';
 import { trueSolarTimeFromInstant, standardHoursForTimeZone } from './true-solar-time.ts';
 import { computeCanonicalHash } from './canonical-hash.ts';
 import { EPHEMERIS_VERSION } from './solar-terms.ts';
+import { parseNaturalBirthTime } from '../inputs/natural-birth-time.ts';
 
 // Back-compat alias for the wave-10 module-local constant. The single
 // source of truth lives in `solar-terms.ts::EPHEMERIS_VERSION` per
@@ -49,11 +50,11 @@ function parseLunarComponents(raw: RawBirthInput, birthDatetimeUtc: string): Lun
   let second = 0;
   const timeText = raw.local_time_text?.trim() || '';
   if (timeText.length > 0) {
-    const timeMatch = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(timeText);
-    if (!timeMatch) return null;
-    hour = Number(timeMatch[1]);
-    minute = Number(timeMatch[2]);
-    second = timeMatch[3] ? Number(timeMatch[3]) : 0;
+    const parsedTime = parseNaturalBirthTime(timeText);
+    if (!parsedTime) return null;
+    hour = parsedTime.hour;
+    minute = parsedTime.minute;
+    second = parsedTime.second;
   } else {
     const utcDate = new Date(birthDatetimeUtc);
     if (!Number.isNaN(utcDate.getTime())) {

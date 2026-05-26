@@ -1,7 +1,7 @@
 // Wave-8 — pure-TS Person draft state machine. Captures Person fields
 // beyond NatalInputs (display_name, relation_hint, consent_state,
-// subject_context, notes). NatalInputs sub-state is held by the
-// wave-7 NatalInputsDraft reducer.
+// subject_context, notes). Birth-record sub-state is held by
+// NaturalBirthDraft.
 
 import { CONSENT_STATES, type ConsentState, type Person } from '../../domain/person.ts';
 

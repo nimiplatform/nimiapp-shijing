@@ -75,6 +75,44 @@ test('bounded_range with start after end is rejected', () => {
   if (!result.ok) assert.equal(result.error.code, 'view_bounded_range_start_after_end');
 });
 
+test('bounded_range endpoints must be ISO-8601 UTC instants with Z', () => {
+  const result = validateView(
+    baseView({
+      time_scope: 'bounded',
+      bounded_range: { start: '2026-05-25T00:00:00+08:00', end: '2026-05-26T00:00:00Z' },
+    }),
+  );
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'view_bounded_range_endpoint_not_iso_utc');
+    assert.equal(result.error.field, 'start');
+  }
+});
+
+test('bounded_range endpoints must be finite real calendar instants', () => {
+  const result = validateView(
+    baseView({
+      time_scope: 'bounded',
+      bounded_range: { start: '2026-02-31T00:00:00Z', end: '2026-03-02T00:00:00Z' },
+    }),
+  );
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'view_bounded_range_endpoint_not_iso_utc');
+    assert.equal(result.error.field, 'start');
+  }
+});
+
+test('bounded_range allows equal start and end per View contract', () => {
+  const result = validateView(
+    baseView({
+      time_scope: 'bounded',
+      bounded_range: { start: '2026-05-25T00:00:00Z', end: '2026-05-25T00:00:00Z' },
+    }),
+  );
+  assert.equal(result.ok, true);
+});
+
 test('rolling scope requires rolling_window_days', () => {
   const result = validateView(baseView({ time_scope: 'rolling' }));
   assert.equal(result.ok, false);

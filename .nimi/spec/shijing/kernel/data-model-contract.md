@@ -279,6 +279,7 @@ Conversation {
   created_at: string                                 // ISO-8601 UTC timestamp
   subject_anchor: SubjectRef
   view_id?: string                                   // optional view binding
+  source_reading_id?: string                         // required for AI turns
   turns: ConversationTurn[]
 }
 
@@ -296,6 +297,20 @@ Invariants:
   objects MUST NOT own conversations.
 - If `view_id` is set, it MUST reference an existing
   `ShiJingSpace.views[].id`.
+- If `source_reading_id` is set, it MUST reference an existing
+  `ShiJingSpace.readings[].id`.
+- `ConversationTurn.role === "ai"` is allowed only inside a Conversation
+  with a resolvable `source_reading_id`. Conversation AI turns clarify or
+  explain the source Reading; they MUST NOT be created as an alternate
+  astrology output path.
+- If `source_reading_id` references a view-scoped Reading, then
+  `Conversation.view_id`, when present, MUST equal that Reading's
+  `view_id`; a Conversation MUST NOT be bound to a conflicting View.
+- A follow-up Conversation launched from Consultation MUST set
+  `source_reading_id` to the saved Reading that opened the follow-up.
+- A Conversation without `source_reading_id` may persist user-provided
+  supplementary context only. It MUST NOT call Runtime AI or persist an AI
+  turn until the user creates a Reading and starts a follow-up from it.
 
 ## SJG-DATA-09 — Settings
 

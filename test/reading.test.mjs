@@ -196,6 +196,60 @@ test('bounded time_window with start>=end is rejected', () => {
   if (!result.ok) assert.equal(result.error.code, 'reading_time_window_bounded_start_not_before_end');
 });
 
+test('bounded time_window endpoints must be ISO-8601 UTC instants with Z', () => {
+  const reading = validReading({ kind: 'today' });
+  reading.time_window = {
+    ...reading.time_window,
+    start_utc: '2026-05-25T00:00:00+08:00',
+    end_utc: '2026-05-26T00:00:00Z',
+  };
+  reading.inputs_summary.time_window = reading.time_window;
+  reading.inputs_summary.feature_snapshot.time_window = reading.time_window;
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'reading_time_window_bounded_endpoint_not_iso_utc');
+    assert.equal(result.error.field, 'start_utc');
+  }
+});
+
+test('bounded time_window endpoints must be finite real calendar instants', () => {
+  const reading = validReading({ kind: 'today' });
+  reading.time_window = {
+    ...reading.time_window,
+    start_utc: '2026-02-31T00:00:00Z',
+    end_utc: '2026-03-02T00:00:00Z',
+  };
+  reading.inputs_summary.time_window = reading.time_window;
+  reading.inputs_summary.feature_snapshot.time_window = reading.time_window;
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'reading_time_window_bounded_endpoint_not_iso_utc');
+    assert.equal(result.error.field, 'start_utc');
+  }
+});
+
+test('ReadingTimeWindow basis_time_zone must be a valid IANA zone', () => {
+  const reading = validReading({ kind: 'today' });
+  reading.time_window = { ...reading.time_window, basis_time_zone: 'UTC+08' };
+  reading.inputs_summary.time_window = reading.time_window;
+  reading.inputs_summary.feature_snapshot.time_window = reading.time_window;
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.error.code, 'reading_time_window_basis_time_zone_invalid');
+});
+
+test('ReadingTimeWindow source must be a closed enum', () => {
+  const reading = validReading({ kind: 'today' });
+  reading.time_window = { ...reading.time_window, source: 'legacy_default' };
+  reading.inputs_summary.time_window = reading.time_window;
+  reading.inputs_summary.feature_snapshot.time_window = reading.time_window;
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.error.code, 'reading_time_window_source_invalid');
+});
+
 test('natal time_window carrying endpoints is rejected', () => {
   const reading = validReading({ kind: 'sign', scope: 'subject' });
   reading.time_window = {

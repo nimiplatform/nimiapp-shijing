@@ -14,6 +14,7 @@ import { describeTab } from '../src/product/navigation/tab-descriptor.ts';
 
 const SHELL_PATH = new URL('../src/product/shell/shijing-shell.tsx', import.meta.url);
 const ROUTER_PATH = new URL('../src/product/navigation/tab-router.tsx', import.meta.url);
+const STYLES_PATH = new URL('../src/styles.css', import.meta.url);
 const TAB_FILES = {
   today: new URL('../src/product/tabs/today.tsx', import.meta.url),
   views: new URL('../src/product/tabs/views.tsx', import.meta.url),
@@ -49,6 +50,22 @@ test('shell short-circuits on invalid snapshot status', () => {
   assert.match(shellSource, /snapshot_status\.kind === 'invalid'/);
   assert.match(shellSource, /snapshot_status\.error\.code/);
   assert.match(shellSource, /shijing-shell--error/);
+});
+
+test('shell routes invalid self natal inputs into a repair form', () => {
+  const shellSource = readFileSync(SHELL_PATH, 'utf8');
+  assert.match(shellSource, /space_self_subject_natal_inputs_invalid/);
+  assert.match(shellSource, /NatalInputsForm/);
+  assert.match(shellSource, /shijing-shell--repair/);
+});
+
+test('repair shell receives the same product form styling scope as tabs', () => {
+  const stylesSource = readFileSync(STYLES_PATH, 'utf8');
+  assert.match(stylesSource, /:where\(\.shijing-tab, \.shijing-shell--repair, \.shijing-conversation-thread\) form/);
+  assert.match(stylesSource, /:where\(\.shijing-tab, \.shijing-shell--repair, \.shijing-conversation-thread\) label/);
+  assert.match(stylesSource, /:where\(\.shijing-tab, \.shijing-shell--repair, \.shijing-conversation-thread\) input\[type="text"\]/);
+  assert.match(stylesSource, /:where\(\.shijing-tab, \.shijing-shell--repair, \.shijing-conversation-thread\) select/);
+  assert.match(stylesSource, /:where\(\.shijing-tab, \.shijing-shell--repair, \.shijing-conversation-thread\) button/);
 });
 
 test('tab router has a branch for every admitted tab id and never iterates SHIJING_IA_TABS', () => {

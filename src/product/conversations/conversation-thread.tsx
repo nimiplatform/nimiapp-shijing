@@ -1,9 +1,8 @@
 // SJG-DATA-08 — Conversation thread surface. Left rail lists
 // conversations; right pane shows the selected conversation's turns
-// plus a composer. Sending a user turn also fires a direct chat call
-// (NOT the astrology pipeline) via the conversation_chat_bridge and
-// appends the assistant turn as role 'ai' (per SJG-DATA-08
-// ConversationRole). All snapshots gated by validateShiJingSpace.
+// plus a composer. AI turns are allowed only for conversations bound
+// to a saved source Reading; unbound conversations persist user
+// context but do not call Runtime AI.
 
 import { useMemo, useState, type FormEvent } from 'react';
 import { OverlayShell } from '@nimiplatform/kit/ui';
@@ -11,6 +10,7 @@ import { OverlayShell } from '@nimiplatform/kit/ui';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts';
 import type { Conversation, ConversationTurn } from '../../domain/conversation.ts';
+import type { Reading } from '../../domain/reading.ts';
 import { newConversationTurnId } from './conversation-id.ts';
 import { ConversationList } from './conversation-list.tsx';
 import { BUTTONS, EMPTY_STATES, HEADINGS, STATUS } from '../i18n/copy.ts';
@@ -18,6 +18,7 @@ import { enumLabel } from '../i18n/enum-label.ts';
 import { subjectDisplayName } from '../i18n/subject-display-name.ts';
 import { formatChatFailure, formatValidatorRefusal } from '../i18n/format-failure.ts';
 import { TechnicalDetails } from '../components/technical-details.tsx';
+import type { ConversationSourceReadingContext } from './conversation-chat-bridge.ts';
 
 const SHIJING_CONVERSATION_MODEL_ID = 'auto';
 
@@ -29,12 +30,36 @@ export interface ConversationThreadProps {
 type SendStatus =
   | { kind: 'idle' }
   | { kind: 'sending' }
+  | { kind: 'source_required' }
   | { kind: 'refused_validator'; code: string }
   | { kind: 'generator_failed'; code: string; detail: string };
 
 function shortenConversationId(id: string): string {
   if (id.length <= 8) return id;
   return id.slice(-8);
+}
+
+export function buildConversationSourceReadingContext(reading: Reading): ConversationSourceReadingContext {
+  return {
+    id: reading.id,
+    kind: reading.kind,
+    scope: reading.scope,
+    anchor_subject: reading.anchor_subject,
+    time_window: reading.time_window,
+    output: {
+      summary: reading.output.summary,
+      highlights: reading.output.highlights,
+      recommendations: reading.output.recommendations,
+    },
+    inputs_summary: {
+      input_hash: reading.inputs_summary.input_hash,
+      feature_snapshot_hash: reading.inputs_summary.feature_snapshot_hash,
+      method_profile: reading.inputs_summary.method_profile,
+      stage_label: reading.inputs_summary.feature_snapshot.stage_label,
+      uncertainty_inputs: reading.inputs_summary.feature_snapshot.uncertainty_inputs,
+    },
+    uncertainty: reading.uncertainty,
+  };
 }
 
 function formatTimestamp(iso: string): string {
@@ -59,6 +84,10 @@ export function ConversationThread(props: ConversationThreadProps) {
       (conversation) => conversation.id === props.selectedConversationId,
     ) ?? null;
   }, [props.selectedConversationId, state.snapshot.conversations]);
+  const sourceReading = useMemo<Reading | null>(() => {
+    if (!selected?.source_reading_id) return null;
+    return state.snapshot.readings.find((reading) => reading.id === selected.source_reading_id) ?? null;
+  }, [selected?.source_reading_id, state.snapshot.readings]);
 
   async function onSend(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -90,9 +119,14 @@ export function ConversationThread(props: ConversationThreadProps) {
     dispatch({ type: 'snapshot/replace', snapshot: snapshotWithUser });
     setComposer('');
 
+    if (!sourceReading) {
+      setStatus({ kind: 'source_required' });
+      return;
+    }
     const result = await conversation_chat_bridge.send({
       user_message: trimmed,
       model_id: SHIJING_CONVERSATION_MODEL_ID,
+      source_reading: buildConversationSourceReadingContext(sourceReading),
     });
     if (!result.ok) {
       setStatus({ kind: 'generator_failed', code: result.error.kind, detail: result.error.detail });
@@ -133,6 +167,23 @@ export function ConversationThread(props: ConversationThreadProps) {
             <h4>会话 #{shortenConversationId(selected.id)}</h4>
             <small>围绕：{subjectDisplayName(selected.subject_anchor, state.snapshot)}</small>
           </header>
+          <section className="shijing-conversation-source" aria-label="来源解读">
+            {sourceReading ? (
+              <>
+                <strong>来源解读：{sourceReading.id}</strong>
+                <span>
+                  {enumLabel('reading_kind', sourceReading.kind)} · {formatTimestamp(sourceReading.created_at)} · 锚点：
+                  {subjectDisplayName(sourceReading.anchor_subject, state.snapshot)}
+                </span>
+                <p>{sourceReading.output.summary}</p>
+              </>
+            ) : (
+              <>
+                <strong>补充语境记录</strong>
+                <p>需要先生成一份解读，再围绕它追问。此会话会保存你的补充语境，但不会调用 AI 产生回复。</p>
+              </>
+            )}
+          </section>
           <ol className="shijing-conversation-turns">
             {selected.turns.length === 0 ? (
               <li>{EMPTY_STATES.conversation_turns}</li>
@@ -158,6 +209,9 @@ export function ConversationThread(props: ConversationThreadProps) {
             </button>
           </form>
           {status.kind === 'sending' ? <p role="status">{STATUS.sending}</p> : null}
+          {status.kind === 'source_required' ? (
+            <p role="status">需要先生成一份解读，再围绕它追问。已保存你的补充语境。</p>
+          ) : null}
           {status.kind === 'refused_validator' ? (() => {
             const formatted = formatValidatorRefusal(status.code);
             return (

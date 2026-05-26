@@ -3,7 +3,7 @@
 // raw code/detail to surface inside <TechnicalDetails> so support
 // engineers can still copy the original anchor.
 
-import type { GenerateReadingFailure } from '../astrology/generate-reading.ts';
+import type { GenerateAndStoreFailure } from '../reading/generate-and-store.ts';
 import { FAILURE_HEADLINES } from './copy.ts';
 
 export interface FormattedFailure {
@@ -11,7 +11,13 @@ export interface FormattedFailure {
   readonly technical: string;
 }
 
-export function formatGenerateReadingFailure(error: GenerateReadingFailure): FormattedFailure {
+export function formatGenerateReadingFailure(error: GenerateAndStoreFailure): FormattedFailure {
+  if (error.kind === 'input_readiness_failed') {
+    return {
+      headline: FAILURE_HEADLINES.input_readiness_failed,
+      technical: `input_readiness_failed: ${error.reason}\n${error.detail}`,
+    };
+  }
   if (error.kind === 'pipeline_stage_failed') {
     const f = error.stage_failure;
     const detail = f.detail ? `\n${f.detail}` : '';

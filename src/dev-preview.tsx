@@ -11,6 +11,7 @@ import { NimiThemeProvider, TooltipProvider } from '@nimiplatform/kit/ui';
 import { ShellLayout } from './shell/app-shell/shell-layout.js';
 import { useAppStore } from './shell/app-shell/app-store.js';
 import { ShijingStoreProvider } from './product/state/shijing-store.tsx';
+import { ShijingCatalogProvider } from './product/catalog/catalog-context.tsx';
 import { ShijingShell } from './product/shell/shijing-shell.tsx';
 import { InMemoryPersistenceAdapter } from './product/persistence/in-memory-adapter.ts';
 import { NoOpRuntimeAiClient } from './product/astrology/runtime-ai-client.ts';
@@ -61,9 +62,11 @@ function DevPreviewProductArea() {
   const persistence = React.useMemo(() => new InMemoryPersistenceAdapter(), []);
   const aiClient = React.useMemo(() => new NoOpRuntimeAiClient(), []);
   return (
-    <ShijingStoreProvider snapshot={snapshot} persistenceClient={persistence} runtimeAiClient={aiClient}>
-      <ShijingShell />
-    </ShijingStoreProvider>
+    <ShijingCatalogProvider>
+      <ShijingStoreProvider snapshot={snapshot} persistenceClient={persistence} runtimeAiClient={aiClient}>
+        <ShijingShell />
+      </ShijingStoreProvider>
+    </ShijingCatalogProvider>
   );
 }
 

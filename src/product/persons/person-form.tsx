@@ -1,16 +1,19 @@
-// Wave-8 — add / edit Person form. Reuses the wave-7 NatalInputs
-// editor surface (via NatalInputsEditor) and the wave-0
-// validateShiJingSpace gate before any snapshot/replace dispatch.
+// Add / edit Person form. Reuses the natural birth record editor and
+// validates the whole ShiJingSpace before any snapshot/replace dispatch.
 
 import { useEffect, useMemo, useReducer, useState, type FormEvent } from 'react';
 
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { TextField, SelectField } from '../inputs/natal-inputs-fields.tsx';
 import {
-  createEmptyDraft,
-  type NatalInputsDraft,
-} from '../inputs/natal-inputs-state.ts';
-import { validateDraft, userMessageForValidationError } from '../inputs/natal-inputs-validate.ts';
+  createEmptyNaturalBirthDraft,
+  type NaturalBirthDraft,
+} from '../inputs/natural-birth-draft.ts';
+import {
+  buildNaturalBirthNatalInputs,
+  technicalDetailForNaturalBirthError,
+  userMessageForNaturalBirthError,
+} from '../inputs/natural-birth-build.ts';
 import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts';
 import type { Person } from '../../domain/person.ts';
 import {
@@ -35,7 +38,7 @@ export interface PersonFormProps {
 export function PersonForm(props: PersonFormProps) {
   const { state, dispatch } = useShijingStore();
   const [personDraft, personDispatch] = useReducer(personDraftReducer, createEmptyPersonDraft());
-  const [natalDraft, setNatalDraft] = useState<NatalInputsDraft>(createEmptyDraft);
+  const [natalDraft, setNatalDraft] = useState<NaturalBirthDraft>(createEmptyNaturalBirthDraft);
   const [submission, setSubmission] = useState<
     | { kind: 'idle' }
     | { kind: 'invalid_person'; code: string }
@@ -64,12 +67,12 @@ export function PersonForm(props: PersonFormProps) {
       setSubmission({ kind: 'invalid_person', code: personCheck.error.code });
       return;
     }
-    const natalOutcome = validateDraft(natalDraft);
+    const natalOutcome = buildNaturalBirthNatalInputs(natalDraft);
     if (!natalOutcome.ok) {
       setSubmission({
         kind: 'invalid_natal',
-        code: natalOutcome.error.code,
-        message: userMessageForValidationError(natalOutcome.error),
+        code: technicalDetailForNaturalBirthError(natalOutcome.error),
+        message: userMessageForNaturalBirthError(natalOutcome.error),
       });
       return;
     }

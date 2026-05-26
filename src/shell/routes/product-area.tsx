@@ -19,20 +19,20 @@ import type { NatalInputs, RawBirthInput } from '../../domain/person.ts';
 function buildInitialRawBirthInput(): RawBirthInput {
   return {
     calendar_system: 'gregorian',
-    local_date_text: '2000-01-01',
+    local_date_text: '',
   };
 }
 
 function buildInitialNatalInputs(): NatalInputs {
   return {
     raw_birth_input: buildInitialRawBirthInput(),
-    birth_datetime_utc: '2000-01-01T00:00:00Z',
+    birth_datetime_utc: '',
     birth_precision: 'unknown',
     calendar_system: 'gregorian',
     birth_location: {
-      latitude: 0,
-      longitude: 0,
-      iana_time_zone: 'Etc/UTC',
+      latitude: Number.NaN,
+      longitude: Number.NaN,
+      iana_time_zone: '',
     },
     calculation_sex: 'unspecified',
   };

@@ -1,7 +1,6 @@
 // Wave-7 — small field components for the NatalInputs editor. Each
 // component is dumb-by-design: it reads `value` + emits `onChange`,
-// no validation, no fetch, no SDK. The form-state reducer in
-// `natal-inputs-state.ts` is the only state owner.
+// no validation, no fetch, no SDK. NaturalBirthDraft owns state.
 
 import type { ChangeEvent } from 'react';
 
@@ -17,6 +16,7 @@ export interface TextFieldProps {
   readonly id: string;
   readonly label: string;
   readonly value: string;
+  readonly type?: 'text' | 'date' | 'number' | 'time' | 'datetime-local';
   readonly required?: boolean;
   readonly placeholder?: string;
   readonly onChange: (value: string) => void;
@@ -28,7 +28,7 @@ export function TextField(props: TextFieldProps) {
       <span>{props.label}{props.required ? ' *' : null}</span>
       <input
         id={props.id}
-        type="text"
+        type={props.type ?? 'text'}
         value={props.value}
         required={props.required ?? false}
         placeholder={props.placeholder}

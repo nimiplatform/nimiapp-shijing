@@ -1,7 +1,7 @@
 // SJG-DATA-08 — Conversation left-rail list. Renders the conversation
 // cards (id, anchor, last-turn time, message count) plus "新建会话" and
-// "打开会话" affordances. New conversations are anchored to `self` and
-// validateShiJingSpace gates every snapshot/replace.
+// "打开会话" affordances. New conversations are anchored to the current
+// observation target and validateShiJingSpace gates every snapshot/replace.
 
 import { useState } from 'react';
 
@@ -51,7 +51,7 @@ export function ConversationList(props: ConversationListProps) {
     const conversation: Conversation = {
       id: newConversationId(),
       created_at: new Date().toISOString(),
-      subject_anchor: 'self',
+      subject_anchor: state.observation_target,
       turns: [],
     };
     const nextSnapshot = {
@@ -74,6 +74,7 @@ export function ConversationList(props: ConversationListProps) {
         <h3>{HEADINGS.conversations}</h3>
         <button type="button" onClick={onCreate}>{BUTTONS.new_conversation}</button>
       </header>
+      <p>普通新建会话用于记录补充语境；需要先生成一份解读，才能围绕它追问。</p>
       {state.snapshot.conversations.length === 0 ? (
         <p>{EMPTY_STATES.conversations}</p>
       ) : (
@@ -87,6 +88,7 @@ export function ConversationList(props: ConversationListProps) {
                   onClick={() => props.onSelectConversation(conversation.id)}
                 >
                   <span>会话 #{shortenConversationId(conversation.id)}</span>
+                  <small>{conversation.source_reading_id ? ` 来源解读 ${conversation.source_reading_id}` : ' 补充语境记录'}</small>
                   <small> （{conversation.turns.length} 条消息 · 最后更新于 {formatTimestamp(lastTurnTime(conversation))}）</small>
                 </button>
                 <button type="button" onClick={() => props.onOpenThread(conversation.id)}>

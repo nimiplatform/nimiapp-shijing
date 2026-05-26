@@ -1,9 +1,6 @@
-// SJG-DATA-08 — Conversation chat bridge. Conversations do NOT go
-// through the astrology pipeline; they are direct chat calls subject
-// to a system prompt that forbids 吉凶 prediction and luck score
-// output (SJG-ASTRO-05 forbidden-outputs spirit, extended to
-// conversations because the chat surface must not bypass the
-// astrology boundary).
+// SJG-DATA-08 — Conversation chat bridge. Follow-up conversations are
+// explanation-only Runtime AI calls over a saved source Reading. They
+// must not become a second astrology generation path.
 //
 // The bridge is wired with a RuntimeTextGenerator (the same SDK
 // callable the astrology runtime adapter uses). All failures surface
@@ -15,7 +12,7 @@ import type {
 } from '../astrology/runtime-ai-client.ts';
 
 export const CONVERSATION_SYSTEM_PROMPT =
-  '你是 ShiJing 的对话助手，仅基于用户提供的语境讨论。永不预言吉凶，永不输出 luck score。';
+  '你是 ShiJing 的跟进解读助手。只能解释、澄清或展开 source_reading 中已经保存的解读；不能做新的占星推算，不能计算四柱、大运、阶段、关键窗口，不能预言吉凶，不能输出 luck score。若用户提出新的占星问题，要求先生成一份新的 Reading。';
 
 export type ConversationChatFailureKind =
   | 'generator_unavailable'
@@ -31,9 +28,35 @@ export type ConversationChatResult =
   | { ok: true; text: string }
   | { ok: false; error: ConversationChatFailure };
 
+export interface ConversationSourceReadingContext {
+  readonly id: string;
+  readonly kind: string;
+  readonly scope: string;
+  readonly anchor_subject: unknown;
+  readonly time_window: unknown;
+  readonly output: {
+    readonly summary: string;
+    readonly highlights: readonly unknown[];
+    readonly recommendations: readonly unknown[];
+  };
+  readonly inputs_summary: {
+    readonly input_hash: string;
+    readonly feature_snapshot_hash: string;
+    readonly method_profile: unknown;
+    readonly stage_label: string;
+    readonly uncertainty_inputs: readonly unknown[];
+  };
+  readonly uncertainty: {
+    readonly confidence: string;
+    readonly caveats: readonly string[];
+    readonly data_gaps: readonly string[];
+  };
+}
+
 export interface ConversationChatRequest {
   readonly user_message: string;
   readonly model_id: string;
+  readonly source_reading: ConversationSourceReadingContext;
 }
 
 export interface ConversationChatBridgeOptions {
@@ -45,11 +68,16 @@ export function createConversationChatBridge(options: ConversationChatBridgeOpti
   const systemPrompt = options.system_prompt ?? CONVERSATION_SYSTEM_PROMPT;
   return {
     async send(request: ConversationChatRequest): Promise<ConversationChatResult> {
+      const userPrompt = JSON.stringify({
+        source_reading: request.source_reading,
+        user_message: request.user_message,
+        instruction: '只围绕 source_reading 回答；如果需要新的占星判断，请要求用户先生成新的 Reading。',
+      });
       let response: RuntimeTextGeneratorResponse;
       try {
         response = await options.generator({
           system: systemPrompt,
-          user: request.user_message,
+          user: userPrompt,
           modelId: request.model_id,
         });
       } catch (cause) {

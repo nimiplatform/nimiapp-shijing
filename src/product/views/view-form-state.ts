@@ -4,10 +4,11 @@
 // time_scope branch consistent by auto-clearing the non-applicable
 // fields.
 
-import type { DisplayState, TimeScope, View, ViewMemory } from '../../domain/view.ts';
+import type { ContextItem, DisplayState, TimeScope, View, ViewMemory } from '../../domain/view.ts';
 import { DISPLAY_STATES, TIME_SCOPES } from '../../domain/view.ts';
 import type { SubjectRef } from '../../domain/subject-ref.ts';
 import { subjectRefEquals, subjectRefKey } from '../../domain/subject-ref.ts';
+import { localDateInputToUtcIso, parseLocalDateInput, utcIsoToLocalDateInput } from './view-time-window.ts';
 
 export interface ViewDraft {
   readonly id: string | null;
@@ -15,8 +16,8 @@ export interface ViewDraft {
   readonly anchor_key: string;
   readonly selected_subject_keys: readonly string[];
   readonly time_scope: TimeScope;
-  readonly bounded_start_utc: string;
-  readonly bounded_end_utc: string;
+  readonly bounded_start_date: string;
+  readonly bounded_end_date: string;
   readonly rolling_window_days_text: string;
   readonly instructions: string;
   readonly memory_summary: string;
@@ -32,15 +33,15 @@ export interface ViewTemplateApplyPayload {
 
 export type ViewDraftAction =
   | { type: 'reset' }
-  | { type: 'hydrate'; view: View }
+  | { type: 'hydrate'; view: View; basis_time_zone: string }
   | { type: 'assign_id'; id: string }
   | { type: 'apply_template'; template: ViewTemplateApplyPayload }
   | { type: 'set_title'; value: string }
   | { type: 'set_anchor_key'; value: string }
   | { type: 'toggle_subject_key'; value: string }
   | { type: 'set_time_scope'; value: TimeScope }
-  | { type: 'set_bounded_start_utc'; value: string }
-  | { type: 'set_bounded_end_utc'; value: string }
+  | { type: 'set_bounded_start_date'; value: string }
+  | { type: 'set_bounded_end_date'; value: string }
   | { type: 'set_rolling_window_days_text'; value: string }
   | { type: 'set_instructions'; value: string }
   | { type: 'set_memory_summary'; value: string }
@@ -54,8 +55,8 @@ export function createEmptyViewDraft(): ViewDraft {
     anchor_key: '',
     selected_subject_keys: [],
     time_scope: 'open_ended',
-    bounded_start_utc: '',
-    bounded_end_utc: '',
+    bounded_start_date: '',
+    bounded_end_date: '',
     rolling_window_days_text: '',
     instructions: '',
     memory_summary: '',
@@ -69,9 +70,9 @@ function clearBranchFields(state: ViewDraft, next: TimeScope): ViewDraft {
     return { ...state, time_scope: next, rolling_window_days_text: '' };
   }
   if (next === 'rolling') {
-    return { ...state, time_scope: next, bounded_start_utc: '', bounded_end_utc: '' };
+    return { ...state, time_scope: next, bounded_start_date: '', bounded_end_date: '' };
   }
-  return { ...state, time_scope: next, bounded_start_utc: '', bounded_end_utc: '', rolling_window_days_text: '' };
+  return { ...state, time_scope: next, bounded_start_date: '', bounded_end_date: '', rolling_window_days_text: '' };
 }
 
 function ensureAnchorIncluded(state: ViewDraft): ViewDraft {
@@ -80,7 +81,7 @@ function ensureAnchorIncluded(state: ViewDraft): ViewDraft {
   return { ...state, selected_subject_keys: [state.anchor_key, ...state.selected_subject_keys] };
 }
 
-function hydrateFromView(view: View): ViewDraft {
+function hydrateFromView(view: View, basisTimeZone: string): ViewDraft {
   const anchorKey = subjectRefKey(view.anchor_subject);
   const subjectKeys = view.subjects.map(subjectRefKey);
   return {
@@ -89,8 +90,8 @@ function hydrateFromView(view: View): ViewDraft {
     anchor_key: anchorKey,
     selected_subject_keys: subjectKeys,
     time_scope: view.time_scope,
-    bounded_start_utc: view.bounded_range?.start ?? '',
-    bounded_end_utc: view.bounded_range?.end ?? '',
+    bounded_start_date: view.bounded_range?.start ? utcIsoToLocalDateInput(view.bounded_range.start, basisTimeZone) : '',
+    bounded_end_date: view.bounded_range?.end ? utcIsoToLocalDateInput(view.bounded_range.end, basisTimeZone) : '',
     rolling_window_days_text: view.rolling_window_days !== undefined ? String(view.rolling_window_days) : '',
     instructions: view.instructions,
     memory_summary: view.view_memory.summary,
@@ -104,7 +105,7 @@ export function viewDraftReducer(state: ViewDraft, action: ViewDraftAction): Vie
     case 'reset':
       return createEmptyViewDraft();
     case 'hydrate':
-      return hydrateFromView(action.view);
+      return hydrateFromView(action.view, action.basis_time_zone);
     case 'assign_id':
       return { ...state, id: action.id };
     case 'apply_template': {
@@ -136,10 +137,10 @@ export function viewDraftReducer(state: ViewDraft, action: ViewDraftAction): Vie
     case 'set_time_scope':
       if (!TIME_SCOPES.includes(action.value)) return state;
       return clearBranchFields(state, action.value);
-    case 'set_bounded_start_utc':
-      return state.time_scope === 'bounded' ? { ...state, bounded_start_utc: action.value } : state;
-    case 'set_bounded_end_utc':
-      return state.time_scope === 'bounded' ? { ...state, bounded_end_utc: action.value } : state;
+    case 'set_bounded_start_date':
+      return state.time_scope === 'bounded' ? { ...state, bounded_start_date: action.value } : state;
+    case 'set_bounded_end_date':
+      return state.time_scope === 'bounded' ? { ...state, bounded_end_date: action.value } : state;
     case 'set_rolling_window_days_text':
       return state.time_scope === 'rolling' ? { ...state, rolling_window_days_text: action.value } : state;
     case 'set_instructions':
@@ -165,6 +166,8 @@ export type ViewDraftValidationError =
   | { code: 'view_anchor_missing' }
   | { code: 'view_memory_locked_unspecified' }
   | { code: 'view_bounded_start_or_end_missing' }
+  | { code: 'view_bounded_start_or_end_invalid' }
+  | { code: 'view_bounded_start_not_before_end' }
   | { code: 'view_rolling_window_days_not_positive_integer' };
 
 export type ViewDraftValidationOutcome =
@@ -183,9 +186,15 @@ export function validateViewDraft(draft: ViewDraft): ViewDraftValidationOutcome 
   if (draft.anchor_key.length === 0) return { ok: false, error: { code: 'view_anchor_missing' } };
   if (draft.memory_locked === null) return { ok: false, error: { code: 'view_memory_locked_unspecified' } };
   if (draft.time_scope === 'bounded') {
-    if (draft.bounded_start_utc.length === 0 || draft.bounded_end_utc.length === 0) {
+    if (draft.bounded_start_date.length === 0 || draft.bounded_end_date.length === 0) {
       return { ok: false, error: { code: 'view_bounded_start_or_end_missing' } };
     }
+    const start = parseLocalDateInput(draft.bounded_start_date);
+    const end = parseLocalDateInput(draft.bounded_end_date);
+    if (!start || !end) return { ok: false, error: { code: 'view_bounded_start_or_end_invalid' } };
+    const startOrder = Date.UTC(start.year, start.month - 1, start.day);
+    const endOrder = Date.UTC(end.year, end.month - 1, end.day);
+    if (startOrder >= endOrder) return { ok: false, error: { code: 'view_bounded_start_not_before_end' } };
   }
   if (draft.time_scope === 'rolling') {
     const days = parseInteger(draft.rolling_window_days_text);
@@ -199,6 +208,8 @@ export function validateViewDraft(draft: ViewDraft): ViewDraftValidationOutcome 
 export interface BuildViewFromDraftInputs {
   readonly anchor: SubjectRef;
   readonly subjects: readonly SubjectRef[];
+  readonly basis_time_zone: string;
+  readonly context_items?: readonly ContextItem[];
 }
 
 export function buildViewFromDraft(draft: ViewDraft, refs: BuildViewFromDraftInputs): View {
@@ -217,13 +228,16 @@ export function buildViewFromDraft(draft: ViewDraft, refs: BuildViewFromDraftInp
     anchor_subject: refs.anchor,
     subjects,
     time_scope: draft.time_scope,
-    context_items: [],
+    context_items: refs.context_items ?? [],
     instructions: draft.instructions,
     view_memory: memory,
     display_state: draft.display_state,
   };
   if (draft.time_scope === 'bounded') {
-    return { ...base, bounded_range: { start: draft.bounded_start_utc, end: draft.bounded_end_utc } };
+    const start = localDateInputToUtcIso(draft.bounded_start_date, refs.basis_time_zone);
+    const end = localDateInputToUtcIso(draft.bounded_end_date, refs.basis_time_zone);
+    if (!start || !end) throw new Error('bounded View dates must be valid local dates before building a View');
+    return { ...base, bounded_range: { start, end } };
   }
   if (draft.time_scope === 'rolling') {
     const days = Number(draft.rolling_window_days_text);

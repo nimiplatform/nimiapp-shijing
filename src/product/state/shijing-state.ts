@@ -35,10 +35,19 @@ function snapshotStatusFor(snapshot: ShiJingSpace): SnapshotStatus {
   return { kind: 'invalid', error: result.error };
 }
 
+export function subjectRefResolvesInSnapshot(target: SubjectRef, snapshot: ShiJingSpace): boolean {
+  if (target === 'self') return true;
+  return snapshot.persons.some((person) => person.id === target.id);
+}
+
+export function resolveObservationTarget(target: SubjectRef, snapshot: ShiJingSpace): SubjectRef {
+  return subjectRefResolvesInSnapshot(target, snapshot) ? target : 'self';
+}
+
 export function createInitialState(snapshot: ShiJingSpace, defaultTarget: SubjectRef = 'self'): ShijingViewState {
   return {
     active_tab: SHIJING_IA_TABS[0]!.id,
-    observation_target: defaultTarget,
+    observation_target: resolveObservationTarget(defaultTarget, snapshot),
     snapshot,
     snapshot_status: snapshotStatusFor(snapshot),
   };
@@ -51,11 +60,13 @@ export function shijingReducer(state: ShijingViewState, action: ShijingAction): 
       if (state.active_tab === action.tab) return state;
       return { ...state, active_tab: action.tab };
     case 'observation/set':
+      if (!subjectRefResolvesInSnapshot(action.target, state.snapshot)) return state;
       if (subjectRefEquals(state.observation_target, action.target)) return state;
       return { ...state, observation_target: action.target };
     case 'snapshot/replace':
       return {
         ...state,
+        observation_target: resolveObservationTarget(state.observation_target, action.snapshot),
         snapshot: action.snapshot,
         snapshot_status: snapshotStatusFor(action.snapshot),
       };
