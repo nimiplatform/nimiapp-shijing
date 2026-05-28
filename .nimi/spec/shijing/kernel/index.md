@@ -21,7 +21,7 @@ Normative surfaces:
   derivation, deterministic feature snapshots, uncertainty decision
   table, canonical hashing, Runtime AI wording boundary.
 - `ia-contract.md` for information architecture (`SJG-IA-*`): exactly four
-  primary tabs (`今日`, `视角`, `问时镜`, `我`), CurrentObservationTarget
+  primary tabs (`今日`, `关注`, `问时镜`, `我`), CurrentObservationTarget
   switcher, stable tab ids, no removed tabs.
 - `removed-surfaces-contract.md` for hard removals (`SJG-REMOVED-*`):
   Profile, Venture, HuangliDaily, Report, monthly/yearly report, trend

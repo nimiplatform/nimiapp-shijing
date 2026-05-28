@@ -35,6 +35,11 @@ test('product area wires real runtime AI adapter (no NoOp default)', () => {
   assert.doesNotMatch(productAreaSource, /NoOpRuntimeAiClient/);
 });
 
+test('product area gates mock runtime AI to Vite dev only', () => {
+  assert.match(productAreaSource, /USE_MOCK_RUNTIME_AI\s*=\s*import\.meta\.env\?\.DEV\s*===\s*true/);
+  assert.match(productAreaSource, /if\s*\(\s*USE_MOCK_RUNTIME_AI\s*\)/);
+});
+
 test('product area threads authenticated user_id into ShiJingSpace', () => {
   // SJG-DATA-02: ShiJingSpace.user_id must be the runtime-projected account id.
   assert.match(productAreaSource, /useAppStore/);

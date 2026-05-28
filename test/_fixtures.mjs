@@ -188,7 +188,6 @@ export function validShiJingSpace(overrides = {}) {
     conversations: [],
     settings: {
       response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' },
-      notification_preferences: { daily_today_card_enabled: false, daily_today_card_local_time: '08:00' },
     },
     ...overrides,
   };

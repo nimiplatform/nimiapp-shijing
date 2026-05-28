@@ -29,7 +29,7 @@ test('canonical ordered ids match contract', () => {
 test('canonical chinese labels match product authority', () => {
   assert.deepEqual(
     SHIJING_IA_TABS.map((tab) => tab.chinese_label),
-    ['今日', '视角', '问时镜', '我'],
+    ['今日', '关注', '问时镜', '我'],
   );
 });
 

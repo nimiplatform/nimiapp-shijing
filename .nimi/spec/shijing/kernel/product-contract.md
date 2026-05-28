@@ -8,9 +8,9 @@
 
 ## SJG-PROD-01 — Single Product Authority
 
-ShiJing product authority is exactly `apps/shijing/spec/**`. No other
-location, including `.nimi/spec/**`, may carry ShiJing-specific product
-truth without an explicit human-gate admission.
+ShiJing product authority is exactly `.nimi/spec/shijing/**`. No other
+location may carry ShiJing-specific product truth without an explicit
+human-gate admission.
 
 ## SJG-PROD-02 — Embedded App, Not Standalone Account
 

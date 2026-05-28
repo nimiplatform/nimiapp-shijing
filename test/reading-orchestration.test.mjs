@@ -181,7 +181,7 @@ test('SJG-ALGO-11: input_hash changes when view context snapshot changes', async
     subjects: ['self'],
     time_scope: 'rolling',
     rolling_window_days: 30,
-    context_items: [{ id: 'ctx_01', kind: 'note', body: '原始上下文' }],
+    context_items: [{ id: 'ctx_01', kind: 'note', body: '原始上下文', created_at: '2026-05-25T00:00:00Z' }],
     instructions: '看节奏',
     view_memory: { summary: '旧记忆', updated_at: '2026-05-20T00:00:00Z', locked: false },
     display_state: 'normal',
@@ -198,7 +198,10 @@ test('SJG-ALGO-11: input_hash changes when view context snapshot changes', async
   };
   const changedView = {
     ...baseView,
-    context_items: [...baseView.context_items, { id: 'ctx_02', kind: 'note', body: '新增上下文' }],
+    context_items: [
+      ...baseView.context_items,
+      { id: 'ctx_02', kind: 'note', body: '新增上下文', created_at: '2026-05-26T00:00:00Z' },
+    ],
   };
   const h1 = await generatedInputHash({ ...baseInput, view: baseView });
   const h2 = await generatedInputHash({ ...baseInput, id: 'reading_hash_view_b', view: changedView });
@@ -288,15 +291,15 @@ test('view-context consultation preserves the question in ad-hoc context text', 
       subjects: ['self'],
       time_scope: 'rolling',
       rolling_window_days: 14,
-      context_items: [{ id: 'ctx_01', kind: 'note', body: '近期沟通压力升高' }],
+      context_items: [{ id: 'ctx_01', kind: 'note', body: '近期沟通压力升高', created_at: '2026-05-25T00:00:00Z' }],
       instructions: '偏重节奏',
       view_memory: { summary: '上次关注长期选择', updated_at: '2026-05-25T00:00:00Z', locked: false },
       display_state: 'normal',
     },
   });
   assert.match(text, /问题：是否换方向？/);
-  assert.match(text, /借用视角：工作节奏观察/);
-  assert.match(text, /视角指示：偏重节奏/);
+  assert.match(text, /借用关注：工作节奏观察/);
+  assert.match(text, /关注指示：偏重节奏/);
   assert.match(text, /上下文\/note：近期沟通压力升高/);
 });
 

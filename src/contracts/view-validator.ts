@@ -15,6 +15,10 @@ export type ViewValidationError =
   | { code: 'view_rolling_window_missing_for_rolling_scope' }
   | { code: 'view_rolling_window_present_for_non_rolling_scope' }
   | { code: 'view_rolling_window_not_positive_integer' }
+  | { code: 'view_context_item_id_empty'; item_index: number }
+  | { code: 'view_context_item_kind_invalid'; item_index: number; received: unknown }
+  | { code: 'view_context_item_body_empty'; item_index: number }
+  | { code: 'view_context_item_created_at_not_iso_utc'; item_index: number }
   | { code: 'view_display_state_invalid'; received: unknown };
 
 export type ViewValidationResult = { ok: true } | { ok: false; error: ViewValidationError };
@@ -68,6 +72,21 @@ export function validateView(view: View): ViewValidationResult {
   }
   if (!DISPLAY_STATES.includes(view.display_state)) {
     return { ok: false, error: { code: 'view_display_state_invalid', received: view.display_state } };
+  }
+  for (let index = 0; index < view.context_items.length; index += 1) {
+    const item = view.context_items[index]!;
+    if (typeof item.id !== 'string' || item.id.length === 0) {
+      return { ok: false, error: { code: 'view_context_item_id_empty', item_index: index } };
+    }
+    if (item.kind !== 'note' && item.kind !== 'document' && item.kind !== 'event_ref') {
+      return { ok: false, error: { code: 'view_context_item_kind_invalid', item_index: index, received: item.kind } };
+    }
+    if (typeof item.body !== 'string' || item.body.length === 0) {
+      return { ok: false, error: { code: 'view_context_item_body_empty', item_index: index } };
+    }
+    if (!parseIsoUtcInstant(item.created_at)) {
+      return { ok: false, error: { code: 'view_context_item_created_at_not_iso_utc', item_index: index } };
+    }
   }
   return { ok: true };
 }

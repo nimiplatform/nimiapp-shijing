@@ -26,7 +26,7 @@ Four primary tabs (`SJG-IA-*`):
 
 - **今日 (Today)** — Generate and display the daily reading for the
   currently observed subject.
-- **视角 (Views)** — Create / manage `View`s; each view fixes a subject set,
+- **关注 (Views)** — Create / manage `View`s; each view fixes a subject set,
   an anchor subject, a time window, and a template.
 - **问时镜 (Consultation)** — Ad-hoc consultation readings against an
   anchored subject.

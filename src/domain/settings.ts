@@ -1,4 +1,4 @@
-// SJG-DATA-09 — Settings, ResponsePreferences, NotificationPreferences.
+// SJG-DATA-09 — Settings, ResponsePreferences.
 
 export type ResponseTone = 'neutral' | 'warm' | 'concise';
 
@@ -15,12 +15,6 @@ export interface ResponsePreferences {
   readonly extra_instructions?: string;
 }
 
-export interface NotificationPreferences {
-  readonly daily_today_card_enabled: boolean;
-  readonly daily_today_card_local_time: string;
-}
-
 export interface Settings {
   readonly response_preferences: ResponsePreferences;
-  readonly notification_preferences: NotificationPreferences;
 }

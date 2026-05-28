@@ -65,7 +65,7 @@ Before making any change:
 | `.nimi/spec/shijing/kernel/data-model-contract.md` | `SJG-DATA-*` | ShiJingSpace, Subject/Person, View, Reading, Conversation, Settings, ShiJingCatalog |
 | `.nimi/spec/shijing/kernel/astrology-contract.md` | `SJG-ASTRO-*` | Astrology Contract v1: kind/scope matrix, output structure, forbidden outputs, uncertainty surface, consultation anchor rules |
 | `.nimi/spec/shijing/kernel/algorithm-contract.md` | `SJG-ALGO-*` | Astrology Algorithm Contract v1: method stack, time windows, canonicalization, DaYun, deterministic feature snapshots, Runtime-AI wording boundary, canonical hashing |
-| `.nimi/spec/shijing/kernel/ia-contract.md` | `SJG-IA-*` | Information architecture (four primary tabs: `今日`, `视角`, `问时镜`, `我`) |
+| `.nimi/spec/shijing/kernel/ia-contract.md` | `SJG-IA-*` | Information architecture (four primary tabs: `今日`, `关注`, `问时镜`, `我`) |
 | `.nimi/spec/shijing/kernel/removed-surfaces-contract.md` | `SJG-REMOVED-*` | Hard removals (Profile, Venture, HuangliDaily, Report, …) |
 
 ### Key Tables
@@ -115,7 +115,7 @@ no data to migrate. Therefore:
 
 ### IA Boundary
 
-- Exactly four primary tabs: `今日`, `视角`, `问时镜`, `我`.
+- Exactly four primary tabs: `今日`, `关注`, `问时镜`, `我`.
 - No History tab. No customer management. No batch import/export. No project
   management vocabulary. See `removed-surfaces-contract.md`.
 

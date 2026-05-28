@@ -11,7 +11,7 @@ The ShiJing renderer exposes exactly four primary tabs, in this order:
 | Order | Tab Id | Chinese Label | English Anchor |
 |-------|--------|---------------|----------------|
 | 1 | `today` | `今日` | Today |
-| 2 | `views` | `视角` | Views |
+| 2 | `views` | `关注` | Views |
 | 3 | `consultation` | `问时镜` | Consultation |
 | 4 | `me` | `我` | Me |
 

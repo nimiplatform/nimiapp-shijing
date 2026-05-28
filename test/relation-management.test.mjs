@@ -130,7 +130,7 @@ test('SJG-DATA-04: findReferencesToRelation finds view.context_items body match'
         anchor_subject: 'self',
         subjects: ['self'],
         time_scope: 'open_ended',
-        context_items: [{ id: 'ctx_01', kind: 'note', body: 'rel_target' }],
+        context_items: [{ id: 'ctx_01', kind: 'note', body: 'rel_target', created_at: '2026-05-25T00:00:00Z' }],
         instructions: '',
         view_memory: { summary: '', updated_at: '2026-05-25T00:00:00Z', locked: false },
         display_state: 'normal',

@@ -197,6 +197,7 @@ ContextItem {
   id: string
   kind: "note" | "document" | "event_ref"
   body: string                                 // for note/document; for event_ref the referenced event id
+  created_at: string                           // ISO-8601 UTC timestamp
 }
 
 ViewMemory {
@@ -317,7 +318,6 @@ Invariants:
 ```text
 Settings {
   response_preferences: ResponsePreferences
-  notification_preferences: NotificationPreferences
 }
 
 ResponsePreferences {
@@ -325,11 +325,6 @@ ResponsePreferences {
   length: "short" | "standard" | "long"
   language: string                                   // BCP-47 tag
   extra_instructions?: string
-}
-
-NotificationPreferences {
-  daily_today_card_enabled: boolean
-  daily_today_card_local_time: string                // HH:MM in user local time
 }
 ```
 

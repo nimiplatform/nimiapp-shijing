@@ -138,7 +138,7 @@ test('SJG-DATA-05: findReferencesToEvent finds view.context_items event_ref body
         anchor_subject: 'self',
         subjects: ['self'],
         time_scope: 'open_ended',
-        context_items: [{ id: 'ctx_01', kind: 'event_ref', body: 'e_target' }],
+        context_items: [{ id: 'ctx_01', kind: 'event_ref', body: 'e_target', created_at: '2026-05-25T00:00:00Z' }],
         instructions: '',
         view_memory: { summary: '', updated_at: '2026-05-25T00:00:00Z', locked: false },
         display_state: 'normal',

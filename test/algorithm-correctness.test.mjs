@@ -96,7 +96,7 @@ test('SJG-ASTRO-08: view-scoped Reading carries real instructions_hash / context
     subjects: ['self'],
     time_scope: 'rolling',
     rolling_window_days: 30,
-    context_items: [{ id: 'ci1', kind: 'note', body: 'note body' }],
+    context_items: [{ id: 'ci1', kind: 'note', body: 'note body', created_at: '2026-05-20T00:00:00Z' }],
     instructions: 'be concise',
     view_memory: { summary: 'prior summary', updated_at: '2026-05-20T00:00:00Z', locked: false },
     display_state: 'normal',
@@ -151,7 +151,10 @@ test('SJG-ASTRO-08: view-scoped Reading carries real instructions_hash / context
   }
   // Recompute to verify wiring.
   assert.equal(vs.instructions_hash, computeCanonicalHash('be concise'));
-  assert.equal(vs.context_items_hash, computeCanonicalHash([{ id: 'ci1', kind: 'note', body: 'note body' }]));
+  assert.equal(
+    vs.context_items_hash,
+    computeCanonicalHash([{ id: 'ci1', kind: 'note', body: 'note body', created_at: '2026-05-20T00:00:00Z' }]),
+  );
   assert.equal(vs.memory_summary_hash, computeCanonicalHash('prior summary'));
 });
 

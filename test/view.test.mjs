@@ -150,3 +150,23 @@ test('invalid display_state is rejected', () => {
   assert.equal(result.ok, false);
   if (!result.ok) assert.equal(result.error.code, 'view_display_state_invalid');
 });
+
+test('context item created_at is required and must be ISO-8601 UTC', () => {
+  const result = validateView(
+    baseView({
+      context_items: [{ id: 'ctx_01', kind: 'note', body: 'x', created_at: '2026-05-25T00:00:00+08:00' }],
+    }),
+  );
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.error.code, 'view_context_item_created_at_not_iso_utc');
+});
+
+test('context item body must be non-empty', () => {
+  const result = validateView(
+    baseView({
+      context_items: [{ id: 'ctx_01', kind: 'note', body: '', created_at: '2026-05-25T00:00:00Z' }],
+    }),
+  );
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.error.code, 'view_context_item_body_empty');
+});

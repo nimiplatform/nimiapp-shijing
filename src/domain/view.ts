@@ -21,6 +21,7 @@ export interface ContextItem {
   readonly id: string;
   readonly kind: ContextItemKind;
   readonly body: string;
+  readonly created_at: string;
 }
 
 export interface ViewMemory {
