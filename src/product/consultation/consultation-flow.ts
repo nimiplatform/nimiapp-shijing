@@ -44,12 +44,12 @@ export function buildConsultationContextText(input: BuildConsultationContextText
   const question = input.question.trim();
   if (!input.view) return question;
   const view = input.view;
-  const lines = [`问题：${question}`, `借用视角：${view.title}`];
+  const lines = [`问题：${question}`, `借用关注：${view.title}`];
   if (view.instructions.trim().length > 0) {
-    lines.push(`视角指示：${view.instructions.trim()}`);
+    lines.push(`关注指示：${view.instructions.trim()}`);
   }
   if (view.view_memory.summary.trim().length > 0) {
-    lines.push(`视角记忆：${view.view_memory.summary.trim()}`);
+    lines.push(`关注记忆：${view.view_memory.summary.trim()}`);
   }
   for (const item of view.context_items) {
     if (item.body.trim().length > 0) {

@@ -22,4 +22,5 @@ export * from './runtime-ai-prompt.ts';
 export * from './runtime-ai-parse.ts';
 export * from './runtime-ai-client.ts';
 export * from './runtime-ai-sdk-factory.ts';
+export * from './mock-runtime-ai-client.ts';
 export * from './generate-reading.ts';

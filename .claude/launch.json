@@ -5,8 +5,13 @@
       "name": "shijing-renderer",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["run", "dev:renderer"],
-      "cwd": "/Users/snwozy/nimiapps/nimiapp-shijing",
       "port": 1430
+    },
+    {
+      "name": "shijing-preview",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["exec", "vite", "--host", "127.0.0.1", "--port", "1431", "--strictPort"],
+      "port": 1431
     }
   ]
 }

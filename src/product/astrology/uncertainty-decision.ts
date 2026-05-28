@@ -69,7 +69,7 @@ const CAVEAT_TEXT: Readonly<Record<UncertaintyInputCode, string>> = {
   ephemeris_missing: '历法表与方法档案不一致,需重新生成',
   calculation_sex_unspecified: '大运方向所需性别未指定',
   consent_withheld: '本人未授权,解读以谨慎语气呈现',
-  view_context_sparse: '视角缺少指令与上下文资料',
+  view_context_sparse: '关注缺少指令与上下文资料',
   ai_parse_failed: 'AI 解析失败,解读未能落字',
 } as const;
 

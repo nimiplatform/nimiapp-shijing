@@ -266,11 +266,11 @@ function ReadingTechnicalDetails(props: { readonly reading: Reading; readonly sp
       </section>
 
       {summary.view_snapshot ? (
-        <section className="shijing-reading-card__section" aria-label="视角快照">
-          <h4>视角快照</h4>
+        <section className="shijing-reading-card__section" aria-label="关注快照">
+          <h4>关注快照</h4>
           <dl className="shijing-reading-card__evidence">
             <div>
-              <dt>视角</dt>
+              <dt>关注</dt>
               <dd><code>{summary.view_snapshot.view_id}</code></dd>
             </div>
             <div>

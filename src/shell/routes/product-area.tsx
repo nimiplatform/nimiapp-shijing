@@ -6,8 +6,10 @@ import { ShijingCatalogProvider } from '../../product/catalog/catalog-context.ts
 import { ShijingShell } from '../../product/shell/shijing-shell.tsx';
 import { IndexedDBPersistenceAdapter } from '../../product/persistence/indexeddb-adapter.ts';
 import { InMemoryPersistenceAdapter } from '../../product/persistence/in-memory-adapter.ts';
+import { buildMockShiJingSpace } from '../../product/dev/mock-snapshot.ts';
 import type { PersistenceClient } from '../../product/persistence/persistence-client.ts';
 import { createSdkRuntimeAiAdapter, type SdkRuntimeTextCaller } from '../../product/astrology/runtime-ai-sdk-factory.ts';
+import { MockRuntimeAiClient } from '../../product/astrology/mock-runtime-ai-client.ts';
 import type { RuntimeAiClient, RuntimeTextGenerator } from '../../product/astrology/runtime-ai-client.ts';
 import {
   createConversationChatBridge,
@@ -50,7 +52,6 @@ function buildEmptySnapshot(userId: string): ShiJingSpace {
     conversations: [],
     settings: {
       response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' },
-      notification_preferences: { daily_today_card_enabled: false, daily_today_card_local_time: '08:00' },
     },
   };
 }
@@ -84,7 +85,14 @@ function buildSdkTextCaller(): SdkRuntimeTextCaller {
   };
 }
 
+// DEV preview only: keep local renderer iteration usable without a live
+// runtime bridge while preserving the SDK-backed adapter in production.
+const USE_MOCK_RUNTIME_AI = import.meta.env?.DEV === true;
+
 function pickRuntimeAiClient(textCaller: SdkRuntimeTextCaller): RuntimeAiClient {
+  if (USE_MOCK_RUNTIME_AI) {
+    return new MockRuntimeAiClient();
+  }
   return createSdkRuntimeAiAdapter({
     modelId: SHIJING_DEFAULT_AI_MODEL_ID,
     textCaller,
@@ -111,7 +119,17 @@ export function ProductArea() {
   const user = useAppStore((s) => s.auth.user);
   const userId = user?.id ?? '';
 
-  const snapshot = useMemo(() => buildEmptySnapshot(userId), [userId]);
+  // DEV-only: seed a mocked ShiJingSpace so the 关注 / 今日 surfaces
+  // render with varied state during `pnpm run dev:renderer`. Production
+  // builds (`pnpm run build`) keep the empty snapshot — `import.meta.env.DEV`
+  // is statically `false` after Vite tree-shakes the production bundle.
+  // Persistence still wins on subsequent loads, so once the user starts
+  // editing, their real data takes over. To re-seed mocks, clear the site's
+  // IndexedDB ("ShijingSpace" DB) from devtools → Application.
+  const snapshot = useMemo(
+    () => (import.meta.env?.DEV === true ? buildMockShiJingSpace(userId) : buildEmptySnapshot(userId)),
+    [userId],
+  );
   const persistenceClient = useMemo(() => pickPersistenceClient(userId), [userId]);
   const textCaller = useMemo<SdkRuntimeTextCaller>(buildSdkTextCaller, []);
   const runtimeAiClient = useMemo(() => pickRuntimeAiClient(textCaller), [textCaller]);

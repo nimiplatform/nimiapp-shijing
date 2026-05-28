@@ -57,7 +57,7 @@ const KEY_WINDOW_LABEL_TEXT: Record<KeyWindowLabel, string> = {
 
 const TIME_WINDOW_SOURCE_LABELS: Record<ReadingTimeWindowSource, string> = {
   kind_default: '默认时间窗',
-  view_time_scope: '视角时间窗',
+  view_time_scope: '关注时间窗',
   user_selected: '手动选择',
   ad_hoc_question: '提问时间窗',
 };
@@ -73,7 +73,7 @@ const UNCERTAINTY_LABELS: Record<UncertaintyInputCode, string> = {
   ephemeris_missing: '缺少节气表证据，干支边界无法确认',
   calculation_sex_unspecified: '大运顺逆所需性别未指定',
   consent_withheld: '相关人物未明确同意，仅作有限参考',
-  view_context_sparse: '视角上下文较少，解读会偏保守',
+  view_context_sparse: '关注上下文较少，解读会偏保守',
   ai_parse_failed: 'AI 返回未通过结构解析',
 };
 

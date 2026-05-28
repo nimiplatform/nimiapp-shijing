@@ -14,53 +14,16 @@ import { ShijingStoreProvider } from './product/state/shijing-store.tsx';
 import { ShijingCatalogProvider } from './product/catalog/catalog-context.tsx';
 import { ShijingShell } from './product/shell/shijing-shell.tsx';
 import { InMemoryPersistenceAdapter } from './product/persistence/in-memory-adapter.ts';
-import { NoOpRuntimeAiClient } from './product/astrology/runtime-ai-client.ts';
-import type { ShiJingSpace } from './domain/shijing-space.ts';
-import type { NatalInputs, RawBirthInput } from './domain/person.ts';
+import { MockRuntimeAiClient } from './product/astrology/mock-runtime-ai-client.ts';
+import { buildMockShiJingSpace } from './product/dev/mock-snapshot.ts';
 import { i18n } from './shell/i18n/index.js';
 import './styles.css';
 
-function buildRawBirth(): RawBirthInput {
-  return { calendar_system: 'gregorian', local_date_text: '1995-05-12' };
-}
-
-function buildNatal(): NatalInputs {
-  return {
-    raw_birth_input: buildRawBirth(),
-    birth_datetime_utc: '1995-05-12T01:30:00Z',
-    birth_precision: 'exact',
-    calendar_system: 'gregorian',
-    birth_location: {
-      latitude: 39.9042,
-      longitude: 116.4074,
-      iana_time_zone: 'Asia/Shanghai',
-      place_name: '北京',
-    },
-    calculation_sex: 'unspecified',
-  };
-}
-
-function buildSnapshot(userId: string): ShiJingSpace {
-  return {
-    user_id: userId,
-    self_subject: { natal_inputs: buildNatal() },
-    persons: [],
-    relations: [],
-    events: [],
-    views: [],
-    readings: [],
-    conversations: [],
-    settings: {
-      response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' },
-      notification_preferences: { daily_today_card_enabled: false, daily_today_card_local_time: '08:00' },
-    },
-  };
-}
-
 function DevPreviewProductArea() {
-  const snapshot = React.useMemo(() => buildSnapshot('dev-preview-user'), []);
+  const snapshot = React.useMemo(() => buildMockShiJingSpace('dev-preview-user'), []);
   const persistence = React.useMemo(() => new InMemoryPersistenceAdapter(), []);
-  const aiClient = React.useMemo(() => new NoOpRuntimeAiClient(), []);
+  // Preview mock — real Nimi runtime AI adapter not yet wired here.
+  const aiClient = React.useMemo(() => new MockRuntimeAiClient(), []);
   return (
     <ShijingCatalogProvider>
       <ShijingStoreProvider snapshot={snapshot} persistenceClient={persistence} runtimeAiClient={aiClient}>

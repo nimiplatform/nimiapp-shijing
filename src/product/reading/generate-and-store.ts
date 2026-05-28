@@ -10,7 +10,11 @@ import { subjectRefKey } from '../../domain/subject-ref.ts';
 import type { View } from '../../domain/view.ts';
 import { generateReading, type GenerateReadingFailure } from '../astrology/generate-reading.ts';
 import type { RuntimeAiClient } from '../astrology/runtime-ai-client.ts';
-import { subjectReadingReadiness, type NatalReadinessReason } from '../subjects/natal-readiness.ts';
+import {
+  natalReadinessSeverity,
+  subjectReadingReadiness,
+  type NatalReadinessReason,
+} from '../subjects/natal-readiness.ts';
 
 export interface GenerateAndStoreInput {
   readonly id: string;
@@ -24,6 +28,13 @@ export interface GenerateAndStoreInput {
   readonly view?: View;
   readonly ad_hoc_context_text?: string;
   readonly runtime_ai_client?: RuntimeAiClient;
+  // When true, warning-level readiness issues (precision/location/sex
+  // gaps that the deterministic pipeline can still run with caveats) do
+  // not block generation. Blocker-level issues (subject missing,
+  // validator failure, scaffold defaults) still refuse. The resulting
+  // Reading carries the corresponding uncertainty caveats via the
+  // deriveUncertainty stage, so consumers see the gap visibly.
+  readonly allow_warnings?: boolean;
 }
 
 export type GenerateAndStoreFailure =
@@ -52,15 +63,18 @@ export async function generateReadingForStorage(
       ...(input.view ? { view: input.view } : {}),
     });
     if (!readiness.ok) {
-      return {
-        ok: false,
-        error: {
-          kind: 'input_readiness_failed',
-          subject,
-          reason: readiness.reason,
-          detail: `${subjectRefKey(subject)} / ${readiness.detail}`,
-        },
-      };
+      const severity = natalReadinessSeverity(readiness.reason);
+      if (severity === 'blocker' || !input.allow_warnings) {
+        return {
+          ok: false,
+          error: {
+            kind: 'input_readiness_failed',
+            subject,
+            reason: readiness.reason,
+            detail: `${subjectRefKey(subject)} / ${readiness.detail}`,
+          },
+        };
+      }
     }
   }
   const result = await generateReading(
