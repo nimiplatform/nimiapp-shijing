@@ -987,6 +987,17 @@ body {
   align-self: flex-end;
 }
 
+/* Required-field marker. The asterisk produced by `decoratedLabel`
+ * in src/product/inputs/natal-inputs-fields.tsx is rendered in its
+ * own <span> so it can carry a distinct color regardless of the
+ * surrounding label's theme. Soft red — readable as "required" by
+ * convention but quiet enough to not compete with primary buttons
+ * or focus rings. */
+.shijing-required-marker {
+  color: #dc2626;
+  font-weight: 500;
+}
+
 /* === Kit field neutralization =====================================
  *
  * The :where(.shijing-tab, …) form rules above paint raw form
@@ -2953,74 +2964,12 @@ body {
   color: var(--shijing-me-warn-strong);
 }
 
-/* Precision-confirmation callout — amber tone, low contrast, single
- * row. Title + body stack on the left, "去确认" button anchored
- * right. Border-left accent stripe gives it a "soft alert" feel
- * without becoming a true error banner. */
-
-.shijing-me-precision-callout {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 12px;
-  background: var(--shijing-me-warn-soft);
-  border: 1px solid color-mix(in srgb, var(--shijing-me-warn) 16%, transparent);
-}
-
-.shijing-me-precision-callout__icon {
-  display: inline-flex;
-  width: 28px;
-  height: 28px;
-  align-items: center;
-  justify-content: center;
-  color: var(--shijing-me-warn);
-  flex-shrink: 0;
-}
-
-.shijing-me-precision-callout__body {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.shijing-me-precision-callout__title {
-  margin: 0;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--shijing-me-warn-strong);
-}
-
-.shijing-me-precision-callout__copy {
-  margin: 0;
-  font-size: 12.5px;
-  color: var(--shijing-text-secondary);
-  line-height: 1.55;
-}
-
-.shijing-me-precision-callout__action {
-  background: var(--shijing-me-warn);
-  color: white;
-  border: none;
-  padding: 7px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s ease;
-}
-
-.shijing-me-precision-callout__action:hover:not(:disabled) {
-  background: var(--shijing-me-warn-strong);
-}
-
-.shijing-me-precision-callout__action:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--shijing-me-warn) 30%, transparent);
-}
+/* (The amber precision-confirmation callout that lived here was
+ * retired — the same advisory is now a single quiet line directly
+ * under the 时间记忆程度 select in the editor form. Showing it next
+ * to the control that produces it reads as inline guidance rather
+ * than after-the-fact criticism, and the page-level status badge
+ * still surfaces "可使用 · 时间待确认" at a glance.) */
 
 /* "排盘技术详情" disclosure — muted, secondary affordance. */
 
@@ -3265,9 +3214,17 @@ body {
  * keeps content readable now lives on the body itself
  * (.shijing-natal-overlay__body's padding-right) — the scrollbar
  * then sits flush with the panel's rounded right edge instead of
- * floating mid-air 32px in. */
+ * floating mid-air 32px in.
+ *
+ * The left padding is split 26 + 6: 26px on the wrapper, 6px on
+ * the body. Net content position from the panel left is still
+ * 32px, but the body's own 6px left padding gives the kit
+ * focus-within ring (which renders as a box-shadow extending
+ * outside the field box) room to breathe — without it, the ring's
+ * left edge gets clipped by the body's overflow box (overflow-y:
+ * auto forces overflow-x to a non-visible value per CSS spec). */
 .shijing-natal-overlay__panel .nimi-overlay-content {
-  padding: 0 0 28px 32px;
+  padding: 0 0 28px 26px;
 }
 
 .shijing-natal-overlay__body {
@@ -3278,11 +3235,11 @@ body {
   max-width: none;
   max-height: min(72vh, 680px);
   overflow-y: auto;
-  /* Right padding holds the form content 32px clear of the panel
-   * edge while the (very thin) scrollbar sits flush with the panel
-   * right inside that gutter. Bottom padding gives the last input
-   * a little breathing room before the scroll bottom. */
-  padding: 0 32px 4px 0;
+  /* Right padding (32px) keeps content clear of the scrollbar.
+   * Left padding (6px) is the focus-ring breathing room described
+   * above. Bottom padding gives the last input a little room
+   * before the scroll bottom. */
+  padding: 0 32px 4px 6px;
   /* Scrollbar styling mirrors .shijing-consultation-history — the
    * project's canonical "quiet scroll" pattern. No
    * scrollbar-gutter: stable so the scrollbar only appears when the
@@ -3367,6 +3324,25 @@ body {
   gap: 12px;
 }
 
+/* Inline advisory under 时间记忆程度 when value === 'unknown'.
+ * Single line, amber tone so it registers as a reminder rather than
+ * generic helper copy. Color matches the page-level status badge's
+ * "attention" tone so the palette stays consistent. */
+.shijing-natal-overlay__panel .shijing-natural-birth__precision-hint {
+  margin: -4px 0 0;
+  font-size: 12px;
+  line-height: 1.55;
+  font-weight: 500;
+  color: #92400e;
+  letter-spacing: 0.01em;
+}
+
+/* (The earlier "leap-hint" copy was retired — leap months now show
+ * up as their own option in the month dropdown ("闰四月" / "闰五月"
+ * etc.) driven by tyme4ts in natural-birth-editor.tsx. The
+ * "是否闰月" question is fully absorbed into the month dropdown,
+ * so there's no longer a clarifying hint to render.) */
+
 /* --- Field shell tuning ---
  * The wrapping label (kit TextField / TextareaField outer label)
  * gets a clean white background + soft border, with the emerald
@@ -3388,6 +3364,50 @@ body {
 
 .shijing-natal-overlay__panel .nimi-field-shell > label:not(.nimi-field-shell__label):hover {
   border-color: color-mix(in srgb, #3FC6A0 28%, #E5E7EB);
+}
+
+/* Date field — wraps kit DatePicker. DateField intentionally sits
+ * outside FieldShell (DatePicker has its own input visuals; the
+ * `.nimi-field-shell input` reset would zero them out). The
+ * outermost div + label here are hand-rolled to match the
+ * FieldShell caption look, and the input inside DatePicker is
+ * normalised to 44px / 14px-radius / #E5E7EB border so it sits at
+ * the same visual altitude as TextField / SelectField siblings. */
+.shijing-natal-overlay__panel .shijing-date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.shijing-natal-overlay__panel .shijing-date-field__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1F2933;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.shijing-natal-overlay__panel .shijing-date-field input[type="text"] {
+  border-radius: 14px;
+  border: 1px solid #E5E7EB;
+  min-height: 44px;
+  /* Right padding leaves room for the kit-rendered calendar icon */
+  padding: 0 38px 0 14px;
+  font-size: 14px;
+  color: #1F2933;
+  background: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.shijing-natal-overlay__panel .shijing-date-field input[type="text"]:hover {
+  border-color: color-mix(in srgb, #3FC6A0 28%, #E5E7EB);
+}
+
+.shijing-natal-overlay__panel .shijing-date-field input[type="text"]:focus {
+  outline: none;
+  border-color: #3FC6A0;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #3FC6A0 18%, transparent);
 }
 
 /* Select trigger (Radix button-rendered <button role="combobox">):
@@ -5879,6 +5899,76 @@ body {
 
 .shijing-view-editor__head .shijing-tab__eyebrow {
   margin: 0;
+}
+
+.shijing-view-editor__entry-mode {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.shijing-view-editor .shijing-view-editor__entry-mode button {
+  flex: 1 1 0;
+  padding: 14px 18px;
+  background: var(--shijing-surface-card-quiet);
+  color: var(--shijing-text-secondary);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-lg, 14px);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.shijing-view-editor .shijing-view-editor__entry-mode button:hover:not([data-active="true"]) {
+  color: var(--shijing-text-primary);
+  background: color-mix(in srgb, var(--shijing-brand-primary) 5%, var(--shijing-surface-card-quiet));
+}
+
+.shijing-view-editor .shijing-view-editor__entry-mode button[data-active="true"] {
+  background: color-mix(in srgb, var(--shijing-brand-primary) 14%, var(--shijing-surface-card));
+  border-color: color-mix(in srgb, var(--shijing-brand-primary) 45%, transparent);
+  color: var(--shijing-text-primary);
+}
+
+.shijing-view-editor__person-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-view-editor__pick-label {
+  font-size: 13px;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-view-editor__person-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shijing-view-editor .shijing-view-editor__person-chips button {
+  padding: 8px 16px;
+  background: var(--shijing-surface-card-quiet);
+  color: var(--shijing-text-secondary);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.shijing-view-editor .shijing-view-editor__person-chips button:hover:not([data-active="true"]) {
+  color: var(--shijing-text-primary);
+  background: color-mix(in srgb, var(--shijing-brand-primary) 6%, var(--shijing-surface-card-quiet));
+}
+
+.shijing-view-editor .shijing-view-editor__person-chips button[data-active="true"] {
+  background: color-mix(in srgb, var(--shijing-brand-primary) 18%, var(--shijing-surface-card));
+  border-color: color-mix(in srgb, var(--shijing-brand-primary) 50%, transparent);
+  color: var(--shijing-text-primary);
 }
 
 .shijing-view-editor__template-row {

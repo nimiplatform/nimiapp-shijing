@@ -2,6 +2,13 @@
 // the previous modal step-2 form.  Uses the same viewDraftReducer +
 // validators as before; only the layout was redesigned around the
 // workspace hero, so users stay oriented while creating or editing.
+//
+// 2026-Q2 binary-entry simplification — new-关注 creation no longer asks
+// for a time range up front.  Users pick between 「关注一个人」(single-
+// person follow) and 「关注一件事」(a topic).  Time-scope, instructions
+// and other internal-shape fields live in 「更多选项」; the deterministic
+// pipeline still uses View.time_scope (default open_ended) under the
+// hood.
 
 import { useEffect, useMemo, useReducer, useState, type FormEvent } from 'react';
 
@@ -37,6 +44,8 @@ export interface ViewEditorPaneProps {
   readonly onSaved: (view: View) => void;
 }
 
+type CreateEntryMode = 'person' | 'matter';
+
 function browserTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 }
@@ -64,6 +73,7 @@ export function ViewEditorPane(props: ViewEditorPaneProps) {
     | { kind: 'invalid_view'; code: string }
     | { kind: 'invalid_space'; code: string }
   >({ kind: 'idle' });
+  const [entryMode, setEntryMode] = useState<CreateEntryMode>('person');
 
   const roster = useMemo<readonly SubjectRosterEntry[]>(
     () => buildSubjectRoster(state.snapshot),
@@ -98,9 +108,25 @@ export function ViewEditorPane(props: ViewEditorPaneProps) {
             default_instructions: template.default_instructions,
           },
         });
+        // A template implies the user is in matter mode (templates are
+        // matter-shaped: "Q3 团队冲刺" / "春节探亲" / etc.).
+        setEntryMode('matter');
       }
     }
   }, [props.mode, state.snapshot, catalog, roster]);
+
+  // Person mode — title mirrors the picked person's display name so the
+  // user never has to think about "what to call this".  We only sync
+  // when the value would actually change so the reducer's identity-
+  // checks short-circuit re-renders.
+  useEffect(() => {
+    if (isEdit) return;
+    if (entryMode !== 'person') return;
+    const entry = findRosterEntry(roster, draft.anchor_key);
+    if (entry && draft.title !== entry.label) {
+      draftDispatch({ type: 'set_title', value: entry.label });
+    }
+  }, [draft.anchor_key, draft.title, entryMode, isEdit, roster]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -114,10 +140,15 @@ export function ViewEditorPane(props: ViewEditorPaneProps) {
       setSubmission({ kind: 'invalid_draft', code: 'view_anchor_missing' });
       return;
     }
-    const subjects = draft.selected_subject_keys
-      .map((key) => findRosterEntry(roster, key))
-      .filter((entry): entry is SubjectRosterEntry => Boolean(entry))
-      .map((entry) => entry.ref);
+    // Person mode is single-subject by definition — the picked person
+    // is the entire scope.  Matter mode + edit mode keep the explicit
+    // subjects roster the user managed in the form.
+    const subjects = !isEdit && entryMode === 'person'
+      ? [anchorEntry.ref]
+      : draft.selected_subject_keys
+          .map((key) => findRosterEntry(roster, key))
+          .filter((entry): entry is SubjectRosterEntry => Boolean(entry))
+          .map((entry) => entry.ref);
     const view = buildViewFromDraft(draft, {
       anchor: anchorEntry.ref,
       subjects,
@@ -169,54 +200,154 @@ export function ViewEditorPane(props: ViewEditorPaneProps) {
     <form className="shijing-view-editor" onSubmit={onSubmit} noValidate>
       <header className="shijing-view-editor__head">
         <p className="shijing-tab__eyebrow">{eyebrow}</p>
+
         {!isEdit ? (
           <div
-            className="shijing-view-editor__template-row"
-            role="group"
-            aria-label="用模板预填"
+            className="shijing-view-editor__entry-mode"
+            role="radiogroup"
+            aria-label="新关注类型"
           >
-            <span>用模板预填</span>
-            <div className="shijing-view-editor__template-chips">
-              {catalog.view_templates.map((template) => (
+            <button
+              type="button"
+              role="radio"
+              aria-checked={entryMode === 'person'}
+              data-active={entryMode === 'person' ? 'true' : 'false'}
+              onClick={() => setEntryMode('person')}
+            >
+              关注一个人
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={entryMode === 'matter'}
+              data-active={entryMode === 'matter' ? 'true' : 'false'}
+              onClick={() => setEntryMode('matter')}
+            >
+              关注一件事
+            </button>
+          </div>
+        ) : null}
+
+        {!isEdit && entryMode === 'person' ? (
+          <div
+            className="shijing-view-editor__person-pick"
+            role="group"
+            aria-label="选择关注的人物"
+          >
+            <span className="shijing-view-editor__pick-label">你想关注谁？</span>
+            <div className="shijing-view-editor__person-chips" role="radiogroup">
+              {roster.map((entry) => (
                 <button
-                  key={template.id}
+                  key={entry.key}
                   type="button"
-                  data-active={appliedTemplateId === template.id ? 'true' : 'false'}
-                  onClick={() => applyTemplate(template.id)}
+                  role="radio"
+                  aria-checked={draft.anchor_key === entry.key}
+                  data-active={draft.anchor_key === entry.key ? 'true' : 'false'}
+                  onClick={() => draftDispatch({ type: 'set_anchor_key', value: entry.key })}
                 >
-                  {template.title}
+                  {entry.label}
                 </button>
               ))}
             </div>
           </div>
         ) : null}
-        <input
-          id="view-editor-title"
-          className="shijing-view-editor__title"
-          type="text"
-          value={draft.title}
-          required
-          placeholder="给这个关注起个名字…"
-          aria-label={FIELD_LABELS.view_title}
-          onChange={(event) => draftDispatch({ type: 'set_title', value: event.target.value })}
-        />
-        <div className="shijing-view-editor__meta-row" role="group" aria-label="锚点与时间">
-          <label className="shijing-view-editor__field shijing-view-editor__field--inline">
-            <span>{FIELD_LABELS.anchor_subject}</span>
-            <select
-              value={draft.anchor_key}
-              required
-              onChange={(event) => draftDispatch({ type: 'set_anchor_key', value: event.target.value })}
+
+        {!isEdit && entryMode === 'matter' ? (
+          <>
+            <div
+              className="shijing-view-editor__template-row"
+              role="group"
+              aria-label="用模板预填"
             >
-              <option value="" disabled>请选择</option>
-              {roster.map((entry) => (
-                <option key={entry.key} value={entry.key}>{entry.label}</option>
-              ))}
-            </select>
-          </label>
-          <div className="shijing-view-editor__field shijing-view-editor__field--inline">
+              <span>用模板预填</span>
+              <div className="shijing-view-editor__template-chips">
+                {catalog.view_templates.map((template) => (
+                  <button
+                    key={template.id}
+                    type="button"
+                    data-active={appliedTemplateId === template.id ? 'true' : 'false'}
+                    onClick={() => applyTemplate(template.id)}
+                  >
+                    {template.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <input
+              id="view-editor-title"
+              className="shijing-view-editor__title"
+              type="text"
+              value={draft.title}
+              required
+              placeholder="给这件事起个名字…"
+              aria-label={FIELD_LABELS.view_title}
+              onChange={(event) => draftDispatch({ type: 'set_title', value: event.target.value })}
+            />
+          </>
+        ) : null}
+
+        {isEdit ? (
+          <>
+            <input
+              id="view-editor-title"
+              className="shijing-view-editor__title"
+              type="text"
+              value={draft.title}
+              required
+              placeholder="给这个关注起个名字…"
+              aria-label={FIELD_LABELS.view_title}
+              onChange={(event) => draftDispatch({ type: 'set_title', value: event.target.value })}
+            />
+            <div className="shijing-view-editor__meta-row" role="group" aria-label="锚定">
+              <label className="shijing-view-editor__field shijing-view-editor__field--inline">
+                <span>{FIELD_LABELS.anchor_subject}</span>
+                <select
+                  value={draft.anchor_key}
+                  required
+                  onChange={(event) => draftDispatch({ type: 'set_anchor_key', value: event.target.value })}
+                >
+                  <option value="" disabled>请选择</option>
+                  {roster.map((entry) => (
+                    <option key={entry.key} value={entry.key}>{entry.label}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </>
+        ) : null}
+      </header>
+
+      {(isEdit || entryMode === 'matter') ? (
+        <section className="shijing-view-editor__card">
+          <div className="shijing-view-editor__field" role="group" aria-labelledby="view-editor-subjects-label">
+            <span id="view-editor-subjects-label">{FIELD_LABELS.subjects}（锚定人物自动包含）</span>
+            <div className="shijing-view-editor__subjects">
+              {roster.map((entry) => {
+                const isAnchor = entry.key === draft.anchor_key;
+                const checked = draft.selected_subject_keys.includes(entry.key) || isAnchor;
+                return (
+                  <label key={entry.key} data-checked={checked ? 'true' : 'false'} data-anchor={isAnchor ? 'true' : 'false'}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={isAnchor}
+                      onChange={() => draftDispatch({ type: 'toggle_subject_key', value: entry.key })}
+                    />
+                    <span>{entry.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      <details className="shijing-view-editor__advanced">
+        <summary>更多选项</summary>
+        <div className="shijing-view-editor__advanced-panel">
+          <div className="shijing-view-editor__field" role="group" aria-label={FIELD_LABELS.time_scope}>
             <span>{FIELD_LABELS.time_scope}</span>
-            <div className="shijing-view-editor__chips" role="group" aria-label={FIELD_LABELS.time_scope}>
+            <div className="shijing-view-editor__chips">
               {TIME_SCOPES.map((scope) => (
                 <button
                   key={scope}
@@ -229,69 +360,40 @@ export function ViewEditorPane(props: ViewEditorPaneProps) {
               ))}
             </div>
           </div>
-        </div>
-        {draft.time_scope === 'bounded' ? (
-          <div className="shijing-view-editor__bounded">
-            <label className="shijing-view-editor__field">
-              <span>{FIELD_LABELS.bounded_start}</span>
+          {draft.time_scope === 'bounded' ? (
+            <div className="shijing-view-editor__bounded">
+              <label className="shijing-view-editor__field">
+                <span>{FIELD_LABELS.bounded_start}</span>
+                <input
+                  type="date"
+                  value={draft.bounded_start_date}
+                  required
+                  onChange={(event) => draftDispatch({ type: 'set_bounded_start_date', value: event.target.value })}
+                />
+              </label>
+              <label className="shijing-view-editor__field">
+                <span>{FIELD_LABELS.bounded_end}</span>
+                <input
+                  type="date"
+                  value={draft.bounded_end_date}
+                  required
+                  onChange={(event) => draftDispatch({ type: 'set_bounded_end_date', value: event.target.value })}
+                />
+              </label>
+            </div>
+          ) : null}
+          {draft.time_scope === 'rolling' ? (
+            <label className="shijing-view-editor__field shijing-view-editor__field--narrow">
+              <span>{FIELD_LABELS.rolling_window_days}</span>
               <input
-                type="date"
-                value={draft.bounded_start_date}
+                type="text"
+                inputMode="numeric"
+                value={draft.rolling_window_days_text}
                 required
-                onChange={(event) => draftDispatch({ type: 'set_bounded_start_date', value: event.target.value })}
+                onChange={(event) => draftDispatch({ type: 'set_rolling_window_days_text', value: event.target.value })}
               />
             </label>
-            <label className="shijing-view-editor__field">
-              <span>{FIELD_LABELS.bounded_end}</span>
-              <input
-                type="date"
-                value={draft.bounded_end_date}
-                required
-                onChange={(event) => draftDispatch({ type: 'set_bounded_end_date', value: event.target.value })}
-              />
-            </label>
-          </div>
-        ) : null}
-        {draft.time_scope === 'rolling' ? (
-          <label className="shijing-view-editor__field shijing-view-editor__field--narrow">
-            <span>{FIELD_LABELS.rolling_window_days}</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={draft.rolling_window_days_text}
-              required
-              onChange={(event) => draftDispatch({ type: 'set_rolling_window_days_text', value: event.target.value })}
-            />
-          </label>
-        ) : null}
-      </header>
-
-      <section className="shijing-view-editor__card">
-        <div className="shijing-view-editor__field" role="group" aria-labelledby="view-editor-subjects-label">
-          <span id="view-editor-subjects-label">{FIELD_LABELS.subjects}（锚定人物自动包含）</span>
-          <div className="shijing-view-editor__subjects">
-            {roster.map((entry) => {
-              const isAnchor = entry.key === draft.anchor_key;
-              const checked = draft.selected_subject_keys.includes(entry.key) || isAnchor;
-              return (
-                <label key={entry.key} data-checked={checked ? 'true' : 'false'} data-anchor={isAnchor ? 'true' : 'false'}>
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    disabled={isAnchor}
-                    onChange={() => draftDispatch({ type: 'toggle_subject_key', value: entry.key })}
-                  />
-                  <span>{entry.label}</span>
-                </label>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <details className="shijing-view-editor__advanced">
-        <summary>更多选项</summary>
-        <div className="shijing-view-editor__advanced-panel">
+          ) : null}
           <label className="shijing-view-editor__field" htmlFor="view-editor-instructions">
             <span>{FIELD_LABELS.instructions}</span>
             <textarea

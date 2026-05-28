@@ -82,7 +82,6 @@ export function MeNatalSummary(props: MeNatalSummaryProps) {
   const raw = inputs.raw_birth_input;
   const loc = inputs.birth_location;
 
-  const showPrecisionCallout = !isScaffold && inputs.birth_precision === 'unknown';
   const tzDisplay = summary.time_zone_resolved
     ? loc.iana_time_zone
     : '尚未识别';
@@ -153,32 +152,14 @@ export function MeNatalSummary(props: MeNatalSummaryProps) {
         </dl>
       )}
 
-      {showPrecisionCallout ? (
-        <aside
-          className="shijing-me-precision-callout"
-          role="note"
-          aria-label="出生时间准确度待确认"
-        >
-          <span className="shijing-me-precision-callout__icon" aria-hidden="true">
-            <MeIcon name="alert" size={18} />
-          </span>
-          <div className="shijing-me-precision-callout__body">
-            <p className="shijing-me-precision-callout__title">
-              出生时间准确度待确认
-            </p>
-            <p className="shijing-me-precision-callout__copy">
-              如果出生时间只是大概时间，部分细节分析可能会有偏差。
-            </p>
-          </div>
-          <button
-            type="button"
-            className="shijing-me-precision-callout__action"
-            onClick={props.onOpenNatalEditor}
-          >
-            去确认
-          </button>
-        </aside>
-      ) : null}
+      {/* The precision-confirmation callout that used to live here was
+        * moved into the editor itself, rendered as a single quiet hint
+        * line directly under the "时间记忆程度" select. Showing the
+        * advisory next to the control that produces it reads as
+        * inline guidance rather than after-the-fact criticism — and
+        * the page-level status badge ("可使用 · 时间待确认") already
+        * surfaces the same signal at a glance for users who haven't
+        * opened the editor yet. */}
 
       <details className="shijing-me-card__details shijing-me-card__details--quiet">
         <summary>

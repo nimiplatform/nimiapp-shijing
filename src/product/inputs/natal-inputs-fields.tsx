@@ -1,23 +1,34 @@
 // Wave-7 — small field components for the NatalInputs editor.
 //
 // Wave-N (kit form pass): the external API is unchanged
-// (TextField / SelectField / LeapMonthCheckbox keep their props
-// shape), but the internals now compose kit primitives —
-// `FieldShell` for the labeled wrapper, kit's `TextField` for the
-// styled input, kit's `SelectField` for the dropdown. Every Me
-// overlay (NaturalBirthEditor / PersonForm / RelationForm)
-// inherits the kit field look automatically; SettingsForm migrates
-// separately because its layout was hand-rolled.
+// (TextField / SelectField keep their props shape), but the
+// internals now compose kit primitives — `FieldShell` for the
+// labeled wrapper, kit's `TextField` for the styled input, kit's
+// `SelectField` for the dropdown. Every Me overlay
+// (NaturalBirthEditor / PersonForm / RelationForm) inherits the
+// kit field look automatically; SettingsForm migrates separately
+// because its layout was hand-rolled.
+//
+// Wave-N (lunar pickers): `LeapMonthCheckbox` was retired in favour
+// of a tyme4ts-driven cascading month select that exposes "闰X月"
+// as a distinct option — see `lunarMonthOptionsFor` /
+// `lunarDayOptionsFor` below. Those helpers are used by
+// `NaturalBirthEditor`'s lunar branch directly so the year/month/
+// day selects stay tightly coupled.
 //
 // Each component is still dumb-by-design: it reads `value` + emits
 // `onChange`, no validation, no fetch, no SDK. NaturalBirthDraft
 // (and its sibling drafts) own state.
 
+import { Fragment, type ReactNode } from 'react';
 import {
+  DatePicker as KitDatePicker,
   FieldShell,
   TextField as KitTextField,
   SelectField as KitSelectField,
+  formatDateValue,
 } from '@nimiplatform/kit/ui';
+import { LunarMonth, LunarYear } from 'tyme4ts';
 
 import {
   BIRTH_PRECISIONS,
@@ -25,11 +36,27 @@ import {
   CALENDAR_SYSTEMS,
   CULTURAL_MARKERS,
 } from '../../domain/person.ts';
-import { FIELD_LABELS, LEAP_MONTH_LABELS } from '../i18n/copy.ts';
+import { FIELD_LABELS } from '../i18n/copy.ts';
 
-function decoratedLabel(label: string, required?: boolean): string {
-  return required ? `${label} *` : label;
+// Compose a field label with the required asterisk wrapped in a
+// dedicated span so CSS can color it independently of the label
+// text. aria-hidden because the real semantic "required" signal is
+// the `required` HTML attribute on the input itself — the asterisk
+// is purely visual.
+export function decoratedLabel(label: ReactNode, required?: boolean): ReactNode {
+  if (!required) return label;
+  return (
+    <Fragment>
+      {label}
+      <span className="shijing-required-marker" aria-hidden="true"> *</span>
+    </Fragment>
+  );
 }
+
+// Birth dates can't be in the future. Computed once per module load —
+// one-day drift in a long-running session is acceptable for a birth-
+// date max.
+const TODAY_ISO = formatDateValue(new Date());
 
 export interface TextFieldProps {
   readonly id: string;
@@ -90,32 +117,126 @@ export function SelectField<T extends string>(props: SelectFieldProps<T>) {
   );
 }
 
-export interface LeapMonthCheckboxProps {
+export interface DateFieldProps {
   readonly id: string;
-  readonly value: boolean | null;
-  readonly onChange: (value: boolean) => void;
+  readonly label: string;
+  readonly value: string;       // ISO YYYY-MM-DD
+  readonly required?: boolean;
+  readonly onChange: (value: string) => void;
 }
 
-export function LeapMonthCheckbox(props: LeapMonthCheckboxProps) {
-  const value = props.value === null ? 'unanswered' : props.value ? 'leap' : 'normal';
+// Calendar date input — kit `DatePicker` inside a hand-rolled
+// label+wrapper instead of FieldShell. Reason: kit DatePicker
+// renders its own <input> with its own visuals (rounded-2xl, kit
+// field tokens), and our `.nimi-field-shell input` reset rule
+// (which exists to neutralise the project-scoped form CSS for kit
+// TextField / SelectField / TextareaField) would zero out the
+// DatePicker's border / radius / padding too. Standing it outside
+// FieldShell lets DatePicker keep its own intentional chrome; CSS
+// in the .shijing-natal-overlay__panel scope normalises the radius
+// + height to match the surrounding fields.
+export function DateField(props: DateFieldProps) {
   return (
-    <FieldShell label={`${FIELD_LABELS.lunar_is_leap_month} *`}>
-      <KitSelectField
-        id={props.id}
-        value={value}
-        required
-        options={[
-          { value: 'unanswered', label: LEAP_MONTH_LABELS.unanswered },
-          { value: 'normal', label: LEAP_MONTH_LABELS.normal },
-          { value: 'leap', label: LEAP_MONTH_LABELS.leap },
-        ]}
-        onValueChange={(next) => {
-          if (next === 'leap') props.onChange(true);
-          else if (next === 'normal') props.onChange(false);
-        }}
+    <div className="shijing-date-field">
+      <label className="shijing-date-field__label" htmlFor={props.id}>
+        {decoratedLabel(props.label, props.required)}
+      </label>
+      <KitDatePicker
+        value={props.value}
+        onChange={props.onChange}
+        maxDate={TODAY_ISO}
       />
-    </FieldShell>
+    </div>
   );
+}
+
+// === Lunar (农历) cascading-select helpers =========================
+//
+// tyme4ts encodes leap lunar months by NEGATING the month number when
+// passed to `LunarMonth.fromYm(year, month)` — see
+// canonicalize-natal-inputs.ts. We mirror that contract in the UI
+// layer by encoding select-option values as:
+//
+//   "5"   →  五月    (normal)
+//   "L5"  →  闰五月  (leap)
+//
+// The "L" prefix collapses two pieces of draft state
+// (`lunar_month_text` + `lunar_is_leap_month`) into a single select
+// value, then the editor decodes it back on change. Tyme4ts's
+// `LunarMonth.getName()` provides ready-made Chinese labels ("正月" /
+// "闰四月" / "腊月" etc) so we don't have to format month names.
+
+export interface LunarSelectOption {
+  readonly value: string;
+  readonly label: string;
+}
+
+// Birth records can't be in the future; cap year range at "now".
+// tyme4ts ships lunar tables back to ~1900 so the lower bound is the
+// table coverage (years before that throw on `getMonths()`).
+export const LUNAR_YEAR_MIN = 1900;
+export function lunarYearMax(): number {
+  return new Date().getFullYear();
+}
+
+function parseLunarYear(yearText: string): number | null {
+  const y = Number.parseInt(yearText.trim(), 10);
+  if (!Number.isInteger(y)) return null;
+  if (y < LUNAR_YEAR_MIN || y > lunarYearMax()) return null;
+  return y;
+}
+
+export function lunarMonthOptionsFor(yearText: string): readonly LunarSelectOption[] {
+  const year = parseLunarYear(yearText);
+  if (year === null) return [];
+  try {
+    return LunarYear.fromYear(year).getMonths().map((m) => {
+      const num = Math.abs(m.getMonthWithLeap());
+      return {
+        value: m.isLeap() ? `L${num}` : String(num),
+        label: m.getName(),
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+export function lunarDayOptionsFor(
+  yearText: string,
+  monthText: string,
+  isLeap: boolean,
+): readonly LunarSelectOption[] {
+  const year = parseLunarYear(yearText);
+  const month = Number.parseInt(monthText.trim(), 10);
+  if (year === null || !Number.isInteger(month) || month < 1 || month > 12) return [];
+  try {
+    const lm = LunarMonth.fromYm(year, isLeap ? -month : month);
+    return lm.getDays().map((d, i) => ({
+      value: String(i + 1),
+      label: d.getName(),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/** Compose draft (monthText + isLeap) → select value ("5" or "L5"). */
+export function encodeLunarMonthSelectValue(
+  monthText: string,
+  isLeap: boolean | null,
+): string {
+  if (!monthText.trim()) return '';
+  return isLeap ? `L${monthText.trim()}` : monthText.trim();
+}
+
+/** Decode select value → { monthText, isLeap } for dispatch. */
+export function decodeLunarMonthSelectValue(
+  value: string,
+): { monthText: string; isLeap: boolean } {
+  if (!value) return { monthText: '', isLeap: false };
+  if (value.startsWith('L')) return { monthText: value.slice(1), isLeap: true };
+  return { monthText: value, isLeap: false };
 }
 
 export const CALENDAR_OPTIONS = CALENDAR_SYSTEMS;
