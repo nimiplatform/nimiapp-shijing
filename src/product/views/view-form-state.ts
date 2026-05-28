@@ -117,6 +117,9 @@ export function viewDraftReducer(state: ViewDraft, action: ViewDraftAction): Vie
         },
         action.template.default_time_scope,
       );
+      if (next.time_scope === 'rolling' && next.rolling_window_days_text.length === 0) {
+        return { ...next, rolling_window_days_text: '7' };
+      }
       return next;
     }
     case 'set_title':

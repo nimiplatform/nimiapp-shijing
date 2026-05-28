@@ -65,7 +65,7 @@ export function EventList() {
           {state.snapshot.events.map((event) => (
             <li key={event.id}>
               <span>{event.title}</span>
-              <small>（发生于 {formatOccurredAt(event.occurred_at)} · 关联 {event.view_refs.length} 个视角）</small>
+              <small>（发生于 {formatOccurredAt(event.occurred_at)} · 关联 {event.view_refs.length} 个关注）</small>
               <button type="button" onClick={() => setEditor({ kind: 'edit', event })}>{BUTTONS.edit}</button>
               <button type="button" onClick={() => onDelete(event)}>{BUTTONS.delete}</button>
             </li>

@@ -38,6 +38,18 @@
   --shijing-shadow-1: 0 1px 2px rgba(15, 23, 38, 0.04), 0 1px 1px rgba(15, 23, 38, 0.03);
   --shijing-shadow-2: 0 6px 16px -8px rgba(15, 23, 38, 0.10), 0 2px 4px rgba(15, 23, 38, 0.04);
   --shijing-focus-ring: 0 0 0 3px color-mix(in srgb, var(--shijing-brand-primary) 22%, transparent);
+
+  /* Z-index repair: kit light/dark themes ship --nimi-z-popover: 80
+   * and --nimi-z-dialog: 90, which puts Radix Select / Popover
+   * portals BELOW any open Dialog backdrop. Inside a Dialog (e.g.
+   * the MeNatalEditorOverlay's 时间记忆程度 select) the trigger
+   * click then opens the popover content invisibly behind the
+   * backdrop, and pointer events register as "outside" — the user
+   * perceives an inert dropdown. Lifting popovers above dialogs
+   * matches the conventional stacking: a popover launched FROM a
+   * dialog should sit on top of it. Affects all kit Popover /
+   * Select / Menu / DatePicker portals app-wide. */
+  --nimi-z-popover: 100;
 }
 
 html, body, #root {
@@ -59,9 +71,9 @@ body {
 .shijing-app {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
   width: 100%;
-  overflow-x: clip;
+  overflow: clip;
   position: relative;
   z-index: 0;
 }
@@ -770,6 +782,60 @@ body {
   color: var(--shijing-text-primary);
 }
 
+.shijing-status--advisory {
+  background: color-mix(in srgb, var(--shijing-status-warning) 12%, var(--shijing-surface-card));
+  border-left-color: var(--shijing-status-warning);
+  color: var(--shijing-text-primary);
+}
+
+.shijing-status--gaps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-status__gap-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shijing-status__gap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: var(--shijing-radius-md, 6px);
+  background: color-mix(in srgb, var(--shijing-surface-card) 70%, transparent);
+}
+
+.shijing-status__gap strong {
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-status__gap span {
+  font-size: 12px;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-status__gap--blocker strong {
+  color: var(--shijing-status-danger);
+}
+
+.shijing-status__gap--warning strong {
+  color: var(--shijing-status-warning);
+}
+
+.shijing-status__gap-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .shijing-consultation-saved {
   display: flex;
   align-items: center;
@@ -921,6 +987,60 @@ body {
   align-self: flex-end;
 }
 
+/* === Kit field neutralization =====================================
+ *
+ * The :where(.shijing-tab, …) form rules above paint raw form
+ * controls so the older hand-rolled forms in today / consultation /
+ * views look consistent. The Me-overlay forms now use kit
+ * <FieldShell> + kit <TextField> / <SelectField> / <TextareaField>,
+ * which paint themselves via the kit "wrapping label owns the box,
+ * inner control is transparent" trick. We neutralize the inner-
+ * control overrides so kit's intended look shows through.
+ *
+ * Specificity note: the project-scoped input rule
+ * `:where(...) input[type="text"]` resolves to (0,0,1,1)
+ * (attribute + type). Our reset `.nimi-field-shell input` is also
+ * (0,0,1,1) — when specificity ties, the later rule wins, which is
+ * why this block lives AFTER the scoped form rules above. Buttons
+ * and selects need no reset because kit's tone classes
+ * (`.nimi-action--primary`, etc.) already outrank the bare-tag
+ * scoped rule on specificity grounds.
+ * ================================================================ */
+
+.nimi-field-shell input,
+.nimi-field-shell textarea {
+  appearance: auto;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  min-height: 0;
+  font-size: inherit;
+  color: inherit;
+  box-shadow: none;
+}
+
+.nimi-field-shell input:focus,
+.nimi-field-shell textarea:focus {
+  outline: none;
+  border: 0;
+  box-shadow: none;
+}
+
+/* FieldShell renders the caption as <label class="nimi-field-shell__label">
+ * and clones kit's wrapping label as a sibling. The scoped form rule
+ * forces every label inside .shijing-tab into flex-column / gap:6px /
+ * font:12px, which would stack kit's icon + input vertically and
+ * shrink the input text. Restore row layout + inheritable size on
+ * the wrapper label only (caption keeps its own kit styling). */
+.nimi-field-shell > label:not(.nimi-field-shell__label) {
+  flex-direction: row;
+  align-items: center;
+  font-size: var(--nimi-type-body-md-size, 14px);
+  letter-spacing: 0;
+  color: inherit;
+}
+
 .shijing-natal-onboarding {
   display: flex;
   flex-direction: column;
@@ -943,72 +1063,32 @@ body {
   line-height: 1.6;
 }
 
+/* The natal-inputs editor used to be a two-column grid (form + a
+ * sticky "系统标准化预览" aside). The aside was removed for being
+ * almost entirely an echo of fields the user just typed — see
+ * src/product/inputs/natural-birth-editor.tsx for context. The
+ * layout is now a single column with the submit button in a footer
+ * row below the fieldset. */
+
 .shijing-natural-birth {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
-  gap: 20px;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: stretch;
 }
 
 .shijing-natural-birth__record {
   min-width: 0;
 }
 
-.shijing-natural-birth__preview {
-  background: var(--shijing-surface-card-quiet);
-  border: 1px solid var(--shijing-border-default);
-  border-radius: var(--shijing-radius-lg);
-  padding: 18px;
+.shijing-natural-birth__footer-actions {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
-  position: sticky;
-  top: 16px;
+  justify-content: flex-end;
+  padding-top: 4px;
 }
 
-.shijing-natural-birth__preview h3 {
-  margin: 0;
-  color: var(--shijing-text-primary);
-  font-size: 16px;
-  line-height: 1.5;
-  font-weight: 600;
-}
-
-.shijing-natural-birth__preview dl {
-  margin: 0;
-  display: grid;
-  gap: 10px;
-}
-
-.shijing-natural-birth__preview dl > div {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  gap: 12px;
-}
-
-.shijing-natural-birth__preview dt {
-  color: var(--shijing-text-muted);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.shijing-natural-birth__preview dd {
-  margin: 0;
-  color: var(--shijing-text-primary);
-  font-size: 13px;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-
-.shijing-natural-birth__preview p {
-  margin: 0;
-  color: var(--shijing-text-secondary);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.shijing-natural-birth__preview button {
-  align-self: flex-end;
+.shijing-natural-birth__footer-actions button {
+  min-width: 132px;
 }
 
 .shijing-view-form-overlay {
@@ -1113,6 +1193,69 @@ body {
   grid-template-columns: minmax(240px, 0.85fr) minmax(0, 1.6fr);
   gap: 18px;
   align-items: start;
+}
+
+.shijing-views-onboarding {
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-default);
+  border-radius: 20px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.shijing-views-onboarding__head h3 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.shijing-views-onboarding__head p {
+  margin: 0;
+  color: var(--shijing-text-muted);
+  font-size: 14px;
+}
+
+.shijing-views-onboarding__grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.shijing-views-onboarding__card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid var(--shijing-border-default);
+  border-radius: 14px;
+  background: var(--shijing-surface-elevated, var(--shijing-surface-card));
+}
+
+.shijing-views-onboarding__card h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.shijing-views-onboarding__card p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--shijing-text-muted);
+  flex: 1;
+}
+
+.shijing-views-onboarding__card button {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+.shijing-views-onboarding__card--blank {
+  border-style: dashed;
 }
 
 .shijing-person-list header,
@@ -1314,6 +1457,19 @@ body {
   color: var(--shijing-text-muted);
 }
 
+.shijing-view-workspace__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.shijing-view-workspace__item-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
 .shijing-view-workspace__section p {
   margin: 0;
   color: var(--shijing-text-secondary);
@@ -1435,10 +1591,329 @@ body {
   gap: 14px;
 }
 
+/* ===== Views tab refinement ===== */
+
+.shijing-tab--views {
+  max-width: 1120px;
+}
+
+.shijing-view-form-overlay {
+  width: min(100%, 920px);
+}
+
+.shijing-view-form {
+  padding: 20px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--shijing-brand-primary) 6%, transparent), transparent 42%),
+    var(--shijing-surface-card);
+}
+
+.shijing-view-form__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.shijing-view-form .shijing-view-form__panel {
+  background: var(--shijing-surface-card);
+  border-color: var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-lg);
+  box-shadow: var(--shijing-shadow-1);
+}
+
+.shijing-view-form__panel--wide {
+  grid-column: 1 / -1;
+}
+
+.shijing-view-form__dates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.shijing-view-form__segmented,
+.shijing-view-list__filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-md);
+  background: var(--shijing-surface-card-quiet);
+}
+
+.shijing-view-form__segmented button,
+.shijing-view-list__filters button {
+  min-height: 34px;
+  padding: 7px 10px;
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  border: 0;
+  box-shadow: none;
+}
+
+.shijing-view-form__segmented button[aria-pressed="true"],
+.shijing-view-list__filters button[aria-pressed="true"] {
+  background: var(--shijing-surface-card);
+  color: var(--shijing-text-primary);
+  border: 1px solid var(--shijing-border-default);
+  box-shadow: var(--shijing-shadow-1);
+}
+
+.shijing-view-form__subject-group,
+.shijing-view-form__toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--shijing-text-secondary);
+  font-size: 12px;
+}
+
+.shijing-view-form__subject-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.shijing-view-form__subject-grid label,
+.shijing-view-form__toggle {
+  flex-direction: row;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-md);
+  background: var(--shijing-surface-card-quiet);
+}
+
+.shijing-view-form__toggle span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.shijing-view-form__toggle strong {
+  color: var(--shijing-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.shijing-view-form__toggle small {
+  color: var(--shijing-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.shijing-view-layout {
+  grid-template-columns: minmax(300px, 0.85fr) minmax(0, 1.65fr);
+}
+
+.shijing-views-onboarding {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);
+  gap: 20px;
+  align-items: stretch;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.shijing-views-onboarding__intro,
+.shijing-views-onboarding__templates {
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-default);
+  border-radius: var(--shijing-radius-xl);
+  padding: 24px;
+  box-shadow: var(--shijing-shadow-1);
+}
+
+.shijing-views-onboarding__intro {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 360px;
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--shijing-brand-primary) 12%, transparent), transparent 52%),
+    var(--shijing-surface-card);
+}
+
+.shijing-views-onboarding__intro h3 {
+  margin: 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 25px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-views-onboarding__intro p,
+.shijing-views-onboarding__templates p {
+  margin: 0;
+  color: var(--shijing-text-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.shijing-views-onboarding__flow {
+  display: grid;
+  gap: 8px;
+}
+
+.shijing-views-onboarding__flow span {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-md);
+  background: color-mix(in srgb, var(--shijing-surface-card) 74%, transparent);
+  color: var(--shijing-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.shijing-views-onboarding__templates {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.shijing-views-onboarding__templates header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shijing-views-onboarding__templates h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-views-onboarding__grid {
+  grid-template-columns: 1fr;
+}
+
+.shijing-views-onboarding__card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border-radius: var(--shijing-radius-lg);
+  background: var(--shijing-surface-card-quiet);
+}
+
+.shijing-view-list {
+  position: sticky;
+  top: 18px;
+  max-height: calc(100vh - 180px);
+  overflow: auto;
+}
+
+.shijing-view-list__header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.shijing-view-list__controls {
+  display: grid;
+  gap: 10px;
+}
+
+.shijing-view-list__search {
+  gap: 6px;
+}
+
+.shijing-view-list__search span {
+  color: var(--shijing-text-muted);
+  font-size: 11px;
+}
+
+.shijing-view-list__empty {
+  margin: 0;
+  color: var(--shijing-text-muted);
+  font-size: 13px;
+}
+
+.shijing-view-list ul {
+  gap: 8px;
+  border-top: 0;
+}
+
+.shijing-view-list li {
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-lg);
+  background: var(--shijing-surface-card-quiet);
+}
+
+.shijing-view-list li[data-selected="true"] {
+  background: color-mix(in srgb, var(--shijing-brand-primary) 9%, var(--shijing-surface-card));
+  border: 1px solid color-mix(in srgb, var(--shijing-brand-primary) 36%, var(--shijing-border-default));
+  border-left-width: 4px;
+}
+
+.shijing-view-list__select {
+  gap: 7px;
+}
+
+.shijing-view-list__title {
+  color: var(--shijing-text-primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.shijing-view-list__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.shijing-view-list__chips span {
+  padding: 3px 8px;
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: 999px;
+  background: var(--shijing-surface-card);
+  color: var(--shijing-text-secondary);
+  font-size: 11px;
+}
+
+.shijing-view-list__actions {
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.shijing-view-workspace__header {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.shijing-view-workspace__header > div {
+  min-width: 0;
+}
+
 @media (max-width: 900px) {
+  .shijing-views-onboarding,
+  .shijing-view-form__grid,
   .shijing-view-layout,
   .shijing-view-workspace__meta {
     grid-template-columns: 1fr;
+  }
+
+  .shijing-view-list {
+    position: static;
+    max-height: none;
+  }
+
+  .shijing-view-form__panel--wide {
+    grid-column: auto;
   }
 }
 
@@ -1466,6 +1941,717 @@ body {
   line-height: 1.5;
 }
 
+/* ===== Consultation (问时镜) — AI 提问台 ===== */
+
+.shijing-tab--consultation {
+  max-width: 1200px;
+  width: 100%;
+  gap: 8px;
+  position: relative;
+}
+
+/* Soft mint/pearl ambient wash that fills the viewport behind the tab.
+ * Scoped to .shijing-tab--consultation so it never leaks into other tabs. */
+.shijing-tab--consultation::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(
+      ellipse 50% 40% at 85% 0%,
+      color-mix(in srgb, var(--shijing-brand-primary) 6%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 60% 30% at 10% 90%,
+      color-mix(in srgb, var(--shijing-brand-primary) 4%, transparent) 0%,
+      transparent 70%
+    ),
+    linear-gradient(180deg, #fbfdfb 0%, #f4f7f4 100%);
+}
+
+/* --- Hero (compact) --------------------------------------------------- */
+
+.shijing-consultation-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 24px 16px;
+  text-align: center;
+  border-radius: var(--shijing-radius-2xl);
+  background: transparent;
+  overflow: visible;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+/* Soft mirror shimmer behind the title (very subtle, ambience only). */
+.shijing-consultation-hero__droplet {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: 300px;
+  height: 140px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 50% 60% at 50% 50%,
+      color-mix(in srgb, var(--shijing-brand-primary) 7%, transparent) 0%,
+      transparent 70%
+    );
+  opacity: 0.55;
+  filter: blur(10px);
+}
+
+.shijing-tab--consultation .shijing-consultation-hero__title {
+  margin: 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 40px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--shijing-text-primary);
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.05;
+  position: relative;
+  z-index: 1;
+}
+
+.shijing-consultation-hero__title-dot {
+  font-size: 18px;
+  color: var(--shijing-brand-primary);
+  margin-top: 4px;
+  font-family: inherit;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.shijing-consultation-hero__tagline {
+  margin: 0;
+  color: var(--shijing-text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  position: relative;
+  z-index: 1;
+}
+
+.shijing-tab .shijing-consultation-hero__subject-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  color: var(--shijing-text-secondary);
+  font-size: 13px;
+  box-shadow: 0 1px 2px rgba(15, 23, 38, 0.04);
+  cursor: pointer;
+  font-family: inherit;
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(8px);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.shijing-tab .shijing-consultation-hero__subject-chip:hover {
+  border-color: color-mix(in srgb, var(--shijing-brand-primary) 26%, rgba(15, 23, 42, 0.08));
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--shijing-brand-primary) 12%, transparent);
+}
+
+.shijing-consultation-hero__subject-chip svg {
+  color: #43c6a5;
+}
+
+.shijing-consultation-hero__subject-chevron {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 2px;
+  border-right: 1.4px solid var(--shijing-text-muted);
+  border-bottom: 1.4px solid var(--shijing-text-muted);
+  transform: translateY(-2px) rotate(45deg);
+}
+
+/* --- Two-column layout ----------------------------------------------- */
+
+.shijing-consultation-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+/* --- Sidebar (glassmorphism panel) ----------------------------------- */
+
+.shijing-consultation-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 14px 12px;
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 24px;
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.04);
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.shijing-consultation-sidebar__top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.shijing-consultation-search {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 32px;
+  border-radius: 999px;
+  background: rgba(247, 248, 246, 0.85);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  color: var(--shijing-text-muted);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.shijing-consultation-search svg {
+  flex-shrink: 0;
+  color: rgba(15, 23, 42, 0.40);
+  width: 13px;
+  height: 13px;
+}
+
+.shijing-tab .shijing-consultation-search input[type="search"] {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  min-height: 0;
+  height: 100%;
+  font-size: 13px;
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  color: var(--shijing-text-primary);
+  box-sizing: border-box;
+}
+
+.shijing-tab .shijing-consultation-search input[type="search"]::placeholder {
+  color: rgba(15, 23, 42, 0.38);
+}
+
+.shijing-tab .shijing-consultation-search input[type="search"]:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.shijing-tab .shijing-consultation-sidebar__new {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  height: 32px;
+  min-height: 32px;
+  background: transparent;
+  border: 0;
+  color: #43c6a5;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.shijing-tab .shijing-consultation-sidebar__new svg {
+  color: #43c6a5;
+  width: 13px;
+  height: 13px;
+}
+
+.shijing-tab .shijing-consultation-sidebar__new:hover:not(:disabled) {
+  color: #2fa789;
+  background: transparent;
+}
+
+.shijing-consultation-sidebar__empty {
+  margin: 0;
+  padding: 8px 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shijing-consultation-sidebar__empty-title {
+  margin: 0;
+  font-size: 13px;
+  color: var(--shijing-text-secondary);
+  font-weight: 500;
+}
+
+.shijing-consultation-sidebar__empty-sub {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-consultation-history {
+  list-style: none;
+  margin: 0;
+  padding: 0 4px 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 23, 42, 0.12) transparent;
+}
+
+.shijing-consultation-history::-webkit-scrollbar {
+  width: 6px;
+}
+
+.shijing-consultation-history::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.12);
+  border-radius: 999px;
+}
+
+.shijing-consultation-history::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.shijing-consultation-sidebar__empty {
+  flex: 0 0 auto;
+  margin-top: 16px;
+  padding: 0 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shijing-consultation-history__group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shijing-consultation-history__group-label {
+  margin: 0;
+  padding: 0 10px;
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.shijing-consultation-history__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.shijing-tab .shijing-consultation-history__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  color: var(--shijing-text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.shijing-tab .shijing-consultation-history__item:hover:not(:disabled) {
+  background: rgba(67, 198, 165, 0.06);
+}
+
+.shijing-tab .shijing-consultation-history__item--active {
+  background: rgba(67, 198, 165, 0.10);
+}
+
+.shijing-tab .shijing-consultation-history__item--active .shijing-consultation-history__title {
+  color: #0f766e;
+  font-weight: 500;
+}
+
+.shijing-consultation-history__title {
+  color: var(--shijing-text-primary);
+  font-size: 13.5px;
+  line-height: 1.35;
+  font-weight: 400;
+}
+
+.shijing-consultation-history__time {
+  color: var(--shijing-text-muted);
+  font-size: 11.5px;
+  letter-spacing: 0;
+}
+
+.shijing-tab .shijing-consultation-sidebar__view-all {
+  align-self: center;
+  background: transparent;
+  border: 0;
+  color: var(--shijing-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: var(--shijing-radius-md);
+  margin-top: 4px;
+}
+
+.shijing-tab .shijing-consultation-sidebar__view-all:hover:not(:disabled) {
+  color: #43c6a5;
+  background: transparent;
+}
+
+/* --- Main column ------------------------------------------------------ */
+
+.shijing-consultation-main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* --- Composer (AI input stage) --------------------------------------- */
+
+.shijing-card.shijing-consultation-composer {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.90) 0%,
+    rgba(248, 255, 252, 0.78) 100%
+  );
+  border: 1px solid rgba(67, 198, 165, 0.20);
+  border-radius: 28px;
+  padding: 28px 30px 22px;
+  gap: 14px;
+  min-height: 400px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+.shijing-tab .shijing-consultation-composer .shijing-consultation-composer__heading {
+  margin: 0 0 4px;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.01em;
+}
+
+.shijing-tab .shijing-consultation-composer__textarea {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+  min-height: 220px;
+  resize: none;
+  font-size: 15px;
+  line-height: 2.0;
+  color: var(--shijing-text-primary);
+  font-family: inherit;
+  width: 100%;
+}
+
+.shijing-tab .shijing-consultation-composer__textarea:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.shijing-tab .shijing-consultation-composer__textarea::placeholder {
+  color: rgba(15, 23, 42, 0.30);
+  white-space: pre-line;
+  line-height: 2;
+}
+
+/* Toolbar: pills on left, generate button on right, stable single row */
+.shijing-consultation-composer__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(15, 23, 42, 0.05);
+  flex-wrap: wrap;
+}
+
+.shijing-consultation-composer__pills {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* --- Pills (label：value chips) -------------------------------------- */
+
+.shijing-consultation-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 40px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  color: var(--shijing-text-primary);
+  font-size: 13px;
+  letter-spacing: 0;
+  box-shadow: 0 1px 2px rgba(15, 23, 38, 0.03);
+  cursor: default;
+  flex-direction: row;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.shijing-consultation-pill:hover {
+  border-color: rgba(67, 198, 165, 0.35);
+  box-shadow: 0 2px 8px rgba(67, 198, 165, 0.10);
+}
+
+.shijing-consultation-pill svg {
+  color: #43c6a5;
+  flex-shrink: 0;
+  opacity: 1;
+}
+
+.shijing-consultation-pill__label {
+  color: var(--shijing-text-muted);
+  font-size: 12.5px;
+}
+
+.shijing-consultation-pill__value {
+  color: var(--shijing-text-primary);
+  font-weight: 500;
+}
+
+.shijing-consultation-pill__chevron {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 2px;
+  border-right: 1.4px solid var(--shijing-text-muted);
+  border-bottom: 1.4px solid var(--shijing-text-muted);
+  transform: translateY(-2px) rotate(45deg);
+  flex-shrink: 0;
+}
+
+.shijing-tab .shijing-consultation-pill--horizon {
+  position: relative;
+  cursor: pointer;
+}
+
+.shijing-tab .shijing-consultation-pill--horizon select {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  min-height: 0;
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.shijing-tab .shijing-consultation-pill--horizon select:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.shijing-consultation-pill--context {
+  position: relative;
+  cursor: pointer;
+}
+
+.shijing-tab .shijing-consultation-pill--context select {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  min-height: 0;
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.shijing-tab .shijing-consultation-pill--context select:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* --- Generate button (primary CTA) ----------------------------------- */
+
+.shijing-tab .shijing-consultation-composer__generate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 24px;
+  height: 50px;
+  min-height: 50px;
+  width: 160px;
+  background: linear-gradient(135deg, #43c6a5 0%, #1fae91 100%);
+  color: #fff;
+  border: 0;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(31, 174, 145, 0.32);
+  transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.shijing-tab .shijing-consultation-composer__generate svg {
+  color: #fff;
+}
+
+.shijing-tab .shijing-consultation-composer__generate:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(31, 174, 145, 0.40);
+}
+
+.shijing-tab .shijing-consultation-composer__generate:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* --- Hint under toolbar (soft, no red) ------------------------------- */
+
+.shijing-consultation-composer__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  color: var(--shijing-text-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.shijing-consultation-composer__hint svg {
+  color: #b5854a;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+/* --- Suggestions row -------------------------------------------------- */
+
+.shijing-consultation-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0 0;
+}
+
+.shijing-consultation-suggestions__heading {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--shijing-text-muted);
+  padding-left: 4px;
+  letter-spacing: 0.02em;
+}
+
+.shijing-consultation-suggestions__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.shijing-tab .shijing-consultation-suggestion {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  min-height: 36px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 999px;
+  color: var(--shijing-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: none;
+  transition: border-color 120ms ease, color 120ms ease, transform 120ms ease, background 120ms ease;
+}
+
+.shijing-tab .shijing-consultation-suggestion svg {
+  color: #43c6a5;
+  opacity: 0.85;
+}
+
+.shijing-tab .shijing-consultation-suggestion:hover:not(:disabled) {
+  border-color: rgba(67, 198, 165, 0.30);
+  color: var(--shijing-text-primary);
+  background: rgba(255, 255, 255, 0.85);
+  transform: translateY(-1px);
+}
+
+/* --- Softer status (advisory tone for natal-related blockers) -------- */
+
+.shijing-tab--consultation .shijing-status--advisory {
+  background: rgba(181, 133, 74, 0.08);
+  border: 1px solid rgba(181, 133, 74, 0.18);
+  border-left: 3px solid rgba(181, 133, 74, 0.55);
+  color: var(--shijing-text-primary);
+}
+
+@media (max-width: 960px) {
+  .shijing-consultation-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-consultation-sidebar {
+    order: 2;
+  }
+
+  .shijing-consultation-main {
+    order: 1;
+  }
+}
+
 @media (max-width: 640px) {
   .shijing-card,
   :where(.shijing-tab, .shijing-shell--repair, .shijing-conversation-thread) form,
@@ -1476,6 +2662,35 @@ body {
   .shijing-view-workspace,
   .shijing-conversation-list {
     padding: 18px;
+  }
+
+  .shijing-tab--consultation .shijing-consultation-hero__title {
+    font-size: 30px;
+  }
+
+  .shijing-consultation-hero {
+    padding: 24px 16px 20px;
+    min-height: 0;
+  }
+
+  .shijing-card.shijing-consultation-composer {
+    padding: 20px;
+    border-radius: 22px;
+  }
+
+  .shijing-tab .shijing-consultation-composer__generate {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .shijing-consultation-composer__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .shijing-consultation-composer__pills {
+    justify-content: flex-start;
   }
 
   .shijing-card--action {
@@ -1493,15 +2708,3699 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .shijing-natural-birth {
+  .shijing-view-form__dates,
+  .shijing-views-onboarding__card {
     grid-template-columns: 1fr;
   }
 
-  .shijing-natural-birth__preview {
-    position: static;
+  .shijing-view-workspace__header {
+    flex-direction: column;
   }
 
   .shijing-natural-birth__lunar-grid {
     grid-template-columns: 1fr;
+  }
+
+  .shijing-natural-birth__footer-actions button {
+    width: 100%;
+  }
+}
+
+/* ===== Me tab — lightweight personal profile center =====
+ *
+ * Hierarchy (post-hero pass):
+ *   header (title + status badge)
+ *   ▸ natal summary card  ← primary content + primary action
+ *   ▸ persons card
+ *   ▸ footer row (response prefs + latest conversation)
+ *   ▸ privacy note
+ *
+ * All cards are emitted by kit `<Surface material="solid">`. Glass
+ * tiers were stepped down to opaque white per the "白色卡片、大圆
+ * 角、弱阴影、浅色渐变背景" brief; the gradient lives on the tab
+ * itself, behind the cards.
+ *
+ * The emerald accent (--shijing-me-accent) is scoped to
+ * .shijing-tab--me so it does not leak into other surfaces.
+ */
+
+.shijing-tab--me {
+  /* Low-saturation emerald — matured-down from the earlier #10b981
+   * so primary action buttons do not dominate the resting state.
+   * Strong variant is used for hover only. */
+  --shijing-me-accent: #2f9e7e;
+  --shijing-me-accent-strong: #1f7a60;
+  --shijing-me-accent-soft: color-mix(in srgb, var(--shijing-me-accent) 14%, transparent);
+  --shijing-me-accent-tint: color-mix(in srgb, var(--shijing-me-accent) 8%, transparent);
+  /* Amber for the "needs confirmation" precision callout. */
+  --shijing-me-warn: #d97706;
+  --shijing-me-warn-soft: color-mix(in srgb, var(--shijing-me-warn) 10%, transparent);
+  --shijing-me-warn-strong: #92400e;
+  --shijing-me-card-border: rgba(15, 23, 38, 0.06);
+  --shijing-me-card-radius: 20px;
+  --shijing-me-card-shadow: 0 1px 2px rgba(15, 23, 38, 0.03), 0 6px 24px -16px rgba(15, 23, 38, 0.08);
+
+  max-width: 880px;
+  gap: 16px;
+}
+
+.shijing-me-tab-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 4px 0;
+  flex-wrap: wrap;
+}
+
+.shijing-me-tab-header h2 {
+  margin: 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.01em;
+}
+
+.shijing-me-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--shijing-border-subtle);
+  color: var(--shijing-text-secondary);
+  letter-spacing: 0.01em;
+  backdrop-filter: blur(8px);
+}
+
+.shijing-me-status-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.shijing-me-status-badge--ok {
+  color: var(--shijing-me-accent-strong);
+  background: var(--shijing-me-accent-tint);
+  border-color: color-mix(in srgb, var(--shijing-me-accent) 18%, transparent);
+}
+
+.shijing-me-status-badge--advisory {
+  color: var(--shijing-me-accent-strong);
+  background: rgba(255, 255, 255, 0.7);
+  border-color: color-mix(in srgb, var(--shijing-me-accent) 20%, transparent);
+}
+
+.shijing-me-status-badge--attention {
+  color: var(--shijing-me-warn-strong);
+  background: var(--shijing-me-warn-soft);
+  border-color: color-mix(in srgb, var(--shijing-me-warn) 22%, transparent);
+}
+
+/* ----- Generic card -----
+ *
+ * Cards are emitted by kit `<Surface material="solid">` which
+ * provides the background + base border; we override here with a
+ * 20px radius and a softer drop shadow so the surface reads as a
+ * premium settings card rather than a dashboard tile.
+ */
+
+.shijing-me-card {
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-radius: var(--shijing-me-card-radius);
+  border: 1px solid var(--shijing-me-card-border);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: var(--shijing-me-card-shadow);
+  backdrop-filter: blur(12px);
+}
+
+.shijing-me-card--natal {
+  padding: 24px 26px;
+  gap: 18px;
+}
+
+.shijing-me-card--list {
+  padding: 18px 22px;
+  gap: 10px;
+}
+
+.shijing-me-card--persons {
+  padding: 18px 22px;
+  gap: 10px;
+}
+
+.shijing-me-card__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shijing-me-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--shijing-me-accent);
+}
+
+.shijing-me-card__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  flex: 1;
+  letter-spacing: 0.01em;
+}
+
+.shijing-me-card__head-action,
+.shijing-me-card__edit,
+.shijing-me-persons__action,
+.shijing-me-list__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: transparent;
+  border: none;
+  color: var(--shijing-me-accent);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 4px;
+  transition: color 0.15s ease;
+  white-space: nowrap;
+}
+
+.shijing-me-card__head-action:hover,
+.shijing-me-card__edit:hover,
+.shijing-me-persons__action:hover,
+.shijing-me-list__action:hover {
+  color: var(--shijing-me-accent-strong);
+}
+
+.shijing-me-card__head-action:focus-visible,
+.shijing-me-card__edit:focus-visible,
+.shijing-me-persons__action:focus-visible,
+.shijing-me-list__action:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--shijing-me-accent) 28%, transparent);
+  border-radius: 6px;
+}
+
+/* Natal — vertical key/value rows. Fixed-width label column keeps
+ * values left-aligned at the same x-position so the card reads as
+ * a clean profile, not a form. */
+
+.shijing-me-natal-rows {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shijing-me-natal-rows__item {
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 16px;
+  min-width: 0;
+}
+
+.shijing-me-natal-rows__item dt {
+  margin: 0;
+  font-size: 13px;
+  color: var(--shijing-text-muted);
+  font-weight: 400;
+}
+
+.shijing-me-natal-rows__item dd {
+  margin: 0;
+  font-size: 14px;
+  color: var(--shijing-text-primary);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.shijing-me-card__warn {
+  color: var(--shijing-me-warn-strong);
+}
+
+/* Precision-confirmation callout — amber tone, low contrast, single
+ * row. Title + body stack on the left, "去确认" button anchored
+ * right. Border-left accent stripe gives it a "soft alert" feel
+ * without becoming a true error banner. */
+
+.shijing-me-precision-callout {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--shijing-me-warn-soft);
+  border: 1px solid color-mix(in srgb, var(--shijing-me-warn) 16%, transparent);
+}
+
+.shijing-me-precision-callout__icon {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  color: var(--shijing-me-warn);
+  flex-shrink: 0;
+}
+
+.shijing-me-precision-callout__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.shijing-me-precision-callout__title {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--shijing-me-warn-strong);
+}
+
+.shijing-me-precision-callout__copy {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--shijing-text-secondary);
+  line-height: 1.55;
+}
+
+.shijing-me-precision-callout__action {
+  background: var(--shijing-me-warn);
+  color: white;
+  border: none;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.shijing-me-precision-callout__action:hover:not(:disabled) {
+  background: var(--shijing-me-warn-strong);
+}
+
+.shijing-me-precision-callout__action:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--shijing-me-warn) 30%, transparent);
+}
+
+/* "排盘技术详情" disclosure — muted, secondary affordance. */
+
+.shijing-me-card__details {
+  margin: 0;
+  padding-top: 6px;
+  border-top: 1px dashed color-mix(in srgb, var(--shijing-text-muted) 18%, transparent);
+}
+
+.shijing-me-card__details--quiet summary {
+  color: var(--shijing-text-muted);
+  font-weight: 500;
+}
+
+.shijing-me-card__details summary {
+  cursor: pointer;
+  color: var(--shijing-me-accent);
+  font-size: 13px;
+  font-weight: 500;
+  list-style: none;
+  padding: 6px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shijing-me-card__details summary::-webkit-details-marker {
+  display: none;
+}
+
+.shijing-me-card__details summary > svg {
+  transition: transform 0.2s ease;
+}
+
+.shijing-me-card__details[open] summary > svg {
+  transform: rotate(90deg);
+}
+
+.shijing-me-card__details summary:hover {
+  color: var(--shijing-me-accent-strong);
+}
+
+.shijing-me-card__detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 24px;
+  padding: 10px 0 4px;
+  margin: 0;
+}
+
+.shijing-me-card__detail-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.shijing-me-card__detail-grid dt {
+  margin: 0;
+  font-size: 11px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-me-card__detail-grid dd {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--shijing-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.shijing-me-card__empty {
+  margin: 0;
+  color: var(--shijing-text-muted);
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+/* ----- Persons list ----- */
+
+.shijing-me-persons {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Compressed person row: solid white inside the parent card, tight
+ * 10px vertical padding, smaller avatar. */
+.shijing-me-persons__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--shijing-me-card-border);
+}
+
+.shijing-me-persons__avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--shijing-me-accent);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13.5px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.shijing-me-persons__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.shijing-me-persons__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-me-persons__meta {
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+}
+
+/* ----- Combined 设置与记录 list card ----- */
+
+.shijing-me-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.shijing-me-list__row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 4px;
+  border-top: 1px solid var(--shijing-me-card-border);
+}
+
+.shijing-me-list__row:first-child {
+  border-top: none;
+}
+
+.shijing-me-list__label {
+  font-size: 13px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-me-list__value {
+  font-size: 14px;
+  color: var(--shijing-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.shijing-me-privacy-note {
+  margin: 4px 0 0;
+  text-align: center;
+  color: var(--shijing-text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.shijing-me-overlay {
+  width: min(100%, 780px);
+  max-height: min(80vh, 800px);
+  overflow-y: auto;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ===================================================================
+ * MeNatalEditorOverlay — "完善出生记录" modal
+ *
+ * 560px-wide premium SaaS sheet. Kit's OverlayShell + DialogTitle
+ * own the panel + a11y; we override the cosmetic tokens
+ * (--nimi-radius-lg, --nimi-surface-overlay, --nimi-elevation-modal)
+ * so the panel reads as glass-white rather than the default kit
+ * modal. Field/button tokens are overridden in the same scope so
+ * inputs are 44px / 14px-radius and the primary button picks up the
+ * brief's linear-gradient.
+ *
+ * The form chrome (white card + bordered fieldset) that scoped form
+ * rules paint inside .shijing-tab is flattened here so the modal
+ * shows a 3-section grouped form, not a card-in-card-in-card. The
+ * body wrapper still carries .shijing-tab to inherit the project's
+ * scoped form + kit-field-neutralization vocabulary; we only undo
+ * the cosmetic chrome.
+ * ================================================================ */
+
+.shijing-natal-overlay__backdrop {
+  --nimi-overlay-backdrop: rgba(18, 24, 38, 0.28);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.shijing-natal-overlay__panel {
+  /* Panel surface */
+  --nimi-radius-lg: 28px;
+  --nimi-surface-overlay: rgba(255, 255, 255, 0.92);
+  --nimi-elevation-modal: 0 30px 80px rgba(15, 23, 42, 0.18);
+  /* Kit fields inside this panel */
+  --nimi-radius-field: 14px;
+  --nimi-sizing-field-md-height: 44px;
+  --nimi-field-border: #E5E7EB;
+  --nimi-field-focus: #3FC6A0;
+  --nimi-focus-ring-color: color-mix(in srgb, #3FC6A0 32%, transparent);
+  --nimi-field-bg: #ffffff;
+  /* Kit buttons inside this panel */
+  --nimi-radius-action: 14px;
+  --nimi-sizing-action-md-height: 44px;
+  /* Glass quality: a faint blur+saturation behind the 92% white */
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border-color: rgba(229, 231, 235, 0.7);
+}
+
+.shijing-natal-overlay__panel .nimi-overlay-title {
+  padding: 32px 32px 8px;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  color: #1F2933;
+}
+
+/* Drop the wrapper's right padding so the scrollable body can
+ * extend all the way to the panel edge. The 32px right inset that
+ * keeps content readable now lives on the body itself
+ * (.shijing-natal-overlay__body's padding-right) — the scrollbar
+ * then sits flush with the panel's rounded right edge instead of
+ * floating mid-air 32px in. */
+.shijing-natal-overlay__panel .nimi-overlay-content {
+  padding: 0 0 28px 32px;
+}
+
+.shijing-natal-overlay__body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: none;
+  max-height: min(72vh, 680px);
+  overflow-y: auto;
+  /* Right padding holds the form content 32px clear of the panel
+   * edge while the (very thin) scrollbar sits flush with the panel
+   * right inside that gutter. Bottom padding gives the last input
+   * a little breathing room before the scroll bottom. */
+  padding: 0 32px 4px 0;
+  /* Scrollbar styling mirrors .shijing-consultation-history — the
+   * project's canonical "quiet scroll" pattern. No
+   * scrollbar-gutter: stable so the scrollbar only appears when the
+   * content actually overflows (matching the today page's
+   * shell-level scroll behaviour: invisible at rest, appears on
+   * demand). */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 23, 42, 0.12) transparent;
+}
+
+.shijing-natal-overlay__body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.shijing-natal-overlay__body::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.12);
+  border-radius: 999px;
+}
+
+.shijing-natal-overlay__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Lead is a kit <NimiText role="body"> — kit handles font size,
+ * line-height and color via design tokens; we only override the
+ * margin reset that overlay layout needs. */
+.shijing-natal-overlay__lead {
+  margin: 0;
+}
+
+/* --- Flatten the nested-card chrome --------------------------------
+ * Scoped form rule (line ~852) paints every <form> + <fieldset> in
+ * .shijing-tab as a white card with border + 24px padding. Inside
+ * this modal that produces card-in-card-in-card. Strip all three
+ * layers down to plain flex stacks. */
+
+.shijing-natal-overlay__panel form,
+.shijing-natal-overlay__panel fieldset {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.shijing-natal-overlay__panel form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.shijing-natal-overlay__panel fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.shijing-natal-overlay__panel legend {
+  padding: 0;
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #1F2933;
+}
+
+.shijing-natal-overlay__panel .shijing-natural-birth {
+  gap: 22px;
+}
+
+.shijing-natal-overlay__panel .shijing-natural-birth__record {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.shijing-natal-overlay__panel .shijing-natural-birth__lunar-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* --- Field shell tuning ---
+ * The wrapping label (kit TextField / TextareaField outer label)
+ * gets a clean white background + soft border, with the emerald
+ * accent only on hover/focus. The caption label gets dark-text
+ * weight so the form reads as content, not muted chrome. */
+
+.shijing-natal-overlay__panel .nimi-field-shell__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1F2933;
+  letter-spacing: 0;
+  margin: 0 0 6px;
+}
+
+.shijing-natal-overlay__panel .nimi-field-shell > label:not(.nimi-field-shell__label) {
+  background: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.shijing-natal-overlay__panel .nimi-field-shell > label:not(.nimi-field-shell__label):hover {
+  border-color: color-mix(in srgb, #3FC6A0 28%, #E5E7EB);
+}
+
+/* Select trigger (Radix button-rendered <button role="combobox">):
+ * mirror the field look so SelectField and TextField sit at the same
+ * visual altitude. */
+.shijing-natal-overlay__panel .nimi-field-shell button[role="combobox"],
+.shijing-natal-overlay__panel .nimi-field-shell button[aria-haspopup="listbox"] {
+  background: #ffffff;
+  border-color: #E5E7EB;
+  color: #1F2933;
+  font-size: 14px;
+  font-weight: 500;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.shijing-natal-overlay__panel .nimi-field-shell button[role="combobox"]:hover:not(:disabled),
+.shijing-natal-overlay__panel .nimi-field-shell button[aria-haspopup="listbox"]:hover:not(:disabled) {
+  border-color: color-mix(in srgb, #3FC6A0 28%, #E5E7EB);
+}
+
+.shijing-natal-overlay__panel .nimi-field-shell button[role="combobox"]:focus,
+.shijing-natal-overlay__panel .nimi-field-shell button[aria-haspopup="listbox"]:focus {
+  border-color: #3FC6A0;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #3FC6A0 18%, transparent);
+}
+
+/* --- Action row ---
+ * Kit's primary Button gets the brief's gradient + soft emerald
+ * shadow. Ghost button stays text-only with a faint hover wash. */
+
+.shijing-natal-overlay__panel .shijing-natural-birth__footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.shijing-natal-overlay__panel .nimi-action--primary {
+  background: linear-gradient(135deg, #46D3AA 0%, #31B993 100%);
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow: 0 6px 16px -4px rgba(63, 198, 160, 0.35);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.1s ease;
+}
+
+.shijing-natal-overlay__panel .nimi-action--primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #51D9B3 0%, #2EAE89 100%);
+  box-shadow: 0 8px 22px -4px rgba(63, 198, 160, 0.42);
+  transform: translateY(-1px);
+}
+
+.shijing-natal-overlay__panel .nimi-action--primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 3px 10px -2px rgba(63, 198, 160, 0.32);
+}
+
+/* Cancel button — outlined ghost.
+ *
+ * Kit's ghost tone is text-only (bg-transparent + border-transparent),
+ * which next to the saturated gradient primary reads as a plain link,
+ * not a button. The Chinese UI convention for "幽灵按钮" is an
+ * outlined transparent button — the 1px border carries the button
+ * affordance while the bg stays clear. kit's base class already sets
+ * `border` (1px solid); we only need to restore the visible
+ * border-color that the ghost tone hid. */
+.shijing-natal-overlay__panel .nimi-action--ghost {
+  color: #6B7280;
+  font-weight: 500;
+  border-color: #E5E7EB;
+  background: transparent;
+}
+
+.shijing-natal-overlay__panel .nimi-action--ghost:hover:not(:disabled) {
+  color: #1F2933;
+  background: rgba(31, 41, 51, 0.04);
+  border-color: #CBD5E1;
+}
+
+.shijing-natal-overlay__panel .nimi-action--ghost:active:not(:disabled) {
+  background: rgba(31, 41, 51, 0.07);
+  transform: translateY(0);
+}
+
+.shijing-natal-overlay__panel .nimi-action--ghost:focus-visible {
+  outline: none;
+  border-color: #CBD5E1;
+  box-shadow: 0 0 0 3px rgba(31, 41, 51, 0.08);
+}
+
+/* Status / error banners are kit <InlineAlert> — kit owns the
+ * tone-specific bg/border/text colour via --nimi-status-*-soft-*
+ * tokens, so we only override what's modal-specific (margin reset
+ * and a slightly larger radius to match the field radius). */
+.shijing-natal-overlay__panel .shijing-natal-inputs-form__alert {
+  margin: 0;
+  border-radius: 12px;
+}
+
+@media (max-width: 640px) {
+  .shijing-natal-overlay__panel {
+    --nimi-radius-lg: 22px;
+  }
+  .shijing-natal-overlay__panel .nimi-overlay-title {
+    padding: 24px 22px 4px;
+  }
+  .shijing-natal-overlay__panel .nimi-overlay-content {
+    padding: 0 22px 22px;
+  }
+  .shijing-natal-overlay__panel .shijing-natural-birth__lunar-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .shijing-me-natal-rows__item {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .shijing-me-card__detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-me-precision-callout {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'icon body'
+      'action action';
+    row-gap: 10px;
+  }
+
+  .shijing-me-precision-callout__icon { grid-area: icon; }
+  .shijing-me-precision-callout__body { grid-area: body; }
+  .shijing-me-precision-callout__action {
+    grid-area: action;
+    width: 100%;
+  }
+
+  .shijing-me-list__row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'label   action'
+      'value   value';
+    gap: 4px 12px;
+  }
+
+  .shijing-me-list__label { grid-area: label; }
+  .shijing-me-list__value { grid-area: value; }
+  .shijing-me-list__action { grid-area: action; justify-self: end; }
+
+  .shijing-me-tab-header h2 {
+    font-size: 22px;
+  }
+}
+
+/* =====================================================================
+ * Integrated top bar (brand + tabs + account) — replaces the original
+ * dual-row shell chrome. Brand sits on the left, NimiTabs in the
+ * middle, and the account avatar+menu on the right.
+ * ===================================================================== */
+
+.shijing-app__body--integrated {
+  padding: 0;
+}
+
+.shijing-shell__topbar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  border-radius: 0;
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--shijing-border-subtle) 60%, transparent);
+  background: color-mix(in srgb, var(--shijing-surface-card) 45%, transparent);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  -webkit-app-region: drag;
+}
+
+.shijing-topbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 10px 28px;
+}
+
+.shijing-topbar > * {
+  -webkit-app-region: no-drag;
+}
+
+.shijing-topbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  justify-self: start;
+  min-width: 0;
+}
+
+.shijing-topbar__brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--shijing-brand-primary) 18%, var(--shijing-surface-card));
+  color: var(--shijing-brand-primary);
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 16px;
+  line-height: 1;
+  border: 1px solid color-mix(in srgb, var(--shijing-brand-primary) 22%, var(--shijing-border-subtle));
+}
+
+.shijing-topbar__brand-name {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-topbar__breadcrumb-sep {
+  user-select: none;
+  color: var(--shijing-border-strong);
+  font-size: 16px;
+  font-weight: 300;
+  line-height: 1;
+  margin: 0 2px;
+}
+
+.shijing-subject-switcher--breadcrumb {
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.shijing-subject-switcher__trigger--breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  color: var(--shijing-text-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.shijing-subject-switcher__trigger--breadcrumb:hover {
+  background: color-mix(in srgb, var(--shijing-text-primary) 6%, transparent);
+}
+
+.shijing-subject-switcher__trigger--breadcrumb:focus-visible {
+  outline: none;
+  box-shadow: var(--shijing-focus-ring);
+}
+
+.shijing-subject-switcher__trigger--breadcrumb .shijing-subject-switcher__current {
+  flex-direction: row;
+  align-items: center;
+  min-width: 0;
+}
+
+.shijing-subject-switcher__trigger--breadcrumb .shijing-subject-switcher__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+}
+
+.shijing-subject-switcher__trigger--breadcrumb .shijing-subject-switcher__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 13px;
+  line-height: 1;
+  transform: none;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-subject-switcher__trigger--breadcrumb .shijing-subject-switcher__chevron svg {
+  display: block;
+}
+
+.shijing-topbar__tabs {
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  backdrop-filter: none;
+  border-bottom: 0;
+  justify-self: center;
+}
+
+.shijing-topbar__tabs ol {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shijing-topbar__tabs button {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 8px 18px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--shijing-text-secondary);
+  cursor: pointer;
+  border-radius: 999px;
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.shijing-topbar__tabs button:hover {
+  color: var(--shijing-text-primary);
+  background: color-mix(in srgb, var(--shijing-text-primary) 5%, transparent);
+}
+
+.shijing-topbar__tabs button[aria-selected="true"],
+.shijing-topbar__tabs button[aria-current="page"] {
+  color: var(--shijing-text-primary);
+  font-weight: 600;
+  background: transparent;
+}
+
+.shijing-topbar__account-slot {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shijing-topbar__account {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 4px 6px 4px 14px;
+  border-radius: 999px;
+  color: var(--shijing-text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  transition: background 120ms ease;
+}
+
+.shijing-topbar__account:hover {
+  background: color-mix(in srgb, var(--shijing-text-primary) 6%, transparent);
+}
+
+.shijing-topbar__account-name {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shijing-shell__subject-bar {
+  display: flex;
+  justify-content: flex-start;
+  padding: 12px 24px 0;
+}
+
+@media (max-width: 760px) {
+  .shijing-topbar {
+    grid-template-columns: auto 1fr auto;
+    padding: 10px 16px;
+    gap: 8px;
+  }
+
+  .shijing-topbar__brand-name {
+    display: none;
+  }
+
+  .shijing-topbar__breadcrumb-sep {
+    display: none;
+  }
+
+  .shijing-topbar__tabs {
+    overflow-x: auto;
+  }
+
+  .shijing-topbar__account-name {
+    display: none;
+  }
+}
+
+/* =====================================================================
+ * Today tab — visual redesign.
+ * Layout flow:
+ *   .shijing-tab--today
+ *     > .shijing-today-header
+ *         > .shijing-today-header__title (h2 + inline date · weekday)
+ *     > .shijing-today-hero        (conclusion + refresh button +
+ *                                   reminder slot that doubles as a
+ *                                   natal-gap warning when needed +
+ *                                   "今日节奏" three-column strip +
+ *                                   "今日参考的事件" footer)
+ *     > .shijing-today-event-input ("今天有特别的事情吗？")
+ *     > "今天怎么做" three small action cards
+ *     > "时镜解读 / 关系与事务" dual card
+ *     > "今日最值得问自己的" reflection callout
+ *     > "推演依据与数据说明" collapsible evidence
+ * ===================================================================== */
+
+.shijing-tab--today {
+  --shijing-today-canvas: linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 38%, #eef2ff 100%);
+  --shijing-today-card-border: #e5e7eb;
+  /* Brand accent for the entire Today surface — sourced from the
+   * Nimi kit's primary action color so every Today module reads as
+   * an extension of the kit theme rather than a fork. */
+  --shijing-today-accent: var(--nimi-action-primary-bg, #4ECCA3);
+  --shijing-today-accent-hover: var(--nimi-action-primary-bg-hover, #3DBB96);
+  --shijing-today-accent-soft: color-mix(in srgb, var(--shijing-today-accent) 12%, transparent);
+  --shijing-today-warn: #b5854a;
+  --shijing-today-info: #5a7a8e;
+
+  /* Nimi-kit glass material aliases — every Today module reads from
+   * these so the visual language stays consistent and theme-aware.
+   *
+   * Tiers (top-down weight):
+   *   chrome   → top conclusion hero
+   *   thick    → primary supporting cards (actions, time slots, split,
+   *              event input, evidence)
+   *   regular  → secondary surfaces (reflection callout, mint tints)
+   *   thin     → barely-there surfaces (chips, pills, inner fields)
+   * Each tier pairs a background, border, blur and elevation token. */
+  --shijing-today-glass-chrome-bg: var(--nimi-material-glass-chrome-bg, rgba(255, 255, 255, 0.85));
+  --shijing-today-glass-chrome-border: var(--nimi-material-glass-chrome-border, rgba(226, 232, 240, 0.50));
+  --shijing-today-glass-thick-bg: var(--nimi-material-glass-thick-bg, rgba(255, 255, 255, 0.70));
+  --shijing-today-glass-thick-border: var(--nimi-material-glass-thick-border, rgba(226, 232, 240, 0.40));
+  --shijing-today-glass-regular-bg: var(--nimi-material-glass-regular-bg, rgba(255, 255, 255, 0.45));
+  --shijing-today-glass-regular-border: var(--nimi-material-glass-regular-border, rgba(226, 232, 240, 0.30));
+  --shijing-today-glass-thin-bg: var(--nimi-material-glass-thin-bg, rgba(255, 255, 255, 0.25));
+  --shijing-today-glass-thin-border: var(--nimi-material-glass-thin-border, rgba(226, 232, 240, 0.20));
+  --shijing-today-blur-regular: var(--nimi-backdrop-blur-regular, 18px);
+  --shijing-today-blur-strong: var(--nimi-backdrop-blur-strong, 24px);
+  --shijing-today-blur-chrome: var(--nimi-backdrop-blur-chrome, 28px);
+  --shijing-today-elev-base: var(--nimi-elevation-base, 0 6px 18px rgba(15, 23, 42, 0.08));
+  --shijing-today-elev-raised: var(--nimi-elevation-raised, 0 12px 28px rgba(15, 23, 42, 0.12));
+  --shijing-today-elev-floating: var(--nimi-elevation-floating, 0 18px 44px rgba(15, 23, 42, 0.16));
+  --shijing-today-radius-card: var(--nimi-radius-xl, 24px);
+  --shijing-today-radius-tile: var(--nimi-radius-lg, 16px);
+  --shijing-today-radius-pill: 999px;
+
+  max-width: 980px;
+  position: relative;
+  isolation: isolate;
+  gap: 24px;
+}
+
+.shijing-tab--today::before {
+  content: '';
+  position: absolute;
+  inset: -32px -80px;
+  z-index: -1;
+  background: var(--shijing-today-canvas);
+  opacity: 0.5;
+  pointer-events: none;
+  border-radius: 28px;
+}
+
+.shijing-today-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shijing-today-header__title {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.shijing-tab--today .shijing-today-header__title h2 {
+  margin: 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--shijing-text-primary);
+  line-height: 1.1;
+}
+
+.shijing-today-header__date {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--shijing-text-secondary);
+  letter-spacing: 0.01em;
+  /* Baseline-aligns the date with the bottom of the large title, so it
+   * reads as a quiet annotation hanging off the lower-right of "今日". */
+  align-self: baseline;
+}
+
+.shijing-today-header__date-sep {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-today-header__date-main {
+  color: var(--shijing-text-primary);
+  font-weight: 500;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ----- Hero conclusion card ----- */
+
+.shijing-today-hero {
+  background: var(--shijing-today-glass-chrome-bg);
+  border: 1px solid var(--shijing-today-glass-chrome-border);
+  border-radius: var(--shijing-today-radius-card);
+  padding: 44px 56px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 18px;
+  box-shadow: var(--shijing-today-elev-raised);
+  backdrop-filter: blur(var(--shijing-today-blur-chrome)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--shijing-today-blur-chrome)) saturate(140%);
+}
+
+.shijing-today-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--shijing-text-muted);
+  font-size: 13px;
+  letter-spacing: 0.32em;
+  padding-left: 0.32em;
+}
+
+.shijing-today-hero__eyebrow-dash {
+  display: inline-block;
+  width: 28px;
+  height: 1px;
+  background: var(--shijing-border-strong);
+}
+
+.shijing-today-hero__headline {
+  margin: 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 52px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--shijing-text-primary);
+  line-height: 1.15;
+}
+
+.shijing-today-hero__keywords {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--shijing-today-accent) 8%, var(--shijing-surface-card));
+  border: 1px solid color-mix(in srgb, var(--shijing-today-accent) 18%, var(--shijing-border-subtle));
+  font-size: 13px;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-today-hero__keywords-label {
+  color: var(--shijing-text-muted);
+  font-size: 12px;
+}
+
+.shijing-today-hero__keywords-list {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--shijing-text-primary);
+  font-weight: 500;
+}
+
+.shijing-today-hero__keyword:not(:first-child)::before {
+  content: '·';
+  margin: 0 4px 0 0;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-today-hero__body {
+  margin: 4px 0 0;
+  max-width: 540px;
+  color: var(--shijing-text-primary);
+  font-size: 15px;
+  line-height: 1.9;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+}
+
+.shijing-today-hero__leanings {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.shijing-today-hero__leaning {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--shijing-today-accent) 12%, var(--shijing-surface-card));
+  color: var(--shijing-today-accent);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.shijing-today-hero__confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  color: var(--shijing-text-muted);
+  font-size: 12.5px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 540px;
+}
+
+.shijing-today-hero__confidence-label {
+  letter-spacing: 0.18em;
+}
+
+.shijing-today-hero__confidence-value {
+  color: var(--shijing-text-primary);
+  font-weight: 500;
+}
+
+.shijing-today-hero__confidence-note {
+  color: var(--shijing-text-secondary);
+  line-height: 1.6;
+}
+
+/* Reminder slot — calm callout (heart-icon) when there is nothing to
+ * fix, or gap-warning callout (warning icon + 去补全 button) when the
+ * observation target still has incomplete natal inputs. Both variants
+ * occupy the same physical slot at the bottom of the Hero card. */
+
+.shijing-today-hero__reminder {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--shijing-today-accent) 5%, var(--shijing-surface-card));
+  border: 1px solid color-mix(in srgb, var(--shijing-today-accent) 14%, var(--shijing-border-subtle));
+  color: var(--shijing-text-secondary);
+  font-size: 13px;
+  line-height: 1.65;
+  text-align: left;
+  max-width: 560px;
+}
+
+.shijing-today-hero__reminder svg {
+  color: var(--shijing-today-accent);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.shijing-today-hero__reminder p {
+  margin: 0;
+}
+
+/* ----- "资料完整度" info variant -----
+ *
+ * Replaces the prior amber/danger gap notice. Reads as a calm
+ * completeness supplement, not an error: a gentle玉青 tint, a small
+ * info-circle badge, a two-row copy (title + body), and a
+ * "完善资料 →" text link. No yellow, no triangle icon, no heavy
+ * border, no filled buttons. */
+
+.shijing-today-hero__reminder--info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  max-width: 560px;
+  width: 100%;
+  border-radius: var(--shijing-today-radius-tile);
+  background: color-mix(in srgb, var(--shijing-today-accent) 6%, color-mix(in srgb, #ffffff 92%, transparent));
+  border: 1px solid color-mix(in srgb, var(--shijing-today-accent) 14%, transparent);
+  font-size: 13px;
+  line-height: 1.55;
+  text-align: left;
+}
+
+.shijing-today-hero__reminder-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--shijing-today-accent) 14%, transparent);
+  color: var(--shijing-today-accent);
+  flex-shrink: 0;
+}
+
+.shijing-today-hero__reminder-icon svg {
+  width: 14px;
+  height: 14px;
+  /* The heart-icon variant uses a slight top margin to align with its
+   * paragraph baseline; the info-circle sits inside its own badge so
+   * we reset that here. */
+  margin-top: 0;
+}
+
+.shijing-today-hero__reminder-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.shijing-today-hero__reminder-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.01em;
+}
+
+.shijing-today-hero__reminder-body {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--shijing-text-secondary);
+  line-height: 1.6;
+}
+
+.shijing-tab--today .shijing-today-hero__reminder-link {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--shijing-today-accent);
+  font-size: 12.5px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 120ms ease, transform 120ms ease;
+}
+
+.shijing-tab--today .shijing-today-hero__reminder-link:hover {
+  filter: brightness(0.85);
+}
+
+.shijing-tab--today .shijing-today-hero__reminder-link:hover .shijing-today-hero__reminder-link-arrow {
+  transform: translateX(2px);
+}
+
+.shijing-today-hero__reminder-link-arrow {
+  display: inline-block;
+  transition: transform 120ms ease;
+}
+
+@media (max-width: 640px) {
+  .shijing-today-hero__reminder--info {
+    flex-wrap: wrap;
+  }
+
+  .shijing-today-hero__reminder--info .shijing-today-hero__reminder-link {
+    margin-left: auto;
+  }
+}
+
+/* ----- Hero top-right refresh button (icon-only) -----
+ *
+ * Replaces the legacy refresh affordance that lived in the context bar.
+ * Position absolute to detach from the hero's centered flow; the button
+ * stays small, calm, and reads as a quiet "regenerate today" handle. */
+
+.shijing-tab--today .shijing-today-hero__refresh {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  appearance: none;
+  background: var(--shijing-today-glass-thin-bg);
+  border: 1px solid var(--shijing-today-glass-thin-border);
+  color: var(--shijing-text-secondary);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease, transform 200ms ease;
+  backdrop-filter: blur(var(--shijing-today-blur-regular)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--shijing-today-blur-regular)) saturate(140%);
+  z-index: 2;
+}
+
+.shijing-tab--today .shijing-today-hero__refresh:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--shijing-today-accent) 12%, var(--shijing-today-glass-regular-bg));
+  border-color: color-mix(in srgb, var(--shijing-today-accent) 24%, var(--shijing-today-glass-regular-border));
+  color: var(--shijing-today-accent);
+}
+
+.shijing-tab--today .shijing-today-hero__refresh:active:not(:disabled) {
+  transform: rotate(180deg);
+}
+
+.shijing-tab--today .shijing-today-hero__refresh:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.shijing-today-hero__refresh svg {
+  width: 16px;
+  height: 16px;
+}
+
+.shijing-today-hero {
+  /* Hero must establish a positioning context so the absolute-positioned
+   * refresh button anchors to its corner instead of the page. */
+  position: relative;
+}
+
+/* ----- Hero "今日节奏" three-column inline strip -----
+ *
+ * Compact morning / afternoon / evening row living inside the Hero
+ * card, between the reminder and the events footer. Each slot keeps
+ * a hue-coded icon, a label + monospace time range, and a one-line
+ * body — visibly lighter than the standalone three-card section it
+ * replaced, but still readable as three distinct beats of the day. */
+
+.shijing-today-hero__time-slots {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--shijing-today-accent) 14%, var(--shijing-today-glass-thick-border));
+  text-align: left;
+}
+
+.shijing-today-hero__time-slots-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.shijing-today-hero__time-slots-title {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--shijing-today-accent);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.shijing-today-hero__time-slots-row {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.shijing-today-hero__time-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: var(--shijing-today-radius-tile);
+  background: var(--shijing-today-glass-thin-bg);
+  border: 1px solid var(--shijing-today-glass-thin-border);
+}
+
+.shijing-today-hero__time-slot-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shijing-today-hero__time-slot-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--shijing-today-accent) 10%, transparent);
+  color: var(--shijing-today-accent);
+  flex-shrink: 0;
+}
+
+.shijing-today-hero__time-slot-icon svg {
+  width: 12px;
+  height: 12px;
+}
+
+.shijing-today-hero__time-slot--morning .shijing-today-hero__time-slot-icon {
+  color: #d49b3a;
+  background: color-mix(in srgb, #d49b3a 12%, transparent);
+}
+
+.shijing-today-hero__time-slot--afternoon .shijing-today-hero__time-slot-icon {
+  color: #e57b3f;
+  background: color-mix(in srgb, #e57b3f 12%, transparent);
+}
+
+.shijing-today-hero__time-slot--evening .shijing-today-hero__time-slot-icon {
+  color: #5b78ed;
+  background: color-mix(in srgb, #5b78ed 12%, transparent);
+}
+
+.shijing-today-hero__time-slot-label {
+  color: var(--shijing-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.shijing-today-hero__time-slot-range {
+  color: var(--shijing-text-muted);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  margin-left: auto;
+}
+
+.shijing-today-hero__time-slot-body {
+  margin: 0;
+  color: var(--shijing-text-secondary);
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+
+/* ----- Hero "今日参考的事件" footer -----
+ *
+ * Sits inside the Hero card so the conclusion is read together with
+ * the events that informed it. Pure list (no card chrome inside the
+ * card) with a thin top divider and a small introduction line. */
+
+.shijing-today-hero__events {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--shijing-today-accent) 14%, var(--shijing-today-glass-thick-border));
+  text-align: left;
+}
+
+.shijing-today-hero__events-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.shijing-today-hero__events-title {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--shijing-today-accent);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.shijing-today-hero__events-intro {
+  margin: 0;
+  color: var(--shijing-text-muted);
+  font-size: 12px;
+}
+
+.shijing-today-hero__events-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.shijing-today-hero__events-item {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 0;
+  border-top: 1px solid color-mix(in srgb, var(--shijing-today-accent) 8%, var(--shijing-today-glass-thin-border));
+  position: relative;
+}
+
+.shijing-today-hero__events-item:first-child {
+  border-top: 0;
+}
+
+.shijing-today-hero__events-date {
+  color: var(--shijing-text-muted);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.shijing-today-hero__events-text {
+  color: var(--shijing-text-primary);
+  font-size: 13.5px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+/* Row actions: visible at low opacity by default; full opacity on row
+ * hover or when any of the buttons takes focus. Keeping them at all
+ * times (vs. display:none) means screen-reader / keyboard users can
+ * always reach them without simulating hover. */
+.shijing-today-hero__events-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.shijing-today-hero__events-item:hover .shijing-today-hero__events-actions,
+.shijing-today-hero__events-item:focus-within .shijing-today-hero__events-actions {
+  opacity: 1;
+}
+
+.shijing-tab--today .shijing-today-hero__events-action {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--shijing-text-muted);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.shijing-tab--today .shijing-today-hero__events-action:hover {
+  color: var(--shijing-today-accent);
+  background: color-mix(in srgb, var(--shijing-today-accent) 10%, transparent);
+}
+
+.shijing-tab--today .shijing-today-hero__events-action:last-child:hover {
+  color: var(--shijing-status-danger);
+  background: color-mix(in srgb, var(--shijing-status-danger) 10%, transparent);
+}
+
+/* Edit mode: row becomes a two-cell layout (date | textarea+actions). */
+.shijing-today-hero__events-item--editing {
+  align-items: start;
+  grid-template-columns: 100px minmax(0, 1fr);
+  padding: 12px 0;
+}
+
+.shijing-today-hero__events-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.shijing-tab--today .shijing-today-hero__events-textarea {
+  appearance: none;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--shijing-text-primary);
+  background: color-mix(in srgb, #ffffff 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--shijing-today-accent) 18%, var(--shijing-today-glass-thin-border));
+  border-radius: 10px;
+  resize: vertical;
+}
+
+.shijing-tab--today .shijing-today-hero__events-textarea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--shijing-today-accent) 40%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--shijing-today-accent) 14%, transparent);
+}
+
+.shijing-today-hero__events-edit-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shijing-tab--today .shijing-today-hero__events-edit-save,
+.shijing-tab--today .shijing-today-hero__events-edit-cancel {
+  appearance: none;
+  border: 0;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  min-height: 28px;
+  transition: filter 120ms ease, background 120ms ease, color 120ms ease;
+}
+
+.shijing-tab--today .shijing-today-hero__events-edit-save {
+  background: var(--shijing-today-accent);
+  color: #fff;
+}
+
+.shijing-tab--today .shijing-today-hero__events-edit-save:hover {
+  filter: brightness(0.9);
+}
+
+.shijing-tab--today .shijing-today-hero__events-edit-cancel {
+  background: transparent;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-tab--today .shijing-today-hero__events-edit-cancel:hover {
+  color: var(--shijing-text-primary);
+  background: color-mix(in srgb, var(--shijing-text-primary) 6%, transparent);
+}
+
+.shijing-today-hero__events-error {
+  grid-column: 1 / -1;
+  margin: 4px 0 0;
+  color: var(--shijing-status-danger);
+  font-size: 12px;
+}
+
+/* ----- Section headings (今天怎么做 / 今日时段) ----- */
+
+.shijing-today-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shijing-today-section__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+}
+
+/* ----- 今天怎么做 ----- */
+
+.shijing-today-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.shijing-today-action {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 20px;
+  background: var(--shijing-today-glass-thick-bg);
+  border: 1px solid var(--shijing-today-glass-thick-border);
+  border-radius: var(--shijing-today-radius-tile);
+  box-shadow: var(--shijing-today-elev-base);
+  backdrop-filter: blur(var(--shijing-today-blur-regular)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--shijing-today-blur-regular)) saturate(140%);
+  position: relative;
+  overflow: hidden;
+}
+
+.shijing-today-action::after {
+  content: '';
+  position: absolute;
+  inset: auto 18px 0 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--shijing-today-action-accent, var(--shijing-today-accent));
+  opacity: 0.5;
+}
+
+/* Action-card categorical accents. "Do" inherits the Today brand
+ * accent (Nimi primary) so the most affirmative action carries the
+ * brand color; "Say" / "Avoid" keep their categorical hues so the
+ * three slots stay visually distinguishable. */
+.shijing-today-action--do { --shijing-today-action-accent: var(--shijing-today-accent); }
+.shijing-today-action--say { --shijing-today-action-accent: #5b78ed; }
+.shijing-today-action--avoid { --shijing-today-action-accent: #d49b3a; }
+
+.shijing-today-action__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shijing-today-action__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--shijing-today-action-accent);
+  flex-shrink: 0;
+}
+
+.shijing-today-action__badge svg {
+  width: 14px;
+  height: 14px;
+}
+
+.shijing-today-action__eyebrow {
+  color: var(--shijing-text-muted);
+  font-size: 12px;
+}
+
+.shijing-today-action__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  line-height: 1.45;
+}
+
+.shijing-today-action__body {
+  margin: 0 0 6px;
+  color: var(--shijing-text-secondary);
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+
+/* ----- 时镜解读 / 关系与事务 ----- */
+
+.shijing-today-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.shijing-today-split__card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 22px;
+  background: var(--shijing-today-glass-thick-bg);
+  border: 1px solid var(--shijing-today-glass-thick-border);
+  border-radius: var(--shijing-today-radius-tile);
+  box-shadow: var(--shijing-today-elev-base);
+  backdrop-filter: blur(var(--shijing-today-blur-regular)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--shijing-today-blur-regular)) saturate(140%);
+}
+
+.shijing-today-split__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shijing-today-split__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--shijing-today-accent);
+}
+
+.shijing-today-split__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-today-split__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shijing-today-split__body p {
+  margin: 0;
+  color: var(--shijing-text-secondary);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.shijing-today-split__grid {
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.shijing-today-split__grid > div {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+}
+
+.shijing-today-split__grid dt {
+  color: var(--shijing-today-accent);
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.shijing-today-split__grid dd {
+  margin: 0;
+  color: var(--shijing-text-secondary);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+/* ----- 今日最值得问自己的 ----- */
+
+.shijing-today-reflection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 22px 24px;
+  border-radius: var(--shijing-today-radius-tile);
+  /* Glass-regular base + a mint wash so this surface stays warmer than
+   * the surrounding action / time-slot cards while still living in the
+   * same translucent material family. */
+  background-color: var(--shijing-today-glass-regular-bg);
+  background-image: linear-gradient(135deg,
+    color-mix(in srgb, var(--shijing-today-accent) 12%, transparent) 0%,
+    color-mix(in srgb, var(--shijing-today-accent) 3%, transparent) 100%);
+  border: 1px solid color-mix(in srgb, var(--shijing-today-accent) 22%, var(--shijing-today-glass-regular-border));
+  box-shadow: var(--shijing-today-elev-base);
+  backdrop-filter: blur(var(--shijing-today-blur-regular)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--shijing-today-blur-regular)) saturate(140%);
+}
+
+.shijing-today-reflection__head {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shijing-today-reflection__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--shijing-today-accent) 14%, transparent);
+  color: var(--shijing-today-accent-hover);
+}
+
+.shijing-today-reflection__badge svg {
+  width: 14px;
+  height: 14px;
+}
+
+.shijing-today-reflection__eyebrow {
+  color: var(--shijing-today-accent-hover);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.shijing-today-reflection__question {
+  margin: 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--shijing-text-primary);
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+}
+
+.shijing-today-reflection__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.shijing-tab--today .shijing-today-reflection__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #111827;
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  min-height: 38px;
+  align-self: flex-start;
+}
+
+.shijing-tab--today .shijing-today-reflection__button:hover:not(:disabled) {
+  background: #1f2937;
+}
+
+.shijing-today-reflection__button svg {
+  color: #fff;
+  width: 16px;
+  height: 16px;
+}
+
+.shijing-today-reflection__hint {
+  margin: 0;
+  color: var(--shijing-text-muted);
+  font-size: 12.5px;
+}
+
+/* ----- 推演依据与数据说明 ----- */
+
+.shijing-today-evidence {
+  background: var(--shijing-today-glass-thick-bg);
+  border: 1px solid var(--shijing-today-glass-thick-border);
+  border-radius: var(--shijing-today-radius-tile);
+  box-shadow: var(--shijing-today-elev-base);
+  backdrop-filter: blur(var(--shijing-today-blur-regular)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--shijing-today-blur-regular)) saturate(140%);
+  overflow: hidden;
+}
+
+.shijing-tab--today .shijing-today-evidence__bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 18px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--shijing-text-primary);
+  text-align: left;
+  font: inherit;
+  align-self: stretch;
+  min-height: 56px;
+  border-radius: 0;
+}
+
+.shijing-tab--today .shijing-today-evidence__bar:disabled {
+  cursor: default;
+  color: var(--shijing-text-secondary);
+  opacity: 1;
+}
+
+.shijing-today-evidence__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--shijing-today-accent) 10%, transparent);
+  color: var(--shijing-today-accent);
+  flex-shrink: 0;
+}
+
+.shijing-today-evidence__title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  flex-shrink: 0;
+}
+
+.shijing-today-evidence__chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.shijing-today-evidence__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--shijing-today-accent) 5%, var(--shijing-surface-card-quiet));
+  border: 1px solid var(--shijing-border-subtle);
+  font-size: 11.5px;
+}
+
+.shijing-today-evidence__chip-label {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-today-evidence__chip-value {
+  color: var(--shijing-text-primary);
+  font-weight: 500;
+}
+
+.shijing-today-evidence__chevron {
+  color: var(--shijing-text-muted);
+  flex-shrink: 0;
+  transition: transform 200ms ease;
+}
+
+.shijing-today-evidence--open .shijing-today-evidence__chevron {
+  transform: rotate(180deg);
+}
+
+.shijing-today-evidence__panel {
+  padding: 0 18px 18px;
+  border-top: 1px solid var(--shijing-border-subtle);
+}
+
+/* ----- "今天有特别的事情吗？" lightweight input card -----
+ *
+ * Mirrors the consultation composer pattern (问时镜 right-side input):
+ *   - white → pale-mint linear gradient body
+ *   - thin teal border + soft drop shadow + backdrop blur
+ *   - serif heading, secondary caption
+ *   - borderless transparent textarea — text floats in the card
+ *   - thin top-bordered toolbar with hint slot left, gradient pill submit right
+ *
+ * Dimensionally one notch lighter than the consultation composer so it
+ * sits below the conclusion hero without competing visually with the
+ * "今天怎么做" action cards underneath. */
+
+.shijing-today-event-input {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 22px 24px 16px;
+  border-radius: var(--shijing-today-radius-card);
+  /* Glass-chrome base + a mint-leaning gradient so the composer-style
+   * input matches the consultation tab's right-hand panel while still
+   * speaking the kit's glass material language. */
+  background-color: var(--shijing-today-glass-chrome-bg);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.10) 0%,
+    color-mix(in srgb, var(--shijing-today-accent) 4%, transparent) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--shijing-today-accent) 18%, var(--shijing-today-glass-chrome-border));
+  box-shadow: var(--shijing-today-elev-base);
+  backdrop-filter: blur(var(--shijing-today-blur-chrome)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--shijing-today-blur-chrome)) saturate(150%);
+}
+
+.shijing-today-event-input__heading {
+  margin: 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.01em;
+}
+
+.shijing-today-event-input__intro {
+  margin: 0 0 4px;
+  color: var(--shijing-text-secondary);
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+
+.shijing-tab--today .shijing-today-event-input__textarea {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-height: 80px;
+  resize: none;
+  font-size: 14.5px;
+  line-height: 1.85;
+  color: var(--shijing-text-primary);
+  font-family: inherit;
+  width: 100%;
+}
+
+.shijing-tab--today .shijing-today-event-input__textarea:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.shijing-tab--today .shijing-today-event-input__textarea::placeholder {
+  color: rgba(15, 23, 42, 0.30);
+  font-size: 14px;
+  line-height: 1.95;
+}
+
+.shijing-today-event-input__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(15, 23, 42, 0.05);
+  flex-wrap: wrap;
+}
+
+.shijing-today-event-input__hint-slot {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  flex: 1;
+  min-width: 0;
+}
+
+.shijing-today-event-input__hint {
+  margin: 0;
+  color: var(--shijing-text-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.shijing-today-event-input__hint--warn {
+  color: var(--shijing-today-warn);
+}
+
+.shijing-today-event-input__hint--ok {
+  color: var(--shijing-today-accent-hover);
+}
+
+.shijing-tab--today .shijing-today-event-input__submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 18px;
+  height: 40px;
+  min-width: 132px;
+  background: linear-gradient(
+    135deg,
+    var(--shijing-today-accent) 0%,
+    color-mix(in srgb, var(--shijing-today-accent) 80%, #ffffff) 100%
+  );
+  color: #fff;
+  border: 0;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--shijing-today-accent) 28%, transparent);
+  transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+  flex-shrink: 0;
+  align-self: center;
+  /* Keep the submit pinned to the right whether or not the hint-slot
+   * sibling is present. (toolbar uses justify-content: space-between
+   * and would otherwise left-align this when alone.) */
+  margin-left: auto;
+}
+
+.shijing-tab--today .shijing-today-event-input__submit svg {
+  width: 14px;
+  height: 14px;
+  color: #fff;
+}
+
+.shijing-tab--today .shijing-today-event-input__submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(67, 198, 165, 0.32);
+}
+
+.shijing-tab--today .shijing-today-event-input__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.shijing-today-submission {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (max-width: 880px) {
+  .shijing-today-actions,
+  .shijing-today-split {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-today-hero__time-slots-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .shijing-today-hero {
+    padding: 32px 22px 28px;
+  }
+
+  .shijing-today-hero__headline {
+    font-size: 38px;
+  }
+
+  .shijing-today-hero__body {
+    font-size: 14px;
+    line-height: 1.85;
+  }
+
+  .shijing-today-hero__events-item {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .shijing-today-hero__events-date {
+    font-size: 11.5px;
+  }
+}
+
+/* ===== 关注 page redesign (2026-05) — icon list + hero workspace ===== */
+
+.shijing-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.shijing-tab--views .shijing-view-layout {
+  grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1.8fr);
+  gap: 22px;
+}
+
+.shijing-view-list {
+  padding: 18px;
+  gap: 12px;
+  border-radius: var(--shijing-radius-2xl);
+}
+
+.shijing-view-list__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.shijing-view-list__header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-view-list .shijing-view-list__create {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: var(--shijing-brand-primary);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  box-shadow: 0 2px 6px -2px color-mix(in srgb, var(--shijing-brand-primary) 60%, transparent);
+}
+
+.shijing-view-list .shijing-view-list__create svg {
+  display: block;
+}
+
+.shijing-view-list .shijing-view-list__create:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--shijing-brand-primary) 90%, #000);
+}
+
+.shijing-view-list .shijing-view-list__search {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.shijing-view-list .shijing-view-list__search input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-md);
+  background: var(--shijing-surface-card-quiet);
+  color: var(--shijing-text-primary);
+  font-size: 12.5px;
+}
+
+.shijing-view-list .shijing-view-list__search input::placeholder {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-tab--views .shijing-view-list__filters {
+  display: flex;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.shijing-tab--views .shijing-view-list__filters button {
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding: 5px 14px;
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.shijing-tab--views .shijing-view-list__filters button:hover:not([aria-pressed="true"]) {
+  background: color-mix(in srgb, var(--shijing-brand-primary) 7%, transparent);
+  color: var(--shijing-text-primary);
+}
+
+.shijing-tab--views .shijing-view-list__filters button[aria-pressed="true"] {
+  background: var(--shijing-brand-primary);
+  color: #fff;
+  border-color: var(--shijing-brand-primary);
+  box-shadow: 0 1px 3px -1px color-mix(in srgb, var(--shijing-brand-primary) 55%, transparent);
+}
+
+.shijing-tab--views .shijing-view-list ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.shijing-tab--views .shijing-view-list li {
+  display: block;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--shijing-radius-lg);
+}
+
+.shijing-tab--views .shijing-view-list li:hover {
+  background: transparent;
+}
+
+.shijing-tab--views .shijing-view-list li[data-selected="true"] {
+  background: transparent;
+  border: 0;
+}
+
+.shijing-view-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-lg);
+  color: var(--shijing-text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.shijing-view-card:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--shijing-brand-primary) 25%, var(--shijing-border-default));
+  background: color-mix(in srgb, var(--shijing-brand-primary) 3%, var(--shijing-surface-card));
+}
+
+.shijing-view-list li[data-selected="true"] .shijing-view-card {
+  border-color: color-mix(in srgb, var(--shijing-brand-primary) 55%, transparent);
+  background: color-mix(in srgb, var(--shijing-brand-primary) 8%, var(--shijing-surface-card));
+  box-shadow: 0 1px 0 0 color-mix(in srgb, var(--shijing-brand-primary) 14%, transparent) inset;
+}
+
+.shijing-view-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.shijing-view-card__icon[data-tone="green"] {
+  background: color-mix(in srgb, var(--shijing-brand-primary) 16%, #fff);
+  color: var(--shijing-brand-primary);
+}
+
+.shijing-view-card__icon[data-tone="purple"] {
+  background: #ece9fc;
+  color: #6c5fd5;
+}
+
+.shijing-view-card__icon[data-tone="amber"] {
+  background: #fdebd2;
+  color: #c98730;
+}
+
+.shijing-view-card__icon[data-tone="sky"] {
+  background: #dff0f4;
+  color: #2f7c8b;
+}
+
+.shijing-view-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.shijing-view-card__title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shijing-view-card__meta {
+  font-size: 11.5px;
+  color: var(--shijing-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shijing-view-card__chevron {
+  color: var(--shijing-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shijing-view-list li[data-selected="true"] .shijing-view-card__chevron {
+  color: var(--shijing-brand-primary);
+}
+
+.shijing-tab--views .shijing-view-workspace {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  gap: 18px;
+}
+
+.shijing-view-workspace__hero {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 26px 28px 22px;
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-2xl);
+}
+
+.shijing-view-workspace__hero-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.shijing-view-workspace__hero .shijing-tab__eyebrow {
+  margin: 0;
+}
+
+.shijing-tab--views .shijing-view-workspace__title {
+  margin: 4px 0 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-view-workspace__anchor {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--shijing-text-muted);
+  font-size: 12.5px;
+}
+
+.shijing-view-workspace__anchor svg {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-view-workspace__intro {
+  margin: 4px 0 0;
+  color: var(--shijing-text-secondary);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+
+.shijing-view-workspace__more {
+  position: relative;
+}
+
+.shijing-view-workspace .shijing-view-workspace__more-trigger {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--shijing-text-muted);
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+.shijing-view-workspace .shijing-view-workspace__more-trigger:hover:not(:disabled),
+.shijing-view-workspace .shijing-view-workspace__more-trigger[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--shijing-brand-primary) 8%, transparent);
+  color: var(--shijing-text-primary);
+}
+
+.shijing-view-workspace__menu {
+  position: absolute;
+  right: 0;
+  top: 36px;
+  min-width: 132px;
+  padding: 6px;
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-default);
+  border-radius: var(--shijing-radius-md);
+  box-shadow: var(--shijing-shadow-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 20;
+}
+
+.shijing-view-workspace__menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--shijing-text-primary);
+  font-size: 13px;
+  text-align: left;
+  box-shadow: none;
+}
+
+.shijing-view-workspace__menu button:hover {
+  background: color-mix(in srgb, var(--shijing-brand-primary) 7%, transparent);
+}
+
+.shijing-view-workspace__menu button[data-variant="danger"] {
+  color: var(--shijing-status-danger);
+}
+
+.shijing-view-workspace__menu button[data-variant="danger"]:hover {
+  background: color-mix(in srgb, var(--shijing-status-danger) 9%, transparent);
+}
+
+.shijing-view-record {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 22px;
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-2xl);
+}
+
+.shijing-view-record__prompt {
+  display: block;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-view-record__textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px 14px;
+  background: var(--shijing-surface-card-quiet);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-md);
+  color: var(--shijing-text-primary);
+  font-size: 13.5px;
+  line-height: 1.7;
+  resize: vertical;
+}
+
+.shijing-view-record__textarea::placeholder {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-view-record__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.shijing-view-record .shijing-view-record__primary,
+.shijing-view-record .shijing-view-record__secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 11px 14px;
+  border-radius: var(--shijing-radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 42px;
+}
+
+.shijing-view-record .shijing-view-record__primary {
+  background: color-mix(in srgb, var(--shijing-brand-primary) 22%, #fff);
+  color: var(--shijing-brand-primary);
+  border: 1px solid color-mix(in srgb, var(--shijing-brand-primary) 28%, transparent);
+  box-shadow: none;
+}
+
+.shijing-view-record .shijing-view-record__primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--shijing-brand-primary) 32%, #fff);
+}
+
+.shijing-view-record .shijing-view-record__primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.shijing-view-record .shijing-view-record__secondary {
+  background: var(--shijing-surface-card);
+  color: var(--shijing-brand-primary);
+  border: 1px solid color-mix(in srgb, var(--shijing-brand-primary) 38%, var(--shijing-border-default));
+  box-shadow: none;
+}
+
+.shijing-view-record .shijing-view-record__secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--shijing-brand-primary) 6%, var(--shijing-surface-card));
+}
+
+.shijing-view-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px 22px 20px;
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-2xl);
+}
+
+.shijing-view-summary__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shijing-view-summary__head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-view-summary__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--shijing-brand-primary);
+}
+
+.shijing-view-summary__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-view-summary__body p {
+  margin: 0;
+  color: var(--shijing-text-primary);
+  font-size: 13.5px;
+  line-height: 1.8;
+}
+
+.shijing-view-summary__empty {
+  margin: 0;
+  color: var(--shijing-text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.shijing-view-summary__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-view-summary__steps h4 {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-view-summary__steps ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shijing-view-summary__steps li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  color: var(--shijing-text-primary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.shijing-view-summary__step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--shijing-brand-primary) 18%, #fff);
+  color: var(--shijing-brand-primary);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.shijing-view-summary__footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.shijing-view-summary .shijing-view-summary__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--shijing-brand-primary);
+  border: 1px solid color-mix(in srgb, var(--shijing-brand-primary) 45%, var(--shijing-border-default));
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.shijing-view-summary .shijing-view-summary__cta:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--shijing-brand-primary) 7%, transparent);
+}
+
+.shijing-view-records {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px 22px 20px;
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-2xl);
+}
+
+.shijing-view-records__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.shijing-view-records__head h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-view-records__head small {
+  color: var(--shijing-text-muted);
+  font-size: 12px;
+}
+
+.shijing-view-records__empty {
+  margin: 0;
+  color: var(--shijing-text-muted);
+  font-size: 13px;
+}
+
+.shijing-view-records__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.shijing-view-records__list li {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--shijing-border-subtle);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.shijing-view-records__list li:last-child {
+  border-bottom: 0;
+}
+
+.shijing-view-records__kind {
+  color: var(--shijing-text-muted);
+  font-size: 11.5px;
+  font-feature-settings: "tnum" 1;
+}
+
+.shijing-view-records__body {
+  color: var(--shijing-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.shijing-view-advanced {
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-2xl);
+  padding: 0;
+}
+
+.shijing-view-advanced > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--shijing-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.shijing-view-advanced > summary::-webkit-details-marker {
+  display: none;
+}
+
+.shijing-view-advanced > summary::after {
+  content: '\203A';
+  font-size: 18px;
+  color: var(--shijing-text-muted);
+  transition: transform 160ms ease;
+  margin-left: auto;
+}
+
+.shijing-view-advanced[open] > summary::after {
+  transform: rotate(90deg);
+}
+
+.shijing-view-advanced__count {
+  margin-left: 6px;
+  color: var(--shijing-text-muted);
+  font-weight: 400;
+}
+
+.shijing-view-advanced__panel {
+  padding: 4px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-top: 1px solid var(--shijing-border-subtle);
+}
+
+.shijing-tab--views .shijing-view-list {
+  position: sticky;
+  top: 18px;
+  max-height: calc(100vh - 140px);
+  overflow: auto;
+}
+
+@media (max-width: 900px) {
+  .shijing-tab--views .shijing-view-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-tab--views .shijing-view-list {
+    position: static;
+    max-height: none;
+  }
+
+  .shijing-view-record__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-view-workspace__title {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 640px) {
+  .shijing-view-workspace__hero,
+  .shijing-view-record,
+  .shijing-view-summary,
+  .shijing-view-records,
+  .shijing-view-advanced {
+    border-radius: var(--shijing-radius-xl);
+  }
+
+  .shijing-view-workspace__hero {
+    padding: 22px 18px 18px;
+  }
+
+  .shijing-view-records__list li {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+/* ===== 关注 inline editor (right pane editor mode) ===== */
+
+.shijing-view-workspace--editing {
+  gap: 16px;
+}
+
+.shijing-view-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.shijing-view-editor__head {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px 26px 22px;
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-2xl);
+}
+
+.shijing-view-editor__head .shijing-tab__eyebrow {
+  margin: 0;
+}
+
+.shijing-view-editor__template-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.shijing-view-editor__template-row > span {
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-view-editor__template-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.shijing-view-editor .shijing-view-editor__template-chips button {
+  padding: 5px 12px;
+  min-height: 28px;
+  background: var(--shijing-surface-card-quiet);
+  color: var(--shijing-text-secondary);
+  border: 1px dashed var(--shijing-border-default);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.shijing-view-editor .shijing-view-editor__template-chips button:hover:not(:disabled) {
+  border-style: solid;
+  color: var(--shijing-text-primary);
+  background: color-mix(in srgb, var(--shijing-brand-primary) 6%, var(--shijing-surface-card));
+}
+
+.shijing-view-editor .shijing-view-editor__template-chips button[data-active="true"] {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--shijing-brand-primary) 45%, transparent);
+  background: color-mix(in srgb, var(--shijing-brand-primary) 12%, var(--shijing-surface-card));
+  color: var(--shijing-text-primary);
+}
+
+.shijing-view-record__hint {
+  margin: 0;
+  padding: 9px 14px;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--shijing-text-muted);
+  background: color-mix(in srgb, var(--shijing-brand-primary) 4%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--shijing-brand-primary) 26%, var(--shijing-border-subtle));
+  border-radius: var(--shijing-radius-md);
+  align-self: center;
+}
+
+.shijing-view-editor .shijing-view-editor__title {
+  width: 100%;
+  margin: 0;
+  padding: 4px 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--shijing-text-primary);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  outline: none;
+  box-shadow: none;
+  transition: border-color 140ms ease;
+}
+
+.shijing-view-editor .shijing-view-editor__title::placeholder {
+  color: var(--shijing-text-muted);
+  font-weight: 500;
+}
+
+.shijing-view-editor .shijing-view-editor__title:focus {
+  border-bottom-color: color-mix(in srgb, var(--shijing-brand-primary) 45%, transparent);
+}
+
+.shijing-view-editor__meta-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 14px;
+  align-items: end;
+}
+
+.shijing-view-editor__bounded {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.shijing-view-editor__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shijing-view-editor__field > span {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--shijing-text-muted);
+  letter-spacing: 0.02em;
+}
+
+.shijing-view-editor__field--narrow {
+  max-width: 200px;
+}
+
+.shijing-view-editor__field input[type="text"],
+.shijing-view-editor__field input[type="date"],
+.shijing-view-editor__field select,
+.shijing-view-editor__field textarea {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--shijing-surface-card-quiet);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-md);
+  color: var(--shijing-text-primary);
+  font-size: 13.5px;
+  line-height: 1.6;
+  box-shadow: none;
+}
+
+.shijing-view-editor__field textarea {
+  resize: vertical;
+  min-height: 90px;
+  line-height: 1.7;
+}
+
+.shijing-view-editor__field input::placeholder,
+.shijing-view-editor__field textarea::placeholder {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-view-editor .shijing-view-editor__chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  background: var(--shijing-surface-card-quiet);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: 999px;
+}
+
+.shijing-view-editor .shijing-view-editor__chips button {
+  padding: 6px 14px;
+  min-height: 30px;
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  border: 0;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.shijing-view-editor .shijing-view-editor__chips button:hover:not([aria-pressed="true"]) {
+  color: var(--shijing-text-primary);
+  background: color-mix(in srgb, var(--shijing-brand-primary) 6%, transparent);
+}
+
+.shijing-view-editor .shijing-view-editor__chips button[aria-pressed="true"] {
+  background: var(--shijing-brand-primary);
+  color: #fff;
+}
+
+.shijing-view-editor__card {
+  padding: 20px 22px;
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-2xl);
+}
+
+.shijing-view-editor__subjects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shijing-view-editor__subjects label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--shijing-surface-card-quiet);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: 999px;
+  font-size: 12.5px;
+  color: var(--shijing-text-secondary);
+  cursor: pointer;
+}
+
+.shijing-view-editor__subjects label[data-checked="true"] {
+  background: color-mix(in srgb, var(--shijing-brand-primary) 10%, var(--shijing-surface-card));
+  border-color: color-mix(in srgb, var(--shijing-brand-primary) 38%, var(--shijing-border-default));
+  color: var(--shijing-text-primary);
+}
+
+.shijing-view-editor__subjects label[data-anchor="true"] {
+  background: color-mix(in srgb, var(--shijing-brand-primary) 14%, var(--shijing-surface-card));
+}
+
+.shijing-view-editor__subjects input[type="checkbox"] {
+  accent-color: var(--shijing-brand-primary);
+}
+
+.shijing-view-editor__advanced {
+  padding: 0;
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-2xl);
+}
+
+.shijing-view-editor__advanced > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 22px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--shijing-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.shijing-view-editor__advanced > summary::-webkit-details-marker {
+  display: none;
+}
+
+.shijing-view-editor__advanced > summary::after {
+  content: '\203A';
+  font-size: 18px;
+  color: var(--shijing-text-muted);
+  transition: transform 160ms ease;
+  margin-left: auto;
+}
+
+.shijing-view-editor__advanced[open] > summary::after {
+  transform: rotate(90deg);
+}
+
+.shijing-view-editor__advanced-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 22px 20px;
+  border-top: 1px solid var(--shijing-border-subtle);
+}
+
+.shijing-view-editor__toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--shijing-surface-card-quiet);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-md);
+  cursor: pointer;
+}
+
+.shijing-view-editor__toggle input[type="checkbox"] {
+  margin-top: 2px;
+  accent-color: var(--shijing-brand-primary);
+}
+
+.shijing-view-editor__toggle span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.shijing-view-editor__toggle strong {
+  color: var(--shijing-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.shijing-view-editor__toggle small {
+  color: var(--shijing-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.shijing-view-editor__footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 4px 0 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.shijing-view-editor .shijing-view-editor__save {
+  background: var(--shijing-brand-primary);
+  color: #fff;
+  border: 0;
+  padding: 9px 18px;
+  border-radius: var(--shijing-radius-md);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.shijing-view-editor .shijing-view-editor__save:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--shijing-brand-primary) 92%, #000);
+}
+
+.shijing-view-editor__footer button[data-variant="ghost"] {
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  border: 1px solid var(--shijing-border-strong);
+  padding: 8px 18px;
+  border-radius: var(--shijing-radius-md);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.shijing-view-editor__footer button[data-variant="ghost"]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--shijing-text-secondary) 6%, transparent);
+  color: var(--shijing-text-primary);
+}
+
+@media (max-width: 640px) {
+  .shijing-view-editor__head,
+  .shijing-view-editor__card,
+  .shijing-view-editor__advanced {
+    border-radius: var(--shijing-radius-xl);
+  }
+
+  .shijing-view-editor__head {
+    padding: 20px 18px 18px;
+  }
+
+  .shijing-view-editor .shijing-view-editor__title {
+    font-size: 26px;
+  }
+
+  .shijing-view-editor__meta-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== 新建关注 modal — template picker step ===== */
+
+.shijing-view-form-overlay[data-step="pick"] {
+  padding: 0;
+}
+
+/* Hide the kit's default overlay title chrome on the picker step so we
+   can render our own eyebrow + serif heading. Edit step keeps it. */
+.nimi-overlay-panel:has(.shijing-view-form-overlay[data-step="pick"]) > .nimi-overlay-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.nimi-overlay-panel:has(.shijing-view-form-overlay[data-step="pick"]) > .nimi-overlay-content {
+  padding: 0;
+}
+
+.shijing-view-picker {
+  padding: 28px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: var(--shijing-surface-card);
+  border-radius: var(--shijing-radius-2xl);
+}
+
+.shijing-view-picker__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.shijing-view-picker__head > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.shijing-view-picker__eyebrow {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--shijing-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.shijing-view-picker__title {
+  margin: 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-view-picker__desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-view-picker .shijing-view-picker__close {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--shijing-text-muted);
+  box-shadow: none;
+  flex-shrink: 0;
+}
+
+.shijing-view-picker .shijing-view-picker__close:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--shijing-brand-primary) 8%, transparent);
+  color: var(--shijing-text-primary);
+}
+
+.shijing-view-picker__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.shijing-view-picker__grid > li {
+  display: block;
+}
+
+.shijing-view-picker .shijing-view-picker__card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-height: 168px;
+  padding: 20px;
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-xl);
+  color: var(--shijing-text-primary);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: none;
+  transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.shijing-view-picker .shijing-view-picker__card:hover:not(:disabled),
+.shijing-view-picker .shijing-view-picker__card[data-focused="true"],
+.shijing-view-picker .shijing-view-picker__card:focus-visible {
+  border-color: color-mix(in srgb, var(--shijing-brand-primary) 55%, transparent);
+  background: color-mix(in srgb, var(--shijing-brand-primary) 6%, var(--shijing-surface-card));
+}
+
+.shijing-view-picker__card-title {
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-view-picker__card-meta {
+  font-size: 12.5px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-view-picker__card-desc {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--shijing-text-secondary);
+  flex: 1;
+}
+
+.shijing-view-picker__card-cta {
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--shijing-brand-primary);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.shijing-view-picker__card[data-focused="true"] .shijing-view-picker__card-cta {
+  color: color-mix(in srgb, var(--shijing-brand-primary) 92%, #000);
+}
+
+@media (max-width: 640px) {
+  .shijing-view-picker {
+    padding: 22px 18px 18px;
+    border-radius: var(--shijing-radius-xl);
+  }
+
+  .shijing-view-picker__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-view-picker__title {
+    font-size: 24px;
   }
 }

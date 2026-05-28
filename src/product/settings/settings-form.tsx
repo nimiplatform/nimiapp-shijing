@@ -1,8 +1,22 @@
-// SJG-DATA-09 — Settings editor (response_preferences + notification_preferences).
-// Failure modes: invalid local_time HH:MM, empty language. Validator gates
-// dispatch through validateShiJingSpace.
+// SJG-DATA-09 — Settings editor (response_preferences).
+// Failure mode: invalid language tag. Validator gates dispatch through
+// validateShiJingSpace.
+//
+// Wave-N (kit form pass): the form layout switched from hand-rolled
+// <label><span/><select/></label> blocks to kit `FieldShell` +
+// kit `SelectField` / `TextField` / `TextareaField` + kit `Button`.
+// The form itself still owns submission state and the dispatch /
+// validator chain — only the visual layer changed.
 
 import { useEffect, useState, type FormEvent } from 'react';
+import {
+  Button,
+  FieldShell,
+  SelectField,
+  TextField,
+  TextareaField,
+} from '@nimiplatform/kit/ui';
+
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts';
 import {
@@ -15,15 +29,11 @@ import { BUTTONS, FAILURE_HEADLINES, FIELD_LABELS, FIELD_PLACEHOLDERS, HEADINGS 
 import { enumLabel } from '../i18n/enum-label.ts';
 import { TechnicalDetails } from '../components/technical-details.tsx';
 
-const HHMM_RE = /^\d{2}:\d{2}$/;
-
 interface DraftState {
   tone: ResponseTone;
   length: ResponseLength;
   language: string;
   extra_instructions: string;
-  daily_today_card_enabled: boolean;
-  daily_today_card_local_time: string;
 }
 
 function isValidLanguage(lang: string): boolean {
@@ -32,14 +42,12 @@ function isValidLanguage(lang: string): boolean {
 
 export function SettingsForm() {
   const { state, dispatch } = useShijingStore();
-  const { response_preferences, notification_preferences } = state.snapshot.settings;
+  const { response_preferences } = state.snapshot.settings;
   const [draft, setDraft] = useState<DraftState>({
     tone: response_preferences.tone,
     length: response_preferences.length,
     language: response_preferences.language,
     extra_instructions: response_preferences.extra_instructions || '',
-    daily_today_card_enabled: notification_preferences.daily_today_card_enabled,
-    daily_today_card_local_time: notification_preferences.daily_today_card_local_time,
   });
   const [submission, setSubmission] = useState<
     | { kind: 'idle' }
@@ -53,19 +61,13 @@ export function SettingsForm() {
       length: response_preferences.length,
       language: response_preferences.language,
       extra_instructions: response_preferences.extra_instructions || '',
-      daily_today_card_enabled: notification_preferences.daily_today_card_enabled,
-      daily_today_card_local_time: notification_preferences.daily_today_card_local_time,
     });
-  }, [response_preferences, notification_preferences]);
+  }, [response_preferences]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!isValidLanguage(draft.language)) {
       setSubmission({ kind: 'invalid', code: 'language_format' });
-      return;
-    }
-    if (draft.daily_today_card_enabled && !HHMM_RE.test(draft.daily_today_card_local_time)) {
-      setSubmission({ kind: 'invalid', code: 'daily_today_card_local_time_format' });
       return;
     }
     const nextSnapshot = {
@@ -78,10 +80,6 @@ export function SettingsForm() {
           ...(draft.extra_instructions.trim().length > 0
             ? { extra_instructions: draft.extra_instructions.trim() }
             : {}),
-        },
-        notification_preferences: {
-          daily_today_card_enabled: draft.daily_today_card_enabled,
-          daily_today_card_local_time: draft.daily_today_card_local_time,
         },
       },
     };
@@ -100,62 +98,46 @@ export function SettingsForm() {
         <h3>{HEADINGS.settings}</h3>
       </header>
 
-      <label>
-        <span>{FIELD_LABELS.response_tone}</span>
-        <select value={draft.tone} onChange={(e) => setDraft({ ...draft, tone: e.target.value as ResponseTone })}>
-          {RESPONSE_TONES.map((tone) => (
-            <option key={tone} value={tone}>{enumLabel('response_tone', tone)}</option>
-          ))}
-        </select>
-      </label>
+      <FieldShell label={FIELD_LABELS.response_tone}>
+        <SelectField
+          value={draft.tone}
+          options={RESPONSE_TONES.map((tone) => ({
+            value: tone,
+            label: enumLabel('response_tone', tone),
+          }))}
+          onValueChange={(value) => setDraft({ ...draft, tone: value as ResponseTone })}
+        />
+      </FieldShell>
 
-      <label>
-        <span>{FIELD_LABELS.response_length}</span>
-        <select value={draft.length} onChange={(e) => setDraft({ ...draft, length: e.target.value as ResponseLength })}>
-          {RESPONSE_LENGTHS.map((len) => (
-            <option key={len} value={len}>{enumLabel('response_length', len)}</option>
-          ))}
-        </select>
-      </label>
+      <FieldShell label={FIELD_LABELS.response_length}>
+        <SelectField
+          value={draft.length}
+          options={RESPONSE_LENGTHS.map((length) => ({
+            value: length,
+            label: enumLabel('response_length', length),
+          }))}
+          onValueChange={(value) => setDraft({ ...draft, length: value as ResponseLength })}
+        />
+      </FieldShell>
 
-      <label>
-        <span>{FIELD_LABELS.response_language}</span>
-        <input
+      <FieldShell label={FIELD_LABELS.response_language}>
+        <TextField
           type="text"
           value={draft.language}
-          onChange={(e) => setDraft({ ...draft, language: e.target.value })}
+          onChange={(event) => setDraft({ ...draft, language: event.target.value })}
           placeholder={FIELD_PLACEHOLDERS.response_language}
           required
         />
-      </label>
+      </FieldShell>
 
-      <label>
-        <span>{FIELD_LABELS.extra_instructions}</span>
-        <textarea
+      <FieldShell label={FIELD_LABELS.extra_instructions}>
+        <TextareaField
           value={draft.extra_instructions}
-          onChange={(e) => setDraft({ ...draft, extra_instructions: e.target.value })}
+          onChange={(event) => setDraft({ ...draft, extra_instructions: event.target.value })}
           rows={3}
           placeholder={FIELD_PLACEHOLDERS.extra_instructions}
         />
-      </label>
-
-      <label className="shijing-settings-toggle-row">
-        <input
-          type="checkbox"
-          checked={draft.daily_today_card_enabled}
-          onChange={(e) => setDraft({ ...draft, daily_today_card_enabled: e.target.checked })}
-        />
-        <span>{FIELD_LABELS.daily_today_card_enabled}</span>
-      </label>
-
-      <label>
-        <span>{FIELD_LABELS.daily_today_card_local_time}</span>
-        <input
-          type="time"
-          value={draft.daily_today_card_local_time}
-          onChange={(e) => setDraft({ ...draft, daily_today_card_local_time: e.target.value })}
-        />
-      </label>
+      </FieldShell>
 
       {submission.kind === 'invalid' ? (
         <>
@@ -168,7 +150,7 @@ export function SettingsForm() {
       ) : null}
 
       <div className="shijing-form-actions">
-        <button type="submit">{BUTTONS.save_settings}</button>
+        <Button type="submit" tone="primary">{BUTTONS.save_settings}</Button>
       </div>
     </form>
   );

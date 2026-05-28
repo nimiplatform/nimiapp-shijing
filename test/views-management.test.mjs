@@ -275,7 +275,7 @@ test('buildViewFromDraft auto-includes anchor in subjects when caller forgot', (
 
 test('buildViewFromDraft preserves existing context_items during edit replace', () => {
   const existing = sampleView({
-    context_items: [{ id: 'ctx_01', kind: 'note', body: '已记录的上下文' }],
+    context_items: [{ id: 'ctx_01', kind: 'note', body: '已记录的上下文', created_at: '2026-05-25T00:00:00Z' }],
   });
   let draft = viewDraftReducer(createEmptyViewDraft(), {
     type: 'hydrate',
@@ -386,8 +386,11 @@ test('views UI source contains no fetch/HTTP/Tauri/Runtime/AI-provider call', ()
   }
 });
 
-test('ViewForm calls validateViewDraft + validateView + validateShiJingSpace before dispatch', () => {
-  const source = readFileSync(new URL('../src/product/views/view-form.tsx', import.meta.url), 'utf8');
+test('ViewEditor calls validateViewDraft + validateView + validateShiJingSpace before dispatch', () => {
+  // Form moved out of the modal into the inline right-pane editor in
+  // the 2026-05 redesign — view-editor-pane.tsx is the authoritative
+  // save path.
+  const source = readFileSync(new URL('../src/product/views/view-editor-pane.tsx', import.meta.url), 'utf8');
   const draftIdx = source.indexOf('validateViewDraft(draft)');
   const viewIdx = source.indexOf('validateView(view)');
   const spaceIdx = source.indexOf('validateShiJingSpace(nextSnapshot)');
@@ -400,27 +403,42 @@ test('ViewForm calls validateViewDraft + validateView + validateShiJingSpace bef
   assert.ok(spaceIdx < dispatchIdx);
 });
 
-test('ViewList delete flow checks dangling references AND validateShiJingSpace', () => {
-  const source = readFileSync(new URL('../src/product/views/view-list.tsx', import.meta.url), 'utf8');
-  const refsIdx = source.indexOf('findReferencesToView');
-  const spaceIdx = source.indexOf('validateShiJingSpace');
-  const dispatchIdx = source.indexOf("dispatch({ type: 'snapshot/replace'");
-  assert.ok(refsIdx >= 0 && refsIdx < dispatchIdx);
-  assert.ok(spaceIdx >= 0 && spaceIdx < dispatchIdx);
+test('View delete flow checks dangling references AND validateShiJingSpace', () => {
+  // Delete moved from ViewList into ViewWorkspace's kebab menu in the
+  // 2026-05 redesign — list rows are now selection-only.
+  const rawSource = readFileSync(new URL('../src/product/views/view-workspace.tsx', import.meta.url), 'utf8');
+  // Normalize line endings: editors on Windows can rewrite this file
+  // to CRLF, which would defeat the literal '\n  }\n' search below.
+  const source = rawSource.replace(/\r\n/g, '\n');
+  // Both validator checks must appear inside the onDeleteView handler
+  // before snapshot replacement.
+  const handlerStart = source.indexOf('function onDeleteView');
+  assert.ok(handlerStart >= 0, 'expected onDeleteView handler');
+  const handlerEnd = source.indexOf('\n  }\n', handlerStart);
+  assert.ok(handlerEnd > handlerStart, 'expected onDeleteView handler body');
+  const handlerBody = source.slice(handlerStart, handlerEnd);
+  assert.match(handlerBody, /findReferencesToView/);
+  assert.match(handlerBody, /validateShiJingSpace/);
+  assert.match(handlerBody, /snapshot\/replace/);
 });
 
-test('ViewList does not mount the full ViewForm inline in the left rail', () => {
+test('ViewList does not mount the full editor inline in the left rail', () => {
   const source = readFileSync(new URL('../src/product/views/view-list.tsx', import.meta.url), 'utf8');
-  assert.doesNotMatch(source, /<ViewForm\b/);
-  assert.doesNotMatch(source, /ViewFormOverlay/);
+  assert.doesNotMatch(source, /<ViewEditorPane\b/);
+  assert.doesNotMatch(source, /ViewTemplatePickerOverlay/);
   assert.match(source, /onCreateView/);
-  assert.match(source, /onEditView/);
+  // Edit moved to ViewWorkspace's kebab menu — ViewList no longer takes onEditView.
+  const workspaceSource = readFileSync(new URL('../src/product/views/view-workspace.tsx', import.meta.url), 'utf8');
+  assert.match(workspaceSource, /onEditView/);
 });
 
 test('ViewsTab mounts a selected View workspace instead of only CRUD lists', () => {
   const source = readFileSync(new URL('../src/product/tabs/views.tsx', import.meta.url), 'utf8');
   assert.match(source, /ViewWorkspace/);
-  assert.match(source, /ViewFormOverlay/);
+  // 2026-05 P1 simplification: no more picker modal; clicking 新建关注
+  // flips the workspace straight into inline editor mode. Templates
+  // live as chips inside ViewEditorPane.
+  assert.doesNotMatch(source, /ViewTemplatePickerOverlay/);
   assert.match(source, /selectedViewId/);
   assert.match(source, /onSelectView/);
   assert.match(source, /onCreateView/);
@@ -449,19 +467,20 @@ test('empty ViewWorkspace exposes the same create hook as the list CTA', () => {
   assert.match(source, /BUTTONS\.add_view/);
 });
 
-test('ViewFormOverlay uses kit OverlayShell and leaves ViewForm as dialog content', () => {
-  const source = readFileSync(new URL('../src/product/views/view-form.tsx', import.meta.url), 'utf8');
-  assert.match(source, /OverlayShell/);
-  assert.match(source, /kind="dialog"/);
-  assert.match(source, /className="shijing-view-form-overlay shijing-tab"/);
-  assert.match(source, /<ViewForm mode=\{props\.mode\} onClose=\{props\.onClose\} \/>/);
+test('Templates are surfaced inside the inline editor as chips, not a separate modal', () => {
+  // 2026-05 P1 simplification — the picker modal was retired entirely.
+  // Templates now live as a chip row inside ViewEditorPane (create
+  // mode only), and the legacy view-form.tsx file no longer exists.
+  const editorSource = readFileSync(new URL('../src/product/views/view-editor-pane.tsx', import.meta.url), 'utf8');
+  assert.match(editorSource, /shijing-view-editor__template-chips/);
+  assert.match(editorSource, /apply_template/);
 });
 
-test('ViewForm source exposes natural date fields instead of UTC technical fields', () => {
-  const source = readFileSync(new URL('../src/product/views/view-form.tsx', import.meta.url), 'utf8');
+test('ViewEditor source exposes natural date fields instead of UTC technical fields', () => {
+  const source = readFileSync(new URL('../src/product/views/view-editor-pane.tsx', import.meta.url), 'utf8');
   const copy = readFileSync(new URL('../src/product/i18n/copy.ts', import.meta.url), 'utf8');
   assert.match(source, /type="date"/);
-  assert.match(source, /view-bounded-start-date/);
-  assert.match(source, /view-bounded-end-date/);
+  assert.match(source, /set_bounded_start_date/);
+  assert.match(source, /set_bounded_end_date/);
   assert.doesNotMatch(`${source}\n${copy}`, /开始时间（UTC）|结束时间（UTC）|view-bounded-start-utc|view-bounded-end-utc/);
 });

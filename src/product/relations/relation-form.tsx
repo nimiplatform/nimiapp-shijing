@@ -4,6 +4,7 @@
 // validateShiJingSpace gate every dispatch.
 
 import { useEffect, useMemo, useReducer, useState, type FormEvent } from 'react';
+import { Button } from '@nimiplatform/kit/ui';
 
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { SelectField, TextField } from '../inputs/natal-inputs-fields.tsx';
@@ -139,8 +140,8 @@ export function RelationForm(props: RelationFormProps) {
         />
       </fieldset>
       <div className="shijing-form-actions">
-        <button type="button" data-variant="ghost" onClick={props.onClose}>{BUTTONS.cancel}</button>
-        <button type="submit">{BUTTONS.save}</button>
+        <Button type="button" tone="ghost" onClick={props.onClose}>{BUTTONS.cancel}</Button>
+        <Button type="submit" tone="primary">{BUTTONS.save}</Button>
       </div>
       {submission.kind === 'invalid_draft' ? (
         <>

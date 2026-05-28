@@ -4,6 +4,7 @@
 // validateEvent + validateShiJingSpace gate every dispatch.
 
 import { useEffect, useMemo, useReducer, useState, type FormEvent } from 'react';
+import { OverlayShell } from '@nimiplatform/kit/ui';
 
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { SelectField, TextField } from '../inputs/natal-inputs-fields.tsx';
@@ -24,6 +25,14 @@ import { TechnicalDetails } from '../components/technical-details.tsx';
 
 export interface EventFormProps {
   readonly mode: 'create' | { kind: 'edit'; event: Event };
+  readonly initial_view_id?: string;
+  readonly onClose: () => void;
+}
+
+export interface EventFormOverlayProps {
+  readonly open: boolean;
+  readonly mode: EventFormProps['mode'];
+  readonly initial_view_id?: string;
   readonly onClose: () => void;
 }
 
@@ -51,10 +60,13 @@ export function EventForm(props: EventFormProps) {
     draftDispatch({ type: 'reset' });
     if (typeof props.mode === 'object') {
       draftDispatch({ type: 'hydrate', event: props.mode.event });
-    } else {
-      draftDispatch({ type: 'assign_id', id: newEventId() });
+      return;
     }
-  }, [props.mode]);
+    draftDispatch({ type: 'assign_id', id: newEventId() });
+    if (props.initial_view_id) {
+      draftDispatch({ type: 'toggle_view_ref_id', value: props.initial_view_id });
+    }
+  }, [props.mode, props.initial_view_id]);
 
   function onSubmit(formEvent: FormEvent<HTMLFormElement>) {
     formEvent.preventDefault();
@@ -190,5 +202,26 @@ export function EventForm(props: EventFormProps) {
         <p role="status">已保存。</p>
       ) : null}
     </form>
+  );
+}
+
+export function EventFormOverlay(props: EventFormOverlayProps) {
+  const title = typeof props.mode === 'object' ? HEADINGS.edit_event : HEADINGS.add_event;
+  return (
+    <OverlayShell
+      open={props.open}
+      kind="dialog"
+      size="L"
+      onClose={props.onClose}
+      title={title}
+    >
+      <div className="shijing-event-form-overlay shijing-tab">
+        <EventForm
+          mode={props.mode}
+          {...(props.initial_view_id !== undefined ? { initial_view_id: props.initial_view_id } : {})}
+          onClose={props.onClose}
+        />
+      </div>
+    </OverlayShell>
   );
 }

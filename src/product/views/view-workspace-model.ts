@@ -5,9 +5,12 @@ import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import type { SubjectRef } from '../../domain/subject-ref.ts';
 import type { View } from '../../domain/view.ts';
 import {
+  natalInputsForSubject,
+  natalReadinessSeverity,
   subjectNatalReadiness,
   subjectReadingReadiness,
   type NatalReadiness,
+  type NatalReadinessSeverity,
 } from '../subjects/natal-readiness.ts';
 import { localCivilDaysWindow } from './view-time-window.ts';
 
@@ -60,25 +63,54 @@ export function eventsForView(events: readonly Event[], viewId: string): readonl
     .sort((a, b) => dateMs(b.occurred_at) - dateMs(a.occurred_at));
 }
 
+export interface ViewGenerationOptions {
+  // When true, warning-severity readiness gaps (precision/location/sex)
+  // do not block time-window resolution or readiness — the deterministic
+  // pipeline still runs and the resulting Reading carries uncertainty
+  // caveats. Blocker-severity gaps (missing subject, invalid time scope,
+  // scaffold defaults) still refuse.
+  readonly allow_warnings?: boolean;
+}
+
 export function resolveViewTimeWindow(
   view: View,
   space: ShiJingSpace,
   now: Date = new Date(),
   kind: ViewGenerationKind = 'period_outlook',
+  options?: ViewGenerationOptions,
 ): ViewTimeWindowResolution {
   const anchorReadiness = subjectNatalReadiness(view.anchor_subject, space);
-  if (!anchorReadiness.ok) {
-    return {
-      ok: false,
-      error: {
-        reason: 'anchor_subject_not_ready',
-        subject: view.anchor_subject,
-        readiness: anchorReadiness,
-        detail: anchorReadiness.detail,
-      },
-    };
+  let basisTimeZone: string;
+  if (anchorReadiness.ok) {
+    basisTimeZone = anchorReadiness.inputs.birth_location.iana_time_zone;
+  } else {
+    const severity = natalReadinessSeverity(anchorReadiness.reason);
+    const allowWarnings = options?.allow_warnings ?? false;
+    if (severity === 'blocker' || !allowWarnings) {
+      return {
+        ok: false,
+        error: {
+          reason: 'anchor_subject_not_ready',
+          subject: view.anchor_subject,
+          readiness: anchorReadiness,
+          detail: anchorReadiness.detail,
+        },
+      };
+    }
+    const inputs = natalInputsForSubject(view.anchor_subject, space);
+    if (!inputs) {
+      return {
+        ok: false,
+        error: {
+          reason: 'anchor_subject_not_ready',
+          subject: view.anchor_subject,
+          readiness: anchorReadiness,
+          detail: anchorReadiness.detail,
+        },
+      };
+    }
+    basisTimeZone = inputs.birth_location.iana_time_zone || 'Etc/UTC';
   }
-  const basisTimeZone = anchorReadiness.inputs.birth_location.iana_time_zone;
   if (view.time_scope === 'bounded') {
     const start = view.bounded_range?.start;
     const end = view.bounded_range?.end;
@@ -145,8 +177,9 @@ export function viewGenerationReadiness(
   space: ShiJingSpace,
   kind: ViewGenerationKind,
   now: Date = new Date(),
+  options?: ViewGenerationOptions,
 ): ViewGenerationReadiness {
-  const timeWindow = resolveViewTimeWindow(view, space, now, kind);
+  const timeWindow = resolveViewTimeWindow(view, space, now, kind, options);
   if (!timeWindow.ok) {
     return {
       ok: false,
@@ -155,6 +188,7 @@ export function viewGenerationReadiness(
       detail: timeWindow.error.detail,
     };
   }
+  const allowWarnings = options?.allow_warnings ?? false;
   for (const subject of view.subjects) {
     const readiness = subjectReadingReadiness({
       subject,
@@ -165,14 +199,39 @@ export function viewGenerationReadiness(
       time_window: timeWindow.time_window,
     });
     if (!readiness.ok) {
-      return {
-        ok: false,
-        reason: 'subject_readiness_failed',
-        subject,
-        readiness,
-        detail: readiness.detail,
-      };
+      const severity = natalReadinessSeverity(readiness.reason);
+      if (severity === 'blocker' || !allowWarnings) {
+        return {
+          ok: false,
+          reason: 'subject_readiness_failed',
+          subject,
+          readiness,
+          detail: readiness.detail,
+        };
+      }
     }
   }
   return { ok: true, time_window: timeWindow.time_window };
+}
+
+export type ViewGenerationOverallSeverity = 'ok' | NatalReadinessSeverity;
+
+// Classifies a ViewGenerationReadiness result into 'ok' | 'warning' |
+// 'blocker'. Used by UI to decide whether to (a) disable the generate
+// button, (b) allow generation but show an advisory, or (c) proceed
+// normally. Subject-readiness and anchor-readiness gaps inherit the
+// underlying NatalReadinessSeverity classification; bounded/rolling
+// time-scope errors are always blockers since the deterministic
+// pipeline literally has no time window to score against.
+export function viewGenerationSeverity(
+  readiness: ViewGenerationReadiness,
+): ViewGenerationOverallSeverity {
+  if (readiness.ok) return 'ok';
+  if (readiness.reason === 'view_time_window_unavailable') {
+    if (readiness.error.reason === 'anchor_subject_not_ready') {
+      return natalReadinessSeverity(readiness.error.readiness.reason);
+    }
+    return 'blocker';
+  }
+  return natalReadinessSeverity(readiness.readiness.reason);
 }
