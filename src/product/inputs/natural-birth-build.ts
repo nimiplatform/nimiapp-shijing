@@ -299,7 +299,7 @@ export function userMessageForNaturalBirthError(error: NaturalBirthBuildError): 
     case 'natural_birth_time_invalid':
       return '请填写可识别的出生时间，例如 08:30 或 23:00。';
     case 'natural_birth_place_unresolved':
-      return '暂未识别这个出生地点，请补全为上海、上海市黄浦区、北京或格尔木市等支持的地点。';
+      return '暂未识别这个出生地点。请填写省市区中文名（例：湖北省钟祥市、上海市黄浦区、北京），若同名地点存在多处请补全到省级。';
     case 'natural_birth_utc_conversion_failed':
       return '出生地点对应的时区无法转换本地时间，请检查地点。';
     case 'natural_birth_natal_inputs_invalid':

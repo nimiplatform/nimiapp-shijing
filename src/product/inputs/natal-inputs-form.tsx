@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useReducer, useState, type FormEvent } from 'react';
+import { InlineAlert } from '@nimiplatform/kit/ui';
 
 import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts';
 import { TechnicalDetails } from '../components/technical-details.tsx';
@@ -17,7 +18,33 @@ import {
   naturalBirthDraftReducer,
 } from './natural-birth-draft.ts';
 
-export function NatalInputsForm() {
+export interface NatalInputsFormProps {
+  /**
+   * When true (Me-tab editor overlay path), skip the internal
+   * "完善本命资料" header — the wrapping OverlayShell already shows
+   * its own DialogTitle, so an inner h1 just doubles the page
+   * chrome. The shell-repair surface keeps the default (header
+   * visible) because it has no outer title.
+   */
+  readonly embedded?: boolean;
+  /**
+   * Override the primary "save" button label. Default is
+   * `BUTTONS.save_natal` ("保存出生记录"). The Me modal passes
+   * `BUTTONS.save_and_resync` ("保存并更新时镜") to set user
+   * expectations that the chart re-baselines on save.
+   */
+  readonly saveLabel?: string;
+  /**
+   * When provided, the form renders a secondary "取消" button in
+   * the action row that triggers this callback (typically the
+   * overlay's onClose). Without this prop only the primary button
+   * shows — matching the pre-modal callsites that didn't have a
+   * close affordance to wire up.
+   */
+  readonly onCancel?: () => void;
+}
+
+export function NatalInputsForm(props: NatalInputsFormProps = {}) {
   const { state, dispatch } = useShijingStore();
   const initialDraft = useMemo(() => createEmptyNaturalBirthDraft(), []);
   const readiness = useMemo(
@@ -67,21 +94,24 @@ export function NatalInputsForm() {
 
   return (
     <form className="shijing-natal-inputs-form" onSubmit={onSubmit} noValidate>
-      <header className="shijing-natal-onboarding">
-        <h1>{title}</h1>
-        <p>{HEADINGS.natal_onboarding_body}</p>
-      </header>
+      {props.embedded ? null : (
+        <header className="shijing-natal-onboarding">
+          <h1>{title}</h1>
+          <p>{HEADINGS.natal_onboarding_body}</p>
+        </header>
+      )}
       <NaturalBirthEditor
         draft={draft}
         dispatch={draftDispatch}
         idPrefix="natal-inputs"
-        submitLabel={BUTTONS.save_natal}
+        submitLabel={props.saveLabel ?? BUTTONS.save_natal}
+        {...(props.onCancel ? { onCancel: props.onCancel } : {})}
       />
       {submission.kind === 'invalid_birth' ? (
         <>
-          <p role="alert" className="shijing-natal-inputs-form__error">
+          <InlineAlert tone="danger" className="shijing-natal-inputs-form__alert">
             {submission.message}
-          </p>
+          </InlineAlert>
           <TechnicalDetails content={submission.technical} />
         </>
       ) : null}
@@ -89,17 +119,17 @@ export function NatalInputsForm() {
         const formatted = formatSaveRefusal(submission.code);
         return (
           <>
-            <p role="alert" className="shijing-natal-inputs-form__error">
+            <InlineAlert tone="danger" className="shijing-natal-inputs-form__alert">
               {FAILURE_HEADLINES.save_refused} {formatted.headline}
-            </p>
+            </InlineAlert>
             <TechnicalDetails content={formatted.technical} />
           </>
         );
       })() : null}
       {submission.kind === 'saved' ? (
-        <p role="status" className="shijing-natal-inputs-form__status">
+        <InlineAlert tone="success" className="shijing-natal-inputs-form__alert">
           已保存。
-        </p>
+        </InlineAlert>
       ) : null}
     </form>
   );

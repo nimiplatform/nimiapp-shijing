@@ -1,8 +1,23 @@
-// Wave-7 — small field components for the NatalInputs editor. Each
-// component is dumb-by-design: it reads `value` + emits `onChange`,
-// no validation, no fetch, no SDK. NaturalBirthDraft owns state.
+// Wave-7 — small field components for the NatalInputs editor.
+//
+// Wave-N (kit form pass): the external API is unchanged
+// (TextField / SelectField / LeapMonthCheckbox keep their props
+// shape), but the internals now compose kit primitives —
+// `FieldShell` for the labeled wrapper, kit's `TextField` for the
+// styled input, kit's `SelectField` for the dropdown. Every Me
+// overlay (NaturalBirthEditor / PersonForm / RelationForm)
+// inherits the kit field look automatically; SettingsForm migrates
+// separately because its layout was hand-rolled.
+//
+// Each component is still dumb-by-design: it reads `value` + emits
+// `onChange`, no validation, no fetch, no SDK. NaturalBirthDraft
+// (and its sibling drafts) own state.
 
-import type { ChangeEvent } from 'react';
+import {
+  FieldShell,
+  TextField as KitTextField,
+  SelectField as KitSelectField,
+} from '@nimiplatform/kit/ui';
 
 import {
   BIRTH_PRECISIONS,
@@ -11,6 +26,10 @@ import {
   CULTURAL_MARKERS,
 } from '../../domain/person.ts';
 import { FIELD_LABELS, LEAP_MONTH_LABELS } from '../i18n/copy.ts';
+
+function decoratedLabel(label: string, required?: boolean): string {
+  return required ? `${label} *` : label;
+}
 
 export interface TextFieldProps {
   readonly id: string;
@@ -24,17 +43,16 @@ export interface TextFieldProps {
 
 export function TextField(props: TextFieldProps) {
   return (
-    <label htmlFor={props.id} className="shijing-input-field">
-      <span>{props.label}{props.required ? ' *' : null}</span>
-      <input
+    <FieldShell label={decoratedLabel(props.label, props.required)}>
+      <KitTextField
         id={props.id}
         type={props.type ?? 'text'}
         value={props.value}
         required={props.required ?? false}
         placeholder={props.placeholder}
-        onChange={(event: ChangeEvent<HTMLInputElement>) => props.onChange(event.target.value)}
+        onChange={(event) => props.onChange(event.target.value)}
       />
-    </label>
+    </FieldShell>
   );
 }
 
@@ -50,23 +68,25 @@ export interface SelectFieldProps<T extends string> {
 }
 
 export function SelectField<T extends string>(props: SelectFieldProps<T>) {
+  // Kit's SelectField surfaces "no value yet" via its built-in
+  // `placeholder` slot — it does NOT need a synthetic <option
+  // value=""/>. Mapping `emptyLabel` -> `placeholder` keeps the
+  // existing call-site contract while letting kit own the visual.
+  const options = props.options.map((option) => ({
+    value: option,
+    label: props.optionLabel ? props.optionLabel(option) : option,
+  }));
   return (
-    <label htmlFor={props.id} className="shijing-input-field">
-      <span>{props.label}{props.required ? ' *' : null}</span>
-      <select
+    <FieldShell label={decoratedLabel(props.label, props.required)}>
+      <KitSelectField
         id={props.id}
         value={props.value}
+        options={options}
+        {...(props.emptyLabel !== undefined ? { placeholder: props.emptyLabel } : {})}
         required={props.required ?? false}
-        onChange={(event: ChangeEvent<HTMLSelectElement>) => props.onChange(event.target.value as T)}
-      >
-        {props.emptyLabel !== undefined ? <option value="">{props.emptyLabel}</option> : null}
-        {props.options.map((option) => (
-          <option key={option} value={option}>
-            {props.optionLabel ? props.optionLabel(option) : option}
-          </option>
-        ))}
-      </select>
-    </label>
+        onValueChange={(value) => props.onChange(value as T)}
+      />
+    </FieldShell>
   );
 }
 
@@ -77,23 +97,24 @@ export interface LeapMonthCheckboxProps {
 }
 
 export function LeapMonthCheckbox(props: LeapMonthCheckboxProps) {
+  const value = props.value === null ? 'unanswered' : props.value ? 'leap' : 'normal';
   return (
-    <label htmlFor={props.id} className="shijing-input-field shijing-input-field--lunar-leap">
-      <span>{FIELD_LABELS.lunar_is_leap_month} *</span>
-      <select
+    <FieldShell label={`${FIELD_LABELS.lunar_is_leap_month} *`}>
+      <KitSelectField
         id={props.id}
-        value={props.value === null ? 'unanswered' : props.value ? 'leap' : 'normal'}
+        value={value}
         required
-        onChange={(event: ChangeEvent<HTMLSelectElement>) => {
-          if (event.target.value === 'leap') props.onChange(true);
-          else if (event.target.value === 'normal') props.onChange(false);
+        options={[
+          { value: 'unanswered', label: LEAP_MONTH_LABELS.unanswered },
+          { value: 'normal', label: LEAP_MONTH_LABELS.normal },
+          { value: 'leap', label: LEAP_MONTH_LABELS.leap },
+        ]}
+        onValueChange={(next) => {
+          if (next === 'leap') props.onChange(true);
+          else if (next === 'normal') props.onChange(false);
         }}
-      >
-        <option value="unanswered">{LEAP_MONTH_LABELS.unanswered}</option>
-        <option value="normal">{LEAP_MONTH_LABELS.normal}</option>
-        <option value="leap">{LEAP_MONTH_LABELS.leap}</option>
-      </select>
-    </label>
+      />
+    </FieldShell>
   );
 }
 

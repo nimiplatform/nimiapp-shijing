@@ -48,15 +48,34 @@ test('switching calendar systems clears irrelevant date evidence', () => {
   assert.equal(state.lunar_is_leap_month, null);
 });
 
-test('local seed catalog resolves admitted places and fails unknown places explicitly', () => {
+test('china gazetteer resolves real province/city/district names and fails unknown places explicitly', () => {
+  // Modern PRC: every recognized place is Asia/Shanghai.
   assert.equal(resolveBirthPlace('上海')?.iana_time_zone, 'Asia/Shanghai');
-  assert.equal(resolveBirthPlace('上海市')?.longitude, 121.4737);
-  assert.equal(resolveBirthPlace('上海市黄浦区')?.latitude, 31.2304);
-  assert.equal(resolveBirthPlace('青海省格尔木市')?.longitude, 94.9);
-  assert.equal(resolveBirthPlace('格尔木市')?.latitude, 36.4);
-  assert.equal(resolveBirthPlace('北京')?.longitude, 116.4074);
-  assert.equal(resolveBirthPlace('北京市')?.latitude, 39.9042);
+  assert.equal(resolveBirthPlace('上海市')?.place_name, '上海市');
+  assert.equal(resolveBirthPlace('上海市黄浦区')?.place_name, '上海市黄浦区');
+  // 钟祥市 — the bug report case. Resolves to its Hubei record uniquely.
+  const zhongxiang = resolveBirthPlace('湖北省钟祥市');
+  assert.equal(zhongxiang?.place_name, '湖北省钟祥市');
+  assert.ok(zhongxiang && Math.abs(zhongxiang.longitude - 112.59) < 0.1);
+  assert.ok(zhongxiang && Math.abs(zhongxiang.latitude - 31.17) < 0.1);
+  // Suffix-tolerant + separator-tolerant parsing.
+  assert.equal(resolveBirthPlace('钟祥市')?.place_name, '湖北省钟祥市');
+  assert.equal(resolveBirthPlace('钟祥')?.place_name, '湖北省钟祥市');
+  assert.equal(resolveBirthPlace('湖北 钟祥市')?.place_name, '湖北省钟祥市');
+  assert.equal(resolveBirthPlace('湖北省/钟祥市')?.place_name, '湖北省钟祥市');
+  // Prefecture-city skip: "西安市新城区" should resolve via city+district.
+  assert.equal(resolveBirthPlace('西安市新城区')?.place_name, '陕西省新城区');
+  // Ambiguity fails closed — 新城区 exists in 西安 and 呼和浩特, user must qualify.
+  assert.equal(resolveBirthPlace('新城区'), null);
+  // Direct municipality still resolves at level 1.
+  assert.equal(resolveBirthPlace('北京')?.place_name, '北京市');
+  assert.equal(resolveBirthPlace('北京市')?.place_name, '北京市');
+  // Multi-segment minority autonomous prefectures stay intact (no 自治州 stripping).
+  assert.equal(resolveBirthPlace('格尔木市')?.place_name, '青海省格尔木市');
+  assert.equal(resolveBirthPlace('青海省格尔木市')?.place_name, '青海省格尔木市');
+  // Unknown / nonsense → null.
   assert.equal(resolveBirthPlace('不存在的地点'), null);
+  assert.equal(resolveBirthPlace(''), null);
 });
 
 test('gregorian natural record builds NatalInputs with Shanghai UTC conversion', () => {
@@ -65,8 +84,9 @@ test('gregorian natural record builds NatalInputs with Shanghai UTC conversion',
   if (outcome.ok) {
     assert.equal(outcome.inputs.birth_datetime_utc, '1990-04-12T00:30:00.000Z');
     assert.equal(outcome.inputs.birth_location.iana_time_zone, 'Asia/Shanghai');
-    assert.equal(outcome.inputs.birth_location.longitude, 121.4737);
-    assert.equal(outcome.inputs.birth_location.latitude, 31.2304);
+    assert.equal(outcome.inputs.birth_location.place_name, '上海市黄浦区');
+    assert.ok(Math.abs(outcome.inputs.birth_location.longitude - 121.49) < 0.1);
+    assert.ok(Math.abs(outcome.inputs.birth_location.latitude - 31.24) < 0.1);
     assert.equal(outcome.inputs.birth_precision, 'exact');
     assert.equal(outcome.inputs.calculation_sex, 'female');
   }
@@ -83,8 +103,24 @@ test('gregorian natural record builds NatalInputs with Golmud UTC conversion', (
   if (outcome.ok) {
     assert.equal(outcome.inputs.birth_datetime_utc, '1987-07-17T15:00:00.000Z');
     assert.equal(outcome.inputs.birth_location.iana_time_zone, 'Asia/Shanghai');
-    assert.equal(outcome.inputs.birth_location.longitude, 94.9);
-    assert.equal(outcome.inputs.birth_location.latitude, 36.4);
+    assert.equal(outcome.inputs.birth_location.place_name, '青海省格尔木市');
+    assert.ok(Math.abs(outcome.inputs.birth_location.longitude - 94.93) < 0.1);
+    assert.ok(Math.abs(outcome.inputs.birth_location.latitude - 36.41) < 0.1);
+  }
+});
+
+test('湖北省钟祥市 (regression for bug report) resolves and converts cleanly', () => {
+  const outcome = buildNaturalBirthNatalInputs(gregorianDraft({
+    gregorian_date_text: '1987-12-05',
+    local_time_text: '21:30',
+    place_text: '湖北省钟祥市',
+  }));
+  assert.equal(outcome.ok, true);
+  if (outcome.ok) {
+    assert.equal(outcome.inputs.birth_datetime_utc, '1987-12-05T13:30:00.000Z');
+    assert.equal(outcome.inputs.birth_location.place_name, '湖北省钟祥市');
+    assert.ok(Math.abs(outcome.inputs.birth_location.longitude - 112.59) < 0.1);
+    assert.ok(Math.abs(outcome.inputs.birth_location.latitude - 31.17) < 0.1);
   }
 });
 
@@ -216,18 +252,26 @@ test('ordinary birth editors have no editable UTC, latitude, longitude, or IANA 
   assert.doesNotMatch(sources, /id=.*iana-time-zone/);
 });
 
-test('NaturalBirthEditor default preview hides UTC and coordinate labels behind TechnicalDetails', () => {
+test('NaturalBirthEditor no longer renders an in-form standardization preview', () => {
+  // The historical "系统标准化预览" aside was retired: 4 of its 6
+  // rows merely echoed fields the user had just typed, and the only
+  // genuinely-new piece of information (resolved IANA timezone +
+  // standardization status) is now exposed post-save on the Me tab
+  // via the natal summary card and its "查看识别详情" disclosure.
+  // The build pipeline (`buildNaturalBirthNatalInputs`) is still
+  // exercised on submit — see the form-level builds/preflight test
+  // further down — but the editor itself is just a fieldset.
   const editorSource = readFileSync(new URL('../src/product/inputs/natural-birth-editor.tsx', import.meta.url), 'utf8');
   const buildSource = readFileSync(new URL('../src/product/inputs/natural-birth-build.ts', import.meta.url), 'utf8');
-  assert.doesNotMatch(editorSource, /<dt>UTC 写入<\/dt>/);
-  assert.doesNotMatch(editorSource, /<dt>经纬度<\/dt>/);
-  assert.match(editorSource, /<dt>本地时间<\/dt>/);
-  assert.match(editorSource, /<dt>地点<\/dt>/);
-  assert.match(editorSource, /<dt>时区<\/dt>/);
-  assert.match(editorSource, /<dt>状态<\/dt>/);
-  assert.match(editorSource, /<dt>时间记忆<\/dt>/);
-  assert.match(editorSource, /<dt>推算性别<\/dt>/);
-  assert.match(editorSource, /TechnicalDetails/);
+  assert.doesNotMatch(editorSource, /shijing-natural-birth__preview/);
+  assert.doesNotMatch(editorSource, /<dt>本地时间<\/dt>/);
+  assert.doesNotMatch(editorSource, /<dt>时区<\/dt>/);
+  assert.doesNotMatch(editorSource, /<dt>状态<\/dt>/);
+  assert.doesNotMatch(editorSource, /<dt>时间记忆<\/dt>/);
+  assert.doesNotMatch(editorSource, /<dt>推算性别<\/dt>/);
+  assert.doesNotMatch(editorSource, /natal_section_standardized_preview/);
+  // The build module is still imported elsewhere (the form's submit
+  // path) and continues to expose the canonical fields.
   assert.match(buildSource, /birth_datetime_utc/);
   assert.match(buildSource, /birth_location/);
 });

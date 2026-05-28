@@ -1,34 +1,52 @@
-import { useMemo, type Dispatch } from 'react';
+import { type Dispatch } from 'react';
+import { Button } from '@nimiplatform/kit/ui';
 
 import { BIRTH_PRECISION_OPTIONS, CALENDAR_OPTIONS, LeapMonthCheckbox, SelectField, TextField } from './natal-inputs-fields.tsx';
 import type { NaturalBirthDraft, NaturalBirthDraftAction } from './natural-birth-draft.ts';
-import { buildNaturalBirthNatalInputs } from './natural-birth-build.ts';
-import { FIELD_LABELS, FIELD_PLACEHOLDERS, HEADINGS } from '../i18n/copy.ts';
+import { BUTTONS, FIELD_LABELS, FIELD_PLACEHOLDERS, HEADINGS } from '../i18n/copy.ts';
 import { enumLabel } from '../i18n/enum-label.ts';
-import { TechnicalDetails } from '../components/technical-details.tsx';
 import type { CalculationSex } from '../../domain/person.ts';
 
 const NATURAL_CALCULATION_SEX_OPTIONS: readonly CalculationSex[] = ['female', 'male', 'unspecified'];
+
+// Context-shortened field labels. The 3-fieldset layout introduced
+// in the modal redesign means each field already sits under a
+// legend that carries the "出生..." framing (出生日期 / 出生时间 /
+// 出生地点与备注). Repeating that prefix in the field label reads as
+// stutter ("出生时间 / 出生时间" / "出生地点与备注 / 出生地点") so we
+// strip the prefix here. FIELD_LABELS keeps the long form for any
+// future standalone-form caller; this is intentionally a local
+// override for the grouped editor only.
+const GROUP_FIELD_LABELS = {
+  local_time_text: '时刻',
+  place_text: '地点',
+} as const;
 
 export interface NaturalBirthEditorProps {
   readonly draft: NaturalBirthDraft;
   readonly dispatch: Dispatch<NaturalBirthDraftAction>;
   readonly idPrefix: string;
   readonly submitLabel?: string;
+  readonly onCancel?: () => void;
 }
 
+// The historical "系统标准化预览" aside was retired in an earlier pass
+// — 4 of its 6 rows were echoes of fields the user had just typed, and
+// the only genuinely-new piece of information (resolved IANA timezone
+// + standardization status) is exposed post-save on the Me tab.
+//
+// Wave-N (modal redesign): the single 7-field <fieldset> was split
+// into three semantic groups — date / time / place+notes — so the
+// form reads as three short stages instead of one long column. The
+// `natal_section_*` legends in copy.ts back the group titles.
 export function NaturalBirthEditor(props: NaturalBirthEditorProps) {
-  const outcome = useMemo(() => buildNaturalBirthNatalInputs(props.draft), [props.draft]);
-  const preview = outcome.preview;
-  const standardizationText = preview.status === 'ready'
-    ? `已标准化为 ${preview.place?.iana_time_zone ?? '当前时区'}`
-    : '继续填写后预览';
+  const isGregorian = props.draft.calendar_system === 'gregorian';
 
   return (
     <div className="shijing-natural-birth">
       <div className="shijing-natural-birth__record">
-        <fieldset>
-          <legend>{HEADINGS.natal_section_record}</legend>
+        <fieldset className="shijing-natural-birth__group">
+          <legend>{HEADINGS.natal_section_date}</legend>
           <SelectField
             id={`${props.idPrefix}-calendar-system`}
             label={FIELD_LABELS.calendar_system}
@@ -38,7 +56,7 @@ export function NaturalBirthEditor(props: NaturalBirthEditorProps) {
             required
             onChange={(value) => props.dispatch({ type: 'set_calendar_system', value })}
           />
-          {props.draft.calendar_system === 'gregorian' ? (
+          {isGregorian ? (
             <TextField
               id={`${props.idPrefix}-gregorian-date`}
               label={FIELD_LABELS.gregorian_date}
@@ -80,9 +98,13 @@ export function NaturalBirthEditor(props: NaturalBirthEditorProps) {
               />
             </div>
           )}
+        </fieldset>
+
+        <fieldset className="shijing-natural-birth__group">
+          <legend>{HEADINGS.natal_section_time}</legend>
           <TextField
             id={`${props.idPrefix}-local-time`}
-            label={FIELD_LABELS.local_time_text}
+            label={GROUP_FIELD_LABELS.local_time_text}
             value={props.draft.local_time_text}
             placeholder={FIELD_PLACEHOLDERS.local_time_text}
             onChange={(value) => props.dispatch({ type: 'set_local_time_text', value })}
@@ -96,9 +118,13 @@ export function NaturalBirthEditor(props: NaturalBirthEditorProps) {
             required
             onChange={(value) => props.dispatch({ type: 'set_birth_precision', value })}
           />
+        </fieldset>
+
+        <fieldset className="shijing-natural-birth__group">
+          <legend>{HEADINGS.natal_section_place_notes}</legend>
           <TextField
             id={`${props.idPrefix}-place-text`}
-            label={FIELD_LABELS.place_text}
+            label={GROUP_FIELD_LABELS.place_text}
             value={props.draft.place_text}
             required
             placeholder={FIELD_PLACEHOLDERS.place_text}
@@ -122,37 +148,19 @@ export function NaturalBirthEditor(props: NaturalBirthEditorProps) {
           />
         </fieldset>
       </div>
-      <aside className="shijing-natural-birth__preview" aria-live="polite">
-        <h3>{HEADINGS.natal_section_standardized_preview}</h3>
-        <dl>
-          <div>
-            <dt>本地时间</dt>
-            <dd>{preview.local_datetime_text ?? '等待填写日期、时间精度和地点'}</dd>
-          </div>
-          <div>
-            <dt>地点</dt>
-            <dd>{preview.place ? `${preview.place.place_name}` : '等待识别出生地点'}</dd>
-          </div>
-          <div>
-            <dt>时区</dt>
-            <dd>{preview.place?.iana_time_zone ?? '标准化后显示'}</dd>
-          </div>
-          <div>
-            <dt>状态</dt>
-            <dd>{standardizationText}</dd>
-          </div>
-          <div>
-            <dt>时间记忆</dt>
-            <dd>{enumLabel('birth_precision', preview.birth_precision)}</dd>
-          </div>
-          <div>
-            <dt>推算性别</dt>
-            <dd>{enumLabel('calculation_sex', props.draft.calculation_sex)}</dd>
-          </div>
-        </dl>
-        <TechnicalDetails content={preview.technical_details ?? ''} />
-        {props.submitLabel ? <button type="submit">{props.submitLabel}</button> : null}
-      </aside>
+
+      {(props.submitLabel || props.onCancel) ? (
+        <div className="shijing-natural-birth__footer-actions">
+          {props.onCancel ? (
+            <Button type="button" tone="ghost" onClick={props.onCancel}>
+              {BUTTONS.cancel}
+            </Button>
+          ) : null}
+          {props.submitLabel ? (
+            <Button type="submit" tone="primary">{props.submitLabel}</Button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
