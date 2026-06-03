@@ -13,6 +13,9 @@ import {
 import type { Runtime } from '@nimiplatform/sdk/runtime';
 import { getShijingRuntimeDefaults } from '../bridge/index.js';
 import { useAppStore } from '../app-shell/app-store.js';
+import {
+  ensureShijingReadingAIConfigFromFirstRunEvidence,
+} from '../ai/shijing-ai-config-bootstrap.ts';
 import { describeError, logRendererEvent } from './renderer-log.js';
 import {
   SHIJING_APP_ID,
@@ -169,6 +172,22 @@ async function doRunShijingBootstrap(): Promise<void> {
     // runtime client that cannot answer Runtime app storage projections.
     if (runtime) {
       await runtime.ready();
+    }
+
+    const aiConfigInit = await ensureShijingReadingAIConfigFromFirstRunEvidence({
+      platformClient,
+    });
+    if (aiConfigInit.outcome === 'not-initialized') {
+      logRendererEvent({
+        level: 'warn',
+        area: 'shijing-bootstrap.ai-config',
+        message: 'action:first-run-ai-config-init-skipped',
+        flowId,
+        details: {
+          reason: aiConfigInit.reason,
+          detail: aiConfigInit.detail,
+        },
+      });
     }
 
     store.setBootstrapReady(true);

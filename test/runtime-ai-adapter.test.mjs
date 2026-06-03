@@ -15,6 +15,9 @@ import {
 } from '../src/shell/ai/shijing-runtime-ai-client.ts';
 import { createShijingReadingAIScopeRef } from '../src/shell/ai/shijing-ai-config.ts';
 import {
+  ensureShijingReadingAIConfigFromFirstRunEvidence,
+} from '../src/shell/ai/shijing-ai-config-bootstrap.ts';
+import {
   dailyMirrorScope,
   rolling30DayMirrorScope,
   validConcernTagSnapshot,
@@ -100,6 +103,119 @@ function emptyAIConfig() {
       selectedParams: {},
     },
     profileOrigin: null,
+  };
+}
+
+function firstRunProof({
+  capability,
+  scenarioType,
+  consumerId,
+  assetId,
+}) {
+  return {
+    capability,
+    scenarioType,
+    boundConsumerId: consumerId,
+    boundAssetId: assetId,
+    localRouteTarget: 'local',
+    routePolicy: 1,
+    modelResolved: assetId,
+    terminalResult: 'local_executed',
+    reasonCode: 'FIRST_RUN_EXECUTION_EVIDENCE_READY',
+    traceId: `trace:${consumerId}`,
+    executedAt: '2026-06-03T00:00:00Z',
+  };
+}
+
+function verifiedFirstRunEvidenceRef() {
+  return {
+    executionEvidenceRef: 'execution_evidence_ready',
+    selectedLocalFactoryAiProfileRef: 'factory:minimal',
+    installLevel: 'minimal',
+    runtimeBaselineRef: 'runtime-baseline:ready',
+    dataRootRef: 'data-root:ready',
+    localExecutionTargetEvidence: ['local'],
+    selectedBaselineCapabilityProof: [
+      firstRunProof({
+        capability: 'local_text_chat_execution',
+        scenarioType: 1,
+        consumerId: 'llama.cpp.cpu',
+        assetId: 'asset:text',
+      }),
+      firstRunProof({
+        capability: 'local_basic_stt_execution',
+        scenarioType: 6,
+        consumerId: 'speech.qwen3-asr.python',
+        assetId: 'asset:stt',
+      }),
+      firstRunProof({
+        capability: 'local_basic_tts_execution',
+        scenarioType: 5,
+        consumerId: 'speech.qwen3-tts.python',
+        assetId: 'asset:tts',
+      }),
+    ],
+    terminalResult: 'local_ai_ready',
+    observedAt: '2026-06-03T00:00:00Z',
+    runtimeAuditSequence: ['audit:ready'],
+    runtimeVerifierIdentity: 'runtime',
+  };
+}
+
+function firstRunReadyPlatformClient() {
+  return {
+    runtime: {
+      local: {
+        getProductControlRecord: async () => ({
+          json: JSON.stringify({
+            path: 'D:\\nimi\\product-control.json',
+            exists: true,
+            state: 'ready_for_use',
+            error: null,
+            record: {
+              schemaVersion: 1,
+              installId: 'install-ready',
+              productVersion: '0.1.0',
+              state: 'ready_for_use',
+              dataRoot: {
+                path: 'D:\\nimi-data',
+                status: 'ready',
+                selectedAt: '2026-06-03T00:00:00Z',
+                verifiedAt: '2026-06-03T00:00:00Z',
+                selectedAtUnixMs: 1780425600000,
+                verifiedAtUnixMs: 1780425600000,
+              },
+              firstRun: {
+                installLevel: 'minimal',
+                aiProfileAlias: 'minimal-local',
+                completed: true,
+                completedAt: '2026-06-03T00:00:00Z',
+                initializationPlanId: 'plan-ready',
+                baselineProfileRef: 'profile-ready',
+                baselineCommitId: 'commit-ready',
+                accountDefaultProfileRef: 'account-default-ready',
+                builtInAiConfigRefs: [],
+                runtimeBaselineRef: 'runtime-baseline:ready',
+                executionEvidenceRef: 'execution_evidence_ready',
+              },
+              pointers: {},
+              repair: { required: false },
+            },
+          }),
+        }),
+        resolveFirstRunExecutionEvidence: async (request) => ({
+          ref: {
+            ...verifiedFirstRunEvidenceRef(),
+            executionEvidenceRef: request.executionEvidenceRef,
+            runtimeBaselineRef: request.expectedRuntimeBaselineRef,
+            installLevel: request.expectedInstallLevel,
+          },
+          state: 'local_ai_ready',
+          reasonCode: 'FIRST_RUN_EXECUTION_EVIDENCE_READY',
+          detail: '',
+        }),
+      },
+    },
   };
 }
 
@@ -440,6 +556,69 @@ test('resolveShijingTextGenerateBinding fails closed when AIConfig has no text.g
     assert.match(resolved.detail, /text\.generate/);
     assert.match(resolved.detail, /failed closed/);
   }
+});
+
+test('first-run evidence initializes ShiJing text.generate AIConfig binding', async () => {
+  let savedConfig = null;
+  const result = await ensureShijingReadingAIConfigFromFirstRunEvidence({
+    platformClient: firstRunReadyPlatformClient(),
+    loadConfig: () => emptyAIConfig(),
+    saveConfig: (next) => {
+      savedConfig = next;
+      return next;
+    },
+  });
+
+  assert.equal(result.outcome, 'initialized');
+  assert.equal(savedConfig.capabilities.selectedBindings['text.generate'].source, 'local');
+  assert.equal(savedConfig.capabilities.selectedBindings['text.generate'].model, 'asset:text');
+  assert.equal(savedConfig.capabilities.selectedBindings['text.generate'].engine, 'llama.cpp.cpu');
+  assert.equal(
+    savedConfig.capabilities.selectedBindings['text.generate'].runtimeExecutionEvidenceRef,
+    'execution_evidence_ready',
+  );
+});
+
+test('first-run evidence init does not overwrite an existing ShiJing text.generate binding', async () => {
+  let productControlRead = false;
+  let saved = false;
+  const existing = {
+    ...emptyAIConfig(),
+    capabilities: {
+      selectedBindings: {
+        'text.generate': {
+          source: 'cloud',
+          connectorId: 'connector-openai',
+          model: 'gpt-runtime',
+          provider: 'openai',
+        },
+      },
+      localProfileRefs: {},
+      selectedParams: {},
+    },
+  };
+  const result = await ensureShijingReadingAIConfigFromFirstRunEvidence({
+    platformClient: {
+      runtime: {
+        local: {
+          getProductControlRecord: async () => {
+            productControlRead = true;
+            throw new Error('should not read product control');
+          },
+        },
+      },
+    },
+    loadConfig: () => existing,
+    saveConfig: () => {
+      saved = true;
+      throw new Error('should not save');
+    },
+  });
+
+  assert.equal(result.outcome, 'already-bound');
+  assert.equal(productControlRead, false);
+  assert.equal(saved, false);
+  assert.equal(result.config.capabilities.selectedBindings['text.generate'].model, 'gpt-runtime');
 });
 
 test('AIConfig-backed RuntimeAiClient routes text.generate through configured cloud binding', async () => {
