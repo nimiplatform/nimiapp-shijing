@@ -13,41 +13,25 @@ import { MemoryEditor } from '../memories/memory-editor.tsx';
 import { PersonEditor } from '../persons/person-editor.tsx';
 import { SelfEditor } from '../self/self-editor.tsx';
 import { ResponsePreferencesEditor } from './response-preferences-editor.tsx';
-import {
-  IndexedDBPersistenceAdapter,
-  SHIJING_INDEXEDDB_DATABASE,
-} from '../persistence/indexeddb-adapter.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
 
-async function deleteIndexedDbDatabase(): Promise<{ ok: true } | { ok: false; detail: string }> {
-  if (!IndexedDBPersistenceAdapter.isSupported()) {
-    return { ok: false, detail: 'IndexedDB not available in this environment' };
-  }
-  const idb = (globalThis as { indexedDB?: IDBFactory }).indexedDB;
-  if (!idb) return { ok: false, detail: 'globalThis.indexedDB missing' };
-  return new Promise((resolve) => {
-    const req = idb.deleteDatabase(SHIJING_INDEXEDDB_DATABASE);
-    req.onsuccess = () => resolve({ ok: true });
-    req.onerror = () =>
-      resolve({ ok: false, detail: String(req.error?.message ?? 'deleteDatabase failed') });
-    req.onblocked = () =>
-      resolve({ ok: false, detail: 'deleteDatabase blocked by open connection — close other tabs and retry' });
-  });
-}
-
 function PrivacyLocalDataSection() {
-  const { persistence_status } = useShijingStore();
+  const { persistence_status, persistence_client } = useShijingStore();
   const [recoveryStatus, setRecoveryStatus] = useState<string | null>(null);
   const persistenceErrorKind =
     persistence_status.kind === 'error' ? persistence_status.error.kind : null;
 
   async function handleClearLocal() {
+    if (!persistence_client) {
+      setRecoveryStatus('清理失败:当前没有可用的本地持久化适配器');
+      return;
+    }
     setRecoveryStatus('清理中…');
-    const result = await deleteIndexedDbDatabase();
+    const result = await persistence_client.clear();
     if (result.ok) {
       setRecoveryStatus('已清理。请刷新页面以重新加载。');
     } else {
-      setRecoveryStatus(`清理失败: ${result.detail}`);
+      setRecoveryStatus(`清理失败: ${result.error.kind}`);
     }
   }
 

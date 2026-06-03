@@ -1,11 +1,14 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use serde::Deserialize;
 use serde::Serialize;
+use serde_json::Value;
 
 // Shared modules from kit/shell/tauri crate (nimi-shell-tauri)
 use nimi_shell_tauri::auth_session_commands;
 use nimi_shell_tauri::desktop_paths;
 use nimi_shell_tauri::oauth_commands;
+use nimi_shell_tauri::runtime_app_storage;
 use nimi_shell_tauri::runtime_bridge;
 use nimi_shell_tauri::runtime_defaults as defaults;
 use nimi_shell_tauri::session_logging;
@@ -15,6 +18,81 @@ use nimi_shell_tauri::session_logging;
 struct ShiJingStorageDirs {
     nimi_dir: String,
     nimi_data_dir: String,
+}
+
+const SHIJING_SPACE_FILE: &str = "shijing-space.json";
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ShiJingSpaceStorageRootPayload {
+    storage_root: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ShiJingSpaceSavePayload {
+    storage_root: String,
+    snapshot_json: String,
+}
+
+fn shijing_space_path(storage_root: &str) -> Result<std::path::PathBuf, String> {
+    runtime_app_storage::scoped_storage_child(storage_root, "shijing data root", SHIJING_SPACE_FILE)
+}
+
+#[tauri::command]
+fn shijing_space_load(payload: ShiJingSpaceStorageRootPayload) -> Result<Option<String>, String> {
+    let path = shijing_space_path(&payload.storage_root)?;
+    if !path.exists() {
+        return Ok(None);
+    }
+    std::fs::read_to_string(&path)
+        .map(Some)
+        .map_err(|error| format!("read shijing space failed ({}): {error}", path.display()))
+}
+
+#[tauri::command]
+fn shijing_space_save(payload: ShiJingSpaceSavePayload) -> Result<(), String> {
+    let parsed: Value = serde_json::from_str(&payload.snapshot_json)
+        .map_err(|error| format!("shijing space JSON invalid: {error}"))?;
+    if !parsed.is_object() || parsed.is_array() {
+        return Err("shijing space payload must be a JSON object".to_string());
+    }
+    let path = shijing_space_path(&payload.storage_root)?;
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            format!(
+                "create shijing storage directory failed ({}): {error}",
+                parent.display()
+            )
+        })?;
+    }
+    let pretty =
+        serde_json::to_string_pretty(&parsed).unwrap_or_else(|_| payload.snapshot_json.to_string());
+    let tmp_path = path.with_extension("json.tmp");
+    std::fs::write(&tmp_path, pretty).map_err(|error| {
+        format!(
+            "write shijing space temp failed ({}): {error}",
+            tmp_path.display()
+        )
+    })?;
+    std::fs::rename(&tmp_path, &path).map_err(|error| {
+        let _ = std::fs::remove_file(&tmp_path);
+        format!(
+            "commit shijing space failed ({} -> {}): {error}",
+            tmp_path.display(),
+            path.display()
+        )
+    })
+}
+
+#[tauri::command]
+fn shijing_space_clear(payload: ShiJingSpaceStorageRootPayload) -> Result<(), String> {
+    let path = shijing_space_path(&payload.storage_root)?;
+    if !path.exists() {
+        return Ok(());
+    }
+    std::fs::remove_file(&path)
+        .map_err(|error| format!("clear shijing space failed ({}): {error}", path.display()))
 }
 
 #[tauri::command]
@@ -82,6 +160,9 @@ fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             get_storage_dirs,
+            shijing_space_load,
+            shijing_space_save,
+            shijing_space_clear,
             shijing_start_window_drag,
             defaults::runtime_defaults,
             auth_session_commands::auth_session_load,
