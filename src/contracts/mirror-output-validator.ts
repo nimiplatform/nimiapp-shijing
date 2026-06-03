@@ -42,21 +42,30 @@ export type MirrorOutputValidationError =
   | { code: 'mirror_output_summary_empty' }
   | { code: 'mirror_output_mirror_kind_invalid'; received: unknown }
   | { code: 'mirror_output_forbidden_field_present'; field: string }
+  | { code: 'mirror_output_citations_invalid' }
   | { code: 'mirror_output_citation_method_invalid'; index: number; received: unknown }
   | { code: 'mirror_output_citation_reference_empty'; index: number }
+  | { code: 'mirror_output_cited_event_memory_refs_invalid' }
+  | { code: 'mirror_output_cited_plan_item_refs_invalid' }
   | { code: 'mirror_output_rijing_daily_overview_empty' }
+  | { code: 'mirror_output_rijing_concern_projections_invalid' }
   | { code: 'mirror_output_rijing_concern_projection_concern_tag_ref_empty'; index: number }
   | { code: 'mirror_output_rijing_concern_projection_tendency_class_invalid'; index: number; received: unknown }
   | { code: 'mirror_output_rijing_concern_projection_summary_empty'; index: number }
+  | { code: 'mirror_output_rijing_concern_projection_recommendations_invalid'; index: number }
   | { code: 'mirror_output_yuejing_range_invalid' }
+  | { code: 'mirror_output_yuejing_cells_invalid' }
   | { code: 'mirror_output_yuejing_cell_date_invalid'; index: number }
   | { code: 'mirror_output_yuejing_cell_concern_tag_ref_empty'; index: number }
   | { code: 'mirror_output_yuejing_cell_tendency_class_invalid'; index: number; received: unknown }
   | { code: 'mirror_output_yuejing_cell_summary_empty'; index: number }
   | { code: 'mirror_output_nianjing_horizon_invalid' }
+  | { code: 'mirror_output_nianjing_phase_bands_invalid' }
+  | { code: 'mirror_output_nianjing_inflection_points_invalid' }
   | { code: 'mirror_output_nianjing_phase_band_invalid'; index: number; reason: string }
   | { code: 'mirror_output_nianjing_inflection_point_invalid'; index: number; reason: string }
   | { code: 'mirror_output_shijing_answer_empty' }
+  | { code: 'mirror_output_shijing_cited_reading_ids_invalid' }
   | { code: 'mirror_output_shijing_cited_reading_ids_empty' };
 
 export type MirrorOutputValidationResult =
@@ -77,12 +86,53 @@ function ensureNoForbiddenFields(
   return null;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isStringArray(value: unknown): value is readonly string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
+function isAllowedCitationMethod(
+  value: unknown,
+): value is MirrorCitation['method'] {
+  return (
+    typeof value === 'string' &&
+    (MIRROR_OUTPUT_ALLOWED_CITATION_METHODS as readonly string[]).includes(value)
+  );
+}
+
+function isAllowedTendencyClass(value: unknown): boolean {
+  return typeof value === 'string' && (TENDENCY_CLASSES as readonly string[]).includes(value);
+}
+
+function isAllowedInflectionKind(value: unknown): boolean {
+  return (
+    typeof value === 'string' &&
+    (NIANJING_INFLECTION_KINDS as readonly string[]).includes(value)
+  );
+}
+
+function isLocalDate(value: unknown): value is string {
+  return typeof value === 'string' && LOCAL_DATE_PATTERN.test(value);
+}
+
 function validateCitations(
-  citations: readonly MirrorCitation[],
+  citations: unknown,
 ): MirrorOutputValidationResult | null {
+  if (!Array.isArray(citations)) {
+    return { ok: false, error: { code: 'mirror_output_citations_invalid' } };
+  }
   for (let i = 0; i < citations.length; i += 1) {
-    const citation = citations[i]!;
-    if (!MIRROR_OUTPUT_ALLOWED_CITATION_METHODS.includes(citation.method)) {
+    const citation = citations[i] as Partial<MirrorCitation>;
+    if (!isRecord(citation)) {
+      return {
+        ok: false,
+        error: { code: 'mirror_output_citation_method_invalid', index: i, received: citation },
+      };
+    }
+    if (!isAllowedCitationMethod(citation.method)) {
       return {
         ok: false,
         error: {
@@ -103,15 +153,24 @@ function validateRijing(output: RiJingMirrorOutput): MirrorOutputValidationResul
   if (typeof output.daily_overview !== 'string' || output.daily_overview.length === 0) {
     return { ok: false, error: { code: 'mirror_output_rijing_daily_overview_empty' } };
   }
+  if (!Array.isArray(output.concern_projections)) {
+    return { ok: false, error: { code: 'mirror_output_rijing_concern_projections_invalid' } };
+  }
   for (let i = 0; i < output.concern_projections.length; i += 1) {
     const projection = output.concern_projections[i]!;
+    if (!isRecord(projection)) {
+      return {
+        ok: false,
+        error: { code: 'mirror_output_rijing_concern_projection_concern_tag_ref_empty', index: i },
+      };
+    }
     if (typeof projection.concern_tag_ref !== 'string' || projection.concern_tag_ref.length === 0) {
       return {
         ok: false,
         error: { code: 'mirror_output_rijing_concern_projection_concern_tag_ref_empty', index: i },
       };
     }
-    if (!TENDENCY_CLASSES.includes(projection.tendency_class)) {
+    if (!isAllowedTendencyClass(projection.tendency_class)) {
       return {
         ok: false,
         error: {
@@ -127,20 +186,33 @@ function validateRijing(output: RiJingMirrorOutput): MirrorOutputValidationResul
         error: { code: 'mirror_output_rijing_concern_projection_summary_empty', index: i },
       };
     }
+    if (!isStringArray(projection.recommendations)) {
+      return {
+        ok: false,
+        error: { code: 'mirror_output_rijing_concern_projection_recommendations_invalid', index: i },
+      };
+    }
   }
   return { ok: true };
 }
 
 function validateYuejing(output: YueJingMirrorOutput): MirrorOutputValidationResult {
   if (
-    !LOCAL_DATE_PATTERN.test(output.range.start_date) ||
-    !LOCAL_DATE_PATTERN.test(output.range.end_date)
+    !isRecord(output.range) ||
+    !isLocalDate(output.range.start_date) ||
+    !isLocalDate(output.range.end_date)
   ) {
     return { ok: false, error: { code: 'mirror_output_yuejing_range_invalid' } };
   }
+  if (!Array.isArray(output.cells)) {
+    return { ok: false, error: { code: 'mirror_output_yuejing_cells_invalid' } };
+  }
   for (let i = 0; i < output.cells.length; i += 1) {
     const cell = output.cells[i]!;
-    if (!LOCAL_DATE_PATTERN.test(cell.date)) {
+    if (!isRecord(cell)) {
+      return { ok: false, error: { code: 'mirror_output_yuejing_cell_date_invalid', index: i } };
+    }
+    if (!isLocalDate(cell.date)) {
       return { ok: false, error: { code: 'mirror_output_yuejing_cell_date_invalid', index: i } };
     }
     if (typeof cell.concern_tag_ref !== 'string' || cell.concern_tag_ref.length === 0) {
@@ -149,7 +221,7 @@ function validateYuejing(output: YueJingMirrorOutput): MirrorOutputValidationRes
         error: { code: 'mirror_output_yuejing_cell_concern_tag_ref_empty', index: i },
       };
     }
-    if (!TENDENCY_CLASSES.includes(cell.tendency_class)) {
+    if (!isAllowedTendencyClass(cell.tendency_class)) {
       return {
         ok: false,
         error: {
@@ -168,13 +240,27 @@ function validateYuejing(output: YueJingMirrorOutput): MirrorOutputValidationRes
 
 function validateNianjing(output: NianJingMirrorOutput): MirrorOutputValidationResult {
   if (
-    !LOCAL_DATE_PATTERN.test(output.horizon.start_date) ||
-    !LOCAL_DATE_PATTERN.test(output.horizon.end_date)
+    !isRecord(output.horizon) ||
+    !isLocalDate(output.horizon.start_date) ||
+    !isLocalDate(output.horizon.end_date)
   ) {
     return { ok: false, error: { code: 'mirror_output_nianjing_horizon_invalid' } };
   }
+  if (!Array.isArray(output.phase_bands)) {
+    return { ok: false, error: { code: 'mirror_output_nianjing_phase_bands_invalid' } };
+  }
   for (let i = 0; i < output.phase_bands.length; i += 1) {
     const band = output.phase_bands[i]!;
+    if (!isRecord(band)) {
+      return {
+        ok: false,
+        error: {
+          code: 'mirror_output_nianjing_phase_band_invalid',
+          index: i,
+          reason: 'not_object',
+        },
+      };
+    }
     if (typeof band.concern_tag_ref !== 'string' || band.concern_tag_ref.length === 0) {
       return {
         ok: false,
@@ -185,7 +271,7 @@ function validateNianjing(output: NianJingMirrorOutput): MirrorOutputValidationR
         },
       };
     }
-    if (!LOCAL_DATE_PATTERN.test(band.start_date) || !LOCAL_DATE_PATTERN.test(band.end_date)) {
+    if (!isLocalDate(band.start_date) || !isLocalDate(band.end_date)) {
       return {
         ok: false,
         error: {
@@ -195,13 +281,23 @@ function validateNianjing(output: NianJingMirrorOutput): MirrorOutputValidationR
         },
       };
     }
-    if (!TENDENCY_CLASSES.includes(band.nature)) {
+    if (!isAllowedTendencyClass(band.nature)) {
       return {
         ok: false,
         error: {
           code: 'mirror_output_nianjing_phase_band_invalid',
           index: i,
           reason: 'nature_invalid',
+        },
+      };
+    }
+    if (!isStringArray(band.driver_refs)) {
+      return {
+        ok: false,
+        error: {
+          code: 'mirror_output_nianjing_phase_band_invalid',
+          index: i,
+          reason: 'driver_refs_invalid',
         },
       };
     }
@@ -216,8 +312,21 @@ function validateNianjing(output: NianJingMirrorOutput): MirrorOutputValidationR
       };
     }
   }
+  if (!Array.isArray(output.inflection_points)) {
+    return { ok: false, error: { code: 'mirror_output_nianjing_inflection_points_invalid' } };
+  }
   for (let i = 0; i < output.inflection_points.length; i += 1) {
     const inflection = output.inflection_points[i]!;
+    if (!isRecord(inflection)) {
+      return {
+        ok: false,
+        error: {
+          code: 'mirror_output_nianjing_inflection_point_invalid',
+          index: i,
+          reason: 'not_object',
+        },
+      };
+    }
     if (
       typeof inflection.concern_tag_ref !== 'string' ||
       inflection.concern_tag_ref.length === 0
@@ -231,7 +340,7 @@ function validateNianjing(output: NianJingMirrorOutput): MirrorOutputValidationR
         },
       };
     }
-    if (!LOCAL_DATE_PATTERN.test(inflection.date)) {
+    if (!isLocalDate(inflection.date)) {
       return {
         ok: false,
         error: {
@@ -241,13 +350,23 @@ function validateNianjing(output: NianJingMirrorOutput): MirrorOutputValidationR
         },
       };
     }
-    if (!NIANJING_INFLECTION_KINDS.includes(inflection.kind)) {
+    if (!isAllowedInflectionKind(inflection.kind)) {
       return {
         ok: false,
         error: {
           code: 'mirror_output_nianjing_inflection_point_invalid',
           index: i,
           reason: 'kind_invalid',
+        },
+      };
+    }
+    if (!isStringArray(inflection.driver_refs)) {
+      return {
+        ok: false,
+        error: {
+          code: 'mirror_output_nianjing_inflection_point_invalid',
+          index: i,
+          reason: 'driver_refs_invalid',
         },
       };
     }
@@ -263,8 +382,9 @@ function validateNianjing(output: NianJingMirrorOutput): MirrorOutputValidationR
     }
     if (inflection.date_window) {
       if (
-        !LOCAL_DATE_PATTERN.test(inflection.date_window.start_date) ||
-        !LOCAL_DATE_PATTERN.test(inflection.date_window.end_date)
+        !isRecord(inflection.date_window) ||
+        !isLocalDate(inflection.date_window.start_date) ||
+        !isLocalDate(inflection.date_window.end_date)
       ) {
         return {
           ok: false,
@@ -284,6 +404,9 @@ function validateShijing(output: ShiJingMirrorOutput): MirrorOutputValidationRes
   if (typeof output.answer !== 'string' || output.answer.length === 0) {
     return { ok: false, error: { code: 'mirror_output_shijing_answer_empty' } };
   }
+  if (!isStringArray(output.cited_reading_ids)) {
+    return { ok: false, error: { code: 'mirror_output_shijing_cited_reading_ids_invalid' } };
+  }
   if (output.cited_reading_ids.length === 0) {
     return { ok: false, error: { code: 'mirror_output_shijing_cited_reading_ids_empty' } };
   }
@@ -297,6 +420,12 @@ export function validateMirrorOutput(output: MirrorOutput): MirrorOutputValidati
   const record = output as unknown as Record<string, unknown>;
   const forbidden = ensureNoForbiddenFields(record);
   if (forbidden) return forbidden;
+  if (!isStringArray(record.cited_event_memory_refs)) {
+    return { ok: false, error: { code: 'mirror_output_cited_event_memory_refs_invalid' } };
+  }
+  if (!isStringArray(record.cited_plan_item_refs)) {
+    return { ok: false, error: { code: 'mirror_output_cited_plan_item_refs_invalid' } };
+  }
   const citationsCheck = validateCitations(output.citations);
   if (citationsCheck) return citationsCheck;
   switch (output.mirror_kind) {

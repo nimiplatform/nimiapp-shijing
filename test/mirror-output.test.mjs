@@ -21,6 +21,19 @@ test('rejects rijing output missing daily_overview', () => {
   assert.equal(result.ok, false);
 });
 
+test('rejects rijing projection missing recommendations array', () => {
+  const out = validRijingOutput();
+  delete out.concern_projections[0].recommendations;
+  const result = validateMirrorOutput(out);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(
+      result.error.code,
+      'mirror_output_rijing_concern_projection_recommendations_invalid',
+    );
+  }
+});
+
 test('rejects mirror output with forbidden score field', () => {
   const out = { ...validRijingOutput(), score: 1 };
   assert.equal(validateMirrorOutput(out).ok, false);

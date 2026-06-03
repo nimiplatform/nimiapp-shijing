@@ -19,3 +19,14 @@ export interface RuntimeAiClient {
     request: RuntimeAiPromptRequest,
   ): Promise<RuntimeAiResult>;
 }
+
+export function createUnavailableRuntimeAiClient(detail: string): RuntimeAiClient {
+  return {
+    async generate(): Promise<RuntimeAiResult> {
+      return {
+        ok: false,
+        failure: { kind: 'runtime_unavailable', detail },
+      };
+    },
+  };
+}

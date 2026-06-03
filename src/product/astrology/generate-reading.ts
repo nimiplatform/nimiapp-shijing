@@ -51,6 +51,7 @@ import {
 } from './runtime-ai-prompt.ts';
 import type {
   RuntimeAiClient,
+  RuntimeAiFailure,
   RuntimeAiResult,
 } from './runtime-ai-client.ts';
 import type { StageFailure } from './stage-result.ts';
@@ -167,6 +168,23 @@ async function refineWithRuntimeAi(
 ): Promise<RuntimeAiResult | null> {
   if (!client) return null;
   return client.generate(mirrorKind, promptRequest);
+}
+
+function runtimeAiFailureDetail(failure: RuntimeAiFailure): string {
+  if (failure.kind === 'runtime_unavailable') return failure.detail;
+  const parseFailure = failure.failure;
+  switch (parseFailure.kind) {
+    case 'invalid_json':
+      return `parse_failure:invalid_json:${parseFailure.detail}`;
+    case 'mirror_kind_mismatch':
+      return [
+        'parse_failure:mirror_kind_mismatch',
+        `expected=${parseFailure.expected}`,
+        `received=${String(parseFailure.received)}`,
+      ].join(';');
+    case 'validation_failed':
+      return `parse_failure:validation_failed:${parseFailure.detail}`;
+  }
 }
 
 export async function generateReading(
@@ -365,6 +383,7 @@ export async function generateReading(
       mirror_kind: input.mirror_kind,
       feature_snapshot: featureSnapshot,
       mirror_context: mirrorContext,
+      deterministic_output: structuralOutput,
       response_preferences: input.space.settings.response_preferences,
       ...(input.question ? { question: input.question } : {}),
     });
@@ -382,9 +401,7 @@ export async function generateReading(
           kind: 'runtime_ai_failed',
           mirror_kind: input.mirror_kind,
           mirror_scope: input.mirror_scope,
-          detail: aiResult.failure.kind === 'parse_failure'
-            ? `parse_failure:${aiResult.failure.failure.kind}`
-            : aiResult.failure.detail,
+          detail: runtimeAiFailureDetail(aiResult.failure),
         },
       };
     }
