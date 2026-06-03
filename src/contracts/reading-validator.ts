@@ -1,206 +1,232 @@
-// SJG-DATA-07 + SJG-ASTRO-03 + SJG-ASTRO-04 + SJG-ASTRO-07 + SJG-ASTRO-08 +
-// SJG-ALGO-03 + SJG-ALGO-08 — Reading validator.
-//
-// Enforces matrix + anchor + Astrology Contract v1 fail-close invariants
-// PLUS the Algorithm Contract v1 ReadingTimeWindow + InputsSummary mirror
-// rules.
+// SJG-DATA-07 + SJG-DATA-09 + SJG-ASTRO-* + SJG-ALGO-* — Reading validator.
 
-import { READING_KIND_SCOPE_MATRIX, type MatrixCell } from '../domain/reading-matrix.ts';
+import type { ConcernTagSnapshot } from '../domain/concern-tag.ts';
+import type { MirrorScope } from '../domain/mirror-scope.ts';
+import type { MirrorOutput } from '../domain/mirror-output.ts';
 import type { Reading } from '../domain/reading.ts';
-import { isSelfRef, subjectRefEquals, subjectRefKey } from '../domain/subject-ref.ts';
 import {
   ASTROLOGY_METHOD_PROFILE_ID,
-  READING_TIME_WINDOW_MODES,
-  READING_TIME_WINDOW_SOURCES,
   SJG_ALGO_CONTRACT_VERSION,
   SJG_ASTRO_CONTRACT_VERSION,
-  type ReadingTimeWindow,
 } from '../domain/algorithm.ts';
-import { isValidIanaTimeZone, parseIsoUtcInstant } from './time-window-validation.ts';
+import { isSelfRef, subjectRefEquals } from '../domain/subject-ref.ts';
+import {
+  evaluateMirrorKindScope,
+  validateMirrorScope,
+} from './mirror-scope-validator.ts';
+import { validateMirrorOutput } from './mirror-output-validator.ts';
+import { READING_OWNER_SCOPED_REMOVED_FIELDS } from './removed-surfaces.ts';
+
+const ISO_UTC_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/;
 
 export type ReadingValidationError =
-  | { code: 'reading_kind_scope_forbidden'; kind: string; scope: string }
-  | { code: 'reading_sign_must_be_self_only' }
-  | { code: 'reading_view_scope_requires_view_id' }
-  | { code: 'reading_non_view_scope_must_omit_view_id' }
-  | { code: 'reading_subjects_empty' }
-  | { code: 'reading_anchor_not_in_subjects' }
-  | { code: 'reading_today_must_be_single_subject_and_anchor' }
-  | { code: 'reading_consultation_anchor_not_in_subjects' }
-  | { code: 'reading_output_summary_empty' }
-  | { code: 'reading_highlight_subject_ref_not_in_subjects'; index: number }
-  | { code: 'reading_recommendation_subject_ref_not_in_subjects'; index: number }
-  | { code: 'reading_time_window_mode_invalid'; received: unknown }
-  | { code: 'reading_time_window_source_invalid'; received: unknown }
-  | { code: 'reading_time_window_basis_time_zone_invalid' }
-  | { code: 'reading_time_window_sign_must_be_natal' }
-  | { code: 'reading_time_window_non_sign_must_be_bounded' }
-  | { code: 'reading_time_window_bounded_missing_endpoints' }
-  | { code: 'reading_time_window_bounded_endpoint_not_iso_utc'; field: 'start_utc' | 'end_utc' }
-  | { code: 'reading_time_window_bounded_start_not_before_end' }
-  | { code: 'reading_time_window_natal_must_not_carry_endpoints' }
+  | { code: 'reading_id_empty' }
+  | { code: 'reading_created_at_not_iso_utc' }
+  | { code: 'reading_mirror_kind_invalid'; received: unknown }
+  | { code: 'reading_mirror_scope_invalid'; reason: string }
+  | { code: 'reading_mirror_kind_scope_forbidden'; kind: string; scope: string }
+  | { code: 'reading_primary_subject_ref_must_be_self' }
+  | { code: 'reading_related_person_ref_must_be_person'; index: number }
+  | { code: 'reading_concern_tag_ref_empty'; index: number }
+  | { code: 'reading_cited_reading_id_empty'; index: number }
+  | { code: 'reading_cited_event_memory_ref_empty'; index: number }
+  | { code: 'reading_cited_plan_item_ref_empty'; index: number }
+  | { code: 'reading_inputs_summary_captured_at_not_iso_utc' }
   | { code: 'reading_inputs_summary_contract_version_mismatch'; received: unknown }
   | { code: 'reading_inputs_summary_algorithm_contract_version_mismatch'; received: unknown }
   | { code: 'reading_inputs_summary_method_profile_id_mismatch'; received: unknown }
-  | { code: 'reading_inputs_summary_time_window_mismatch' }
-  | { code: 'reading_inputs_summary_feature_snapshot_method_profile_mismatch'; received: unknown }
-  | { code: 'reading_inputs_summary_feature_snapshot_time_window_mismatch' }
-  | { code: 'reading_inputs_summary_view_snapshot_required_for_view_scope' }
-  | { code: 'reading_inputs_summary_view_snapshot_forbidden_for_non_view_scope' }
-  | { code: 'reading_inputs_summary_view_snapshot_view_id_mismatch' }
-  | { code: 'reading_inputs_summary_view_snapshot_hash_missing'; field: string }
   | { code: 'reading_inputs_summary_input_hash_invalid' }
   | { code: 'reading_inputs_summary_feature_snapshot_hash_invalid' }
-  | { code: 'reading_inputs_summary_ad_hoc_context_required_for_ad_hoc_scope' }
-  | { code: 'reading_inputs_summary_ad_hoc_context_forbidden_for_non_ad_hoc_scope' };
+  | { code: 'reading_inputs_summary_feature_snapshot_mirror_kind_mismatch' }
+  | { code: 'reading_inputs_summary_feature_snapshot_canonical_window_mismatch' }
+  | { code: 'reading_inputs_summary_mirror_context_mirror_kind_mismatch' }
+  | { code: 'reading_inputs_summary_mirror_context_mirror_scope_mismatch' }
+  | { code: 'reading_inputs_summary_mirror_context_response_preferences_hash_invalid' }
+  | { code: 'reading_inputs_summary_mirror_context_concern_tag_snapshot_invalid'; index: number; reason: string }
+  | { code: 'reading_output_mirror_kind_mismatch'; received: string }
+  | { code: 'reading_output_invalid'; reason: string }
+  | { code: 'reading_output_cited_event_memory_must_be_in_reading_citations'; ref: string }
+  | { code: 'reading_output_cited_plan_item_must_be_in_reading_citations'; ref: string }
+  | { code: 'reading_output_uncited_memory_influence' }
+  | { code: 'reading_output_uncited_plan_influence' }
+  | { code: 'reading_shijing_cited_reading_ids_must_match_scope_source_reading_ids' }
+  | { code: 'reading_non_shijing_cited_reading_ids_must_be_empty' }
+  | { code: 'reading_uncertainty_confidence_invalid'; received: unknown }
+  | { code: 'reading_removed_field_present'; field: string };
 
 export type ReadingValidationResult =
   | { ok: true }
   | { ok: false; error: ReadingValidationError };
 
-export function evaluateReadingKindScope(
-  kind: keyof typeof READING_KIND_SCOPE_MATRIX,
-  scope: 'subject' | 'view' | 'ad_hoc',
-): MatrixCell {
-  return READING_KIND_SCOPE_MATRIX[kind][scope];
+const MIRROR_KINDS_RUNTIME = new Set<string>(['rijing', 'yuejing', 'nianjing', 'shijing']);
+const CONFIDENCE_LEVELS_RUNTIME = new Set<string>(['low', 'medium', 'high']);
+
+function mirrorScopesEqual(a: MirrorScope, b: MirrorScope): boolean {
+  if (a.kind !== b.kind) return false;
+  if (a.basis_time_zone !== b.basis_time_zone) return false;
+  if (a.kind === 'daily' && b.kind === 'daily') {
+    return a.date === b.date;
+  }
+  if (
+    (a.kind === 'rolling_30_day' && b.kind === 'rolling_30_day') ||
+    (a.kind === 'long_horizon' && b.kind === 'long_horizon')
+  ) {
+    return a.start_date === b.start_date && a.end_date === b.end_date;
+  }
+  if (a.kind === 'consultation' && b.kind === 'consultation') {
+    if (a.source_reading_ids.length !== b.source_reading_ids.length) return false;
+    for (let i = 0; i < a.source_reading_ids.length; i += 1) {
+      if (a.source_reading_ids[i] !== b.source_reading_ids[i]) return false;
+    }
+    const aHasWindow = a.question_window !== undefined;
+    const bHasWindow = b.question_window !== undefined;
+    if (aHasWindow !== bHasWindow) return false;
+    if (a.question_window && b.question_window) {
+      return (
+        a.question_window.start_date === b.question_window.start_date &&
+        a.question_window.end_date === b.question_window.end_date
+      );
+    }
+    return true;
+  }
+  return false;
 }
 
-function validateTimeWindowShape(window: ReadingTimeWindow): ReadingValidationResult {
-  if (!READING_TIME_WINDOW_MODES.includes(window.mode)) {
-    return { ok: false, error: { code: 'reading_time_window_mode_invalid', received: window.mode } };
+function arraysEqual<T>(a: readonly T[], b: readonly T[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) return false;
   }
-  if (!READING_TIME_WINDOW_SOURCES.includes(window.source)) {
-    return { ok: false, error: { code: 'reading_time_window_source_invalid', received: window.source } };
-  }
-  if (!isValidIanaTimeZone(window.basis_time_zone)) {
-    return { ok: false, error: { code: 'reading_time_window_basis_time_zone_invalid' } };
-  }
-  return { ok: true };
+  return true;
 }
 
-function timeWindowsEqual(a: ReadingTimeWindow, b: ReadingTimeWindow): boolean {
-  return (
-    a.mode === b.mode &&
-    a.start_utc === b.start_utc &&
-    a.end_utc === b.end_utc &&
-    a.basis_time_zone === b.basis_time_zone &&
-    a.source === b.source
-  );
+function validateConcernTagSnapshot(snap: ConcernTagSnapshot): string | null {
+  if (typeof snap.id !== 'string' || snap.id.length === 0) return 'id_empty';
+  if (typeof snap.label !== 'string' || snap.label.length === 0) return 'label_empty';
+  if (snap.status !== 'active' && snap.status !== 'archived') return 'status_invalid';
+  if (typeof snap.prompt_text_hash !== 'string' || snap.prompt_text_hash.length === 0) {
+    return 'prompt_text_hash_empty';
+  }
+  if (!ISO_UTC_PATTERN.test(snap.captured_at)) return 'captured_at_not_iso_utc';
+  return null;
+}
+
+function findRemovedReadingField(reading: Reading): string | null {
+  const record = reading as unknown as Record<string, unknown>;
+  for (const key of Object.keys(record)) {
+    if (READING_OWNER_SCOPED_REMOVED_FIELDS.has(key)) return key;
+  }
+  return null;
 }
 
 export function validateReading(reading: Reading): ReadingValidationResult {
-  if (reading.subjects.length === 0) {
-    return { ok: false, error: { code: 'reading_subjects_empty' } };
+  if (typeof reading.id !== 'string' || reading.id.length === 0) {
+    return { ok: false, error: { code: 'reading_id_empty' } };
   }
-  const anchorPresent = reading.subjects.some((subject) =>
-    subjectRefEquals(subject, reading.anchor_subject),
-  );
-  if (!anchorPresent) {
-    return { ok: false, error: { code: 'reading_anchor_not_in_subjects' } };
+  if (!ISO_UTC_PATTERN.test(reading.created_at)) {
+    return { ok: false, error: { code: 'reading_created_at_not_iso_utc' } };
   }
-  if (reading.scope === 'view') {
-    if (!reading.view_id || reading.view_id.length === 0) {
-      return { ok: false, error: { code: 'reading_view_scope_requires_view_id' } };
-    }
-  } else if (reading.view_id !== undefined) {
-    return { ok: false, error: { code: 'reading_non_view_scope_must_omit_view_id' } };
+  const removedField = findRemovedReadingField(reading);
+  if (removedField) {
+    return { ok: false, error: { code: 'reading_removed_field_present', field: removedField } };
   }
-  const cell = evaluateReadingKindScope(reading.kind, reading.scope);
-  if (cell === 'forbidden') {
+  if (!MIRROR_KINDS_RUNTIME.has(reading.mirror_kind)) {
     return {
       ok: false,
-      error: { code: 'reading_kind_scope_forbidden', kind: reading.kind, scope: reading.scope },
+      error: { code: 'reading_mirror_kind_invalid', received: reading.mirror_kind },
     };
   }
-  if (cell === 'self_only') {
-    const isSelfOnly =
-      isSelfRef(reading.anchor_subject) &&
-      reading.subjects.length === 1 &&
-      isSelfRef(reading.subjects[0]!);
-    if (!isSelfOnly) {
-      return { ok: false, error: { code: 'reading_sign_must_be_self_only' } };
+  const scopeCheck = validateMirrorScope(reading.mirror_scope);
+  if (!scopeCheck.ok) {
+    return { ok: false, error: { code: 'reading_mirror_scope_invalid', reason: scopeCheck.error.code } };
+  }
+  if (evaluateMirrorKindScope(reading.mirror_kind, reading.mirror_scope) === 'forbidden') {
+    return {
+      ok: false,
+      error: {
+        code: 'reading_mirror_kind_scope_forbidden',
+        kind: reading.mirror_kind,
+        scope: reading.mirror_scope.kind,
+      },
+    };
+  }
+  if (!isSelfRef(reading.primary_subject_ref)) {
+    return { ok: false, error: { code: 'reading_primary_subject_ref_must_be_self' } };
+  }
+  for (let i = 0; i < reading.related_person_refs.length; i += 1) {
+    const ref = reading.related_person_refs[i]!;
+    if (typeof ref !== 'object' || ref === null || ref.kind !== 'person') {
+      return { ok: false, error: { code: 'reading_related_person_ref_must_be_person', index: i } };
     }
   }
-  if (reading.kind === 'today') {
-    const singleSubject = reading.subjects.length === 1;
-    const anchorMatches = singleSubject && subjectRefEquals(reading.subjects[0]!, reading.anchor_subject);
-    if (!singleSubject || !anchorMatches) {
-      return { ok: false, error: { code: 'reading_today_must_be_single_subject_and_anchor' } };
+  for (let i = 0; i < reading.concern_tag_refs.length; i += 1) {
+    const ref = reading.concern_tag_refs[i]!;
+    if (typeof ref !== 'string' || ref.length === 0) {
+      return { ok: false, error: { code: 'reading_concern_tag_ref_empty', index: i } };
     }
   }
-  if (reading.kind === 'consultation') {
-    if (!anchorPresent) {
-      return { ok: false, error: { code: 'reading_consultation_anchor_not_in_subjects' } };
+  for (let i = 0; i < reading.cited_reading_ids.length; i += 1) {
+    const ref = reading.cited_reading_ids[i]!;
+    if (typeof ref !== 'string' || ref.length === 0) {
+      return { ok: false, error: { code: 'reading_cited_reading_id_empty', index: i } };
     }
   }
-  const timeWindowShape = validateTimeWindowShape(reading.time_window);
-  if (!timeWindowShape.ok) return timeWindowShape;
-  if (reading.kind === 'sign') {
-    if (reading.time_window.mode !== 'natal') {
-      return { ok: false, error: { code: 'reading_time_window_sign_must_be_natal' } };
-    }
-    if (reading.time_window.start_utc !== undefined || reading.time_window.end_utc !== undefined) {
-      return { ok: false, error: { code: 'reading_time_window_natal_must_not_carry_endpoints' } };
-    }
-  } else {
-    if (reading.time_window.mode !== 'bounded') {
-      return { ok: false, error: { code: 'reading_time_window_non_sign_must_be_bounded' } };
-    }
-    if (!reading.time_window.start_utc || !reading.time_window.end_utc) {
-      return { ok: false, error: { code: 'reading_time_window_bounded_missing_endpoints' } };
-    }
-    const start = parseIsoUtcInstant(reading.time_window.start_utc);
-    if (!start) {
-      return { ok: false, error: { code: 'reading_time_window_bounded_endpoint_not_iso_utc', field: 'start_utc' } };
-    }
-    const end = parseIsoUtcInstant(reading.time_window.end_utc);
-    if (!end) {
-      return { ok: false, error: { code: 'reading_time_window_bounded_endpoint_not_iso_utc', field: 'end_utc' } };
-    }
-    if (start.ms >= end.ms) {
-      return { ok: false, error: { code: 'reading_time_window_bounded_start_not_before_end' } };
+  for (let i = 0; i < reading.cited_event_memory_refs.length; i += 1) {
+    const ref = reading.cited_event_memory_refs[i]!;
+    if (typeof ref !== 'string' || ref.length === 0) {
+      return { ok: false, error: { code: 'reading_cited_event_memory_ref_empty', index: i } };
     }
   }
-  if (!reading.output.summary || reading.output.summary.trim().length === 0) {
-    return { ok: false, error: { code: 'reading_output_summary_empty' } };
-  }
-  const subjectKeys = new Set(reading.subjects.map(subjectRefKey));
-  for (let i = 0; i < reading.output.highlights.length; i += 1) {
-    const highlight = reading.output.highlights[i]!;
-    if (!subjectKeys.has(subjectRefKey(highlight.subject_ref))) {
-      return { ok: false, error: { code: 'reading_highlight_subject_ref_not_in_subjects', index: i } };
+  for (let i = 0; i < reading.cited_plan_item_refs.length; i += 1) {
+    const ref = reading.cited_plan_item_refs[i]!;
+    if (typeof ref !== 'string' || ref.length === 0) {
+      return { ok: false, error: { code: 'reading_cited_plan_item_ref_empty', index: i } };
     }
   }
-  for (let i = 0; i < reading.output.recommendations.length; i += 1) {
-    const recommendation = reading.output.recommendations[i]!;
-    if (!subjectKeys.has(subjectRefKey(recommendation.subject_ref))) {
-      return { ok: false, error: { code: 'reading_recommendation_subject_ref_not_in_subjects', index: i } };
+  if (reading.mirror_kind === 'shijing') {
+    if (
+      reading.mirror_scope.kind !== 'consultation' ||
+      !arraysEqual(reading.cited_reading_ids, reading.mirror_scope.source_reading_ids)
+    ) {
+      return {
+        ok: false,
+        error: { code: 'reading_shijing_cited_reading_ids_must_match_scope_source_reading_ids' },
+      };
     }
+  } else if (reading.cited_reading_ids.length > 0) {
+    return { ok: false, error: { code: 'reading_non_shijing_cited_reading_ids_must_be_empty' } };
   }
   const summary = reading.inputs_summary;
+  if (!ISO_UTC_PATTERN.test(summary.captured_at)) {
+    return { ok: false, error: { code: 'reading_inputs_summary_captured_at_not_iso_utc' } };
+  }
   if (summary.contract_version !== SJG_ASTRO_CONTRACT_VERSION) {
     return {
       ok: false,
-      error: { code: 'reading_inputs_summary_contract_version_mismatch', received: summary.contract_version },
+      error: {
+        code: 'reading_inputs_summary_contract_version_mismatch',
+        received: summary.contract_version,
+      },
     };
   }
   if (summary.algorithm_contract_version !== SJG_ALGO_CONTRACT_VERSION) {
     return {
       ok: false,
-      error: { code: 'reading_inputs_summary_algorithm_contract_version_mismatch', received: summary.algorithm_contract_version },
+      error: {
+        code: 'reading_inputs_summary_algorithm_contract_version_mismatch',
+        received: summary.algorithm_contract_version,
+      },
     };
   }
   if (summary.method_profile.id !== ASTROLOGY_METHOD_PROFILE_ID) {
     return {
       ok: false,
-      error: { code: 'reading_inputs_summary_method_profile_id_mismatch', received: summary.method_profile.id },
+      error: {
+        code: 'reading_inputs_summary_method_profile_id_mismatch',
+        received: summary.method_profile.id,
+      },
     };
   }
-  // SJG-ALGO-11 — input_hash / feature_snapshot_hash must be real
-  // canonical SHA-256 digests, NOT the wave-5 placeholder literal
-  // 'unset' and NOT the empty string. The deterministic pipeline
-  // populates them via computeCanonicalHash, so any persisted Reading
-  // missing them is a contract violation.
   if (
     typeof summary.input_hash !== 'string' ||
     summary.input_hash.length === 0 ||
@@ -215,48 +241,104 @@ export function validateReading(reading: Reading): ReadingValidationResult {
   ) {
     return { ok: false, error: { code: 'reading_inputs_summary_feature_snapshot_hash_invalid' } };
   }
-  if (!timeWindowsEqual(summary.time_window, reading.time_window)) {
-    return { ok: false, error: { code: 'reading_inputs_summary_time_window_mismatch' } };
+  if (summary.feature_snapshot.mirror_kind !== reading.mirror_kind) {
+    return {
+      ok: false,
+      error: { code: 'reading_inputs_summary_feature_snapshot_mirror_kind_mismatch' },
+    };
   }
-  if (summary.feature_snapshot.method_profile.id !== ASTROLOGY_METHOD_PROFILE_ID) {
+  if (summary.feature_snapshot.canonical_window.basis_time_zone !== reading.mirror_scope.basis_time_zone) {
+    return {
+      ok: false,
+      error: { code: 'reading_inputs_summary_feature_snapshot_canonical_window_mismatch' },
+    };
+  }
+  if (summary.feature_snapshot.canonical_window.scope_kind !== reading.mirror_scope.kind) {
+    return {
+      ok: false,
+      error: { code: 'reading_inputs_summary_feature_snapshot_canonical_window_mismatch' },
+    };
+  }
+  if (summary.mirror_context_snapshot.mirror_kind !== reading.mirror_kind) {
+    return { ok: false, error: { code: 'reading_inputs_summary_mirror_context_mirror_kind_mismatch' } };
+  }
+  if (!mirrorScopesEqual(summary.mirror_context_snapshot.mirror_scope, reading.mirror_scope)) {
+    return { ok: false, error: { code: 'reading_inputs_summary_mirror_context_mirror_scope_mismatch' } };
+  }
+  if (
+    typeof summary.mirror_context_snapshot.response_preferences_hash !== 'string' ||
+    summary.mirror_context_snapshot.response_preferences_hash.length === 0
+  ) {
+    return {
+      ok: false,
+      error: { code: 'reading_inputs_summary_mirror_context_response_preferences_hash_invalid' },
+    };
+  }
+  for (let i = 0; i < summary.mirror_context_snapshot.active_concern_tags.length; i += 1) {
+    const snapshot = summary.mirror_context_snapshot.active_concern_tags[i]!;
+    const reason = validateConcernTagSnapshot(snapshot);
+    if (reason) {
+      return {
+        ok: false,
+        error: {
+          code: 'reading_inputs_summary_mirror_context_concern_tag_snapshot_invalid',
+          index: i,
+          reason,
+        },
+      };
+    }
+  }
+  if (reading.output.mirror_kind !== reading.mirror_kind) {
+    return {
+      ok: false,
+      error: { code: 'reading_output_mirror_kind_mismatch', received: reading.output.mirror_kind },
+    };
+  }
+  const outputCheck = validateMirrorOutput(reading.output);
+  if (!outputCheck.ok) {
+    return { ok: false, error: { code: 'reading_output_invalid', reason: outputCheck.error.code } };
+  }
+  const readingMemoryRefs = new Set(reading.cited_event_memory_refs);
+  const readingPlanRefs = new Set(reading.cited_plan_item_refs);
+  const outputMemoryRefs: readonly string[] = (reading.output as Extract<MirrorOutput, { cited_event_memory_refs: readonly string[] }>).cited_event_memory_refs;
+  const outputPlanRefs: readonly string[] = (reading.output as Extract<MirrorOutput, { cited_plan_item_refs: readonly string[] }>).cited_plan_item_refs;
+  for (const ref of outputMemoryRefs) {
+    if (!readingMemoryRefs.has(ref)) {
+      return {
+        ok: false,
+        error: { code: 'reading_output_cited_event_memory_must_be_in_reading_citations', ref },
+      };
+    }
+  }
+  for (const ref of outputPlanRefs) {
+    if (!readingPlanRefs.has(ref)) {
+      return {
+        ok: false,
+        error: { code: 'reading_output_cited_plan_item_must_be_in_reading_citations', ref },
+      };
+    }
+  }
+  if (reading.cited_event_memory_refs.length > 0 && outputMemoryRefs.length === 0) {
+    return { ok: false, error: { code: 'reading_output_uncited_memory_influence' } };
+  }
+  if (reading.cited_plan_item_refs.length > 0 && outputPlanRefs.length === 0) {
+    return { ok: false, error: { code: 'reading_output_uncited_plan_influence' } };
+  }
+  if (!CONFIDENCE_LEVELS_RUNTIME.has(reading.uncertainty.confidence)) {
     return {
       ok: false,
       error: {
-        code: 'reading_inputs_summary_feature_snapshot_method_profile_mismatch',
-        received: summary.feature_snapshot.method_profile.id,
+        code: 'reading_uncertainty_confidence_invalid',
+        received: reading.uncertainty.confidence,
       },
     };
   }
-  if (!timeWindowsEqual(summary.feature_snapshot.time_window, reading.time_window)) {
-    return { ok: false, error: { code: 'reading_inputs_summary_feature_snapshot_time_window_mismatch' } };
-  }
-  if (reading.scope === 'view') {
-    if (!summary.view_snapshot) {
-      return { ok: false, error: { code: 'reading_inputs_summary_view_snapshot_required_for_view_scope' } };
+  // Force shape check on related person refs to subject_ref helpers (no-op
+  // unless they collapse to 'self' which is forbidden above).
+  for (const ref of reading.related_person_refs) {
+    if (subjectRefEquals(ref, 'self')) {
+      return { ok: false, error: { code: 'reading_related_person_ref_must_be_person', index: 0 } };
     }
-    if (summary.view_snapshot.view_id !== reading.view_id) {
-      return { ok: false, error: { code: 'reading_inputs_summary_view_snapshot_view_id_mismatch' } };
-    }
-    const hashFields: ('instructions_hash' | 'context_items_hash' | 'memory_summary_hash')[] = [
-      'instructions_hash',
-      'context_items_hash',
-      'memory_summary_hash',
-    ];
-    for (const field of hashFields) {
-      const value = summary.view_snapshot[field];
-      if (typeof value !== 'string' || value.length === 0 || value === 'unset') {
-        return { ok: false, error: { code: 'reading_inputs_summary_view_snapshot_hash_missing', field } };
-      }
-    }
-  } else if (summary.view_snapshot !== undefined) {
-    return { ok: false, error: { code: 'reading_inputs_summary_view_snapshot_forbidden_for_non_view_scope' } };
-  }
-  if (reading.scope === 'ad_hoc') {
-    if (summary.ad_hoc_context === undefined || summary.ad_hoc_context.length === 0) {
-      return { ok: false, error: { code: 'reading_inputs_summary_ad_hoc_context_required_for_ad_hoc_scope' } };
-    }
-  } else if (summary.ad_hoc_context !== undefined) {
-    return { ok: false, error: { code: 'reading_inputs_summary_ad_hoc_context_forbidden_for_non_ad_hoc_scope' } };
   }
   return { ok: true };
 }

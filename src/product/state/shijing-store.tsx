@@ -1,8 +1,7 @@
-// React Context wrapper around the pure reducer in `shijing-state.ts`.
-// Wave-2 adds optional persistence wiring: an in-memory or IndexedDB
-// adapter loaded on mount, plus a debounced saver fired on every
-// snapshot/replace dispatch. Persistence status (load/save lifecycle) is
-// surfaced through the context so downstream renderers can react.
+// W04 — React Context wrapper around the pure reducer in
+// `shijing-state.ts`. Persistence loads on mount and a debounced save
+// fires on every snapshot/replace. Runtime AI wiring is W03; conversation
+// chat bridge wiring is W06d.
 
 import {
   createContext,
@@ -17,8 +16,12 @@ import {
 } from 'react';
 
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
-import type { SubjectRef } from '../../domain/subject-ref.ts';
-import { createInitialState, shijingReducer, type ShijingAction, type ShijingViewState } from './shijing-state.ts';
+import {
+  createInitialState,
+  shijingReducer,
+  type ShijingAction,
+  type ShijingViewState,
+} from './shijing-state.ts';
 import type { PersistenceClient } from '../persistence/persistence-client.ts';
 import {
   createDebouncedSaver,
@@ -27,7 +30,6 @@ import {
   type PersistenceLifecycleStatus,
 } from './persistence-bridge.ts';
 import type { RuntimeAiClient } from '../astrology/runtime-ai-client.ts';
-import { NoOpRuntimeAiClient } from '../astrology/runtime-ai-client.ts';
 import {
   createUnavailableConversationChatBridge,
   type ConversationChatBridge,
@@ -37,7 +39,7 @@ interface ShijingStoreValue {
   readonly state: ShijingViewState;
   readonly dispatch: Dispatch<ShijingAction>;
   readonly persistence_status: PersistenceLifecycleStatus;
-  readonly runtime_ai_client: RuntimeAiClient;
+  readonly runtime_ai_client: RuntimeAiClient | null;
   readonly conversation_chat_bridge: ConversationChatBridge;
 }
 
@@ -45,7 +47,6 @@ const ShijingStoreContext = createContext<ShijingStoreValue | null>(null);
 
 interface ShijingStoreProviderProps {
   readonly snapshot: ShiJingSpace;
-  readonly initialObservationTarget?: SubjectRef;
   readonly persistenceClient?: PersistenceClient | null;
   readonly persistenceDebounceMs?: number;
   readonly runtimeAiClient?: RuntimeAiClient;
@@ -56,9 +57,11 @@ interface ShijingStoreProviderProps {
 export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
   const [state, dispatch] = useReducer(
     shijingReducer,
-    createInitialState(props.snapshot, props.initialObservationTarget ?? 'self'),
+    createInitialState(props.snapshot),
   );
-  const [persistenceStatus, setPersistenceStatus] = useState<PersistenceLifecycleStatus>({ kind: 'idle' });
+  const [persistenceStatus, setPersistenceStatus] = useState<PersistenceLifecycleStatus>({
+    kind: 'idle',
+  });
   const saverRef = useRef<DebouncedSaver | null>(null);
   const lastSavedRef = useRef<ShiJingSpace | null>(null);
 
@@ -99,8 +102,8 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
     saver.enqueue(state.snapshot);
   }, [state.snapshot, state.snapshot_status]);
 
-  const runtimeAiClient = useMemo<RuntimeAiClient>(
-    () => props.runtimeAiClient ?? new NoOpRuntimeAiClient(),
+  const runtimeAiClient = useMemo<RuntimeAiClient | null>(
+    () => props.runtimeAiClient ?? null,
     [props.runtimeAiClient],
   );
 

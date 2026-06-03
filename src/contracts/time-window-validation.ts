@@ -34,8 +34,12 @@ export function parseIsoUtcInstant(value: unknown): IsoUtcInstant | null {
   return { iso: value, ms };
 }
 
+const OFFSET_ONLY_TZ_PATTERN = /^(?:UTC|GMT|Etc\/GMT)?[+-]?\d{1,2}(?::\d{2})?$/i;
+
 export function isValidIanaTimeZone(value: unknown): boolean {
   if (typeof value !== 'string' || value.length === 0) return false;
+  if (OFFSET_ONLY_TZ_PATTERN.test(value)) return false;
+  if (!value.includes('/')) return false;
   try {
     new Intl.DateTimeFormat('en-US', { timeZone: value }).format(new Date(0));
     return true;

@@ -1,32 +1,31 @@
+// W03 — Reading selectors under the Mirror Architecture v1.
+
 import type { Reading } from '../../domain/reading.ts';
-import { subjectRefEquals, type SubjectRef } from '../../domain/subject-ref.ts';
-import type { ReadingKind, ReadingScope } from '../../domain/reading-matrix.ts';
+import type { MirrorKind } from '../../domain/mirror-scope.ts';
 
-export interface LatestReadingForTargetInput {
+export interface LatestReadingByMirrorKindInput {
   readonly readings: readonly Reading[];
-  readonly kind: ReadingKind;
-  readonly scope?: ReadingScope;
-  readonly target: SubjectRef;
+  readonly mirror_kind: MirrorKind;
 }
 
-export function readingMatchesObservationTarget(reading: Reading, target: SubjectRef): boolean {
-  return (
-    subjectRefEquals(reading.anchor_subject, target) &&
-    reading.subjects.some((subject) => subjectRefEquals(subject, target))
-  );
-}
-
-export function latestReadingForTarget(input: LatestReadingForTargetInput): Reading | undefined {
+export function latestReadingByMirrorKind(
+  input: LatestReadingByMirrorKindInput,
+): Reading | undefined {
   return input.readings
-    .map((reading, index) => ({ reading, index }))
-    .filter(({ reading }) =>
-      reading.kind === input.kind &&
-      (input.scope === undefined || reading.scope === input.scope) &&
-      readingMatchesObservationTarget(reading, input.target),
-    )
-    .sort((a, b) => {
-      const createdDelta = Date.parse(b.reading.created_at) - Date.parse(a.reading.created_at);
-      if (createdDelta !== 0) return createdDelta;
-      return b.index - a.index;
-    })[0]?.reading;
+    .filter((reading) => reading.mirror_kind === input.mirror_kind)
+    .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
+}
+
+export function readingsCitingReading(
+  readings: readonly Reading[],
+  sourceReadingId: string,
+): Reading[] {
+  return readings.filter((reading) => reading.cited_reading_ids.includes(sourceReadingId));
+}
+
+export function readingsForConcernTag(
+  readings: readonly Reading[],
+  concernTagId: string,
+): Reading[] {
+  return readings.filter((reading) => reading.concern_tag_refs.includes(concernTagId));
 }

@@ -1,24 +1,12 @@
-// SJG-DATA-08 — Conversation.id + ConversationTurn.id factory. Uses
-// platform crypto.randomUUID (browser + Node 24). No Math.random
-// fallback; if the primitive is absent the factory throws so id
-// quality never silently degrades.
+// SJG-DATA-10 — Conversation.id + ConversationTurn.id factory.
+//
+// W-c01: replaced the wave-04 `crypto.randomUUID()` strategy with the
+// admitted Crockford-base32 ULID strategy. ULID delivers monotonic,
+// lexicographically-sortable ids without depending on a host-provided
+// UUID factory, which keeps the renderer working in environments that
+// lack `crypto.randomUUID` while still avoiding `Date.now()+Math.random()`
+// collision risk.
 
-interface CryptoLike {
-  randomUUID(): string;
-}
+import { newConversationId, newConversationTurnId } from '../ids/index.ts';
 
-function platformCrypto(): CryptoLike {
-  const c = (globalThis as { crypto?: CryptoLike }).crypto;
-  if (!c || typeof c.randomUUID !== 'function') {
-    throw new Error('crypto.randomUUID is not available in this environment');
-  }
-  return c;
-}
-
-export function newConversationId(): string {
-  return platformCrypto().randomUUID();
-}
-
-export function newConversationTurnId(): string {
-  return platformCrypto().randomUUID();
-}
+export { newConversationId, newConversationTurnId };

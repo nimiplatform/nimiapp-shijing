@@ -1,12 +1,15 @@
 // SJG-ALGO-* — Astrology Algorithm Contract v1 source mirror.
 //
-// This module exposes ONLY type aliases + closed enums + structural shapes
-// mirroring `.nimi/spec/shijing/kernel/algorithm-contract.md`. Validators
-// that consume these types live in `src/contracts/**`; the deterministic
-// pipeline implementation lives in `src/product/astrology/**`.
+// Type aliases + closed enums + structural shapes mirroring
+// `.nimi/spec/shijing/kernel/algorithm-contract.md` (SJG-ALGO-08
+// AstrologyFeatureSnapshot). Validators consume these from src/contracts/**.
+// Deterministic pipeline implementation lives downstream of W02.
 
 import type { RawBirthInput } from './person.ts';
+import type { MirrorKind, MirrorScope, MirrorScopeKind } from './mirror-scope.ts';
 import type { SubjectRef } from './subject-ref.ts';
+import type { TendencyClass } from './mirror-output.ts';
+import type { NianJingInflectionKind } from './mirror-output.ts';
 
 export const SJG_ALGO_CONTRACT_VERSION = 'SJG-ALGO-v1' as const;
 export const SJG_ALGO_FEATURE_SCHEMA_VERSION = 'SJG-FEATURE-v1' as const;
@@ -77,12 +80,6 @@ export const EARTHLY_BRANCHES: readonly EarthlyBranch[] = [
 export interface GanzhiPillar {
   readonly stem: HeavenlyStem;
   readonly branch: EarthlyBranch;
-  // SJG-ALGO-06 + SJG-ALGO-11 — every emitted pillar records the
-  // ephemeris table that resolved its boundary instant. Algorithm
-  // contract v1 ties this to the admitted `bazi_ganzhi_jieqi_dayun_v1`
-  // method profile via `shijing-approx-v1` while the high-precision
-  // ephemeris is admitted; downstream consumers MUST refuse pillars
-  // whose ephemeris_version does not match the active profile.
   readonly ephemeris_version: string;
 }
 
@@ -102,11 +99,6 @@ export const CALENDAR_CONVERSION_SOURCES: readonly CalendarConversionSource[] = 
 ] as const;
 
 export interface NatalCanonicalization {
-  // SJG-ALGO-04: the spec body lists `raw_birth_input: RawBirthInput`
-  // verbatim, and the spec rules require the canonicalization output to
-  // preserve raw input as evidence (including lunar leap-month evidence,
-  // place_text, etc.). The companion `raw_birth_input_hash` is retained
-  // for compact reference / storage / canonical-hash inputs.
   readonly raw_birth_input: RawBirthInput;
   readonly raw_birth_input_hash: string;
   readonly canonical_birth_datetime_utc: string;
@@ -127,11 +119,15 @@ export interface NatalCanonicalization {
 
 export type MissingPillarName = 'year' | 'month' | 'day' | 'hour';
 
-export const MISSING_PILLAR_NAMES: readonly MissingPillarName[] = ['year', 'month', 'day', 'hour'] as const;
+export const MISSING_PILLAR_NAMES: readonly MissingPillarName[] = [
+  'year',
+  'month',
+  'day',
+  'hour',
+] as const;
 
 export interface NatalChartSnapshot {
-  readonly subject: SubjectRef;
-  readonly method_profile: AstrologyMethodProfile;
+  readonly subject_ref: SubjectRef;
   readonly canonicalization_hash: string;
   readonly year_pillar?: GanzhiPillar;
   readonly month_pillar?: GanzhiPillar;
@@ -149,11 +145,9 @@ export interface DayunSnapshot {
   readonly required: boolean;
   readonly direction?: DayunDirection;
   readonly start_age_years?: number;
-  readonly start_utc?: string;
   readonly current_period_start_utc?: string;
   readonly current_period_end_utc?: string;
   readonly current_pillar?: GanzhiPillar;
-  readonly next_boundary_utc?: string;
 }
 
 export interface TimedPillar {
@@ -161,31 +155,6 @@ export interface TimedPillar {
   readonly end_utc: string;
   readonly pillar: GanzhiPillar;
 }
-
-export type CycleMarkerKind =
-  | 'dayun_boundary'
-  | 'annual_transition'
-  | 'monthly_transition'
-  | 'clash'
-  | 'combination'
-  | 'storage'
-  | 'resource'
-  | 'output'
-  | 'wealth'
-  | 'constraint';
-
-export const CYCLE_MARKER_KINDS: readonly CycleMarkerKind[] = [
-  'dayun_boundary',
-  'annual_transition',
-  'monthly_transition',
-  'clash',
-  'combination',
-  'storage',
-  'resource',
-  'output',
-  'wealth',
-  'constraint',
-] as const;
 
 export type MarkerStrength = 'low' | 'medium' | 'high';
 
@@ -202,11 +171,11 @@ export const CYCLE_MARKER_SOURCES: readonly CycleMarkerSource[] = [
 ] as const;
 
 export interface CycleMarker {
-  readonly kind: CycleMarkerKind;
+  readonly kind: string;
   readonly strength: MarkerStrength;
   readonly start_utc: string;
   readonly end_utc: string;
-  readonly subjects: readonly SubjectRef[];
+  readonly subject_refs: readonly SubjectRef[];
   readonly source: CycleMarkerSource;
 }
 
@@ -216,7 +185,7 @@ export interface CycleSnapshot {
   readonly annual_pillar?: GanzhiPillar;
   readonly monthly_pillars: readonly TimedPillar[];
   readonly daily_pillars: readonly TimedPillar[];
-  readonly active_markers: readonly CycleMarker[];
+  readonly markers: readonly CycleMarker[];
 }
 
 export type ShijingStageLabel = '进时' | '收时' | '养时' | '转时' | '守时';
@@ -231,32 +200,8 @@ export const SHIJING_STAGE_LABELS: readonly ShijingStageLabel[] = [
 
 export interface StageDriver {
   readonly stage_label: ShijingStageLabel;
-  readonly marker_kind: CycleMarkerKind;
-  readonly strength: MarkerStrength;
+  readonly marker_refs: readonly string[];
   readonly explanation_key: string;
-}
-
-export interface SubjectFeatureSnapshot {
-  readonly subject: SubjectRef;
-  readonly natal_chart: NatalChartSnapshot;
-  readonly dayun?: DayunSnapshot;
-  readonly cycle_snapshot: CycleSnapshot;
-  readonly stage_drivers: readonly StageDriver[];
-}
-
-export type RelationFeatureAnchorRelevance = 'primary' | 'context';
-
-export const RELATION_FEATURE_ANCHOR_RELEVANCES: readonly RelationFeatureAnchorRelevance[] = [
-  'primary',
-  'context',
-] as const;
-
-export interface RelationFeatureSnapshot {
-  readonly from_subject: SubjectRef;
-  readonly to_subject: SubjectRef;
-  readonly relation_kind: string;
-  readonly interaction_markers: readonly CycleMarker[];
-  readonly anchor_relevance: RelationFeatureAnchorRelevance;
 }
 
 export type KeyWindowLabel = 'transition' | 'support' | 'closure' | 'maintenance';
@@ -272,8 +217,43 @@ export interface KeyWindowFeature {
   readonly start_utc: string;
   readonly end_utc: string;
   readonly label: KeyWindowLabel;
-  readonly driver: string;
-  readonly subjects: readonly SubjectRef[];
+  readonly driver_refs: readonly string[];
+  readonly subject_refs: readonly SubjectRef[];
+}
+
+export interface SubjectFeatureSnapshot {
+  readonly subject_ref: SubjectRef;
+  readonly natal_chart: NatalChartSnapshot;
+  readonly dayun?: DayunSnapshot;
+  readonly cycle_snapshot: CycleSnapshot;
+}
+
+export interface YueJingTendencyDriver {
+  readonly date: string;
+  readonly concern_tag_ref: string;
+  readonly tendency_class: TendencyClass;
+  readonly driver_refs: readonly string[];
+}
+
+export interface NianJingPhaseDriver {
+  readonly concern_tag_ref: string;
+  readonly start_date: string;
+  readonly end_date: string;
+  readonly nature: TendencyClass;
+  readonly driver_refs: readonly string[];
+}
+
+export interface NianJingInflectionDriverWindow {
+  readonly start_date: string;
+  readonly end_date: string;
+}
+
+export interface NianJingInflectionDriver {
+  readonly concern_tag_ref: string;
+  readonly date: string;
+  readonly date_window?: NianJingInflectionDriverWindow;
+  readonly kind: NianJingInflectionKind;
+  readonly driver_refs: readonly string[];
 }
 
 export type UncertaintyInputCode =
@@ -287,7 +267,10 @@ export type UncertaintyInputCode =
   | 'ephemeris_missing'
   | 'calculation_sex_unspecified'
   | 'consent_withheld'
-  | 'view_context_sparse'
+  | 'unresolved_mention'
+  | 'related_person_incomplete'
+  | 'memory_unavailable'
+  | 'no_active_concern_tags'
   | 'ai_parse_failed';
 
 export const UNCERTAINTY_INPUT_CODES: readonly UncertaintyInputCode[] = [
@@ -301,7 +284,10 @@ export const UNCERTAINTY_INPUT_CODES: readonly UncertaintyInputCode[] = [
   'ephemeris_missing',
   'calculation_sex_unspecified',
   'consent_withheld',
-  'view_context_sparse',
+  'unresolved_mention',
+  'related_person_incomplete',
+  'memory_unavailable',
+  'no_active_concern_tags',
   'ai_parse_failed',
 ] as const;
 
@@ -317,44 +303,27 @@ export const UNCERTAINTY_SEVERITIES: readonly UncertaintySeverity[] = [
 export interface UncertaintyInput {
   readonly code: UncertaintyInputCode;
   readonly severity: UncertaintySeverity;
-  readonly subject?: SubjectRef;
+  readonly subject_ref?: SubjectRef;
 }
 
-// Forward-declared here so `Reading.time_window` and
-// `AstrologyFeatureSnapshot.time_window` share the same shape. The full
-// alias is re-exported from `./reading.ts` for consumer ergonomics.
-export type ReadingTimeWindowMode = 'bounded' | 'natal';
-
-export const READING_TIME_WINDOW_MODES: readonly ReadingTimeWindowMode[] = ['bounded', 'natal'] as const;
-
-export type ReadingTimeWindowSource =
-  | 'kind_default'
-  | 'view_time_scope'
-  | 'user_selected'
-  | 'ad_hoc_question';
-
-export const READING_TIME_WINDOW_SOURCES: readonly ReadingTimeWindowSource[] = [
-  'kind_default',
-  'view_time_scope',
-  'user_selected',
-  'ad_hoc_question',
-] as const;
-
-export interface ReadingTimeWindow {
-  readonly mode: ReadingTimeWindowMode;
-  readonly start_utc?: string;
-  readonly end_utc?: string;
+export interface CanonicalMirrorWindow {
+  readonly start_utc: string;
+  readonly end_utc: string;
   readonly basis_time_zone: string;
-  readonly source: ReadingTimeWindowSource;
+  readonly scope_kind: MirrorScopeKind;
 }
 
 export interface AstrologyFeatureSnapshot {
   readonly method_profile: AstrologyMethodProfile;
-  readonly time_window: ReadingTimeWindow;
-  readonly subjects: readonly SubjectFeatureSnapshot[];
-  readonly relation_features: readonly RelationFeatureSnapshot[];
-  readonly stage_label: ShijingStageLabel;
+  readonly mirror_kind: MirrorKind;
+  readonly canonical_window: CanonicalMirrorWindow;
+  readonly self_subject: SubjectFeatureSnapshot;
+  readonly related_persons: readonly SubjectFeatureSnapshot[];
+  readonly stage_drivers: readonly StageDriver[];
   readonly key_windows: readonly KeyWindowFeature[];
+  readonly yuejing_tendency_drivers: readonly YueJingTendencyDriver[];
+  readonly nianjing_phase_drivers: readonly NianJingPhaseDriver[];
+  readonly nianjing_inflection_drivers: readonly NianJingInflectionDriver[];
   readonly uncertainty_inputs: readonly UncertaintyInput[];
 }
 
@@ -363,3 +332,12 @@ export const CANONICAL_SERIALIZATION = 'json-c14n-v1' as const;
 export const UNICODE_NORMALIZATION = 'NFC' as const;
 export const HASH_ENCODING = 'utf-8' as const;
 export const HASH_DIGEST_FORMAT = 'hex-lowercase' as const;
+
+export function canonicalWindowFromScope(scope: MirrorScope, startUtc: string, endUtc: string): CanonicalMirrorWindow {
+  return {
+    start_utc: startUtc,
+    end_utc: endUtc,
+    basis_time_zone: scope.basis_time_zone,
+    scope_kind: scope.kind,
+  };
+}

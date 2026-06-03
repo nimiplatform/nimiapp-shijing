@@ -1,5 +1,16 @@
-import type { ReadingTimeWindow } from '../../domain/reading.ts';
-import type { View } from '../../domain/view.ts';
+// SJG-ASTRO-07 — ShiJing consultation flow.
+//
+// Builds the consultation MirrorScope grounded in cited
+// source_reading_ids and routes the request through the generator.
+// The actual structured output is produced by `shijing-generator.ts`
+// (or refined by Runtime AI under the orchestrator).
+
+import type {
+  ConsultationMirrorScope,
+  ConsultationQuestionWindow,
+} from '../../domain/mirror-scope.ts';
+import type { Reading } from '../../domain/reading.ts';
+import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 
 export type ConsultationHorizonParseResult =
   | { readonly ok: true; readonly days: number }
@@ -20,41 +31,62 @@ export function parseConsultationHorizonDays(value: string): ConsultationHorizon
   return { ok: true, days: n };
 }
 
-export function consultationTimeWindowFromDays(
-  basisTimeZone: string,
-  days: number,
-  now: Date = new Date(),
-): ReadingTimeWindow {
-  const startMs = now.getTime();
+export interface BuildConsultationScopeInput {
+  readonly source_reading_ids: readonly string[];
+  readonly basis_time_zone: string;
+  readonly question_window_days?: number;
+  readonly now?: Date;
+}
+
+export type BuildConsultationScopeResult =
+  | { ok: true; scope: ConsultationMirrorScope }
+  | { ok: false; reason: 'source_readings_empty' | 'question_window_out_of_bounds' };
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function formatLocalDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+export function buildConsultationScope(
+  input: BuildConsultationScopeInput,
+): BuildConsultationScopeResult {
+  if (input.source_reading_ids.length === 0) {
+    return { ok: false, reason: 'source_readings_empty' };
+  }
+  let question_window: ConsultationQuestionWindow | undefined;
+  if (input.question_window_days !== undefined) {
+    if (input.question_window_days < 1 || input.question_window_days > 365) {
+      return { ok: false, reason: 'question_window_out_of_bounds' };
+    }
+    const now = input.now ?? new Date();
+    const startMs = now.getTime();
+    const endMs = startMs + (input.question_window_days - 1) * MS_PER_DAY;
+    question_window = {
+      start_date: formatLocalDate(new Date(startMs)),
+      end_date: formatLocalDate(new Date(endMs)),
+    };
+  }
   return {
-    mode: 'bounded',
-    start_utc: now.toISOString(),
-    end_utc: new Date(startMs + days * 24 * 60 * 60 * 1000).toISOString(),
-    basis_time_zone: basisTimeZone,
-    source: 'ad_hoc_question',
+    ok: true,
+    scope: {
+      kind: 'consultation',
+      source_reading_ids: [...input.source_reading_ids],
+      basis_time_zone: input.basis_time_zone,
+      ...(question_window ? { question_window } : {}),
+    },
   };
 }
 
-export interface BuildConsultationContextTextInput {
-  readonly question: string;
-  readonly view?: View;
-}
-
-export function buildConsultationContextText(input: BuildConsultationContextTextInput): string {
-  const question = input.question.trim();
-  if (!input.view) return question;
-  const view = input.view;
-  const lines = [`问题：${question}`, `借用关注：${view.title}`];
-  if (view.instructions.trim().length > 0) {
-    lines.push(`关注指示：${view.instructions.trim()}`);
+export function resolveSourceReadings(
+  ids: readonly string[],
+  space: ShiJingSpace,
+): { ok: true; readings: Reading[] } | { ok: false; missing: string } {
+  const readings: Reading[] = [];
+  for (const id of ids) {
+    const r = space.readings.find((entry) => entry.id === id);
+    if (!r) return { ok: false, missing: id };
+    readings.push(r);
   }
-  if (view.view_memory.summary.trim().length > 0) {
-    lines.push(`关注记忆：${view.view_memory.summary.trim()}`);
-  }
-  for (const item of view.context_items) {
-    if (item.body.trim().length > 0) {
-      lines.push(`上下文/${item.kind}：${item.body.trim()}`);
-    }
-  }
-  return lines.join('\n');
+  return { ok: true, readings };
 }
