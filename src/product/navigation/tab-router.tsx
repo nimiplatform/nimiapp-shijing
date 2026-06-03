@@ -1,31 +1,33 @@
-// Renders the body for the currently-active tab. Tab descriptors come
-// exclusively from `SHIJING_IA_TABS` (wave-0 IA contract); this module
-// must not host a parallel tab list.
+// SJG-IA-01 — primary tab router for the four-mirror shell.
 
-import type { ShijingTabId } from '../../contracts/ia-contract.ts';
-import { TodayTab } from '../tabs/today.tsx';
-import { ViewsTab } from '../tabs/views.tsx';
-import { ConsultationTab } from '../tabs/consultation.tsx';
-import { MeTab } from '../tabs/me.tsx';
+import { type ReactNode } from 'react';
+import {
+  SHIJING_PRIMARY_TAB_DESCRIPTORS,
+  type ShijingPrimaryTabId,
+} from './tab-descriptor.ts';
+import { useShijingStore } from '../state/shijing-store.tsx';
 
-interface TabRouterProps {
-  readonly active_tab: ShijingTabId;
+export interface PrimaryTabBarProps {
+  readonly children?: ReactNode;
 }
 
-export function TabRouter({ active_tab }: TabRouterProps) {
-  switch (active_tab) {
-    case 'today':
-      return <TodayTab />;
-    case 'views':
-      return <ViewsTab />;
-    case 'consultation':
-      return <ConsultationTab />;
-    case 'me':
-      return <MeTab />;
-    default: {
-      const exhaustive: never = active_tab;
-      void exhaustive;
-      return null;
-    }
-  }
+export function PrimaryTabBar(_props: PrimaryTabBarProps) {
+  const { state, dispatch } = useShijingStore();
+  return (
+    <nav className="shijing-primary-tabbar" aria-label="ShiJing 四镜">
+      {SHIJING_PRIMARY_TAB_DESCRIPTORS.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          aria-current={state.active_tab === tab.id ? 'page' : undefined}
+          onClick={() => dispatch({ type: 'tab/activate', tab: tab.id })}
+          data-mirror-kind={tab.id}
+        >
+          {tab.chinese_label}
+        </button>
+      ))}
+    </nav>
+  );
 }
+
+export type ActiveMirrorKind = ShijingPrimaryTabId;

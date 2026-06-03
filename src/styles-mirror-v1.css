@@ -1,0 +1,1124 @@
+/* ============================================================
+ * W05/W06 Mirror Architecture v1 shell + tabs + settings styles.
+ * Imported from src/styles.css.
+ * ============================================================ */
+
+.shijing-shell {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "head"
+    "main";
+  gap: 0;
+  /* The shell is mounted inside `.shijing-app__body`, which is
+   * `display: flex`. Without `flex: 1` + `width: 100%` the grid
+   * container would size to its intrinsic content and leave the rest of
+   * the viewport empty. */
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  background: var(--shijing-surface-canvas);
+}
+
+/* Soft "time instrument" gradient behind the consultation surface, per
+ * the 问时镜 redesign. Other mirrors keep the calm canvas. */
+.shijing-shell[data-active-tab="shijing"] {
+  background:
+    radial-gradient(125% 80% at 50% -12%, #e7edfb 0%, transparent 58%),
+    linear-gradient(180deg, #eef1fb 0%, #f1f0fb 40%, #e8f5ee 100%);
+}
+
+/* ----- Integrated top bar (brand + four-mirror nav + account) ----- */
+
+.shijing-topbar {
+  grid-area: head;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 28px;
+  background: color-mix(in srgb, var(--shijing-surface-card) 82%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--shijing-border-subtle);
+  /* `backdrop-filter` makes the top bar a stacking context; without an
+   * explicit z-index the later <main> sibling would paint over the
+   * settings dropdown anchored inside this bar. */
+  position: relative;
+  z-index: 50;
+}
+
+.shijing-topbar__brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* Logo box retired — the brand is now `wordmark + tagline`. Rule
+ * retained as `display: none` so any straggler markup is hidden until
+ * removed entirely. */
+.shijing-topbar__logo {
+  display: none;
+}
+
+.shijing-topbar__wordmark {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-topbar__tagline {
+  font-family: "Inter", "Helvetica Neue", system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  color: var(--shijing-text-muted);
+  text-transform: uppercase;
+}
+
+.shijing-topbar__account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  /* Anchor for the settings dropdown rendered directly below the avatar. */
+  position: relative;
+}
+
+.shijing-topbar__account-name {
+  font-size: 13px;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-topbar__avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--shijing-brand-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.shijing-topbar__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.shijing-topbar__avatar-button {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--shijing-surface-card-quiet);
+  border: 1px solid var(--shijing-border-subtle);
+  padding: 3px 12px 3px 3px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.shijing-topbar__avatar-button:hover,
+.shijing-topbar__avatar-button:focus-visible {
+  outline: none;
+  background: var(--shijing-brand-soft);
+  border-color: color-mix(in srgb, var(--shijing-brand-primary) 30%, var(--shijing-border-subtle));
+  box-shadow: var(--shijing-focus-ring);
+}
+
+.shijing-topbar__avatar-button[aria-expanded="true"] {
+  background: var(--shijing-brand-soft);
+  border-color: color-mix(in srgb, var(--shijing-brand-primary) 40%, var(--shijing-border-subtle));
+  box-shadow: var(--shijing-focus-ring);
+}
+
+.shijing-topbar__avatar-button .shijing-topbar__account-name {
+  font-weight: 500;
+}
+
+.shijing-shell__error {
+  grid-column: 1 / -1;
+  margin: 12px 24px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--shijing-status-danger) 12%, transparent);
+  color: var(--shijing-status-danger);
+  border-radius: var(--shijing-radius-md);
+  font-size: 13px;
+}
+
+/* ----- Primary tab bar (centered inside the top bar) -----
+ * The active tab is signalled by a short green underline indicator,
+ * not a pill background, so the topbar reads as a single horizontal
+ * baseline rather than four separate chips. */
+
+.shijing-primary-tabbar {
+  display: flex;
+  gap: 8px;
+  margin: 0 auto;
+}
+
+.shijing-primary-tabbar button {
+  appearance: none;
+  position: relative;
+  background: transparent;
+  border: 0;
+  padding: 8px 14px 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--shijing-text-secondary);
+  cursor: pointer;
+  border-radius: 0;
+  transition: color 120ms ease;
+}
+
+.shijing-primary-tabbar button::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 4px;
+  height: 2px;
+  border-radius: 2px;
+  background: transparent;
+  transition: background 120ms ease;
+}
+
+.shijing-primary-tabbar button:hover {
+  color: var(--shijing-text-primary);
+}
+
+.shijing-primary-tabbar button[aria-current="page"] {
+  color: var(--shijing-brand-primary);
+  font-weight: 600;
+}
+
+.shijing-primary-tabbar button[aria-current="page"]::after {
+  background: var(--shijing-brand-primary);
+}
+
+/* ----- Main mirror area ----- */
+
+.shijing-shell__main {
+  grid-area: main;
+  overflow: auto;
+  padding: 24px 28px 40px;
+}
+
+.shijing-tab {
+  max-width: 920px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.shijing-tab h1 {
+  margin: 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-tab h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-tab h3 {
+  margin: 12px 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-tab p {
+  margin: 0;
+  color: var(--shijing-text-primary);
+  line-height: 1.6;
+}
+
+.shijing-tab > section,
+.shijing-tab > article {
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shijing-shadow-1);
+}
+
+.shijing-tab [role="status"] {
+  color: var(--shijing-text-secondary);
+  font-size: 13px;
+}
+
+.shijing-tab [role="alert"] {
+  color: var(--shijing-status-warning);
+  background: color-mix(in srgb, var(--shijing-status-warning) 12%, transparent);
+  padding: 10px 14px;
+  border-radius: var(--shijing-radius-md);
+  font-size: 13px;
+  margin: 8px 0;
+}
+
+.shijing-rijing__head,
+.shijing-yuejing__head,
+.shijing-nianjing__head,
+.shijing-shijing__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.shijing-tab button {
+  appearance: none;
+  background: var(--shijing-brand-primary);
+  color: #fff;
+  border: 0;
+  padding: 8px 16px;
+  border-radius: var(--shijing-radius-md);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 120ms ease, opacity 120ms ease;
+}
+
+/* Keep this hover at a single-class specificity (.shijing-tab + :hover) so
+ * two-class custom button hovers (e.g. .shijing-ask .shijing-ask__chip:hover)
+ * win cleanly. Disabled buttons are excluded by the :disabled rule below,
+ * which is declared after this one at equal specificity. */
+.shijing-tab button:hover {
+  background: color-mix(in srgb, var(--shijing-brand-primary) 88%, black);
+}
+
+.shijing-tab button:disabled {
+  background: var(--shijing-text-disabled);
+  cursor: not-allowed;
+}
+
+.shijing-tab textarea,
+.shijing-tab input[type="text"],
+.shijing-concern-tags input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--shijing-border-default);
+  border-radius: var(--shijing-radius-md);
+  background: var(--shijing-surface-card);
+  color: var(--shijing-text-primary);
+  resize: vertical;
+}
+
+.shijing-tab textarea {
+  min-height: 84px;
+}
+
+.shijing-tab textarea:focus,
+.shijing-tab input:focus {
+  outline: none;
+  border-color: var(--shijing-brand-primary);
+  box-shadow: var(--shijing-focus-ring);
+}
+
+.shijing-tab form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.shijing-tab form button[type="submit"] {
+  align-self: flex-end;
+}
+
+.shijing-tab ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-tab ul ul {
+  margin-top: 4px;
+}
+
+.shijing-tab small {
+  color: var(--shijing-text-muted);
+  font-size: 12px;
+}
+
+/* ----- RiJing ----- */
+
+.shijing-rijing__summary {
+  font-weight: 600;
+  font-size: 17px;
+}
+
+.shijing-rijing__overview {
+  color: var(--shijing-text-secondary);
+}
+
+/* ----- YueJing ----- */
+
+.shijing-yuejing__calendar fieldset {
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-md);
+  padding: 8px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.shijing-yuejing__calendar fieldset label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.shijing-yuejing__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.shijing-yuejing__legend li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--shijing-surface-card-quiet);
+  border: 1px solid var(--shijing-border-subtle);
+  font-size: 12px;
+}
+
+.shijing-yuejing__legend li[data-tendency="supportive"] { color: var(--shijing-status-success); }
+.shijing-yuejing__legend li[data-tendency="steady"]     { color: var(--shijing-text-secondary); }
+.shijing-yuejing__legend li[data-tendency="watch"]      { color: var(--shijing-status-warning); }
+.shijing-yuejing__legend li[data-tendency="blocked"]    { color: var(--shijing-status-danger); }
+.shijing-yuejing__legend li[data-tendency="turning"]    { color: var(--shijing-status-info); }
+
+.shijing-yuejing__cells {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+  margin-top: 8px;
+}
+
+.shijing-yuejing__cells li {
+  padding: 10px 12px;
+  border-radius: var(--shijing-radius-md);
+  background: var(--shijing-surface-card-quiet);
+  border: 1px solid var(--shijing-border-subtle);
+  border-left: 3px solid var(--shijing-text-disabled);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shijing-yuejing__cells li[data-tendency="supportive"] { border-left-color: var(--shijing-status-success); }
+.shijing-yuejing__cells li[data-tendency="watch"]      { border-left-color: var(--shijing-status-warning); }
+.shijing-yuejing__cells li[data-tendency="blocked"]    { border-left-color: var(--shijing-status-danger); }
+.shijing-yuejing__cells li[data-tendency="turning"]    { border-left-color: var(--shijing-status-info); }
+
+.shijing-yuejing__cells li strong { font-size: 13px; }
+.shijing-yuejing__cells li p      { font-size: 12px; color: var(--shijing-text-secondary); margin: 0; }
+
+/* ----- NianJing ----- */
+
+.shijing-nianjing__phase-bands,
+.shijing-nianjing__inflections {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-nianjing__phase-bands li,
+.shijing-nianjing__inflections li {
+  padding: 10px 14px;
+  border-radius: var(--shijing-radius-md);
+  background: var(--shijing-surface-card-quiet);
+  border: 1px solid var(--shijing-border-subtle);
+  border-left: 3px solid var(--shijing-text-disabled);
+  font-size: 13px;
+}
+
+.shijing-nianjing__phase-bands li[data-nature="supportive"] { border-left-color: var(--shijing-status-success); }
+.shijing-nianjing__phase-bands li[data-nature="watch"]      { border-left-color: var(--shijing-status-warning); }
+.shijing-nianjing__phase-bands li[data-nature="blocked"]    { border-left-color: var(--shijing-status-danger); }
+.shijing-nianjing__phase-bands li[data-nature="turning"]    { border-left-color: var(--shijing-status-info); }
+
+.shijing-nianjing__phase-bands li p { font-size: 13px; margin: 4px 0 0; color: var(--shijing-text-secondary); }
+.shijing-nianjing__phase-bands li small { color: var(--shijing-text-muted); }
+
+/* ----- ShiJing consultation ----- */
+
+.shijing-shijing__latest {
+  background: var(--shijing-brand-soft);
+  border-color: color-mix(in srgb, var(--shijing-brand-primary) 30%, var(--shijing-border-subtle));
+}
+
+.shijing-shijing form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-shijing form label input[type="checkbox"] {
+  margin-right: 6px;
+}
+
+/* ----- Concern tag controls ----- */
+
+.shijing-concern-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shijing-concern-tags ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.shijing-concern-tags li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 12px;
+  border-radius: 999px;
+  background: var(--shijing-surface-card-quiet);
+  border: 1px solid var(--shijing-border-subtle);
+  font-size: 13px;
+}
+
+.shijing-concern-tags li[data-status="archived"] {
+  opacity: 0.55;
+}
+
+.shijing-concern-tags li button {
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 999px;
+  background: var(--shijing-surface-card);
+  color: var(--shijing-text-secondary);
+  border: 1px solid var(--shijing-border-default);
+}
+
+.shijing-concern-tags > div {
+  display: flex;
+  gap: 8px;
+}
+
+.shijing-concern-tags > div button {
+  padding: 8px 14px;
+}
+
+/* ----- Citation drawer + failure banner + import button ----- */
+
+.shijing-citation-drawer {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-md);
+  background: var(--shijing-surface-card-quiet);
+  font-size: 13px;
+}
+
+.shijing-citation-drawer summary {
+  cursor: pointer;
+  color: var(--shijing-text-secondary);
+  font-weight: 500;
+}
+
+.shijing-citation-drawer dl {
+  margin: 10px 0 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  font-size: 12px;
+}
+
+.shijing-citation-drawer dt {
+  color: var(--shijing-text-muted);
+  font-weight: 500;
+}
+
+.shijing-citation-drawer dd {
+  margin: 0;
+  color: var(--shijing-text-primary);
+  word-break: break-all;
+}
+
+.shijing-citation-drawer code {
+  font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  background: var(--shijing-surface-card);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.shijing-failure-banner {
+  display: block;
+  background: color-mix(in srgb, var(--shijing-status-danger) 12%, transparent);
+  color: var(--shijing-status-danger);
+  padding: 10px 14px;
+  border-radius: var(--shijing-radius-md);
+  font-size: 13px;
+  border-left: 3px solid var(--shijing-status-danger);
+}
+
+.shijing-failure-banner code {
+  display: inline-block;
+  margin-left: 6px;
+  font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.shijing-import-to-consultation {
+  margin-top: 10px;
+  background: transparent !important;
+  color: var(--shijing-brand-primary) !important;
+  border: 1px solid var(--shijing-brand-primary) !important;
+}
+
+/* ----- Account menu (compact dropdown anchored below the avatar) ----- */
+
+.shijing-account-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 200px;
+}
+
+/* The kit ActionMenu defaults to a translucent "glass" surface
+ * (rgba(255,255,255,0.45) + blur), which is hard to read over the mirror
+ * content. Force an opaque card surface so the items stay legible. */
+.shijing-account-menu .nimi-action-menu {
+  background-color: var(--shijing-surface-card);
+  backdrop-filter: none;
+  border-color: var(--shijing-border-default);
+  box-shadow: var(--shijing-shadow-2);
+}
+
+.shijing-account-menu .nimi-action-menu__item {
+  color: var(--shijing-text-primary);
+}
+
+/* ----- Settings detail page (full-surface, opened from the menu) ----- */
+
+.shijing-settings-page {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow: auto;
+  background: var(--shijing-surface-canvas);
+}
+
+.shijing-settings-page__back {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 4px 0;
+  font: inherit;
+  font-size: 14px;
+  color: var(--shijing-text-muted);
+  cursor: pointer;
+}
+
+.shijing-settings-page__back:hover {
+  color: var(--shijing-brand-primary);
+}
+
+/* The detail page reuses the `.shijing-settings` surface/editor styling. As
+ * a full page (rather than a narrow rail) each surface reads as a card. The
+ * personal-data settings pages ship their own card treatment (see
+ * styles-personal-data.css, keyed off `--styled`), so they opt out of this generic
+ * section chrome. */
+.shijing-settings-page:not(.shijing-settings-page--styled) .shijing-settings > section {
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-lg);
+  box-shadow: var(--shijing-shadow-1);
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.shijing-settings h3 {
+  margin: 14px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--shijing-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.shijing-settings p {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-settings section {
+  margin-bottom: 12px;
+}
+
+.shijing-settings button {
+  appearance: none;
+  background: var(--shijing-surface-card-quiet);
+  color: var(--shijing-text-primary);
+  border: 1px solid var(--shijing-border-default);
+  padding: 6px 12px;
+  border-radius: var(--shijing-radius-md);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.shijing-settings button:hover {
+  background: var(--shijing-brand-soft);
+  border-color: var(--shijing-brand-primary);
+}
+
+.shijing-settings__recover {
+  background: color-mix(in srgb, var(--shijing-status-danger) 8%, transparent) !important;
+  color: var(--shijing-status-danger) !important;
+  border-color: color-mix(in srgb, var(--shijing-status-danger) 30%, var(--shijing-border-default)) !important;
+}
+
+.shijing-settings h4 {
+  margin: 12px 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--shijing-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ----- W-c03 editor forms ----- */
+
+.shijing-self-editor,
+.shijing-person-editor,
+.shijing-memory-editor,
+.shijing-plan-editor,
+.shijing-response-prefs-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.shijing-self-editor label,
+.shijing-person-editor label,
+.shijing-memory-editor label,
+.shijing-plan-editor label,
+.shijing-response-prefs-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-self-editor input[type="text"],
+.shijing-self-editor select,
+.shijing-self-editor textarea,
+.shijing-person-editor input[type="text"],
+.shijing-person-editor select,
+.shijing-person-editor textarea,
+.shijing-memory-editor input[type="text"],
+.shijing-memory-editor select,
+.shijing-memory-editor textarea,
+.shijing-plan-editor input[type="text"],
+.shijing-plan-editor select,
+.shijing-plan-editor textarea,
+.shijing-response-prefs-editor input[type="text"],
+.shijing-response-prefs-editor select,
+.shijing-response-prefs-editor textarea {
+  font: inherit;
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-default);
+  border-radius: var(--shijing-radius-md);
+  padding: 6px 8px;
+}
+
+.shijing-self-editor textarea,
+.shijing-person-editor textarea,
+.shijing-memory-editor textarea,
+.shijing-plan-editor textarea,
+.shijing-response-prefs-editor textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+.shijing-self-editor fieldset,
+.shijing-person-editor fieldset,
+.shijing-memory-editor fieldset,
+.shijing-plan-editor fieldset {
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-md);
+  padding: 8px 12px;
+  margin: 0;
+}
+
+.shijing-self-editor fieldset legend,
+.shijing-person-editor fieldset legend,
+.shijing-memory-editor fieldset legend,
+.shijing-plan-editor fieldset legend {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--shijing-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 4px;
+}
+
+.shijing-self-editor button,
+.shijing-person-editor button,
+.shijing-memory-editor button,
+.shijing-plan-editor button,
+.shijing-response-prefs-editor button {
+  align-self: flex-start;
+  background: var(--shijing-brand-primary) !important;
+  color: #fff !important;
+  border: 0 !important;
+  padding: 6px 12px;
+  border-radius: var(--shijing-radius-md);
+  cursor: pointer;
+}
+
+.shijing-self-editor button:disabled,
+.shijing-person-editor button:disabled,
+.shijing-memory-editor button:disabled,
+.shijing-plan-editor button:disabled,
+.shijing-response-prefs-editor button:disabled {
+  background: var(--shijing-text-disabled) !important;
+  cursor: not-allowed;
+}
+
+.shijing-person-editor ul,
+.shijing-memory-editor ul,
+.shijing-plan-editor ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shijing-person-editor ul li,
+.shijing-memory-editor ul li,
+.shijing-plan-editor ul li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--shijing-surface-card-quiet);
+  border-radius: var(--shijing-radius-md);
+  border: 1px solid var(--shijing-border-subtle);
+  font-size: 12px;
+}
+
+.shijing-person-editor [role="alert"],
+.shijing-memory-editor [role="alert"],
+.shijing-plan-editor [role="alert"],
+.shijing-self-editor [role="alert"],
+.shijing-response-prefs-editor [role="alert"] {
+  color: var(--shijing-status-danger);
+  font-size: 12px;
+}
+
+.shijing-person-editor [role="status"],
+.shijing-self-editor [role="status"],
+.shijing-response-prefs-editor [role="status"] {
+  color: var(--shijing-status-success);
+  font-size: 12px;
+}
+
+.shijing-concern-tags__preview {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--shijing-text-muted);
+  line-height: 1.5;
+}
+
+.shijing-concern-tags__intro {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--shijing-text-muted);
+  line-height: 1.6;
+}
+
+.shijing-editor-empty {
+  margin: 4px 0 12px;
+  padding: 12px 14px;
+  border: 1px dashed var(--shijing-border, rgba(0, 0, 0, 0.12));
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--shijing-text-muted);
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .shijing-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      "head"
+      "main"
+      "aside";
+  }
+  .shijing-topbar {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .shijing-primary-tabbar {
+    order: 3;
+    width: 100%;
+    margin: 0;
+    overflow-x: auto;
+  }
+  .shijing-shell__settings {
+    border-left: 0;
+    border-top: 1px solid var(--shijing-border-subtle);
+  }
+}
+
+/* ============================================================
+ * W-c04 — YueJing 30-day grid + NianJing timeline + ShiJing
+ * state-backed source list
+ * ============================================================ */
+
+.shijing-yuejing__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.shijing-yuejing__day {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--shijing-surface-card-quiet);
+  border: 1px solid var(--shijing-border-subtle);
+  border-left: 3px solid var(--shijing-text-disabled);
+  border-radius: var(--shijing-radius-md);
+  font-size: 12px;
+}
+
+.shijing-yuejing__day[data-day-kind="today"] {
+  border-color: var(--shijing-brand-primary);
+  background: var(--shijing-brand-soft);
+}
+
+.shijing-yuejing__day[data-tendency="supportive"] { border-left-color: var(--shijing-status-success); }
+.shijing-yuejing__day[data-tendency="watch"]      { border-left-color: var(--shijing-status-warning); }
+.shijing-yuejing__day[data-tendency="blocked"]    { border-left-color: var(--shijing-status-danger); }
+.shijing-yuejing__day[data-tendency="turning"]    { border-left-color: var(--shijing-status-info); }
+
+.shijing-yuejing__day-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.shijing-yuejing__day-head strong { font-size: 13px; }
+.shijing-yuejing__day-head small  { color: var(--shijing-text-muted); }
+
+.shijing-yuejing__day ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shijing-yuejing__day ul li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 6px;
+  background: var(--shijing-surface-card);
+  border-radius: 4px;
+  border-left: 2px solid var(--shijing-text-disabled);
+}
+
+.shijing-yuejing__day ul li[data-tendency="supportive"] { border-left-color: var(--shijing-status-success); }
+.shijing-yuejing__day ul li[data-tendency="watch"]      { border-left-color: var(--shijing-status-warning); }
+.shijing-yuejing__day ul li[data-tendency="blocked"]    { border-left-color: var(--shijing-status-danger); }
+.shijing-yuejing__day ul li[data-tendency="turning"]    { border-left-color: var(--shijing-status-info); }
+
+.shijing-yuejing__day-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.shijing-yuejing__day-entry textarea {
+  font: inherit;
+  font-size: 11px;
+  min-height: 40px;
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: 4px;
+  padding: 4px 6px;
+  resize: vertical;
+}
+
+.shijing-yuejing__day-entry button {
+  align-self: flex-end;
+  font-size: 11px !important;
+  padding: 3px 8px !important;
+}
+
+.shijing-nianjing__timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: var(--shijing-surface-card-quiet);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-md);
+  margin-bottom: 12px;
+}
+
+.shijing-nianjing__axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--shijing-text-muted);
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--shijing-border-subtle);
+}
+
+.shijing-nianjing__lane {
+  display: grid;
+  grid-template-columns: minmax(80px, max-content) 1fr;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.shijing-nianjing__lane-label {
+  color: var(--shijing-text-secondary);
+  font-weight: 500;
+}
+
+.shijing-nianjing__lane-track {
+  position: relative;
+  height: 24px;
+  background: var(--shijing-surface-card);
+  border-radius: 4px;
+  border: 1px solid var(--shijing-border-subtle);
+  overflow: hidden;
+}
+
+.shijing-nianjing__band {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #fff;
+  background: var(--shijing-text-disabled);
+  overflow: hidden;
+}
+
+.shijing-nianjing__band[data-nature="supportive"] { background: var(--shijing-status-success); }
+.shijing-nianjing__band[data-nature="watch"]      { background: var(--shijing-status-warning); }
+.shijing-nianjing__band[data-nature="blocked"]    { background: var(--shijing-status-danger); }
+.shijing-nianjing__band[data-nature="turning"]    { background: var(--shijing-status-info); }
+.shijing-nianjing__band[data-nature="steady"]     { background: var(--shijing-text-muted); }
+
+.shijing-nianjing__band-label {
+  white-space: nowrap;
+  padding: 0 4px;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.25);
+}
+
+.shijing-nianjing__marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #000;
+  transform: translateX(-1px);
+}
+
+.shijing-nianjing__marker[data-kind="dayun_boundary"]      { background: var(--shijing-status-danger); }
+.shijing-nianjing__marker[data-kind="annual_transition"]   { background: var(--shijing-status-info); }
+.shijing-nianjing__marker[data-kind="monthly_transition"]  { background: var(--shijing-status-warning); }
+.shijing-nianjing__marker[data-kind="marker_cluster"]      { background: var(--shijing-brand-primary); }
+
+.shijing-shijing__source-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shijing-shijing__source-list ul li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 4px 8px;
+  background: var(--shijing-surface-card-quiet);
+  border-radius: 4px;
+  border: 1px solid var(--shijing-border-subtle);
+}
+
+.shijing-shijing__source-list ul li button {
+  margin-left: auto;
+  font-size: 11px !important;
+  padding: 2px 8px !important;
+}

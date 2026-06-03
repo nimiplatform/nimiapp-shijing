@@ -1,144 +1,154 @@
-// Four-tab IA shell layout. Tabs come from SHIJING_IA_TABS; active state
-// goes through the in-memory store. Snapshot validation status is surfaced
-// at the shell level so any invalid ShiJingSpace short-circuits the body
-// instead of rendering downstream surfaces against bad data.
+// W05 — four-mirror shell.
+//
+// Wires the integrated top bar (brand + the contract-locked primary tab
+// bar rijing / yuejing / nianjing / shijing + account). The account cluster
+// shows the user's avatar + name; clicking it opens a compact menu (Nimi
+// ActionMenu) listing the settings sub-pages; selecting an entry opens a
+// full-surface detail page for that page.
 
-import {
-  Surface,
-  NimiTabs,
-  InlineAlert,
-  Avatar,
-  ActionMenu,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  type NimiMenuItem,
-} from '@nimiplatform/kit/ui';
-import { SHIJING_IA_TABS, type ShijingTabId } from '../../contracts/ia-contract.ts';
+import { useEffect, useRef, useState } from 'react';
+import { ActionMenu, type NimiMenuItem } from '@nimiplatform/kit/ui';
 import { useShijingStore } from '../state/shijing-store.tsx';
-import { TabRouter } from '../navigation/tab-router.tsx';
-import { SubjectSwitcher } from './subject-switcher.tsx';
-import { formatValidatorRefusal } from '../i18n/format-failure.ts';
-import { TechnicalDetails } from '../components/technical-details.tsx';
-import { NatalInputsForm } from '../inputs/natal-inputs-form.tsx';
-import { BRAND_NAME } from '../i18n/copy.ts';
-import { useAppStore } from '../../shell/app-shell/app-store.js';
-import { logoutShijingRuntimeAccount } from '../../shell/infra/shijing-bootstrap.js';
+import { PrimaryTabBar } from '../navigation/tab-router.tsx';
+import { RiJingTab } from '../tabs/rijing-tab.tsx';
+import { YueJingTab } from '../tabs/yuejing-tab.tsx';
+import { NianJingTab } from '../tabs/nianjing-tab.tsx';
+import { ShiJingTab } from '../tabs/shijing-tab.tsx';
+import { SettingsPageView } from '../settings/settings-page-view.tsx';
+import {
+  SHIJING_SETTINGS_PAGES,
+  type ShijingSettingsPageId,
+} from '../../contracts/ia-contract.ts';
+import { BRAND_NAME, SETTINGS_PAGE_LABELS } from '../i18n/copy.ts';
 
-function initialFromName(name: string): string {
-  const trimmed = name.trim();
-  if (!trimmed) return '時';
-  const codePoint = trimmed.codePointAt(0);
-  return codePoint ? String.fromCodePoint(codePoint).toUpperCase() : '時';
+// Derives the avatar fallback glyph from the account name — the first
+// character (works for both CJK and Latin names). Falls back to a neutral
+// dot when no name is projected (dev preview / unauthenticated mount).
+function avatarInitial(name: string): string {
+  return name ? Array.from(name)[0] : '·';
 }
 
-function ShellAccountTrigger() {
-  const user = useAppStore((s) => s.auth.user);
-  const accountDisplayName = user?.displayName?.trim() || user?.id || '';
-
-  const accountMenuItems: NimiMenuItem[] = [
-    {
-      id: 'logout',
-      label: '退出登录',
-      tone: 'danger',
-      onSelect: () => {
-        void logoutShijingRuntimeAccount()
-          .catch(() => {})
-          .finally(() => {
-            useAppStore.getState().clearAuthSession();
-          });
-      },
-    },
-  ];
-
-  if (!user) return null;
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button type="button" className="shijing-topbar__account" aria-label="账户菜单">
-          <span className="shijing-topbar__account-name">{accountDisplayName}</span>
-          <Avatar
-            size="sm"
-            shape="circle"
-            tone="accent"
-            alt={accountDisplayName || '账户头像'}
-            fallback={initialFromName(accountDisplayName)}
-          />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="end" sideOffset={8}>
-        <ActionMenu items={accountMenuItems} ariaLabel="账户菜单" />
-      </PopoverContent>
-    </Popover>
-  );
+export interface ShijingShellAccount {
+  readonly name?: string;
+  readonly avatarUrl?: string;
 }
 
-export function ShijingShell() {
-  const { state, dispatch } = useShijingStore();
+export interface ShijingShellProps {
+  // Projected account identity for the top-bar account cluster. Optional
+  // so the dev preview and tests can mount the shell without an auth
+  // session; absent → a neutral avatar with no name.
+  readonly account?: ShijingShellAccount;
+}
 
-  if (state.snapshot_status.kind === 'invalid') {
-    const formatted = formatValidatorRefusal(state.snapshot_status.error.code);
-    if (state.snapshot_status.error.code === 'space_self_subject_natal_inputs_invalid') {
-      return (
-        <div className="shijing-shell shijing-shell--repair" role="main">
-          <Surface tone="card" material="glass-thin" padding="md">
-            <InlineAlert tone="warning">
-              <strong>建立本人本命资料</strong>
-            </InlineAlert>
-            <NatalInputsForm />
-          </Surface>
-        </div>
-      );
+export function ShijingShell(props: ShijingShellProps) {
+  const { state } = useShijingStore();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [activePage, setActivePage] = useState<ShijingSettingsPageId | null>(null);
+  const accountRef = useRef<HTMLDivElement>(null);
+  const accountName = props.account?.name?.trim() ?? '';
+
+  // Dropdown affordances: dismiss the avatar menu on Escape or on a click
+  // outside the account cluster.
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setMenuOpen(false);
     }
-    return (
-      <div className="shijing-shell shijing-shell--error" role="alert">
-        <Surface tone="card" material="glass-thin" padding="md">
-          <InlineAlert tone="danger">
-            <strong>{formatted.headline}</strong>
-          </InlineAlert>
-          <TechnicalDetails content={formatted.technical} />
-        </Surface>
-      </div>
-    );
+    function onPointerDown(event: MouseEvent) {
+      if (!accountRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('mousedown', onPointerDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('mousedown', onPointerDown);
+    };
+  }, [menuOpen]);
+
+  function openPage(pageId: ShijingSettingsPageId) {
+    setActivePage(pageId);
+    setMenuOpen(false);
   }
 
-  const tabItems = SHIJING_IA_TABS.map((tab) => ({
-    value: tab.id,
-    label: tab.chinese_label,
+  const menuItems: NimiMenuItem[] = SHIJING_SETTINGS_PAGES.map((page) => ({
+    id: page.id,
+    label: SETTINGS_PAGE_LABELS[page.id],
+    onSelect: () => openPage(page.id),
   }));
 
   return (
-    <div className="shijing-shell">
-      <Surface
-        tone="panel"
-        material="glass-chrome"
-        padding="none"
-        className="shijing-shell__topbar"
-        data-tauri-drag-region
-      >
-        <div className="shijing-topbar">
-          <div className="shijing-topbar__brand">
-            <span className="shijing-topbar__brand-mark" aria-hidden>時</span>
-            <span className="shijing-topbar__brand-name">{BRAND_NAME}</span>
-            <span className="shijing-topbar__breadcrumb-sep" aria-hidden>/</span>
-            <SubjectSwitcher variant="breadcrumb" />
-          </div>
-          <NimiTabs
-            items={tabItems}
-            value={state.active_tab}
-            onValueChange={(value) => dispatch({ type: 'tab/activate', tab: value as ShijingTabId })}
-            ariaLabel="时镜主导航"
-            className="shijing-topbar__tabs"
-          />
-          <div className="shijing-topbar__account-slot">
-            <ShellAccountTrigger />
-          </div>
+    <div className="shijing-shell" data-active-tab={state.active_tab}>
+      <header className="shijing-topbar">
+        <div className="shijing-topbar__brand">
+          <span className="shijing-topbar__wordmark">{BRAND_NAME}</span>
+          <span className="shijing-topbar__tagline" aria-hidden>
+            SHIJING · OS
+          </span>
         </div>
-      </Surface>
-      <div className="shijing-shell__body">
-        <TabRouter active_tab={state.active_tab} />
-      </div>
+        <PrimaryTabBar />
+        <div className="shijing-topbar__account" ref={accountRef}>
+          <button
+            type="button"
+            className="shijing-topbar__avatar-button"
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+            aria-label={accountName ? `账户菜单 — ${accountName}` : '账户菜单'}
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            <span className="shijing-topbar__avatar" aria-hidden>
+              {props.account?.avatarUrl ? (
+                <img src={props.account.avatarUrl} alt="" />
+              ) : (
+                avatarInitial(accountName)
+              )}
+            </span>
+            {accountName ? (
+              <span className="shijing-topbar__account-name">{accountName}</span>
+            ) : null}
+          </button>
+          {menuOpen ? (
+            <div className="shijing-account-menu">
+              <ActionMenu ariaLabel="设置" items={menuItems} />
+            </div>
+          ) : null}
+        </div>
+      </header>
+      <main className="shijing-shell__main" role="main">
+        {state.snapshot_status.kind === 'invalid' ? (
+          <p className="shijing-shell__error" role="alert">
+            数据快照校验未通过: {state.snapshot_status.error.code}
+            。请点击右上角头像打开"设置 → 隐私与本地数据"清理已存数据后再试。
+          </p>
+        ) : null}
+        {renderActiveTab(state.active_tab, (page) => openPage(page ?? 'profile'))}
+      </main>
+      {activePage ? (
+        <SettingsPageView
+          pageId={activePage}
+          onBack={() => setActivePage(null)}
+          onNavigate={setActivePage}
+        />
+      ) : null}
     </div>
   );
+}
+
+function renderActiveTab(
+  tab: string,
+  onRequestOpenSettings: (page?: ShijingSettingsPageId) => void,
+) {
+  switch (tab) {
+    case 'rijing':
+      return <RiJingTab onRequestOpenSettings={onRequestOpenSettings} />;
+    case 'yuejing':
+      return <YueJingTab />;
+    case 'nianjing':
+      return <NianJingTab onRequestOpenSettings={onRequestOpenSettings} />;
+    case 'shijing':
+      return <ShiJingTab onRequestOpenSettings={onRequestOpenSettings} />;
+    default:
+      return null;
+  }
 }

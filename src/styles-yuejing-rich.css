@@ -1,0 +1,1612 @@
+/* =====================================================================
+ * YueJing rich tab — header strip + today hero + weekday-aligned 30-day
+ * calendar + inline day drawer + compact concern pill bar.
+ *
+ * Scoped under `.shijing-yuejing` so it overrides the baseline rules in
+ * `styles-mirror-v1.css` for the YueJing surface only. Other mirrors
+ * keep the v1 layout.
+ *
+ * Palette aligns with SJG-DSY-01 mirror chart tendency tokens. The
+ * surrounding panels are intentionally glass-morphic so the underlying
+ * aurora background reads through; day cells carry the tendency color
+ * at full saturation with white serif numerals.
+ * ===================================================================== */
+
+/* Aurora background — applied to the whole shell when the YueJing
+ * tab is active so the gradient bleeds behind the topbar too, per
+ * the SJG-DSY-01 mockup. Mint top-left, lavender bottom-right with a
+ * green halo and a pink halo. Other tabs keep the v1 cream canvas
+ * (or the `shijing` consultation gradient defined in mirror-v1). */
+.shijing-shell[data-active-tab="yuejing"] {
+  background:
+    radial-gradient(42% 36% at 6% 4%, rgba(167, 243, 208, 0.55), transparent 70%),
+    radial-gradient(40% 38% at 94% 92%, rgba(252, 231, 243, 0.50), transparent 70%),
+    linear-gradient(135deg, #e7f5ee 0%, #eef0f7 100%);
+}
+
+/* On YueJing, drop the topbar's translucent white card so the aurora
+ * shows through and the brand / tabs / gear sit directly on the
+ * gradient. The bottom border becomes a single hairline to keep a
+ * subtle separation from the scrollable main below. */
+.shijing-shell[data-active-tab="yuejing"] .shijing-topbar {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom-color: rgba(255, 255, 255, 0.45);
+}
+
+/* Main area no longer needs its own background — inherits the shell
+ * aurora. Keep the selector around as a no-op safety net in case the
+ * shell-level rule is overridden in a future layout. */
+.shijing-shell__main:has(> .shijing-yuejing) {
+  background: transparent;
+}
+
+.shijing-yuejing {
+  --yuejing-supportive: #4ECCA3;
+  --yuejing-steady:     #7DA3C9;
+  --yuejing-watch:      #E0A458;
+  --yuejing-blocked:    #D96A6A;
+  --yuejing-turning:    #8B7CD6;
+
+  /* Day-cell fills sit between fully-saturated brand colors and white
+   * so the white serif numeral on top stays readable on every
+   * tendency. Tuned at 62% for green/orange/red/purple (good contrast)
+   * and slightly higher for steady-blue which would otherwise wash
+   * out the numeral. */
+  --yuejing-supportive-soft: color-mix(in srgb, var(--yuejing-supportive) 62%, white);
+  --yuejing-steady-soft:     color-mix(in srgb, var(--yuejing-steady)     68%, white);
+  --yuejing-watch-soft:      color-mix(in srgb, var(--yuejing-watch)      62%, white);
+  --yuejing-blocked-soft:    color-mix(in srgb, var(--yuejing-blocked)    62%, white);
+  --yuejing-turning-soft:    color-mix(in srgb, var(--yuejing-turning)    62%, white);
+
+  /* Shared glass surface tokens for the surrounding panels. */
+  --yuejing-glass-bg: rgba(255, 255, 255, 0.55);
+  --yuejing-glass-border: rgba(255, 255, 255, 0.55);
+  --yuejing-glass-blur: blur(16px) saturate(140%);
+  --yuejing-glass-shadow: 0 8px 28px -16px rgba(15, 23, 38, 0.12);
+
+  gap: 18px;
+}
+
+/* The mirror-v1 baseline wraps every direct article/section in a card.
+ * The rich layout draws its own framing per block, so reset that. */
+.shijing-yuejing > .shijing-yuejing__strip,
+.shijing-yuejing > .shijing-yuejing__hero,
+.shijing-yuejing > .shijing-yuejing__filter-row,
+.shijing-yuejing > .shijing-yuejing__calendar,
+.shijing-yuejing > .shijing-yuejing__concern-bar,
+.shijing-yuejing > .shijing-yuejing__details {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+/* ----- 1) Header strip ------------------------------------------- */
+
+.shijing-yuejing__strip {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 16px;
+}
+
+.shijing-yuejing__strip-titles h1 {
+  font-size: 32px;
+  letter-spacing: 0.04em;
+  margin: 0 0 6px;
+}
+
+.shijing-yuejing__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--shijing-text-secondary);
+  margin: 0;
+}
+
+.shijing-yuejing__meta [aria-hidden] {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-yuejing__strip-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.shijing-yuejing__strip-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* The shared import button is `.shijing-import-to-consultation`; let it
+ * adopt the pill shape used by the YueJing header. */
+.shijing-yuejing .shijing-import-to-consultation {
+  margin-top: 0;
+  font-size: 14px;
+  padding: 9px 18px;
+  border-radius: 999px;
+}
+
+.shijing-yuejing .shijing-yuejing__generate {
+  background: var(--yuejing-supportive);
+  color: #fff;
+  border: 0;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px -4px rgba(78, 204, 163, 0.45);
+}
+
+.shijing-yuejing .shijing-yuejing__generate:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--yuejing-supportive) 90%, black);
+}
+
+.shijing-yuejing .shijing-yuejing__generate:disabled {
+  background: var(--shijing-text-disabled);
+  box-shadow: none;
+}
+
+.shijing-yuejing__ago {
+  color: var(--shijing-text-muted);
+  font-size: 12px;
+}
+
+/* ----- 2) Generic notice / stale banners ------------------------- */
+
+.shijing-yuejing__notice {
+  background: var(--yuejing-glass-bg);
+  backdrop-filter: var(--yuejing-glass-blur);
+  -webkit-backdrop-filter: var(--yuejing-glass-blur);
+  border: 1px solid var(--yuejing-glass-border);
+  border-radius: var(--shijing-radius-lg);
+  padding: 14px 18px;
+  color: var(--shijing-text-secondary);
+  text-align: center;
+  box-shadow: var(--yuejing-glass-shadow);
+}
+
+.shijing-yuejing__stale {
+  background: color-mix(in srgb, var(--yuejing-watch) 14%, transparent);
+  color: var(--shijing-status-warning);
+  padding: 10px 14px;
+  border-radius: var(--shijing-radius-md);
+  border-left: 3px solid var(--yuejing-watch);
+  font-size: 13px;
+  margin: 0;
+}
+
+/* ----- 3) Today hero card ---------------------------------------- */
+
+/* Hero is rendered as a near-uniform tendency color with a soft white
+ * highlight sweeping from the top-left so it feels glossy without
+ * darkening at the bottom-right. Box-shadows pick up the tendency hue
+ * for a halo effect against the aurora background. */
+/* Hero card — mirrored from `styles-nianjing-rich.css` so YueJing's
+ * today-overview reads as the same visual family as NianJing's
+ * current-phase overview. Two-class selector matches the parent
+ * reset's specificity (0,2,0); source order then ensures this rule's
+ * padding / background / shadow override the reset's `padding: 0`. */
+.shijing-yuejing > .shijing-yuejing__hero {
+  position: relative;
+  display: grid;
+  /* Fixed-width right column keeps the chip pane from touching the
+   * card edge — predictable size, not "whatever fills the remainder". */
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 32px;
+  align-items: center;
+  min-height: 160px;
+  padding: 26px 56px;
+  border-radius: 28px;
+  color: #fff;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--yuejing-supportive) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(78, 204, 163, 0.55);
+}
+
+.shijing-yuejing__hero[data-tendency="steady"] {
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--yuejing-steady) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(125, 163, 201, 0.55);
+}
+.shijing-yuejing__hero[data-tendency="watch"] {
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--yuejing-watch) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(224, 164, 88, 0.55);
+}
+.shijing-yuejing__hero[data-tendency="blocked"] {
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--yuejing-blocked) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(217, 106, 106, 0.55);
+}
+.shijing-yuejing__hero[data-tendency="turning"] {
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--yuejing-turning) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(139, 124, 214, 0.55);
+}
+
+/* Three-layer headline: eyebrow → big title + date → body, with
+ * explicit vertical breathing room. Matches NianJing. */
+.shijing-yuejing__hero-headline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.shijing-yuejing__hero-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.shijing-yuejing__hero-tendency {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.shijing-yuejing__hero-tendency strong {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 56px;
+  line-height: 1;
+  color: #fff;
+  letter-spacing: 0.06em;
+  text-shadow: 0 2px 4px rgba(15, 23, 38, 0.08);
+}
+
+.shijing-yuejing__hero-tendency small {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+
+.shijing-yuejing__hero-body {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.7;
+  max-width: 38ch;
+  font-weight: 400;
+}
+
+/* The per-concern chip rows on the right side of the hero. Mirrors
+ * NianJing's `__hero-rows`: label column + tendency chip + detail
+ * column. The chip carries a colored dot and the tendency label, the
+ * detail column shows the cell's summary text. */
+.shijing-yuejing .shijing-yuejing__hero-rows {
+  list-style: none;
+  margin: 0;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 2px 12px -6px rgba(15, 23, 38, 0.10);
+  align-self: center;
+  width: 100%;
+}
+
+.shijing-yuejing .shijing-yuejing__hero-rows li {
+  display: grid;
+  grid-template-columns: 72px auto 1fr;
+  align-items: center;
+  column-gap: 14px;
+  font-size: 14px;
+  color: #fff;
+  list-style: none;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.shijing-yuejing__hero-row-label {
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shijing-yuejing__hero-row-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.shijing-yuejing__hero-row-chip-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--yuejing-steady);
+}
+
+.shijing-yuejing__hero-row-chip[data-tendency="supportive"] .shijing-yuejing__hero-row-chip-dot { background: var(--yuejing-supportive); }
+.shijing-yuejing__hero-row-chip[data-tendency="steady"]     .shijing-yuejing__hero-row-chip-dot { background: var(--yuejing-steady); }
+.shijing-yuejing__hero-row-chip[data-tendency="watch"]      .shijing-yuejing__hero-row-chip-dot { background: var(--yuejing-watch); }
+.shijing-yuejing__hero-row-chip[data-tendency="blocked"]    .shijing-yuejing__hero-row-chip-dot { background: var(--yuejing-blocked); }
+.shijing-yuejing__hero-row-chip[data-tendency="turning"]    .shijing-yuejing__hero-row-chip-dot { background: var(--yuejing-turning); }
+
+/* "待生成" — tag activated after the reading was generated, no
+ * projection yet. Muted chip + hollow dot so the row reads as
+ * "data pending" rather than as a real tendency. */
+.shijing-yuejing__hero-row-chip[data-tendency="pending"] {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.78);
+}
+.shijing-yuejing__hero-row-chip[data-tendency="pending"] .shijing-yuejing__hero-row-chip-dot {
+  background: transparent;
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  width: 8px;
+  height: 8px;
+}
+.shijing-yuejing__hero-rows li[data-pending="true"] .shijing-yuejing__hero-row-label {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.shijing-yuejing__hero-row-detail {
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 13.5px;
+  letter-spacing: 0.02em;
+  justify-self: start;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* ----- 4) Filter row --------------------------------------------- */
+
+/* Filter row — mirrored from `styles-nianjing-rich.css`. Two-class
+ * selector beats the parent reset (also 0,2,0) by source order so the
+ * glass background, padding, and border survive. */
+.shijing-yuejing > .shijing-yuejing__filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 8px 16px;
+  background: var(--yuejing-glass-bg);
+  backdrop-filter: var(--yuejing-glass-blur);
+  -webkit-backdrop-filter: var(--yuejing-glass-blur);
+  border: 1px solid var(--yuejing-glass-border);
+  border-radius: 999px;
+  box-shadow: var(--yuejing-glass-shadow);
+  position: relative;
+  z-index: 5;
+}
+
+.shijing-yuejing .shijing-yuejing__filter {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.shijing-yuejing__filter legend {
+  font-size: 12px;
+  color: var(--shijing-text-secondary);
+  padding-right: 10px;
+  margin-right: 4px;
+  border-right: 1px solid var(--shijing-border-subtle);
+  float: left;
+  line-height: 22px;
+}
+
+.shijing-yuejing .shijing-yuejing__filter-pill {
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  border: 1px solid transparent;
+  font-size: 13px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.shijing-yuejing .shijing-yuejing__filter-pill[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--shijing-text-primary);
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 1px 4px rgba(15, 23, 38, 0.06);
+  font-weight: 500;
+}
+
+/* Hover / focus on an UNSELECTED pill: a subtle neutral wash. The
+ * explicit `background` + `border-color` are required to override the
+ * baseline `.shijing-tab button:hover` (specificity 0,3,1) which would
+ * otherwise bleed the brand-green button background onto the pill —
+ * the "weird" green flash on click. */
+.shijing-yuejing .shijing-yuejing__filter-pill:hover:not([aria-pressed="true"]),
+.shijing-yuejing .shijing-yuejing__filter-pill:focus-visible:not([aria-pressed="true"]) {
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--shijing-text-primary);
+  border-color: rgba(255, 255, 255, 0.6);
+  outline: none;
+}
+
+/* Hover on the SELECTED pill keeps the white pressed look — never the
+ * baseline brand-green. */
+.shijing-yuejing .shijing-yuejing__filter-pill[aria-pressed="true"]:hover {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+/* Two-class selector so it beats the baseline `.shijing-tab ul`
+ * (specificity 0,1,1) which would otherwise force flex-column and
+ * stack the five legend items vertically. */
+.shijing-yuejing .shijing-yuejing__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+.shijing-yuejing__legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--shijing-text-secondary);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+  white-space: nowrap;
+}
+
+.shijing-yuejing__legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--shijing-text-disabled);
+}
+
+.shijing-yuejing__legend li[data-tendency="supportive"] .shijing-yuejing__legend-dot { background: var(--yuejing-supportive); }
+.shijing-yuejing__legend li[data-tendency="steady"]     .shijing-yuejing__legend-dot { background: var(--yuejing-steady); }
+.shijing-yuejing__legend li[data-tendency="watch"]      .shijing-yuejing__legend-dot { background: var(--yuejing-watch); }
+.shijing-yuejing__legend li[data-tendency="blocked"]    .shijing-yuejing__legend-dot { background: var(--yuejing-blocked); }
+.shijing-yuejing__legend li[data-tendency="turning"]    .shijing-yuejing__legend-dot { background: var(--yuejing-turning); }
+
+/* ----- 4b) Concern editor popover -------------------------------- */
+/* Mirrors `styles-nianjing-rich.css` so 「✎ 编辑关注」 looks and
+ * behaves identically on the YueJing filter row. */
+
+.shijing-yuejing .shijing-yuejing__filter-manage {
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  border: 1px dashed var(--shijing-border-default);
+  font-size: 12.5px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 4px;
+}
+
+.shijing-yuejing .shijing-yuejing__filter-manage:hover,
+.shijing-yuejing .shijing-yuejing__filter-manage[aria-expanded="true"] {
+  color: var(--shijing-text-primary);
+  border-color: var(--shijing-brand-primary);
+}
+
+.shijing-yuejing__editor-anchor {
+  position: relative;
+  display: inline-block;
+}
+
+.shijing-yuejing__editor {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 70;
+  min-width: 320px;
+  max-width: 380px;
+  padding: 16px 18px 14px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--shijing-radius-2xl, 20px);
+  box-shadow:
+    0 18px 40px -16px rgba(15, 23, 38, 0.22),
+    0 2px 8px -4px rgba(15, 23, 38, 0.10);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.shijing-yuejing__editor-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.shijing-yuejing__editor-head strong {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.shijing-yuejing__editor-count {
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-yuejing__editor-subtitle {
+  font-size: 12px;
+  color: var(--shijing-text-secondary);
+  line-height: 1.55;
+  margin: 0 0 2px;
+}
+
+.shijing-yuejing__editor-section h4 {
+  margin: 6px 0 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--shijing-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.shijing-yuejing .shijing-yuejing__editor-section ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shijing-yuejing .shijing-yuejing__editor-section li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 12px;
+}
+
+.shijing-yuejing__editor-row-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.shijing-yuejing__editor-row-text strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.shijing-yuejing__editor-row-text small {
+  font-size: 11.5px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-yuejing .shijing-yuejing__editor-remove {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--shijing-border-default);
+  color: var(--shijing-text-secondary);
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+  flex: 0 0 auto;
+}
+
+.shijing-yuejing .shijing-yuejing__editor-remove:hover {
+  background: var(--shijing-hover-surface);
+  border-color: var(--shijing-border-default);
+  color: var(--shijing-text-primary);
+}
+
+.shijing-yuejing .shijing-yuejing__editor-add {
+  appearance: none;
+  background: var(--yuejing-supportive);
+  color: #fff;
+  border: 0;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: background 120ms ease;
+}
+
+.shijing-yuejing .shijing-yuejing__editor-add:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--yuejing-supportive) 90%, black);
+}
+
+.shijing-yuejing .shijing-yuejing__editor-add:disabled {
+  background: var(--shijing-text-disabled);
+  cursor: not-allowed;
+}
+
+.shijing-yuejing__editor-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid color-mix(in srgb, var(--yuejing-supportive) 35%, transparent);
+  border-radius: 12px;
+  margin-top: 4px;
+}
+
+.shijing-yuejing .shijing-yuejing__editor-custom input {
+  flex: 1;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+  padding: 4px 0;
+  min-width: 0;
+}
+
+.shijing-yuejing .shijing-yuejing__editor-custom input::placeholder {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-yuejing .shijing-yuejing__editor-custom input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.shijing-yuejing .shijing-yuejing__editor-custom input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ----- 5) Calendar grid ------------------------------------------ */
+
+.shijing-yuejing__calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  background: var(--yuejing-glass-bg);
+  backdrop-filter: var(--yuejing-glass-blur);
+  -webkit-backdrop-filter: var(--yuejing-glass-blur);
+  border: 1px solid var(--yuejing-glass-border);
+  border-radius: var(--shijing-radius-2xl, 20px);
+  box-shadow: var(--yuejing-glass-shadow);
+}
+
+.shijing-yuejing__weekday-row {
+  list-style: none;
+  margin: 0;
+  padding: 0 4px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-yuejing__weekday-row li {
+  text-align: center;
+}
+
+.shijing-yuejing .shijing-yuejing__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-top: 0;
+}
+
+.shijing-yuejing__blank {
+  min-height: 104px;
+  border-radius: var(--shijing-radius-xl, 16px);
+  border: 1px dashed rgba(15, 23, 38, 0.08);
+  background: transparent;
+  opacity: 0.55;
+}
+
+/* The mirror-v1 baseline adds a left rule + padded card per day; the
+ * rich design uses tinted blocks instead, so reset. */
+.shijing-yuejing .shijing-yuejing__day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  border: 0;
+  border-left: 0;
+  border-radius: var(--shijing-radius-xl, 16px);
+  padding: 0;
+  font-size: 13px;
+  gap: 0;
+}
+
+/* Each day-face is a saturated tendency block with a subtle white
+ * sheen sweeping in from the top-left, plus a soft drop shadow so it
+ * floats on the aurora background. Numbers, weekday label, and the
+ * tendency chip ride on top in white. */
+.shijing-yuejing .shijing-yuejing__day-face {
+  appearance: none;
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  text-align: left;
+  width: 100%;
+  min-height: 104px;
+  padding: 10px 12px;
+  border-radius: var(--shijing-radius-xl, 16px);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    var(--yuejing-steady-soft);
+  border: 0;
+  cursor: pointer;
+  color: #fff;
+  font: inherit;
+  box-shadow: 0 4px 14px -8px rgba(15, 23, 38, 0.18);
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+
+.shijing-yuejing__day[data-tendency="supportive"] .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 55%), var(--yuejing-supportive-soft); }
+.shijing-yuejing__day[data-tendency="steady"]     .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 55%), var(--yuejing-steady-soft); }
+.shijing-yuejing__day[data-tendency="watch"]      .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 55%), var(--yuejing-watch-soft); }
+.shijing-yuejing__day[data-tendency="blocked"]    .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 55%), var(--yuejing-blocked-soft); }
+.shijing-yuejing__day[data-tendency="turning"]    .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 55%), var(--yuejing-turning-soft); }
+
+/* Today cell — pull saturation up so the ring reads as "this is now"
+ * and the white numeral pops harder than on neighbouring days. */
+.shijing-yuejing__day[data-day-kind="today"] .shijing-yuejing__day-face {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--yuejing-supportive) 78%, white);
+  box-shadow: 0 0 0 2px var(--yuejing-supportive), 0 6px 18px -8px rgba(78, 204, 163, 0.45);
+}
+.shijing-yuejing__day[data-day-kind="today"][data-tendency="steady"]     .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 55%), color-mix(in srgb, var(--yuejing-steady)     78%, white); box-shadow: 0 0 0 2px var(--yuejing-steady),     0 6px 18px -8px rgba(125, 163, 201, 0.45); }
+.shijing-yuejing__day[data-day-kind="today"][data-tendency="watch"]      .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 55%), color-mix(in srgb, var(--yuejing-watch)      78%, white); box-shadow: 0 0 0 2px var(--yuejing-watch),      0 6px 18px -8px rgba(224, 164, 88, 0.45); }
+.shijing-yuejing__day[data-day-kind="today"][data-tendency="blocked"]    .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 55%), color-mix(in srgb, var(--yuejing-blocked)    78%, white); box-shadow: 0 0 0 2px var(--yuejing-blocked),    0 6px 18px -8px rgba(217, 106, 106, 0.45); }
+.shijing-yuejing__day[data-day-kind="today"][data-tendency="turning"]    .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 55%), color-mix(in srgb, var(--yuejing-turning)    78%, white); box-shadow: 0 0 0 2px var(--yuejing-turning),    0 6px 18px -8px rgba(139, 124, 214, 0.45); }
+
+/* Empty / placeholder cells — rendered before a reading is generated.
+ * Neutral translucent white card with dark text instead of tendency
+ * tint + white text, so the user can tell at a glance which dates are
+ * "data pending" vs "data filled". The today cell still keeps its
+ * green ring as an anchor. */
+.shijing-yuejing__day[data-tendency="empty"] .shijing-yuejing__day-face {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0) 55%),
+    rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 4px 14px -10px rgba(15, 23, 38, 0.10);
+}
+.shijing-yuejing__day[data-tendency="empty"] .shijing-yuejing__day-weekday {
+  color: var(--shijing-text-secondary);
+  opacity: 0.9;
+}
+.shijing-yuejing__day[data-tendency="empty"] .shijing-yuejing__day-number {
+  color: var(--shijing-text-primary);
+  text-shadow: none;
+  opacity: 0.88;
+}
+.shijing-yuejing__day[data-tendency="empty"] .shijing-yuejing__day-month-marker {
+  color: var(--shijing-text-muted);
+}
+.shijing-yuejing__day[data-day-kind="today"][data-tendency="empty"] .shijing-yuejing__day-face {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--yuejing-supportive) 16%, white);
+  box-shadow: 0 0 0 2px var(--yuejing-supportive), 0 6px 18px -10px rgba(78, 204, 163, 0.30);
+}
+.shijing-yuejing__day[data-day-kind="today"][data-tendency="empty"] .shijing-yuejing__day-number {
+  color: var(--shijing-text-primary);
+}
+
+.shijing-yuejing__day-face:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px -10px rgba(15, 23, 38, 0.24);
+  filter: brightness(0.93) saturate(1.1);
+}
+.shijing-yuejing__day[data-day-kind="today"] .shijing-yuejing__day-face:hover {
+  transform: translateY(-1px);
+}
+
+/* Past days fade toward the aurora background so the eye is drawn to
+ * today and the future window. The white numeral stays legible. */
+.shijing-yuejing__day[data-day-kind="past"] .shijing-yuejing__day-face {
+  opacity: 0.82;
+}
+
+.shijing-yuejing__day[data-selected="true"] .shijing-yuejing__day-face {
+  outline: 0;
+  box-shadow: var(--shijing-focus-ring), 0 8px 24px -10px rgba(15, 23, 38, 0.22);
+}
+
+.shijing-yuejing__day-weekday {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.82);
+  grid-row: 1;
+  letter-spacing: 0.04em;
+}
+
+.shijing-yuejing__day-month-marker {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.78);
+  margin-top: 2px;
+  grid-row: 1;
+  justify-self: start;
+}
+
+.shijing-yuejing__day-number {
+  grid-row: 2;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 34px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1;
+  align-self: center;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(15, 23, 38, 0.08);
+}
+
+.shijing-yuejing__day-tendency {
+  grid-row: 3;
+  font-size: 11px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.22);
+  padding: 2px 9px;
+  border-radius: 999px;
+  align-self: end;
+  justify-self: start;
+  font-weight: 500;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.shijing-yuejing__day-today-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--shijing-text-primary);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-weight: 600;
+  z-index: 1;
+  box-shadow: 0 1px 4px rgba(15, 23, 38, 0.10);
+}
+
+.shijing-yuejing__day-edit-mark {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--shijing-text-secondary);
+  border-radius: 999px;
+  z-index: 1;
+  box-shadow: 0 1px 3px rgba(15, 23, 38, 0.08);
+}
+
+/* ----- 6) Right-side day-detail panel ---------------------------- */
+/* Replaces the old in-grid drawer with a viewport-level slide-in
+ * panel. The backdrop blurs the rest of the page so the panel reads
+ * as a focused workspace; the panel itself uses a heavier glass
+ * background so it floats above the (already-blurred) backdrop. */
+
+.shijing-yuejing__panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(4px) saturate(105%);
+  -webkit-backdrop-filter: blur(4px) saturate(105%);
+  animation: shijing-yuejing__panel-fade-in 160ms ease both;
+}
+
+/* Panel reads as a nearly-solid white workspace with a faint aurora
+ * bleed picked up by `saturate(160%)` from whatever's behind the
+ * (already-blurred) backdrop. Width sits at 440px to match the
+ * mockup; the date title sits at the top with the × button absolute-
+ * positioned in the upper-right corner. */
+.shijing-yuejing__panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(440px, 100vw);
+  z-index: 201;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border-left: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: -22px 0 56px -28px rgba(15, 23, 38, 0.22);
+  overflow-y: auto;
+  padding: 32px 30px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  animation: shijing-yuejing__panel-slide-in 220ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes shijing-yuejing__panel-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes shijing-yuejing__panel-slide-in {
+  from { transform: translateX(24px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.shijing-yuejing .shijing-yuejing__panel-close {
+  appearance: none;
+  position: absolute;
+  top: 26px;
+  right: 26px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-close svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-close:hover {
+  background: var(--shijing-hover-surface);
+  color: var(--shijing-text-primary);
+}
+
+/* Date header — big serif title + small weekday/kind subtitle. Sits
+ * inline at the top of the panel with the × button absolute-
+ * positioned in the upper-right corner. */
+.shijing-yuejing__panel-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 44px; /* clear room for the × button */
+}
+
+.shijing-yuejing__panel-head strong {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+}
+
+.shijing-yuejing__panel-head small {
+  font-size: 13px;
+  color: var(--shijing-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.shijing-yuejing__panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shijing-yuejing__panel-section > h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+}
+
+/* ----- 6a) 当日倾向 tendency cards ----- */
+
+.shijing-yuejing .shijing-yuejing__panel-tendencies {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-tendencies li {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 38, 0.06);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 38, 0.04);
+}
+
+/* Round concern-themed icon on the left of each tendency row. The
+ * background color comes from the per-concern palette set via the
+ * inline `style` prop on the icon span; this rule controls shape /
+ * size only. */
+.shijing-yuejing__panel-tend-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.shijing-yuejing__panel-tend-icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.shijing-yuejing__panel-tend-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.shijing-yuejing__panel-tend-text strong {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.shijing-yuejing__panel-tend-text p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--shijing-text-secondary);
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shijing-yuejing__panel-tend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--shijing-text-disabled) 16%, transparent);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--shijing-text-primary);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.shijing-yuejing__panel-tend-chip[data-tendency="supportive"] { background: color-mix(in srgb, var(--yuejing-supportive) 18%, transparent); }
+.shijing-yuejing__panel-tend-chip[data-tendency="steady"]     { background: color-mix(in srgb, var(--yuejing-steady)     18%, transparent); }
+.shijing-yuejing__panel-tend-chip[data-tendency="watch"]      { background: color-mix(in srgb, var(--yuejing-watch)      18%, transparent); }
+.shijing-yuejing__panel-tend-chip[data-tendency="blocked"]    { background: color-mix(in srgb, var(--yuejing-blocked)    18%, transparent); }
+.shijing-yuejing__panel-tend-chip[data-tendency="turning"]    { background: color-mix(in srgb, var(--yuejing-turning)    18%, transparent); }
+
+.shijing-yuejing__panel-tend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--shijing-text-disabled);
+}
+
+.shijing-yuejing__panel-tend-chip[data-tendency="supportive"] .shijing-yuejing__panel-tend-dot { background: var(--yuejing-supportive); }
+.shijing-yuejing__panel-tend-chip[data-tendency="steady"]     .shijing-yuejing__panel-tend-dot { background: var(--yuejing-steady); }
+.shijing-yuejing__panel-tend-chip[data-tendency="watch"]      .shijing-yuejing__panel-tend-dot { background: var(--yuejing-watch); }
+.shijing-yuejing__panel-tend-chip[data-tendency="blocked"]    .shijing-yuejing__panel-tend-dot { background: var(--yuejing-blocked); }
+.shijing-yuejing__panel-tend-chip[data-tendency="turning"]    .shijing-yuejing__panel-tend-dot { background: var(--yuejing-turning); }
+
+/* (Old `__panel-tend-body` retired — body text now flows from
+ * `__panel-tend-text p` inside the grid layout.) */
+
+/* ----- 6b) Entry input ----- */
+
+.shijing-yuejing .shijing-yuejing__panel-entry {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 120px;
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 38, 0.08);
+  border-radius: 14px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--shijing-text-primary);
+  resize: vertical;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-entry::placeholder {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-yuejing .shijing-yuejing__panel-entry:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--yuejing-supportive) 45%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--yuejing-supportive) 18%, transparent);
+}
+
+.shijing-yuejing__panel-entry-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+/* Save button — dark forest-green pill with a pencil icon, matching
+ * the SJG-DSY-01 panel mockup. Distinct from the bright supportive
+ * green used on the「生成 30 日」action so the panel's CTA reads as
+ * "commit this entry" rather than "rerun the algorithm". */
+.shijing-yuejing .shijing-yuejing__panel-save {
+  appearance: none;
+  background: color-mix(in srgb, var(--yuejing-supportive) 55%, #1f3d2d);
+  color: #fff;
+  border: 0;
+  padding: 9px 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 4px 14px -6px rgba(31, 61, 45, 0.4);
+}
+
+.shijing-yuejing .shijing-yuejing__panel-save svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-save:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--yuejing-supportive) 45%, #1f3d2d);
+}
+
+.shijing-yuejing .shijing-yuejing__panel-save:disabled {
+  background: rgba(15, 23, 38, 0.18);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ----- 6c) Records list / empty state ----- */
+
+.shijing-yuejing .shijing-yuejing__panel-records {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-records li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px 10px 14px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+  line-height: 1.55;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-records li[data-editing] {
+  grid-template-columns: 1fr;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.shijing-yuejing__panel-record-body {
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-width: 0;
+  align-self: center;
+}
+
+.shijing-yuejing__panel-record-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+  /* Hide actions by default and reveal them on row hover or
+   * keyboard focus so the records list reads cleanly until the
+   * user actually wants to mutate a row. */
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.shijing-yuejing__panel-records li:hover .shijing-yuejing__panel-record-actions,
+.shijing-yuejing__panel-records li:focus-within .shijing-yuejing__panel-record-actions {
+  opacity: 1;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-actions button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--shijing-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-actions button svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-actions button:hover,
+.shijing-yuejing .shijing-yuejing__panel-record-actions button:focus-visible {
+  outline: none;
+  background: var(--shijing-hover-surface);
+  color: var(--shijing-text-primary);
+}
+
+/* ----- inline edit form ----- */
+
+.shijing-yuejing .shijing-yuejing__panel-record-edit {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 64px;
+  padding: 8px 10px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 38, 0.12);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--shijing-text-primary);
+  resize: vertical;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-edit:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--yuejing-supportive) 50%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--yuejing-supportive) 16%, transparent);
+}
+
+.shijing-yuejing__panel-record-edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-cancel,
+.shijing-yuejing .shijing-yuejing__panel-record-confirm {
+  appearance: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-cancel {
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  border: 1px solid rgba(15, 23, 38, 0.14);
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-cancel:hover {
+  background: var(--shijing-hover-surface);
+  color: var(--shijing-text-primary);
+  border-color: rgba(15, 23, 38, 0.22);
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-confirm {
+  background: color-mix(in srgb, var(--yuejing-supportive) 55%, #1f3d2d);
+  color: #ffffff;
+  border: 0;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-confirm:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--yuejing-supportive) 45%, #1f3d2d);
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-confirm:disabled {
+  background: rgba(15, 23, 38, 0.12);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: not-allowed;
+}
+
+.shijing-yuejing__panel-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--shijing-text-muted);
+  font-style: italic;
+}
+
+/* Centered icon-in-circle + caption for the 「已记录」empty state,
+ * matching the SJG-DSY-01 panel mockup. */
+.shijing-yuejing__panel-records-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 0 12px;
+}
+
+.shijing-yuejing__panel-records-empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(15, 23, 38, 0.06);
+  color: var(--shijing-text-muted);
+}
+
+.shijing-yuejing__panel-records-empty-icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.shijing-yuejing__panel-records-empty p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--shijing-text-muted);
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 720px) {
+  .shijing-yuejing__panel {
+    width: 100vw;
+    padding: 24px 22px 32px;
+  }
+  .shijing-yuejing__panel-entry-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .shijing-yuejing__panel-related {
+    align-self: flex-start;
+  }
+}
+
+/* ----- 7) Bottom concern pill bar -------------------------------- */
+
+.shijing-yuejing__concern-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  background: var(--yuejing-glass-bg);
+  backdrop-filter: var(--yuejing-glass-blur);
+  -webkit-backdrop-filter: var(--yuejing-glass-blur);
+  border: 1px solid var(--yuejing-glass-border);
+  border-radius: var(--shijing-radius-2xl, 20px);
+  box-shadow: var(--yuejing-glass-shadow);
+}
+
+.shijing-yuejing__concern-bar header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shijing-yuejing__concern-bar header h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.shijing-yuejing__concern-bar header small {
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-yuejing .shijing-yuejing__concern-bar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shijing-yuejing .shijing-yuejing__concern-bar li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px 5px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-yuejing .shijing-yuejing__concern-bar li[data-status="active"] {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.shijing-yuejing .shijing-yuejing__concern-bar li[data-status="archived"] {
+  opacity: 0.7;
+}
+
+.shijing-yuejing .shijing-yuejing__concern-bar li button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  color: var(--shijing-text-secondary);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shijing-yuejing .shijing-yuejing__concern-bar li button:hover {
+  background: var(--shijing-hover-surface);
+  color: var(--shijing-text-primary);
+}
+
+.shijing-yuejing__concern-add input[type="text"] {
+  appearance: none;
+  border: 1px dashed var(--shijing-border-default);
+  background: transparent;
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 13px;
+  min-width: 240px;
+  width: auto;
+}
+
+.shijing-yuejing .shijing-yuejing__concern-add-btn {
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  border: 1px dashed var(--shijing-border-default);
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.shijing-yuejing .shijing-yuejing__concern-add-btn:hover:not(:disabled) {
+  color: var(--shijing-brand-primary);
+  border-color: var(--shijing-brand-primary);
+  background: transparent;
+}
+
+.shijing-yuejing .shijing-yuejing__concern-add-btn:disabled {
+  background: transparent;
+  color: var(--shijing-text-disabled);
+  border-color: var(--shijing-border-subtle);
+  cursor: not-allowed;
+}
+
+.shijing-yuejing__concern-link {
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+}
+
+/* ----- 8) Details / summary -------------------------------------- */
+
+.shijing-yuejing__details {
+  background: var(--yuejing-glass-bg);
+  backdrop-filter: var(--yuejing-glass-blur);
+  -webkit-backdrop-filter: var(--yuejing-glass-blur);
+  border: 1px solid var(--yuejing-glass-border);
+  border-radius: var(--shijing-radius-lg);
+  padding: 14px 18px;
+  box-shadow: var(--yuejing-glass-shadow);
+}
+
+.shijing-yuejing__details summary {
+  cursor: pointer;
+  color: var(--shijing-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  list-style: none;
+}
+
+.shijing-yuejing__details summary::-webkit-details-marker { display: none; }
+
+.shijing-yuejing__details[open] > summary {
+  margin-bottom: 10px;
+}
+
+.shijing-yuejing__summary {
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+  line-height: 1.6;
+}
+
+/* ----- 9) Responsive --------------------------------------------- */
+
+@media (max-width: 720px) {
+  .shijing-yuejing__strip { grid-template-columns: 1fr; }
+  .shijing-yuejing__strip-actions { align-items: flex-start; }
+  .shijing-yuejing__hero { grid-template-columns: 1fr; padding: 20px; }
+  .shijing-yuejing__hero-tendency strong { font-size: 40px; }
+  .shijing-yuejing__filter-row { border-radius: var(--shijing-radius-lg); padding: 12px 14px; }
+  .shijing-yuejing__day-face { min-height: 72px; padding: 6px 8px; }
+  .shijing-yuejing__day-number { font-size: 20px; }
+  .shijing-yuejing__day-tendency { font-size: 10.5px; }
+}

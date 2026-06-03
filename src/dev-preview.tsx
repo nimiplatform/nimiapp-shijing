@@ -1,8 +1,6 @@
-// Renderer dev preview — mounts the product UI directly with stub auth +
-// NoOp Runtime AI client so I can iterate on visuals without a Tauri
-// shell + runtime bridge. This module is loaded from `dev-preview.html`
-// only; it is NOT part of the production app entry. The production entry
-// remains `index.html` → `src/main.tsx`.
+// Renderer dev preview — mounts the product UI directly with stub auth.
+// Loaded from `dev-preview.html` only. Production entry remains
+// `index.html` → `src/main.tsx`.
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
@@ -11,10 +9,8 @@ import { NimiThemeProvider, TooltipProvider } from '@nimiplatform/kit/ui';
 import { ShellLayout } from './shell/app-shell/shell-layout.js';
 import { useAppStore } from './shell/app-shell/app-store.js';
 import { ShijingStoreProvider } from './product/state/shijing-store.tsx';
-import { ShijingCatalogProvider } from './product/catalog/catalog-context.tsx';
 import { ShijingShell } from './product/shell/shijing-shell.tsx';
 import { InMemoryPersistenceAdapter } from './product/persistence/in-memory-adapter.ts';
-import { MockRuntimeAiClient } from './product/astrology/mock-runtime-ai-client.ts';
 import { buildMockShiJingSpace } from './product/dev/mock-snapshot.ts';
 import { i18n } from './shell/i18n/index.js';
 import './styles.css';
@@ -22,14 +18,15 @@ import './styles.css';
 function DevPreviewProductArea() {
   const snapshot = React.useMemo(() => buildMockShiJingSpace('dev-preview-user'), []);
   const persistence = React.useMemo(() => new InMemoryPersistenceAdapter(), []);
-  // Preview mock — real Nimi runtime AI adapter not yet wired here.
-  const aiClient = React.useMemo(() => new MockRuntimeAiClient(), []);
+  // Dev preview intentionally omits the Runtime AI client. The generate
+  // pipeline then runs through structural-output-only and renders the
+  // deterministic feature snapshot without needing a network/AI bridge.
+  // To exercise the typed `runtime_ai_failed` path, swap in a
+  // MockRuntimeAiClient with no canned output.
   return (
-    <ShijingCatalogProvider>
-      <ShijingStoreProvider snapshot={snapshot} persistenceClient={persistence} runtimeAiClient={aiClient}>
-        <ShijingShell />
-      </ShijingStoreProvider>
-    </ShijingCatalogProvider>
+    <ShijingStoreProvider snapshot={snapshot} persistenceClient={persistence}>
+      <ShijingShell account={{ name: '演示用户' }} />
+    </ShijingStoreProvider>
   );
 }
 

@@ -1,0 +1,311 @@
+// Visual-first derivation helpers for the RiJing tab.
+//
+// The mirror pipeline gives us a Reading whose `output` is the
+// discriminated `RiJingMirrorOutput` (summary / daily_overview /
+// concern_projections). The Hero presentation wants a calmer
+// register than the raw pipeline output: a short evocative headline,
+// a small set of tendency leanings, a confidence note, and a
+// reminder line. These helpers shape that presentation without
+// inventing claims beyond what the Reading already says.
+
+import type { Reading } from '../../../domain/reading.ts';
+import type {
+  RiJingConcernProjection,
+  RiJingMirrorOutput,
+  TendencyClass,
+} from '../../../domain/mirror-output.ts';
+import type { EventMemory } from '../../../domain/event-memory.ts';
+import { TENDENCY_CLASS_LABELS } from '../../i18n/copy.ts';
+
+export interface RiJingHeroContent {
+  readonly hasReading: boolean;
+  readonly eyebrow: string;
+  readonly headline: string;
+  readonly description: string;
+  readonly leanings: readonly string[];
+  readonly confidence_label: string;
+  readonly confidence_note: string;
+  readonly reminder: string;
+}
+
+export interface RiJingDateLabel {
+  readonly date: string;
+  readonly weekday: string;
+  readonly zone: string;
+}
+
+// Maps the deterministic ShijingStageLabel (carried on every Reading
+// via inputs_summary.feature_snapshot.stage_label) to a short evocative
+// Hero headline phrase. 4-character serif phrases survive in the
+// 32-px Hero slot without truncation.
+const STAGE_HEADLINE: Record<string, string> = {
+  进时: '顺势承担',
+  收时: '收束归档',
+  养时: '修养蓄力',
+  转时: '处于转折',
+  守时: '稳中守节',
+};
+
+const STAGE_HEADLINE_FALLBACK = '如常推进';
+const HEADLINE_FALLBACK = '尚未生成今日日镜';
+
+const CONFIDENCE_LABEL: Record<'high' | 'medium' | 'low', string> = {
+  high: '较高',
+  medium: '中等',
+  low: '较低',
+};
+
+// Tendency class → leaning chip text. We use the i18n labels for the
+// dominant tendency (e.g. supportive → 助力) so the leanings strip
+// reads as a derived projection summary, not a hand-written phrase.
+function leaningsForReading(reading: Reading): readonly string[] {
+  const output = reading.output as RiJingMirrorOutput;
+  if (output.concern_projections.length === 0) return ['平稳'];
+  const counts = new Map<TendencyClass, number>();
+  for (const p of output.concern_projections) {
+    counts.set(p.tendency_class, (counts.get(p.tendency_class) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([t]) => TENDENCY_CLASS_LABELS[t]);
+}
+
+function condense(text: string, max: number): string {
+  const cleaned = text.trim().replace(/\s+/g, '');
+  if (cleaned.length <= max) return cleaned;
+  return `${cleaned.slice(0, max)}…`;
+}
+
+export function deriveRiJingHero(
+  reading: Reading | undefined,
+): RiJingHeroContent {
+  if (!reading) {
+    return {
+      hasReading: false,
+      eyebrow: '今日总览',
+      headline: HEADLINE_FALLBACK,
+      description: '点击右上角的"刷新"，会基于你的生辰资料与当下时空，生成今日的判断。',
+      leanings: ['平稳'],
+      confidence_label: '—',
+      confidence_note: '今日日镜尚未生成。',
+      reminder: '生成前请先确认上方的关注标签是否符合你想要的视角。',
+    };
+  }
+  const output = reading.output as RiJingMirrorOutput;
+  // stage_label comes from the feature snapshot's stage_drivers list.
+  // We use the first driver's label as the dominant stage for the
+  // headline; downstream copy (description) still carries the full
+  // pipeline narrative.
+  const firstStage = reading.inputs_summary.feature_snapshot.stage_drivers[0]?.stage_label;
+  const headline = firstStage
+    ? STAGE_HEADLINE[firstStage] ?? STAGE_HEADLINE_FALLBACK
+    : STAGE_HEADLINE_FALLBACK;
+  const summary = output.summary || output.daily_overview || HEADLINE_FALLBACK;
+  const description = output.daily_overview || summary;
+  const caveat = reading.uncertainty.caveats[0];
+  const dataGap = reading.uncertainty.data_gaps[0];
+  const reminder =
+    caveat ||
+    dataGap ||
+    '今日可以稳定推进，仍记得在动作前再做一次"是否真的准备好了"的确认。';
+  const confidence_note =
+    caveat ||
+    dataGap ||
+    '推演基于完整资料，结论可作为节奏参考。';
+  return {
+    hasReading: true,
+    eyebrow: '今日总览',
+    headline,
+    description,
+    leanings: leaningsForReading(reading),
+    confidence_label: CONFIDENCE_LABEL[reading.uncertainty.confidence],
+    confidence_note,
+    reminder,
+  };
+}
+
+// ----- 「今天怎么做」 do / say / avoid action cards -----
+//
+// The mockup surfaces a three-card action triptych (做一件事 / 说一句话 /
+// 避免一件事) that does not map 1:1 to the mirror output. We shape it from
+// whatever the Reading already carries — projection recommendations for
+// the "do" / "say" slots and an uncertainty caveat for the "avoid" slot —
+// and fall back to calm static copy when the generator has not run. We do
+// not invent claims beyond what the Reading says.
+
+export type RiJingActionSlot = 'do' | 'say' | 'avoid';
+
+export interface RiJingActionItem {
+  readonly slot: RiJingActionSlot;
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly body: string;
+}
+
+export function deriveRiJingActions(
+  reading: Reading | undefined,
+): readonly RiJingActionItem[] {
+  const output = reading?.output as RiJingMirrorOutput | undefined;
+  const recs = output
+    ? output.concern_projections.flatMap((p) => p.recommendations)
+    : [];
+  const summaries = output
+    ? output.concern_projections.map((p) => p.summary).filter((s) => s.length > 0)
+    : [];
+  const avoidCaveat = reading?.uncertainty.caveats[0];
+
+  const doText = recs[0];
+  const sayText = recs[1] ?? summaries[0];
+
+  return [
+    {
+      slot: 'do',
+      eyebrow: '今天做一件事',
+      title: doText ? condense(doText, 14) : '推进一件已经准备好的事情',
+      body: doText ?? '选一件已有基础的事，把它往前送一步，不必追求一次完成。',
+    },
+    {
+      slot: 'say',
+      eyebrow: '今天说一句话',
+      title: sayText ? condense(sayText, 14) : '和关键人物确认彼此预期',
+      body: sayText ?? '适合把时间、分工、边界说清楚，减少后面反复解释。',
+    },
+    {
+      slot: 'avoid',
+      eyebrow: '今天避免一件事',
+      title: avoidCaveat ? condense(avoidCaveat, 14) : '不要为了赶进度而打乱原本节奏',
+      body: avoidCaveat ?? '今天不适合临时加码，也不适合因为一时焦虑就推翻原本计划。',
+    },
+  ];
+}
+
+// Friendly Chinese name for common IANA timezones; falls back to
+// "City (GMT±N)" so the user never sees a raw "Etc/UTC" string.
+const FRIENDLY_TIME_ZONE_LABELS: Record<string, string> = {
+  'Etc/UTC': '国际标准时间',
+  UTC: '国际标准时间',
+  GMT: '国际标准时间',
+  'Asia/Shanghai': '北京时间',
+  'Asia/Chongqing': '北京时间',
+  'Asia/Hong_Kong': '香港时间',
+  'Asia/Taipei': '台北时间',
+  'Asia/Tokyo': '东京时间',
+  'Asia/Seoul': '首尔时间',
+  'Asia/Singapore': '新加坡时间',
+  'Asia/Bangkok': '曼谷时间',
+  'Asia/Dubai': '迪拜时间',
+  'Europe/London': '伦敦时间',
+  'Europe/Paris': '巴黎时间',
+  'Europe/Berlin': '柏林时间',
+  'Europe/Moscow': '莫斯科时间',
+  'America/New_York': '纽约时间',
+  'America/Los_Angeles': '洛杉矶时间',
+  'America/Chicago': '芝加哥时间',
+  'Australia/Sydney': '悉尼时间',
+};
+
+function gmtOffsetFor(iana: string, now: Date): string {
+  try {
+    const dtf = new Intl.DateTimeFormat('en-US', { timeZone: iana, timeZoneName: 'shortOffset' });
+    const parts = dtf.formatToParts(now);
+    return parts.find((p) => p.type === 'timeZoneName')?.value ?? '';
+  } catch {
+    return '';
+  }
+}
+
+export function friendlyTimeZoneLabel(iana: string, now: Date = new Date()): string {
+  if (!iana) return '本地时间';
+  if (FRIENDLY_TIME_ZONE_LABELS[iana]) return FRIENDLY_TIME_ZONE_LABELS[iana]!;
+  const segs = iana.split('/');
+  const tail = (segs[segs.length - 1] ?? iana).replace(/_/g, ' ');
+  const offset = gmtOffsetFor(iana, now);
+  return offset ? `${tail}（${offset}）` : tail || iana;
+}
+
+export function rijingDateLabel(basisTimeZone: string, now: Date = new Date()): RiJingDateLabel {
+  const tz = basisTimeZone === '' ? 'Etc/UTC' : basisTimeZone;
+  const formatter = new Intl.DateTimeFormat('zh-CN-u-ca-gregory', {
+    timeZone: tz,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    weekday: 'long',
+  });
+  const parts = formatter.formatToParts(now);
+  const year = parts.find((p) => p.type === 'year')?.value ?? '';
+  const month = parts.find((p) => p.type === 'month')?.value ?? '';
+  const day = parts.find((p) => p.type === 'day')?.value ?? '';
+  const weekday = parts.find((p) => p.type === 'weekday')?.value ?? '';
+  return {
+    date: `${year}年${month}月${day}日`,
+    weekday,
+    zone: friendlyTimeZoneLabel(tz, now),
+  };
+}
+
+export interface RecentMemoryItem {
+  readonly memory: EventMemory;
+  readonly date_label: string;
+  readonly text: string;
+}
+
+export function deriveRecentMemories(
+  memories: readonly EventMemory[],
+  limit = 3,
+): readonly RecentMemoryItem[] {
+  return memories
+    .slice()
+    .sort((a, b) => Date.parse(b.occurred_at) - Date.parse(a.occurred_at))
+    .slice(0, limit)
+    .map((memory) => ({
+      memory,
+      date_label: memory.occurred_at.slice(0, 10),
+      text: memory.body,
+    }));
+}
+
+// ----- evidence chips -----
+
+const STEM_LABELS: Record<string, string> = {
+  jia: '甲', yi: '乙', bing: '丙', ding: '丁', wu: '戊',
+  ji: '己', geng: '庚', xin: '辛', ren: '壬', gui: '癸',
+};
+const BRANCH_LABELS: Record<string, string> = {
+  zi: '子', chou: '丑', yin: '寅', mao: '卯', chen: '辰', si: '巳',
+  wu: '午', wei: '未', shen: '申', you: '酉', xu: '戌', hai: '亥',
+};
+
+function pillarLabel(pillar: { stem: string; branch: string } | undefined): string {
+  if (!pillar) return '待补';
+  const stem = STEM_LABELS[pillar.stem] ?? pillar.stem;
+  const branch = BRANCH_LABELS[pillar.branch] ?? pillar.branch;
+  return `${stem}${branch}`;
+}
+
+export interface RijingEvidenceChip {
+  readonly group: string;
+  readonly value: string;
+}
+
+export function deriveEvidenceChips(reading: Reading | undefined): readonly RijingEvidenceChip[] {
+  if (!reading) {
+    return [{ group: '数据完整度', value: '待生成' }];
+  }
+  const fs = reading.inputs_summary.feature_snapshot;
+  const chart = fs.self_subject.natal_chart;
+  const chips: RijingEvidenceChip[] = [];
+  if (chart.day_pillar) chips.push({ group: '日柱', value: pillarLabel(chart.day_pillar) });
+  if (chart.month_pillar) chips.push({ group: '月令', value: pillarLabel(chart.month_pillar) });
+  const firstStage = fs.stage_drivers[0]?.stage_label;
+  if (firstStage) chips.push({ group: '阶段驱动', value: firstStage });
+  const totalPillars = 4;
+  const missing = chart.missing_pillars.length;
+  const filled = totalPillars - missing;
+  chips.push({ group: '数据完整度', value: `约 ${filled}/${totalPillars}` });
+  return chips;
+}
+
+export type { RiJingConcernProjection };

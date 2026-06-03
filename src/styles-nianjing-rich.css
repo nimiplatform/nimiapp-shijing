@@ -1,0 +1,1873 @@
+/* =====================================================================
+ * NianJing rich tab — header strip + current-phase hero + concern
+ * filter row + multi-lane long-horizon phase timeline.
+ *
+ * Scoped under `.shijing-nianjing` so it overrides the baseline rules in
+ * `styles-mirror-v1.css` for the NianJing surface only. Other mirrors
+ * keep their own visual style.
+ *
+ * Palette matches `styles-yuejing-rich.css` so the five tendency
+ * tokens read the same across all three time-window mirrors.
+ *
+ * SJG-REMOVED-04 compliance: this stylesheet introduces only phase
+ * BANDS (rectangular fills, no curves), inflection MARKERS (circles
+ * at lane edges, no scores), and a now-line. No score axes, no
+ * gradient-as-trend, no rankable numeric series.
+ * ===================================================================== */
+
+/* Aurora background — kept identical to YueJing so NianJing reads as
+ * part of the same time-window mirror family. Applied to the whole
+ * shell so the gradient bleeds behind the topbar too (matching the
+ * YueJing / RiJing surfaces). Mint top-left, pink bottom-right, on a
+ * mint→lavender base gradient. */
+.shijing-shell[data-active-tab="nianjing"] {
+  background:
+    radial-gradient(42% 36% at 6% 4%, rgba(167, 243, 208, 0.55), transparent 70%),
+    radial-gradient(40% 38% at 94% 92%, rgba(252, 231, 243, 0.50), transparent 70%),
+    linear-gradient(135deg, #e7f5ee 0%, #eef0f7 100%);
+}
+
+/* Drop the topbar's translucent white card so the aurora shows through
+ * and the brand / tabs / gear sit directly on the gradient, as on
+ * YueJing. */
+.shijing-shell[data-active-tab="nianjing"] .shijing-topbar {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom-color: rgba(255, 255, 255, 0.45);
+}
+
+/* Main area inherits the shell aurora — no own background needed. */
+.shijing-shell__main:has(> .shijing-nianjing) {
+  background: transparent;
+}
+
+.shijing-nianjing {
+  --nianjing-supportive: #4ECCA3;
+  --nianjing-steady:     #7DA3C9;
+  --nianjing-watch:      #E0A458;
+  --nianjing-blocked:    #D96A6A;
+  --nianjing-turning:    #8B7CD6;
+
+  /* Soft variants identical to the YueJing day-cell tokens — sit
+   * between the saturated brand color and white so a white-on-fill
+   * numeral or label stays readable on every nature. Tuned at 62%
+   * for green / orange / red / purple and slightly higher (68%) for
+   * steady-blue which would otherwise wash out white text. */
+  --nianjing-supportive-soft: color-mix(in srgb, var(--nianjing-supportive) 62%, white);
+  --nianjing-steady-soft:     color-mix(in srgb, var(--nianjing-steady)     68%, white);
+  --nianjing-watch-soft:      color-mix(in srgb, var(--nianjing-watch)      62%, white);
+  --nianjing-blocked-soft:    color-mix(in srgb, var(--nianjing-blocked)    62%, white);
+  --nianjing-turning-soft:    color-mix(in srgb, var(--nianjing-turning)    62%, white);
+
+  --nianjing-glass-bg: rgba(255, 255, 255, 0.55);
+  --nianjing-glass-border: rgba(255, 255, 255, 0.55);
+  --nianjing-glass-blur: blur(16px) saturate(140%);
+  --nianjing-glass-shadow: 0 8px 28px -16px rgba(15, 23, 38, 0.12);
+
+  --nianjing-text-on-band: #ffffff;
+
+  gap: 18px;
+}
+
+/* The mirror-v1 baseline wraps every direct article/section in a card.
+ * The rich layout draws its own framing per block, so reset that on
+ * each direct NianJing block. */
+.shijing-nianjing > .shijing-nianjing__strip,
+.shijing-nianjing > .shijing-nianjing__hero,
+.shijing-nianjing > .shijing-nianjing__filter-row,
+.shijing-nianjing > .shijing-nianjing__timeline,
+.shijing-nianjing > .shijing-nianjing__notice {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+/* ----- 1) Header strip ------------------------------------------- */
+
+.shijing-nianjing__strip {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 16px;
+}
+
+.shijing-nianjing__strip-titles h1 {
+  font-size: 32px;
+  letter-spacing: 0.04em;
+  margin: 0 0 6px;
+}
+
+.shijing-nianjing__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--shijing-text-secondary);
+  margin: 0;
+}
+
+.shijing-nianjing__meta [aria-hidden] {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-nianjing__strip-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.shijing-nianjing__strip-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* Let the shared import button adopt the pill shape used by the
+ * NianJing header. */
+.shijing-nianjing .shijing-import-to-consultation {
+  margin-top: 0;
+  font-size: 14px;
+  padding: 9px 18px;
+  border-radius: 999px;
+}
+
+.shijing-nianjing .shijing-nianjing__generate {
+  background: var(--nianjing-supportive);
+  color: #fff;
+  border: 0;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px -4px rgba(78, 204, 163, 0.45);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shijing-nianjing .shijing-nianjing__generate:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--nianjing-supportive) 90%, black);
+}
+
+.shijing-nianjing .shijing-nianjing__generate:disabled {
+  background: var(--shijing-text-disabled);
+  box-shadow: none;
+}
+
+.shijing-nianjing__generate-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  font-size: 0;
+}
+
+.shijing-nianjing__strip-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.shijing-nianjing__ago {
+  color: var(--shijing-text-muted);
+  font-size: 12px;
+}
+
+/* Subtle link-button that only appears when the user has at least
+ * two NianJing readings in the store. Toggles between the latest and
+ * the immediate prior reading. Highlight when "viewing previous" so
+ * the user always knows which version they're looking at. */
+.shijing-nianjing .shijing-nianjing__version-toggle {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 2px 4px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--shijing-brand-primary);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.shijing-nianjing .shijing-nianjing__version-toggle:hover {
+  background: var(--shijing-brand-soft);
+  text-decoration: underline;
+}
+
+.shijing-nianjing .shijing-nianjing__version-toggle[aria-pressed="true"] {
+  color: var(--shijing-status-warning);
+  font-weight: 500;
+}
+
+/* ----- 2) Generic notice / stale banners ------------------------- */
+
+/* Two-class selector beats the reset so the glass background and
+ * padding survive on empty / loading / failure notices. */
+.shijing-nianjing > .shijing-nianjing__notice {
+  background: var(--nianjing-glass-bg);
+  backdrop-filter: var(--nianjing-glass-blur);
+  -webkit-backdrop-filter: var(--nianjing-glass-blur);
+  border: 1px solid var(--nianjing-glass-border);
+  border-radius: var(--shijing-radius-lg);
+  padding: 14px 18px;
+  color: var(--shijing-text-secondary);
+  text-align: center;
+  box-shadow: var(--nianjing-glass-shadow);
+}
+
+.shijing-nianjing__stale {
+  background: color-mix(in srgb, var(--nianjing-watch) 14%, transparent);
+  color: var(--shijing-status-warning);
+  padding: 10px 14px;
+  border-radius: var(--shijing-radius-md);
+  border-left: 3px solid var(--nianjing-watch);
+  font-size: 13px;
+  margin: 0;
+}
+
+/* ----- 3) Current-phase hero ------------------------------------- */
+
+/* Two-class selector matches the parent reset's specificity (0,2,0).
+ * Source order then puts this hero rule's padding / background /
+ * shadow above the reset — without this bump, the reset's
+ * `padding: 0` clobbers our generous 30px 56px and the title hugs
+ * the card edge. */
+.shijing-nianjing > .shijing-nianjing__hero {
+  position: relative;
+  display: grid;
+  /* Fixed-width right column keeps the chip pane from touching the
+   * card's right padding edge — its size is the column, not "whatever
+   * fills the remaining space". The LHS gets all leftover room and
+   * the big serif title is never compressed. */
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 32px;
+  /* `align-items: center` vertically anchors the title and the chip
+   * pane on the same baseline; combined with min-height below, this
+   * stops the card from collapsing into a "status bar" when content
+   * is short. */
+  align-items: center;
+  min-height: 160px;
+  padding: 26px 56px;
+  border-radius: 28px;
+  color: #fff;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--nianjing-steady) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(125, 163, 201, 0.55);
+}
+
+.shijing-nianjing__hero[data-nature="supportive"] {
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--nianjing-supportive) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(78, 204, 163, 0.55);
+}
+.shijing-nianjing__hero[data-nature="watch"] {
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--nianjing-watch) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(224, 164, 88, 0.55);
+}
+.shijing-nianjing__hero[data-nature="blocked"] {
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--nianjing-blocked) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(217, 106, 106, 0.55);
+}
+.shijing-nianjing__hero[data-nature="turning"] {
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--nianjing-turning) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(139, 124, 214, 0.55);
+}
+
+/* Three-layer headline: eyebrow → big title + date → body, with
+ * explicit vertical breathing room between each layer so nothing
+ * crowds the title or hugs the card edges. */
+.shijing-nianjing__hero-headline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.shijing-nianjing__hero-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.shijing-nianjing__hero-nature {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.shijing-nianjing__hero-nature strong {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 56px;
+  line-height: 1;
+  color: #fff;
+  letter-spacing: 0.06em;
+  text-shadow: 0 2px 4px rgba(15, 23, 38, 0.08);
+}
+
+.shijing-nianjing__hero-nature small {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+
+/* Body text is intentionally lighter than the title/eyebrow alpha so
+ * it reads as supporting copy, not as a second headline. Margin-top
+ * carves out a clear gap from the big title without collapsing into
+ * the body's own line-height. */
+.shijing-nianjing__hero-body {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.7;
+  max-width: 38ch;
+  font-weight: 400;
+}
+
+/* The per-concern chips pane on the right side of the hero. The
+ * pane sits inside a fixed-width grid column (see __hero above) so it
+ * has predictable left/right breathing room from the card edge —
+ * `align-self: center` plus the card's min-height keeps it
+ * vertically centered against the big title on the left. */
+.shijing-nianjing .shijing-nianjing__hero-rows {
+  list-style: none;
+  margin: 0;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 2px 12px -6px rgba(15, 23, 38, 0.10);
+  align-self: center;
+  width: 100%;
+}
+
+.shijing-nianjing .shijing-nianjing__hero-rows li {
+  display: grid;
+  grid-template-columns: 72px auto 1fr;
+  align-items: center;
+  column-gap: 14px;
+  font-size: 14px;
+  color: #fff;
+  list-style: none;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.shijing-nianjing__hero-row-label {
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shijing-nianjing__hero-row-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.shijing-nianjing__hero-row-chip-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--nianjing-steady);
+}
+
+.shijing-nianjing__hero-row-chip[data-nature="supportive"] .shijing-nianjing__hero-row-chip-dot { background: var(--nianjing-supportive); }
+.shijing-nianjing__hero-row-chip[data-nature="steady"]     .shijing-nianjing__hero-row-chip-dot { background: var(--nianjing-steady); }
+.shijing-nianjing__hero-row-chip[data-nature="watch"]      .shijing-nianjing__hero-row-chip-dot { background: var(--nianjing-watch); }
+.shijing-nianjing__hero-row-chip[data-nature="blocked"]    .shijing-nianjing__hero-row-chip-dot { background: var(--nianjing-blocked); }
+.shijing-nianjing__hero-row-chip[data-nature="turning"]    .shijing-nianjing__hero-row-chip-dot { background: var(--nianjing-turning); }
+
+.shijing-nianjing__hero-row-detail {
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 13.5px;
+  letter-spacing: 0.02em;
+  justify-self: start;
+}
+
+/* ----- 4) Filter row ----------------------------------------------- */
+
+/* Two-class selector beats the reset (also 0,2,0) by source order so
+ * the glass pill background, padding, and border survive. */
+.shijing-nianjing > .shijing-nianjing__filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 8px 16px;
+  background: var(--nianjing-glass-bg);
+  backdrop-filter: var(--nianjing-glass-blur);
+  -webkit-backdrop-filter: var(--nianjing-glass-blur);
+  border: 1px solid var(--nianjing-glass-border);
+  border-radius: 999px;
+  box-shadow: var(--nianjing-glass-shadow);
+  /* `backdrop-filter` already promotes this row to its own stacking
+   * context. Without an explicit z-index, sibling blocks that come
+   * later in the DOM (timeline card, footer) — both also creating
+   * stacking contexts via backdrop-filter — paint on top of this row's
+   * descendants, including the「编辑关注」popover. Lifting the whole
+   * row above downstream siblings keeps the popover visible. */
+  position: relative;
+  z-index: 5;
+}
+
+.shijing-nianjing .shijing-nianjing__filter {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.shijing-nianjing__filter legend {
+  font-size: 12px;
+  color: var(--shijing-text-secondary);
+  padding-right: 10px;
+  margin-right: 4px;
+  border-right: 1px solid var(--shijing-border-subtle);
+  float: left;
+  line-height: 22px;
+}
+
+.shijing-nianjing .shijing-nianjing__filter-pill {
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  border: 1px solid transparent;
+  font-size: 13px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.shijing-nianjing .shijing-nianjing__filter-pill[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--shijing-text-primary);
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 1px 4px rgba(15, 23, 38, 0.06);
+  font-weight: 500;
+}
+
+/* Hover / focus on an UNSELECTED pill: a subtle neutral wash. The
+ * explicit `background` + `border-color` are required to override the
+ * baseline `.shijing-tab button:hover` (specificity 0,3,1) which would
+ * otherwise bleed the brand-green button background onto the pill. */
+.shijing-nianjing .shijing-nianjing__filter-pill:hover:not([aria-pressed="true"]),
+.shijing-nianjing .shijing-nianjing__filter-pill:focus-visible:not([aria-pressed="true"]) {
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--shijing-text-primary);
+  border-color: rgba(255, 255, 255, 0.6);
+  outline: none;
+}
+
+/* Hover on the SELECTED pill keeps the white pressed look — never the
+ * baseline brand-green. */
+.shijing-nianjing .shijing-nianjing__filter-pill[aria-pressed="true"]:hover {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.shijing-nianjing .shijing-nianjing__filter-manage {
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  border: 1px dashed var(--shijing-border-default);
+  font-size: 12.5px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 4px;
+}
+
+.shijing-nianjing .shijing-nianjing__filter-manage:hover,
+.shijing-nianjing .shijing-nianjing__filter-manage[aria-expanded="true"] {
+  color: var(--shijing-text-primary);
+  border-color: var(--shijing-brand-primary);
+}
+
+/* ----- 4b) Concern editor popover -------------------------------- */
+
+.shijing-nianjing__editor-anchor {
+  position: relative;
+  display: inline-block;
+}
+
+.shijing-nianjing__editor {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 70;
+  min-width: 320px;
+  max-width: 380px;
+  padding: 16px 18px 14px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--shijing-radius-2xl, 20px);
+  box-shadow:
+    0 18px 40px -16px rgba(15, 23, 38, 0.22),
+    0 2px 8px -4px rgba(15, 23, 38, 0.10);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.shijing-nianjing__editor-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.shijing-nianjing__editor-head strong {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.shijing-nianjing__editor-count {
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-nianjing__editor-subtitle {
+  font-size: 12px;
+  color: var(--shijing-text-secondary);
+  line-height: 1.55;
+  margin: 0 0 2px;
+}
+
+.shijing-nianjing__editor-section h4 {
+  margin: 6px 0 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--shijing-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.shijing-nianjing .shijing-nianjing__editor-section ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shijing-nianjing .shijing-nianjing__editor-section li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 12px;
+}
+
+.shijing-nianjing__editor-row-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.shijing-nianjing__editor-row-text strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.shijing-nianjing__editor-row-text small {
+  font-size: 11.5px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-nianjing .shijing-nianjing__editor-remove {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--shijing-border-default);
+  color: var(--shijing-text-secondary);
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+  flex: 0 0 auto;
+}
+
+.shijing-nianjing .shijing-nianjing__editor-remove:hover {
+  background: var(--shijing-hover-surface);
+  border-color: var(--shijing-border-default);
+  color: var(--shijing-text-primary);
+}
+
+.shijing-nianjing .shijing-nianjing__editor-add {
+  appearance: none;
+  background: var(--nianjing-supportive);
+  color: #fff;
+  border: 0;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: background 120ms ease;
+}
+
+.shijing-nianjing .shijing-nianjing__editor-add:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--nianjing-supportive) 90%, black);
+}
+
+.shijing-nianjing .shijing-nianjing__editor-add:disabled {
+  background: var(--shijing-text-disabled);
+  cursor: not-allowed;
+}
+
+.shijing-nianjing__editor-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid color-mix(in srgb, var(--nianjing-supportive) 35%, transparent);
+  border-radius: 12px;
+  margin-top: 4px;
+}
+
+.shijing-nianjing .shijing-nianjing__editor-custom input {
+  flex: 1;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+  padding: 4px 0;
+  min-width: 0;
+}
+
+.shijing-nianjing .shijing-nianjing__editor-custom input::placeholder {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-nianjing .shijing-nianjing__editor-custom input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.shijing-nianjing .shijing-nianjing__editor-custom input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Two-class selector so it beats the baseline `.shijing-tab ul`
+ * (specificity 0,1,1) which would otherwise force `flex-direction:
+ * column` and stack our five legend items vertically. */
+.shijing-nianjing .shijing-nianjing__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  /* Keep all five tendency items on a single line, even when the
+   * filter row narrows. If the row genuinely can't fit pills + legend,
+   * the row itself wraps so the legend drops to its own line as a
+   * whole — but the five items never split across two lines. */
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+.shijing-nianjing__legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--shijing-text-secondary);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+  white-space: nowrap;
+}
+
+.shijing-nianjing__legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--shijing-text-disabled);
+}
+
+.shijing-nianjing__legend li[data-nature="supportive"] .shijing-nianjing__legend-dot { background: var(--nianjing-supportive); }
+.shijing-nianjing__legend li[data-nature="steady"]     .shijing-nianjing__legend-dot { background: var(--nianjing-steady); }
+.shijing-nianjing__legend li[data-nature="watch"]      .shijing-nianjing__legend-dot { background: var(--nianjing-watch); }
+.shijing-nianjing__legend li[data-nature="blocked"]    .shijing-nianjing__legend-dot { background: var(--nianjing-blocked); }
+.shijing-nianjing__legend li[data-nature="turning"]    .shijing-nianjing__legend-dot { background: var(--nianjing-turning); }
+
+/* ----- 5) Long-horizon timeline card ----------------------------- */
+
+.shijing-nianjing .shijing-nianjing__timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 24px 16px;
+  background: var(--nianjing-glass-bg);
+  backdrop-filter: var(--nianjing-glass-blur);
+  -webkit-backdrop-filter: var(--nianjing-glass-blur);
+  border: 1px solid var(--nianjing-glass-border);
+  border-radius: var(--shijing-radius-2xl, 20px);
+  box-shadow: var(--nianjing-glass-shadow);
+  margin-bottom: 0;
+}
+
+.shijing-nianjing__lanes-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Year axis: replace the v1 flex-row of two end labels with absolutely
+ * positioned year ticks. */
+.shijing-nianjing .shijing-nianjing__axis {
+  position: relative;
+  display: block;
+  height: 24px;
+  padding-bottom: 0;
+  border-bottom: 0;
+  /* Reserve the left lane-label column so axis ticks align with the
+   * track area below. */
+  margin-left: 110px;
+}
+
+.shijing-nianjing__axis-tick {
+  position: absolute;
+  top: 4px;
+  transform: translateX(-50%);
+  font-size: 11.5px;
+  color: var(--shijing-text-muted);
+  white-space: nowrap;
+}
+
+.shijing-nianjing__now-tag {
+  position: absolute;
+  top: -2px;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: var(--shijing-status-success);
+  background: color-mix(in srgb, var(--nianjing-supportive) 16%, white);
+  border: 1px solid color-mix(in srgb, var(--nianjing-supportive) 35%, transparent);
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  z-index: 4;
+  box-shadow: 0 1px 3px rgba(15, 23, 38, 0.08);
+}
+
+/* Override the v1 lane layout to give more room for the band detail
+ * line and a richer label column. */
+.shijing-nianjing .shijing-nianjing__lane {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 14px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.shijing-nianjing__lane-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.shijing-nianjing__lane-label strong {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.04em;
+}
+
+.shijing-nianjing__lane-label small {
+  font-size: 11.5px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-nianjing .shijing-nianjing__lane-track {
+  position: relative;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 14px;
+  border: 0;
+  overflow: visible;
+}
+
+/* Bands sit inside the lane track as filled rounded blocks, each
+ * carrying a two-line label (tendency name + a short detail). */
+/* Band fill matches the YueJing day-cell formula exactly: a 22%-white
+ * sheen from the top-left over the soft tendency color. The soft
+ * variant (color-mix 62-68% with white) keeps the band more pastel,
+ * matching the calmer reading of the YueJing calendar. White label
+ * text + the existing text-shadow keep readability on every nature.
+ *
+ * Bands are <button>s so they open the detail drawer when clicked —
+ * `appearance: none` + `border: 0` + `font: inherit` strip the native
+ * button chrome so the visual reads identically to the previous
+ * <span> rendering. */
+.shijing-nianjing .shijing-nianjing__band {
+  appearance: none;
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border: 0;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--nianjing-text-on-band);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    var(--nianjing-steady-soft);
+  overflow: hidden;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px -3px rgba(15, 23, 38, 0.18);
+  transition: filter 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.shijing-nianjing .shijing-nianjing__band:hover {
+  filter: brightness(1.06) saturate(1.06);
+  box-shadow: 0 4px 12px -4px rgba(15, 23, 38, 0.25);
+  transform: translateY(-1px);
+}
+
+.shijing-nianjing .shijing-nianjing__band:focus-visible {
+  outline: none;
+  box-shadow: var(--shijing-focus-ring), 0 2px 6px -3px rgba(15, 23, 38, 0.18);
+}
+
+.shijing-nianjing .shijing-nianjing__band[data-nature="supportive"] {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    var(--nianjing-supportive-soft);
+}
+.shijing-nianjing .shijing-nianjing__band[data-nature="steady"] {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    var(--nianjing-steady-soft);
+}
+.shijing-nianjing .shijing-nianjing__band[data-nature="watch"] {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    var(--nianjing-watch-soft);
+}
+.shijing-nianjing .shijing-nianjing__band[data-nature="blocked"] {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    var(--nianjing-blocked-soft);
+}
+.shijing-nianjing .shijing-nianjing__band[data-nature="turning"] {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    var(--nianjing-turning-soft);
+}
+
+.shijing-nianjing .shijing-nianjing__band-label {
+  white-space: nowrap;
+  padding: 0;
+  font-weight: 600;
+  font-size: 13px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18);
+}
+
+.shijing-nianjing__band-detail {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.94);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Inflection markers: switch from v1's 2px vertical line to a circle
+ * pinned at the top edge of each lane. Kind drives fill style. */
+/* Markers are now buttons. Reset the baseline `.shijing-tab button`
+ * (filled brand-color pill) to nothing — we paint our own circle —
+ * and add hover / focus affordances so the click target reads as
+ * interactive. */
+.shijing-nianjing .shijing-nianjing__marker {
+  appearance: none;
+  position: absolute;
+  top: -7px;
+  bottom: auto;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border-radius: 50%;
+  transform: translateX(-7px);
+  background: var(--shijing-text-primary);
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 38, 0.28);
+  z-index: 3;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.shijing-nianjing .shijing-nianjing__marker:hover {
+  transform: translateX(-7px) scale(1.25);
+  box-shadow: 0 2px 6px rgba(15, 23, 38, 0.35);
+}
+
+.shijing-nianjing .shijing-nianjing__marker:focus-visible {
+  outline: none;
+  box-shadow: var(--shijing-focus-ring), 0 1px 3px rgba(15, 23, 38, 0.28);
+}
+
+.shijing-nianjing .shijing-nianjing__marker[data-kind="dayun_boundary"] {
+  background: var(--shijing-text-primary);
+  border-color: #ffffff;
+}
+
+.shijing-nianjing .shijing-nianjing__marker[data-kind="annual_transition"] {
+  background: #ffffff;
+  border-color: var(--shijing-text-primary);
+}
+
+.shijing-nianjing .shijing-nianjing__marker[data-kind="monthly_transition"] {
+  background: var(--nianjing-watch);
+  border-color: #ffffff;
+}
+
+.shijing-nianjing .shijing-nianjing__marker[data-kind="marker_cluster"] {
+  background:
+    radial-gradient(circle, var(--shijing-text-primary) 28%, transparent 32%),
+    #ffffff;
+  border-color: var(--shijing-text-primary);
+}
+
+/* Hover swap: every pixel that was BLACK (text-primary) becomes WHITE,
+ * every pixel that was WHITE becomes the brand green. The previous
+ * generic `:hover` rule (scale + shadow) keeps applying alongside
+ * these per-kind background / border overrides. */
+.shijing-nianjing .shijing-nianjing__marker[data-kind="dayun_boundary"]:hover {
+  background: #ffffff;
+  border-color: var(--shijing-brand-primary);
+}
+
+.shijing-nianjing .shijing-nianjing__marker[data-kind="annual_transition"]:hover {
+  background: var(--shijing-brand-primary);
+  border-color: #ffffff;
+}
+
+.shijing-nianjing .shijing-nianjing__marker[data-kind="marker_cluster"]:hover {
+  background:
+    radial-gradient(circle, #ffffff 28%, transparent 32%),
+    var(--shijing-brand-primary);
+  border-color: #ffffff;
+}
+
+/* The vertical "now" line spans every lane in the timeline. Positioned
+ * via a CSS variable set on the wrapper so the same offset drives the
+ * axis "现在" badge above. */
+.shijing-nianjing__nowline {
+  position: absolute;
+  top: 24px;             /* clears the axis row */
+  bottom: 0;
+  width: 0;
+  border-left: 2px dashed var(--nianjing-supportive);
+  pointer-events: none;
+  z-index: 1;
+  /* Account for the lane-label column (96px) + gap (14px). */
+  transform: translateX(-1px);
+}
+
+/* Bottom legend strip inside the timeline card. */
+/* Two-class selector so we beat baseline `.shijing-tab ul`
+ * (specificity 0,1,1) which would otherwise force flex-direction:
+ * column and stack the marker legend vertically. */
+.shijing-nianjing .shijing-nianjing__timeline-legend {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 8px 6px 0;
+  border-top: 1px solid color-mix(in srgb, var(--shijing-border-subtle) 80%, transparent);
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 18px;
+  font-size: 12px;
+  color: var(--shijing-text-secondary);
+  align-items: center;
+}
+
+.shijing-nianjing__timeline-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+}
+
+.shijing-nianjing__legend-marker {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--shijing-text-primary);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px var(--shijing-border-default);
+}
+
+.shijing-nianjing__legend-marker[data-kind="dayun_boundary"] {
+  background: var(--shijing-text-primary);
+}
+.shijing-nianjing__legend-marker[data-kind="annual_transition"] {
+  background: #ffffff;
+  border-color: var(--shijing-text-primary);
+  box-shadow: none;
+}
+.shijing-nianjing__legend-marker[data-kind="marker_cluster"] {
+  background:
+    radial-gradient(circle, var(--shijing-text-primary) 28%, transparent 32%),
+    #ffffff;
+  border-color: var(--shijing-text-primary);
+  box-shadow: none;
+}
+
+.shijing-nianjing__legend-now {
+  margin-left: auto;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-nianjing__legend-now-line {
+  display: inline-block;
+  width: 28px;
+  height: 0;
+  border-top: 2px dashed var(--nianjing-supportive);
+}
+
+/* ----- 6) Summary + drawer footer ------------------------------- */
+
+.shijing-nianjing__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px;
+  background: var(--nianjing-glass-bg);
+  backdrop-filter: var(--nianjing-glass-blur);
+  -webkit-backdrop-filter: var(--nianjing-glass-blur);
+  border: 1px solid var(--nianjing-glass-border);
+  border-radius: var(--shijing-radius-xl, 16px);
+  box-shadow: var(--nianjing-glass-shadow);
+}
+
+.shijing-nianjing__footer summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--shijing-text-secondary);
+  font-weight: 500;
+}
+
+.shijing-nianjing__footer-summary {
+  color: var(--shijing-text-primary);
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ----- Responsive ------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .shijing-nianjing__hero {
+    grid-template-columns: 1fr;
+    padding: 22px 22px;
+  }
+  .shijing-nianjing__strip {
+    grid-template-columns: 1fr;
+  }
+  .shijing-nianjing__strip-actions {
+    align-items: flex-start;
+  }
+  .shijing-nianjing .shijing-nianjing__axis {
+    margin-left: 0;
+  }
+  .shijing-nianjing .shijing-nianjing__lane {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .shijing-nianjing__nowline {
+    /* In stacked layout the lane-label column is gone, so the dashed
+     * now-line should sit flush with the lane edge. */
+    transform: translateX(-1px);
+  }
+}
+
+/* ----- 7) Inflection right-side drawer --------------------------- */
+/* Visual treatment matches YueJing's right-side day panel: flush to
+ * the viewport edge (no radius, only a left border), nearly-opaque
+ * white glass over a light white-wash backdrop. The whole composition
+ * reads as "the page got pushed aside" rather than "a card floats
+ * on top". */
+
+.shijing-nianjing__inflection-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(4px) saturate(105%);
+  -webkit-backdrop-filter: blur(4px) saturate(105%);
+  cursor: pointer;
+  animation: shijing-nianjing__backdrop-in 160ms ease both;
+}
+
+@keyframes shijing-nianjing__backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.shijing-nianjing__inflection-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(440px, 100vw);
+  z-index: 201;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border-left: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: -22px 0 56px -28px rgba(15, 23, 38, 0.22);
+  overflow-y: auto;
+  padding: 32px 30px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  animation: shijing-nianjing__drawer-slide-in 220ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* Band variant: very soft mint-to-white gradient so the whole panel
+ * reads as a calm, breathable "guidance space" rather than a
+ * dialog. The mint tint fades by ~30% so the lower sections (white
+ * cards, footer) sit cleanly on near-white. */
+.shijing-nianjing__inflection-drawer[data-kind="band"] {
+  background:
+    linear-gradient(180deg,
+      rgba(231, 246, 237, 0.96) 0%,
+      rgba(245, 251, 248, 0.96) 24%,
+      rgba(255, 255, 255, 0.96) 60%
+    );
+}
+
+@keyframes shijing-nianjing__drawer-slide-in {
+  from { transform: translateX(24px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* Close button sits absolute in the upper-right corner so the header
+ * content can occupy the full content width below it. */
+.shijing-nianjing .shijing-nianjing__inflection-close {
+  appearance: none;
+  position: absolute;
+  top: 26px;
+  right: 26px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.shijing-nianjing .shijing-nianjing__inflection-close:hover {
+  background: rgba(15, 23, 38, 0.06);
+  color: var(--shijing-text-primary);
+}
+
+.shijing-nianjing__inflection-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 44px; /* clear room for the absolute close button */
+}
+
+.shijing-nianjing__inflection-head strong {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+}
+
+.shijing-nianjing__inflection-head small {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--shijing-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.shijing-nianjing__inflection-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shijing-nianjing__inflection-section > h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.shijing-nianjing__inflection-section > p {
+  margin: 0;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 38, 0.06);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 38, 0.04);
+  font-size: 13.5px;
+  color: var(--shijing-text-primary);
+  line-height: 1.7;
+}
+
+/* ----- 8) Band detail drawer content ------------------------------ */
+/* Rich "结论 → 解释 → 行动建议 → 提醒" layout shown when a phase band
+ * is opened. Shares the drawer shell with inflection markers; only
+ * the body content differs (see `data-kind="band"` on the drawer). */
+
+.shijing-nianjing__band-detail-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 44px; /* clear room for the absolute close button */
+}
+
+.shijing-nianjing__band-detail-title {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+.shijing-nianjing__band-detail-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shijing-nianjing__band-detail-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  background: color-mix(in srgb, var(--nianjing-supportive) 16%, white);
+  color: color-mix(in srgb, var(--nianjing-supportive) 60%, #0e3a2a);
+  border: 1px solid color-mix(in srgb, var(--nianjing-supportive) 26%, transparent);
+}
+
+/* The nature pill picks up the band's tendency color so the user can
+ * confirm at a glance which phase they're reading. */
+.shijing-nianjing__band-detail-pill[data-nature="supportive"] {
+  background: color-mix(in srgb, var(--nianjing-supportive) 18%, white);
+  color: color-mix(in srgb, var(--nianjing-supportive) 65%, #0e3a2a);
+  border-color: color-mix(in srgb, var(--nianjing-supportive) 30%, transparent);
+}
+.shijing-nianjing__band-detail-pill[data-nature="steady"] {
+  background: color-mix(in srgb, var(--nianjing-steady) 18%, white);
+  color: color-mix(in srgb, var(--nianjing-steady) 70%, #0f2b40);
+  border-color: color-mix(in srgb, var(--nianjing-steady) 30%, transparent);
+}
+.shijing-nianjing__band-detail-pill[data-nature="watch"] {
+  background: color-mix(in srgb, var(--nianjing-watch) 18%, white);
+  color: color-mix(in srgb, var(--nianjing-watch) 70%, #3d2410);
+  border-color: color-mix(in srgb, var(--nianjing-watch) 30%, transparent);
+}
+.shijing-nianjing__band-detail-pill[data-nature="blocked"] {
+  background: color-mix(in srgb, var(--nianjing-blocked) 18%, white);
+  color: color-mix(in srgb, var(--nianjing-blocked) 70%, #3a1010);
+  border-color: color-mix(in srgb, var(--nianjing-blocked) 30%, transparent);
+}
+.shijing-nianjing__band-detail-pill[data-nature="turning"] {
+  background: color-mix(in srgb, var(--nianjing-turning) 18%, white);
+  color: color-mix(in srgb, var(--nianjing-turning) 70%, #1f1640);
+  border-color: color-mix(in srgb, var(--nianjing-turning) 30%, transparent);
+}
+
+.shijing-nianjing__band-detail-oneline {
+  margin: 4px 0 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--shijing-text-primary);
+  line-height: 1.6;
+}
+
+.shijing-nianjing__band-detail-oneline-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--shijing-brand-primary);
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Generic card shell for the drawer's content sections. */
+.shijing-nianjing__band-detail-card {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 38, 0.05);
+  border-radius: 18px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 10px -6px rgba(15, 23, 38, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.shijing-nianjing__band-detail-card h3,
+.shijing-nianjing__band-detail-card h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shijing-nianjing__band-detail-card > p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--shijing-text-primary);
+  line-height: 1.75;
+}
+
+/* Meaning card — main hero card with mint-tinted gradient background
+ * and a subtle inner highlight. This is the "结论卡片". */
+.shijing-nianjing__band-detail-meaning {
+  background:
+    linear-gradient(135deg,
+      rgba(220, 244, 232, 0.85) 0%,
+      rgba(238, 250, 244, 0.85) 60%,
+      rgba(248, 253, 250, 0.85) 100%
+    );
+  border-color: rgba(78, 204, 163, 0.18);
+}
+
+/* Decorative leading dot for section headers (适合做 / 提醒) — colored
+ * by tone via data-tone attribute. */
+.shijing-nianjing__band-detail-h4-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--nianjing-supportive);
+  flex-shrink: 0;
+}
+
+.shijing-nianjing__band-detail-h4-dot[data-tone="caution"] {
+  background: var(--nianjing-watch);
+}
+
+/* Keywords — small mint pills, no card wrapper. */
+.shijing-nianjing__band-detail-keywords {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 4px;
+}
+
+.shijing-nianjing__band-detail-keywords h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--shijing-text-secondary);
+  letter-spacing: 0.06em;
+}
+
+.shijing-nianjing .shijing-nianjing__band-detail-keyword-pills {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shijing-nianjing .shijing-nianjing__band-detail-keyword-pills li {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--nianjing-supportive) 14%, white);
+  color: color-mix(in srgb, var(--nianjing-supportive) 70%, #0e3a2a);
+  border: 1px solid color-mix(in srgb, var(--nianjing-supportive) 22%, transparent);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+/* Suggestions list — numbered items inside a white card. */
+.shijing-nianjing .shijing-nianjing__band-detail-suggestions ul,
+.shijing-nianjing .shijing-nianjing__band-detail-cautions ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.shijing-nianjing .shijing-nianjing__band-detail-suggestions ul li,
+.shijing-nianjing .shijing-nianjing__band-detail-cautions ul li {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 12px;
+  align-items: start;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.shijing-nianjing__band-detail-suggestions ul li > div,
+.shijing-nianjing__band-detail-cautions ul li > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.shijing-nianjing__band-detail-suggestions ul li > div strong,
+.shijing-nianjing__band-detail-cautions ul li > div strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.shijing-nianjing__band-detail-suggestions ul li > div p,
+.shijing-nianjing__band-detail-cautions ul li > div p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--shijing-text-secondary);
+  line-height: 1.65;
+}
+
+/* Round numbered bullets for "适合做" — mint-themed. */
+.shijing-nianjing__band-detail-item-num {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--nianjing-supportive) 18%, white);
+  color: color-mix(in srgb, var(--nianjing-supportive) 70%, #0e3a2a);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  margin-top: 1px;
+}
+
+/* Round "!" bullets for "提醒" — peach/orange-themed. */
+.shijing-nianjing__band-detail-caution-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--nianjing-watch) 22%, white);
+  color: color-mix(in srgb, var(--nianjing-watch) 72%, #3d2410);
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 1px;
+}
+
+/* Cautions card — soft peach tint so the section reads as a
+ * "watch out" zone without being alarming. */
+.shijing-nianjing__band-detail-cautions {
+  background: color-mix(in srgb, var(--nianjing-watch) 10%, white);
+  border-color: color-mix(in srgb, var(--nianjing-watch) 18%, transparent);
+}
+
+/* Footer — small metadata rows. No card border, just space and a
+ * thin divider above to set it off from the cautions card. */
+.shijing-nianjing__band-detail-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(15, 23, 38, 0.08);
+  margin-top: 4px;
+}
+
+.shijing-nianjing__band-detail-footer-row {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 12px;
+  align-items: start;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.shijing-nianjing__band-detail-footer-label {
+  color: var(--shijing-text-muted);
+  font-weight: 500;
+}
+
+.shijing-nianjing__band-detail-footer-value {
+  color: var(--shijing-text-secondary);
+}
+
+/* ===== Phase / inflection "发生过的事" recorder ====================== */
+/* Mounted at the foot of the band + inflection drawers. Visual treatment
+ * matches the YueJing day-panel record section so cross-mirror recording
+ * reads identically. */
+
+.shijing-nianjing__rec {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 16px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(15, 23, 38, 0.08);
+}
+
+.shijing-nianjing__rec-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.shijing-nianjing__rec-intro,
+.shijing-nianjing__rec-note {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-nianjing__rec-note {
+  padding: 12px 14px;
+  background: rgba(15, 23, 38, 0.03);
+  border-radius: 12px;
+  color: var(--shijing-text-muted);
+}
+
+/* Chat-composer style: the border lives on the container so the date control
+ * and save icon dock inside the input box's bottom corners. */
+.shijing-nianjing__rec-compose {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 38, 0.12);
+  border-radius: 12px;
+  transition: border-color 120ms ease;
+}
+
+.shijing-nianjing__rec-compose:focus-within {
+  border-color: color-mix(in srgb, var(--shijing-text-primary) 30%, transparent);
+}
+
+.shijing-nianjing__rec-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 52px;
+  padding: 10px 12px 4px;
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--shijing-text-primary);
+  background: transparent;
+  border: 0;
+}
+
+.shijing-nianjing__rec-textarea:focus {
+  outline: none;
+}
+
+.shijing-nianjing__rec-edit {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 52px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--shijing-text-primary);
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 38, 0.12);
+  border-radius: 12px;
+}
+
+.shijing-nianjing__rec-edit:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--shijing-text-primary) 30%, transparent);
+}
+
+/* Bottom row docked inside the input box: date at the left, save at the right. */
+.shijing-nianjing__rec-compose-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 8px 6px;
+}
+
+.shijing-nianjing__rec-date {
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--shijing-text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.shijing-nianjing__rec-date::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.shijing-nianjing__rec-date:hover {
+  background: rgba(15, 23, 38, 0.05);
+}
+
+.shijing-nianjing__rec-date-fixed {
+  padding: 4px 6px;
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-nianjing__rec-save {
+  appearance: none;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  background: color-mix(in srgb, #4f8a68 60%, #1f3d2d);
+  color: #fff;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 120ms ease, opacity 120ms ease;
+}
+
+.shijing-nianjing__rec-save svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.shijing-nianjing__rec-save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.shijing-nianjing__rec-error {
+  margin: 0;
+  font-size: 12.5px;
+  color: #b4452f;
+}
+
+.shijing-nianjing__rec-list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-nianjing__rec-archive-link {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: color-mix(in srgb, #4f8a68 70%, #1f3d2d);
+  cursor: pointer;
+}
+
+.shijing-nianjing__rec-archive-link:hover {
+  text-decoration: underline;
+}
+
+.shijing-nianjing__rec-empty {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-nianjing__rec-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-nianjing__rec-list > li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 38, 0.06);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 38, 0.04);
+}
+
+.shijing-nianjing__rec-list > li[data-editing] {
+  grid-template-columns: 1fr;
+}
+
+.shijing-nianjing__rec-date-label {
+  font-size: 11.5px;
+  color: var(--shijing-text-muted);
+  white-space: nowrap;
+  padding-top: 1px;
+}
+
+.shijing-nianjing__rec-body {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--shijing-text-primary);
+  word-break: break-word;
+}
+
+.shijing-nianjing__rec-actions,
+.shijing-nianjing__rec-edit-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shijing-nianjing__rec-actions > button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--shijing-text-muted);
+  font-size: 13px;
+  line-height: 1;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.shijing-nianjing__rec-actions > button:hover {
+  background: rgba(15, 23, 38, 0.06);
+  color: var(--shijing-text-primary);
+}
+
+.shijing-nianjing__rec-edit-actions {
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.shijing-nianjing__rec-edit-actions > button {
+  appearance: none;
+  border: 1px solid rgba(15, 23, 38, 0.14);
+  background: #ffffff;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  cursor: pointer;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-nianjing__rec-edit-actions > button[data-primary] {
+  background: color-mix(in srgb, #4f8a68 60%, #1f3d2d);
+  border-color: transparent;
+  color: #fff;
+}
+
+.shijing-nianjing__rec-edit-actions > button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
