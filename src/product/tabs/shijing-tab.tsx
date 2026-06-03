@@ -200,7 +200,7 @@ export function ShiJingTab(props: ShiJingTabProps) {
       ...(seedPlanIds.length > 0 ? { cited_plan_item_refs: seedPlanIds } : {}),
       question: q,
       space: state.snapshot,
-      ...(runtime_ai_client ? { deps: { runtime_ai_client } } : {}),
+      deps: { runtime_ai_client },
     });
     setLoading(false);
     if (!outcome.ok) {

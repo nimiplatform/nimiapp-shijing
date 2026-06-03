@@ -26,8 +26,15 @@ export function rolling30DayMirrorScopeFromToday(
   now: Date = new Date(),
   basis_time_zone: string = DEFAULT_BASIS_TIME_ZONE,
 ): Rolling30DayMirrorScope {
-  const startDate = isoLocalDate(now);
-  const endDate = isoLocalDate(new Date(now.getTime() + 29 * MS_PER_DAY));
+  return rolling30DayMirrorScopeFromDate(isoLocalDate(now), basis_time_zone);
+}
+
+export function rolling30DayMirrorScopeFromDate(
+  startDate: string,
+  basis_time_zone: string = DEFAULT_BASIS_TIME_ZONE,
+): Rolling30DayMirrorScope {
+  const start = new Date(`${startDate}T00:00:00Z`);
+  const endDate = isoLocalDate(new Date(start.getTime() + 29 * MS_PER_DAY));
   return { kind: 'rolling_30_day', start_date: startDate, end_date: endDate, basis_time_zone };
 }
 

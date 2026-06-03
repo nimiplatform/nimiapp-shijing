@@ -49,13 +49,22 @@ concern tags or cited context resolve them.
 
 ## SJG-ASTRO-05 - YueJing Output
 
-YueJing output contains a 30-day calendar from the scope start date:
+YueJing output is generated and persisted one local date at a time:
 
-- one cell per local date,
-- one or more active concern-tag projections per cell when requested,
+- `Reading.mirror_scope.kind` remains `rolling_30_day`; its `start_date`
+  is the local date being generated and its `end_date` is the 30-day
+  context boundary,
+- each persisted YueJing Reading contains cells only for the scope
+  `start_date`,
+- one or more active concern-tag projections may exist for that local date,
 - tendency class from the closed set in `SJG-ALGO-09`,
-- detail payloads for selected dates,
+- detail payloads for the generated date,
 - cited plan and memory refs when used.
+
+The YueJing calendar surface is assembled by aggregating multiple persisted
+YueJing Readings over the visible 30-day window. Empty dates remain ungenerated
+until explicitly or automatically generated; Runtime AI must not be asked to
+word 30 dates in a single request.
 
 Tendency classes are not numeric scores, rankings, or curve inputs.
 

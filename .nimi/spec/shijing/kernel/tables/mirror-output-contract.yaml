@@ -36,6 +36,9 @@ rijing:
       - summary
       - recommendations
 yuejing:
+  generation_granularity: one_local_date_per_reading
+  aggregation_rule: calendar_surface_aggregates_multiple_yuejing_readings
+  cell_date_rule: cells_must_target_scope_start_date
   required_fields:
     - mirror_kind
     - summary

@@ -37,6 +37,25 @@ function spaceWithActiveTag() {
   });
 }
 
+function spaceWithLoveAndCareerTags() {
+  return validShiJingSpace({
+    concern_tags: [
+      validConcernTag('tag_love', {
+        label: '#姻缘',
+        parsed_topics: ['love'],
+        prompt_text: 'love relationship reflection',
+        sort_order: 0,
+      }),
+      validConcernTag('tag_career', {
+        label: '#事业',
+        parsed_topics: ['career'],
+        prompt_text: 'career work reflection',
+        sort_order: 1,
+      }),
+    ],
+  });
+}
+
 test('resolveCanonicalMirrorWindow: daily scope yields a 1-day UTC window', () => {
   const scope = dailyMirrorScope({ date: '2026-05-25', basis_time_zone: TZ });
   const result = resolveCanonicalMirrorWindow(scope);
@@ -73,19 +92,51 @@ test('buildAstrologyFeatureSnapshot: rijing daily snapshot uses rijing mirror_ki
   }
 });
 
-test('buildAstrologyFeatureSnapshot: yuejing emits 30 daily tendency drivers per concern tag', () => {
+test('buildAstrologyFeatureSnapshot: yuejing emits start-date tendency drivers per concern tag', () => {
   const space = spaceWithActiveTag();
+  const scope = rolling30DayMirrorScope();
   const result = buildAstrologyFeatureSnapshot({
     mirror_kind: 'yuejing',
-    mirror_scope: rolling30DayMirrorScope(),
+    mirror_scope: scope,
     space,
     related_person_refs: [],
     active_concern_tags: space.concern_tags,
   });
   assert.equal(result.ok, true);
   if (result.ok) {
-    assert.ok(result.value.yuejing_tendency_drivers.length >= 30);
+    assert.equal(result.value.yuejing_tendency_drivers.length, space.concern_tags.length);
+    assert.equal(result.value.yuejing_tendency_drivers[0].date, scope.start_date);
   }
+});
+
+test('buildAstrologyFeatureSnapshot: yuejing domainizes tendency by concern tag', () => {
+  const space = spaceWithLoveAndCareerTags();
+  const scope = rolling30DayMirrorScope({
+    start_date: '2026-06-03',
+    end_date: '2026-07-02',
+    basis_time_zone: TZ,
+  });
+  const result = buildAstrologyFeatureSnapshot({
+    mirror_kind: 'yuejing',
+    mirror_scope: scope,
+    space,
+    related_person_refs: [],
+    active_concern_tags: space.concern_tags,
+  });
+  assert.equal(result.ok, true, JSON.stringify(result));
+  if (!result.ok) return;
+  const byTag = new Map(result.value.yuejing_tendency_drivers.map((driver) => [
+    driver.concern_tag_ref,
+    driver,
+  ]));
+  assert.equal(byTag.get('tag_love')?.date, '2026-06-03');
+  assert.equal(byTag.get('tag_career')?.date, '2026-06-03');
+  assert.notEqual(
+    byTag.get('tag_love')?.tendency_class,
+    byTag.get('tag_career')?.tendency_class,
+  );
+  assert.ok(byTag.get('tag_love')?.driver_refs.includes('domain.love'));
+  assert.ok(byTag.get('tag_career')?.driver_refs.includes('domain.career'));
 });
 
 test('generateRiJingOutput: emits projection per active concern tag', () => {
@@ -237,6 +288,43 @@ test('generateReading: rejects forbidden output coming from runtime AI', async (
   }
 });
 
+test('generateReading: preserves runtime AI mirror_kind_mismatch diagnostics', async () => {
+  const space = spaceWithActiveTag();
+  const today = new Date();
+  const ai = new MockRuntimeAiClient({
+    canned_failure: {
+      kind: 'parse_failure',
+      failure: { kind: 'mirror_kind_mismatch', expected: 'rijing', received: 'yuejing' },
+    },
+  });
+  const result = await generateReading(
+    {
+      id: 'r_kind_mismatch_01',
+      created_at: today.toISOString().replace(/\.\d{3}Z$/, 'Z'),
+      mirror_kind: 'rijing',
+      mirror_scope: dailyMirrorScope({
+        date: today.toISOString().slice(0, 10),
+        basis_time_zone: TZ,
+      }),
+      related_person_refs: [],
+      concern_tag_refs: ['tag_love'],
+      cited_reading_ids: [],
+      cited_event_memory_refs: [],
+      cited_plan_item_refs: [],
+      space,
+    },
+    { runtime_ai_client: ai },
+  );
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.failure.kind, 'runtime_ai_failed');
+    assert.equal(
+      result.failure.detail,
+      'parse_failure:mirror_kind_mismatch;expected=rijing;received=yuejing',
+    );
+  }
+});
+
 test('generateReading: stale_inputs failure when created_at is older than rijing horizon', async () => {
   const space = spaceWithActiveTag();
   // captured_at = 48h before now → rijing 24h horizon expired.
@@ -359,7 +447,7 @@ test('generateNianJingOutput: refuses with empty phase drivers', () => {
   assert.equal(result.ok, false);
 });
 
-test('generateYueJingOutput: produces cells per active tag X each day', () => {
+test('generateYueJingOutput: produces cells for the scope start date only', () => {
   const scope = rolling30DayMirrorScope();
   const space = spaceWithActiveTag();
   const featureResult = buildAstrologyFeatureSnapshot({
@@ -380,7 +468,8 @@ test('generateYueJingOutput: produces cells per active tag X each day', () => {
   });
   assert.equal(result.ok, true);
   if (result.ok) {
-    assert.ok(result.value.cells.length >= 30);
+    assert.equal(result.value.cells.length, space.concern_tags.length);
+    assert.equal(result.value.cells[0].date, scope.start_date);
   }
 });
 

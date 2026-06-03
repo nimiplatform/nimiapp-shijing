@@ -2,6 +2,7 @@
 
 import type { Reading } from '../../domain/reading.ts';
 import type { MirrorKind } from '../../domain/mirror-scope.ts';
+import type { YueJingMirrorOutput } from '../../domain/mirror-output.ts';
 
 export interface LatestReadingByMirrorKindInput {
   readonly readings: readonly Reading[];
@@ -28,4 +29,10 @@ export function readingsForConcernTag(
   concernTagId: string,
 ): Reading[] {
   return readings.filter((reading) => reading.concern_tag_refs.includes(concernTagId));
+}
+
+export function yuejingReadingStartsOn(reading: Reading | undefined, date: string): boolean {
+  if (!reading || reading.mirror_kind !== 'yuejing') return false;
+  if (reading.output.mirror_kind !== 'yuejing') return false;
+  return (reading.output as YueJingMirrorOutput).range.start_date === date;
 }

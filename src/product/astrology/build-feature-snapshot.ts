@@ -11,11 +11,12 @@
 //   uncertainty_inputs.
 
 import type { ConcernTag } from '../../domain/concern-tag.ts';
-import type { NatalInputs } from '../../domain/person.ts';
+import type { CalculationSex, NatalInputs } from '../../domain/person.ts';
 import type {
   AstrologyFeatureSnapshot,
   CanonicalMirrorWindow,
   CycleMarker,
+  GanzhiPillar,
   KeyWindowFeature,
   NianJingInflectionDriver,
   NianJingPhaseDriver,
@@ -33,10 +34,12 @@ import type { MirrorKind, MirrorScope } from '../../domain/mirror-scope.ts';
 import type { TendencyClass } from '../../domain/mirror-output.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import { isPersonRef, isSelfRef, type SubjectRef } from '../../domain/subject-ref.ts';
+import { classifyBranchPair } from './branch-relations.ts';
 import { canonicalizeNatalInputs } from './canonicalize-natal-inputs.ts';
 import { buildCycleSnapshot } from './build-cycle-snapshot.ts';
 import { buildNatalChartSnapshot } from './build-natal-chart.ts';
 import { computeDayun } from './dayun.ts';
+import { classifyTransitToDayStem, type TransitElementRelation } from './element-relations.ts';
 import { resolveCanonicalMirrorWindow } from './mirror-window.ts';
 import { type StageResult } from './stage-result.ts';
 
@@ -139,52 +142,163 @@ function buildKeyWindows(snapshots: readonly SubjectFeatureSnapshot[]): KeyWindo
   return features;
 }
 
-function classifyDailyTendency(
-  marker: CycleMarker | undefined,
-): TendencyClass {
-  if (!marker) return 'steady';
-  switch (marker.kind) {
+type ConcernDomain = 'love' | 'career' | 'health' | 'wealth' | 'general';
+
+function textHasAny(value: string, tokens: readonly string[]): boolean {
+  return tokens.some((token) => value.includes(token));
+}
+
+function concernDomainFor(tag: ConcernTag): ConcernDomain {
+  const haystack = [
+    tag.id,
+    tag.label,
+    tag.prompt_text,
+    ...tag.parsed_topics,
+  ].join(' ').toLowerCase();
+  if (textHasAny(haystack, ['love', 'relationship', 'romance', 'partner', '姻缘', '婚恋', '感情', '关系'])) {
+    return 'love';
+  }
+  if (textHasAny(haystack, ['career', 'work', 'job', 'office', 'profession', '事业', '工作', '职场', '职业'])) {
+    return 'career';
+  }
+  if (textHasAny(haystack, ['health', 'body', 'sleep', 'wellness', '健康', '身体', '睡眠', '精力'])) {
+    return 'health';
+  }
+  if (textHasAny(haystack, ['wealth', 'money', 'finance', 'income', '财富', '财务', '收入', '金钱'])) {
+    return 'wealth';
+  }
+  return 'general';
+}
+
+function transitionMarkerTendency(kind: CycleMarker['kind'], domain: ConcernDomain): TendencyClass | null {
+  switch (kind) {
     case 'clash':
     case 'annual_transition':
     case 'dayun_boundary':
-    case 'monthly_transition':
       return 'turning';
+    case 'monthly_transition':
+      return domain === 'career' ? 'supportive' : 'turning';
     case 'combination':
-    case 'resource':
-      return 'supportive';
-    case 'output':
-    case 'wealth':
-      return 'supportive';
-    case 'constraint':
     case 'storage':
-      return 'watch';
+      return null;
     default:
-      return 'steady';
+      return null;
+  }
+}
+
+function loveTendency(
+  relation: TransitElementRelation,
+  calculationSex: CalculationSex,
+): TendencyClass {
+  if (relation === 'wealth') return calculationSex === 'female' ? 'watch' : 'supportive';
+  if (relation === 'constraint') return calculationSex === 'male' ? 'watch' : 'supportive';
+  if (relation === 'output') return 'supportive';
+  if (relation === 'resource') return 'steady';
+  return 'steady';
+}
+
+function classifyDomainTendency(input: {
+  readonly tag: ConcernTag;
+  readonly natalDayPillar: GanzhiPillar;
+  readonly transitDayPillar: GanzhiPillar;
+  readonly marker: CycleMarker | undefined;
+  readonly calculationSex: CalculationSex;
+}): { tendency: TendencyClass; driverRefs: readonly string[] } {
+  const domain = concernDomainFor(input.tag);
+  const branchRelation = classifyBranchPair(
+    input.transitDayPillar.branch,
+    input.natalDayPillar.branch,
+  );
+  const relation = classifyTransitToDayStem(
+    input.transitDayPillar.stem,
+    input.natalDayPillar.stem,
+  );
+  const date = input.marker?.start_utc.slice(0, 10) ?? 'daily';
+  const driverRefs = [
+    `domain.${domain}`,
+    `daily_relation.${relation}@${date}`,
+    ...(branchRelation ? [`branch_relation.${branchRelation}@${date}`] : []),
+    ...(input.marker ? [`${input.marker.kind}@${input.marker.start_utc}`] : []),
+  ];
+
+  if (branchRelation === '相冲' || branchRelation === '相害') {
+    return {
+      tendency: domain === 'career' ? 'watch' : 'turning',
+      driverRefs,
+    };
+  }
+  if (branchRelation === '六合' || branchRelation === '三合') {
+    return {
+      tendency: domain === 'health' ? 'steady' : 'supportive',
+      driverRefs,
+    };
+  }
+
+  const transition = input.marker ? transitionMarkerTendency(input.marker.kind, domain) : null;
+  if (transition) return { tendency: transition, driverRefs };
+
+  switch (domain) {
+    case 'love':
+      return { tendency: loveTendency(relation, input.calculationSex), driverRefs };
+    case 'career':
+      if (relation === 'constraint' || relation === 'resource' || relation === 'output') {
+        return { tendency: 'supportive', driverRefs };
+      }
+      if (relation === 'wealth') return { tendency: 'steady', driverRefs };
+      return { tendency: 'steady', driverRefs };
+    case 'wealth':
+      if (relation === 'wealth') return { tendency: 'supportive', driverRefs };
+      if (relation === 'output') return { tendency: 'steady', driverRefs };
+      if (relation === 'resource') return { tendency: 'watch', driverRefs };
+      if (relation === 'constraint') return { tendency: 'turning', driverRefs };
+      return { tendency: 'watch', driverRefs };
+    case 'health':
+      if (relation === 'resource') return { tendency: 'supportive', driverRefs };
+      if (relation === 'output' || relation === 'wealth') return { tendency: 'watch', driverRefs };
+      if (relation === 'constraint') return { tendency: 'blocked', driverRefs };
+      return { tendency: 'steady', driverRefs };
+    case 'general':
+      if (relation === 'resource' || relation === 'output') return { tendency: 'supportive', driverRefs };
+      if (relation === 'constraint') return { tendency: 'watch', driverRefs };
+      if (relation === 'wealth') return { tendency: 'steady', driverRefs };
+      return { tendency: 'steady', driverRefs };
   }
 }
 
 function buildYueJingDrivers(
   snapshots: readonly SubjectFeatureSnapshot[],
+  scope: MirrorScope,
   activeConcernTags: readonly ConcernTag[],
+  calculationSex: CalculationSex,
 ): YueJingTendencyDriver[] {
   if (snapshots.length === 0) return [];
+  if (scope.kind !== 'rolling_30_day') return [];
   const drivers: YueJingTendencyDriver[] = [];
   const self = snapshots[0]!;
+  const natalDayPillar = self.natal_chart.day_pillar;
+  if (!natalDayPillar) return [];
+  const targetDate = scope.start_date;
   const dailyPillars = self.cycle_snapshot.daily_pillars;
   for (const tp of dailyPillars) {
     const date = tp.start_utc.slice(0, 10);
-    // pick the strongest marker overlapping this day
+    if (date !== targetDate) continue;
     const overlapping = self.cycle_snapshot.markers.find(
       (m) => m.start_utc.slice(0, 10) === date,
     );
-    const tendency = classifyDailyTendency(overlapping);
     for (const tag of activeConcernTags) {
+      const classified = classifyDomainTendency({
+        tag,
+        natalDayPillar,
+        transitDayPillar: tp.pillar,
+        marker: overlapping,
+        calculationSex,
+      });
       drivers.push({
         date,
         concern_tag_ref: tag.id,
-        tendency_class: tendency,
-        driver_refs: overlapping
-          ? [`${overlapping.kind}@${overlapping.start_utc}`]
+        tendency_class: classified.tendency,
+        driver_refs: classified.driverRefs.length > 0
+          ? classified.driverRefs
           : [`cycle_baseline@${date}`],
       });
     }
@@ -360,7 +474,12 @@ export function buildAstrologyFeatureSnapshot(
   const keyWindows = buildKeyWindows(allSubjectSnapshots);
   const yuejingDrivers =
     input.mirror_kind === 'yuejing'
-      ? buildYueJingDrivers(allSubjectSnapshots, input.active_concern_tags)
+      ? buildYueJingDrivers(
+          allSubjectSnapshots,
+          input.mirror_scope,
+          input.active_concern_tags,
+          input.space.self_subject.natal_inputs.calculation_sex,
+        )
       : [];
   const { phases: nianjingPhases, inflections: nianjingInflections } =
     input.mirror_kind === 'nianjing'

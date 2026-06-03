@@ -1,7 +1,7 @@
 // SJG-ASTRO-05 — YueJing rolling 30-day mirror screen.
 //
 // V2 layout (per SJG-DSY-01 mockup):
-//   1. Header strip — title + window meta + 「导入到时镜」/「生成 30 日」
+//   1. Header strip — title + window meta + 「导入到时镜」/「生成今日」
 //      actions + 上次生成 X 前.
 //   2. Today hero — a tinted overview card showing today's dominant
 //      tendency and per-concern bars. Only rendered when today is
@@ -33,7 +33,7 @@ import {
 } from '../../domain/concern-tag.ts';
 import type { EventMemory } from '../../domain/event-memory.ts';
 import type { PlanItem } from '../../domain/plan-item.ts';
-import type { ReadingGenerationFailure } from '../../domain/reading.ts';
+import type { Reading, ReadingGenerationFailure } from '../../domain/reading.ts';
 import { generateReadingForStorage } from '../reading/generate-and-store.ts';
 import { inputsSummaryExpired } from '../astrology/inputs-summary-expiry.ts';
 import {
@@ -42,10 +42,13 @@ import {
   newPlanItemId,
   newReadingId,
 } from '../ids/index.ts';
-import { latestReadingByMirrorKind } from '../reading/reading-selectors.ts';
+import {
+  latestReadingByMirrorKind,
+  yuejingReadingStartsOn,
+} from '../reading/reading-selectors.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { MIRROR_KIND_LABELS, TENDENCY_CLASS_LABELS } from '../i18n/copy.ts';
-import { rolling30DayMirrorScopeFromToday } from './mirror-scope-helpers.ts';
+import { rolling30DayMirrorScopeFromDate } from './mirror-scope-helpers.ts';
 import { classifyMirrorTabState } from './mirror-state.ts';
 import {
   deriveConcernTagLabelForDisplay,
@@ -162,23 +165,84 @@ function classifyDay(date: string, today: string): DayKind {
   return 'today';
 }
 
-function groupCellsByDate(
-  cells: readonly YueJingCell[],
-): Map<string, readonly YueJingCell[]> {
-  const m = new Map<string, YueJingCell[]>();
-  for (const cell of cells) {
-    const bucket = m.get(cell.date);
-    if (bucket) bucket.push(cell);
-    else m.set(cell.date, [cell]);
+function yuejingReadings(readings: readonly Reading[]): Reading[] {
+  return readings.filter((reading) => reading.mirror_kind === 'yuejing');
+}
+
+function latestYuejingReadingForDate(
+  readings: readonly Reading[],
+  date: string,
+): Reading | undefined {
+  return yuejingReadings(readings)
+    .filter((reading) => yuejingReadingStartsOn(reading, date))
+    .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
+}
+
+function yuejingReadingHasDomainizedDrivers(reading: Reading): boolean {
+  if (reading.output.mirror_kind !== 'yuejing') return false;
+  const output = reading.output as YueJingMirrorOutput;
+  for (const cell of output.cells) {
+    const driver = reading.inputs_summary.feature_snapshot.yuejing_tendency_drivers.find(
+      (candidate) =>
+        candidate.date === cell.date &&
+        candidate.concern_tag_ref === cell.concern_tag_ref,
+    );
+    if (!driver) return false;
+    if (!driver.driver_refs.some((ref) => ref.startsWith('domain.'))) return false;
+    if (!driver.driver_refs.some((ref) => ref.startsWith('daily_relation.'))) return false;
   }
-  return m;
+  return true;
+}
+
+function aggregateYuejingCellsByDate(input: {
+  readonly readings: readonly Reading[];
+  readonly dates: readonly string[];
+  readonly activeTagIdSet: ReadonlySet<string>;
+}): Map<string, readonly YueJingCell[]> {
+  const dateSet = new Set(input.dates);
+  const latestByKey = new Map<string, { readonly createdAtMs: number; readonly cell: YueJingCell }>();
+  for (const reading of yuejingReadings(input.readings)) {
+    if (reading.output.mirror_kind !== 'yuejing') continue;
+    if (!yuejingReadingHasDomainizedDrivers(reading)) continue;
+    const createdAtMs = Date.parse(reading.created_at);
+    const output = reading.output as YueJingMirrorOutput;
+    for (const cell of output.cells) {
+      if (!dateSet.has(cell.date)) continue;
+      if (!input.activeTagIdSet.has(cell.concern_tag_ref)) continue;
+      const key = `${cell.date}::${cell.concern_tag_ref}`;
+      const current = latestByKey.get(key);
+      if (!current || createdAtMs >= current.createdAtMs) {
+        latestByKey.set(key, { createdAtMs, cell });
+      }
+    }
+  }
+  const grouped = new Map<string, YueJingCell[]>();
+  for (const date of input.dates) grouped.set(date, []);
+  for (const { cell } of latestByKey.values()) {
+    grouped.get(cell.date)?.push(cell);
+  }
+  return grouped;
+}
+
+function nextMissingYuejingDate(input: {
+  readonly dates: readonly string[];
+  readonly cellsByDate: ReadonlyMap<string, readonly YueJingCell[]>;
+  readonly activeTagIds: readonly string[];
+}): string | null {
+  if (input.activeTagIds.length === 0) return null;
+  for (const date of input.dates) {
+    const existing = new Set((input.cellsByDate.get(date) ?? []).map((cell) => cell.concern_tag_ref));
+    if (input.activeTagIds.some((tagId) => !existing.has(tagId))) return date;
+  }
+  return null;
 }
 
 // ===== Top-level component ==========================================
 
 export function YueJingTab() {
-  const { state, dispatch, runtime_ai_client } = useShijingStore();
+  const { state, replace_snapshot, runtime_ai_client } = useShijingStore();
   const [loading, setLoading] = useState(false);
+  const [generatingDate, setGeneratingDate] = useState<string | null>(null);
   const [failure, setFailure] = useState<ReadingGenerationFailure | null>(null);
   const [filterTagId, setFilterTagId] = useState<string | null>(null);
   // Lifted so the day-detail panel can render at the YueJingTab level
@@ -186,7 +250,25 @@ export function YueJingTab() {
   // the calendar grid as an inline row-spanning element.
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  const reading = latestReadingByMirrorKind({
+  const today = todayLocalDate();
+  const activeTags = useMemo(
+    () => state.snapshot.concern_tags.filter((t) => t.status === 'active'),
+    [state.snapshot.concern_tags],
+  );
+  const activeTagIds = useMemo(() => activeTags.map((t) => t.id), [activeTags]);
+  const activeTagIdSet = useMemo(() => new Set(activeTagIds), [activeTagIds]);
+
+  const placeholderDates = useMemo(() => {
+    const dates: string[] = [];
+    const start = new Date(`${today}T00:00:00Z`).getTime();
+    for (let i = 0; i < 30; i++) {
+      dates.push(new Date(start + i * 86_400_000).toISOString().slice(0, 10));
+    }
+    return dates;
+  }, [today]);
+
+  const reading = latestYuejingReadingForDate(state.snapshot.readings, today);
+  const latestReading = latestReadingByMirrorKind({
     readings: state.snapshot.readings,
     mirror_kind: 'yuejing',
   });
@@ -202,39 +284,78 @@ export function YueJingTab() {
     [reading, failure, loading, stale],
   );
 
-  const activeTags = useMemo(
-    () => state.snapshot.concern_tags.filter((t) => t.status === 'active'),
-    [state.snapshot.concern_tags],
+  const cellsByDate = useMemo(
+    () =>
+      aggregateYuejingCellsByDate({
+        readings: state.snapshot.readings,
+        dates: placeholderDates,
+        activeTagIdSet,
+      }),
+    [state.snapshot.readings, placeholderDates, activeTagIdSet],
   );
-  const activeTagIds = useMemo(() => activeTags.map((t) => t.id), [activeTags]);
+  const nextGenerationDate = useMemo(
+    () => nextMissingYuejingDate({ dates: placeholderDates, cellsByDate, activeTagIds }),
+    [placeholderDates, cellsByDate, activeTagIds],
+  );
 
-  async function handleGenerate() {
+  async function handleGenerate(targetDate: string = nextGenerationDate ?? today) {
+    if (loading) return;
+    const targetTagIds = [...activeTagIds];
+    const targetTagIdSet = new Set(targetTagIds);
+    let currentSpace = state.snapshot;
+    let currentDate: string | null = targetDate;
+    let guard = 0;
+
     setLoading(true);
+    setGeneratingDate(targetDate);
     setFailure(null);
-    const outcome = await generateReadingForStorage({
-      id: newReadingId(),
-      created_at: nowIso(),
-      mirror_kind: 'yuejing',
-      mirror_scope: rolling30DayMirrorScopeFromToday(),
-      related_person_refs: [],
-      concern_tag_refs: activeTagIds,
-      space: state.snapshot,
-      ...(runtime_ai_client ? { deps: { runtime_ai_client } } : {}),
-    });
-    setLoading(false);
-    if (outcome.ok) {
-      dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
-    } else {
-      setFailure(outcome.failure);
+
+    try {
+      while (currentDate && guard < placeholderDates.length) {
+        guard += 1;
+        setGeneratingDate(currentDate);
+        const outcome = await generateReadingForStorage({
+          id: newReadingId(),
+          created_at: nowIso(),
+          mirror_kind: 'yuejing',
+          mirror_scope: rolling30DayMirrorScopeFromDate(currentDate),
+          related_person_refs: [],
+          concern_tag_refs: targetTagIds,
+          space: currentSpace,
+          deps: { runtime_ai_client },
+        });
+        if (!outcome.ok) {
+          setFailure(outcome.failure);
+          return;
+        }
+
+        const persistence = await replace_snapshot(outcome.next_space);
+        if (persistence.kind !== 'saved' && persistence.kind !== 'idle') return;
+
+        currentSpace = outcome.next_space;
+        const nextCellsByDate = aggregateYuejingCellsByDate({
+          readings: currentSpace.readings,
+          dates: placeholderDates,
+          activeTagIdSet: targetTagIdSet,
+        });
+        currentDate = nextMissingYuejingDate({
+          dates: placeholderDates,
+          cellsByDate: nextCellsByDate,
+          activeTagIds: targetTagIds,
+        });
+      }
+    } finally {
+      setGeneratingDate(null);
+      setLoading(false);
     }
   }
 
   // ----- Auto-generation -------------------------------------------
   // Once the user has filled self natal inputs and has
   // at least one active concern, the YueJing data should simply *be
-  // there* — the user shouldn't have to press 生成 30 日 manually, nor
-  // re-press it every time they revisit the tab. This effect generates
-  // the rolling-30-day reading on demand when:
+  // there* — the user shouldn't have to press generation manually, nor
+  // re-press it for each day. This effect generates missing YueJing days
+  // in order when:
   //   - self natal inputs are present,
   //   - there's ≥1 active concern,
   //   - there's no current fresh reading (none yet, or the existing one
@@ -247,73 +368,46 @@ export function YueJingTab() {
   // available and bypasses this guard.
   const selfNatalReady =
     state.snapshot.self_subject.natal_inputs.birth_datetime_utc.trim().length > 0;
-  const autoGenSignature = `${state.snapshot.self_subject.natal_inputs.birth_datetime_utc}|${activeTagIds.join(',')}`;
+  const autoGenSignature = `${today}|${state.snapshot.self_subject.natal_inputs.birth_datetime_utc}|${activeTagIds.join(',')}`;
   const autoGenAttemptRef = useRef<string | null>(null);
   useEffect(() => {
     if (loading) return;
     if (!selfNatalReady) return;
     if (activeTagIds.length === 0) return;
-    if (reading && !stale) return;
+    if (nextGenerationDate === null && reading && !stale) return;
     if (autoGenAttemptRef.current === autoGenSignature) return;
     autoGenAttemptRef.current = autoGenSignature;
-    void handleGenerate();
-  }, [loading, selfNatalReady, activeTagIds, reading, stale, autoGenSignature]);
+    void handleGenerate(nextGenerationDate ?? today);
+  }, [loading, selfNatalReady, activeTagIds, reading, stale, autoGenSignature, nextGenerationDate]);
 
-  const output = reading ? (reading.output as YueJingMirrorOutput) : null;
-  const isReady = tabState.kind === 'ready' && output !== null;
-  const today = todayLocalDate();
+  const output = latestReading?.output.mirror_kind === 'yuejing'
+    ? (latestReading.output as YueJingMirrorOutput)
+    : null;
+  const generatedCellCount = useMemo(
+    () => Array.from(cellsByDate.values()).reduce((sum, cells) => sum + cells.length, 0),
+    [cellsByDate],
+  );
+  const isReady = generatedCellCount > 0;
 
-  // The calendar always renders, even before the first reading is
-  // generated. When `output` is null we build a 30-day skeleton window
-  // starting today so the user sees the date grid (weekday labels,
-  // today badge, month-boundary markers) immediately. Tendency colors
-  // and per-concern projections fill in only after generation —
-  // EventMemory / PlanItem recording on individual day cells works
-  // either way.
-  const placeholderDates = useMemo(() => {
-    const dates: string[] = [];
-    const start = new Date(`${today}T00:00:00Z`).getTime();
-    for (let i = 0; i < 30; i++) {
-      dates.push(new Date(start + i * 86_400_000).toISOString().slice(0, 10));
-    }
-    return dates;
-  }, [today]);
-
-  // Cell projection groups. We filter `output.cells` to only the
-  // currently-active tag IDs — archiving a concern in 「✎ 编辑关注」
-  // must immediately drop its cells from the calendar (and from the
-  // hero's per-day projection list) without waiting for a regenerate.
-  // A newly-added tag has no cells until the next 生成 30 日; the hero
-  // detects that and renders a "待生成" placeholder for it.
-  const activeTagIdSet = useMemo(() => new Set(activeTagIds), [activeTagIds]);
-  const cellsByDate = useMemo(() => {
-    if (!output) {
-      const m = new Map<string, readonly YueJingCell[]>();
-      for (const d of placeholderDates) m.set(d, []);
-      return m;
-    }
-    const live = output.cells.filter((c) => activeTagIdSet.has(c.concern_tag_ref));
-    return groupCellsByDate(live);
-  }, [output, placeholderDates, activeTagIdSet]);
 
   const cellsForToday = cellsByDate.get(today) ?? [];
 
   const visibleByDate = useMemo(() => {
-    if (!output || !filterTagId) return cellsByDate;
+    if (!filterTagId) return cellsByDate;
     const filtered = new Map<string, readonly YueJingCell[]>();
     for (const [date, entries] of cellsByDate) {
       const kept = entries.filter((e) => e.concern_tag_ref === filterTagId);
       if (kept.length > 0) filtered.set(date, kept);
     }
     return filtered;
-  }, [cellsByDate, filterTagId, output]);
+  }, [cellsByDate, filterTagId]);
 
   // Tag-drift detection — when the user's active-tag set no longer
   // matches the one the current reading was generated against, we
   // show a hint suggesting a regenerate. Adds (active tag with no
   // cells) and removes (filtered out above) both trip this.
   const tagDriftKind = useMemo<'none' | 'added' | 'removed' | 'both'>(() => {
-    if (!output || !reading) return 'none';
+    if (!reading) return 'none';
     const readingSet = new Set(reading.concern_tag_refs);
     const added = activeTagIds.some((id) => !readingSet.has(id));
     const removed = reading.concern_tag_refs.some((id) => !activeTagIdSet.has(id));
@@ -321,7 +415,7 @@ export function YueJingTab() {
     if (added) return 'added';
     if (removed) return 'removed';
     return 'none';
-  }, [output, reading, activeTagIds, activeTagIdSet]);
+  }, [reading, activeTagIds, activeTagIdSet]);
 
   return (
     <section
@@ -331,10 +425,13 @@ export function YueJingTab() {
     >
       <YueJingHeaderStrip
         generating={loading}
-        canGenerate={activeTagIds.length > 0}
-        readingId={reading?.id ?? null}
-        readingCreatedAt={reading?.created_at ?? null}
-        onGenerate={handleGenerate}
+        canGenerate={activeTagIds.length > 0 && nextGenerationDate !== null}
+        generateLabel={nextGenerationDate === null ? '已完成' : nextGenerationDate === today ? '生成 30 日' : '继续生成'}
+        readingId={latestReading?.id ?? null}
+        readingCreatedAt={latestReading?.created_at ?? null}
+        onGenerate={() => {
+          void handleGenerate(nextGenerationDate ?? today);
+        }}
       />
 
       {/* Inline status row above the calendar — a thin hint banner
@@ -350,26 +447,28 @@ export function YueJingTab() {
         </p>
       ) : null}
       {tabState.kind === 'loading' ? (
-        <p role="status" className="shijing-yuejing__notice">正在推算 30 日…</p>
+        <p role="status" className="shijing-yuejing__notice">
+          正在推算 {generatingDate ? shortMonthDay(generatingDate) : '月镜'}…
+        </p>
       ) : null}
       {tabState.kind === 'empty' && selfNatalReady && activeTagIds.length > 0 && !loading ? (
         <p role="status" className="shijing-yuejing__notice">
-          正在准备 30 日倾向…若长时间未出现,可点击右上「生成 30 日」重试。
+          正在准备月镜倾向…若长时间未出现,可点击右上「生成 30 日」重试。
         </p>
       ) : null}
       {tabState.kind === 'failure' ? <FailureBanner failure={tabState.failure} /> : null}
-      {isReady && tabState.stale ? (
+      {isReady && tabState.kind === 'ready' && tabState.stale ? (
         <p role="alert" className="shijing-yuejing__stale">
-          当前 30 日解读已超过 7 天,建议重新生成。
+          当前月镜解读已超过 7 天,建议重新生成。
         </p>
       ) : null}
       {isReady && tagDriftKind !== 'none' ? (
         <p role="status" className="shijing-yuejing__notice">
           {tagDriftKind === 'added'
-            ? '关注集已新增,新关注尚未推算。点击右上「生成 30 日」用当前关注集重新生成。'
+            ? '关注集已新增,新关注尚未推算。点击右上「生成今日」用当前关注集重新生成。'
             : tagDriftKind === 'removed'
-              ? '已移除部分关注,日历已隐藏对应数据。若想用当前关注集重算,点击右上「生成 30 日」。'
-              : '关注集已变动,日历已按当前激活关注过滤。点击右上「生成 30 日」用新关注集重新推算。'}
+              ? '已移除部分关注,日历已隐藏对应数据。若想用当前关注集重算,点击右上「生成今日」。'
+              : '关注集已变动,日历已按当前激活关注过滤。点击右上「生成今日」用新关注集重新推算。'}
         </p>
       ) : null}
 
@@ -401,11 +500,11 @@ export function YueJingTab() {
       />
 
       {/* Details — only when a reading exists (has summary + cite). */}
-      {isReady && reading && output ? (
+      {isReady && latestReading && output ? (
         <details className="shijing-yuejing__details">
           <summary>30 日解读摘要与生成依据</summary>
           <p className="shijing-yuejing__summary">{output.summary}</p>
-          <CitationDrawer reading={reading} />
+          <CitationDrawer reading={latestReading} />
         </details>
       ) : null}
 
@@ -432,6 +531,7 @@ export function YueJingTab() {
 interface YueJingHeaderStripProps {
   readonly generating: boolean;
   readonly canGenerate: boolean;
+  readonly generateLabel: string;
   readonly readingId: string | null;
   readonly readingCreatedAt: string | null;
   readonly onGenerate: () => void;
@@ -453,7 +553,7 @@ function YueJingHeaderStrip(props: YueJingHeaderStripProps) {
             disabled={props.generating || !props.canGenerate}
             onClick={props.onGenerate}
           >
-            {props.generating ? '生成中…' : '生成 30 日'}
+            {props.generating ? '生成中…' : props.generateLabel}
           </button>
         </div>
         {ago ? <small className="shijing-yuejing__ago">上次生成 {ago}</small> : null}
@@ -495,7 +595,7 @@ function YueJingTodayHero(props: {
           // was generated, so the algorithm has no projection for it
           // yet. Render a muted "待生成" placeholder chip instead of
           // falling back to a misleading 'steady' tint; the row reads
-          // as "data pending" until the next 生成 30 日.
+          // as "data pending" until the next 生成今日.
           if (!cell) {
             return (
               <li key={tag.id} data-pending="true">
@@ -547,8 +647,8 @@ function YueJingFilterRow(props: {
   const [editorOpen, setEditorOpen] = useState(false);
   return (
     <div className="shijing-yuejing__filter-row" role="toolbar" aria-label="按关注筛选 / 倾向图例">
-      <fieldset className="shijing-yuejing__filter">
-        <legend>关注</legend>
+      <div className="shijing-yuejing__filter" role="group" aria-label="关注">
+        <span className="shijing-yuejing__filter-label" aria-hidden="true">关注</span>
         <FilterPill
           label="全部"
           selected={props.filterTagId === null}
@@ -576,7 +676,7 @@ function YueJingFilterRow(props: {
             <YueJingConcernEditorPopover onClose={() => setEditorOpen(false)} />
           ) : null}
         </span>
-      </fieldset>
+      </div>
       <ul className="shijing-yuejing__legend" aria-label="倾向图例">
         {(Object.entries(TENDENCY_CLASS_LABELS) as ReadonlyArray<[TendencyClass, string]>).map(
           ([cls, label]) => (
@@ -1382,7 +1482,7 @@ function YueJingDayPanel(props: {
             </ul>
           ) : (
             <p className="shijing-yuejing__panel-empty">
-              本日还没有推算倾向。点击右上「生成 30 日」开始。
+              本日还没有推算倾向。点击右上「生成今日」开始。
             </p>
           )}
         </section>

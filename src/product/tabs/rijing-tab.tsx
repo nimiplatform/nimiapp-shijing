@@ -106,7 +106,7 @@ export function RiJingTab(props: RiJingTabProps) {
       related_person_refs: [],
       concern_tag_refs: activeTagIds,
       space: state.snapshot,
-      ...(runtime_ai_client ? { deps: { runtime_ai_client } } : {}),
+      deps: { runtime_ai_client },
     });
     setLoading(false);
     if (outcome.ok) {

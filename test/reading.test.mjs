@@ -10,6 +10,7 @@ import {
   MIRROR_SCOPE_KINDS,
 } from '../src/domain/mirror-scope.ts';
 import { validateReading } from '../src/contracts/reading-validator.ts';
+import { yuejingReadingStartsOn } from '../src/product/reading/reading-selectors.ts';
 import {
   consultationMirrorScope,
   dailyMirrorScope,
@@ -40,6 +41,48 @@ test('rijing/daily reading is valid', () => {
 test('yuejing/rolling_30_day reading is valid', () => {
   const result = validateReading(validReading({ mirror_kind: 'yuejing' }));
   assert.equal(result.ok, true, JSON.stringify(result));
+});
+
+test('yuejingReadingStartsOn keys regeneration to the rolling window start date', () => {
+  const scope = rolling30DayMirrorScope({
+    start_date: '2026-05-25',
+    end_date: '2026-06-23',
+  });
+  const reading = validReading({
+    mirror_kind: 'yuejing',
+    mirror_scope: scope,
+    output: validYuejingOutput(scope),
+    inputs_summary: validInputsSummary({ mirrorKind: 'yuejing', scope }),
+  });
+  assert.equal(yuejingReadingStartsOn(reading, '2026-05-25'), true);
+  assert.equal(yuejingReadingStartsOn(reading, '2026-05-26'), false);
+});
+
+test('rejects yuejing cells outside the scope start date', () => {
+  const scope = rolling30DayMirrorScope({
+    start_date: '2026-05-25',
+    end_date: '2026-06-23',
+  });
+  const reading = validReading({
+    mirror_kind: 'yuejing',
+    mirror_scope: scope,
+    output: validYuejingOutput(scope, {
+      cells: [
+        {
+          date: '2026-05-26',
+          concern_tag_ref: 'tag_love',
+          tendency_class: 'steady',
+          summary: 'Wrong date.',
+        },
+      ],
+    }),
+    inputs_summary: validInputsSummary({ mirrorKind: 'yuejing', scope }),
+  });
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'reading_yuejing_cell_date_must_match_scope_start_date');
+  }
 });
 
 test('nianjing/long_horizon reading is valid', () => {

@@ -49,6 +49,7 @@ export type ReadingValidationError =
   | { code: 'reading_output_cited_plan_item_must_be_in_reading_citations'; ref: string }
   | { code: 'reading_output_uncited_memory_influence' }
   | { code: 'reading_output_uncited_plan_influence' }
+  | { code: 'reading_yuejing_cell_date_must_match_scope_start_date'; index: number; expected: string; received: string }
   | { code: 'reading_shijing_cited_reading_ids_must_match_scope_source_reading_ids' }
   | { code: 'reading_non_shijing_cited_reading_ids_must_be_empty' }
   | { code: 'reading_uncertainty_confidence_invalid'; received: unknown }
@@ -297,6 +298,26 @@ export function validateReading(reading: Reading): ReadingValidationResult {
   const outputCheck = validateMirrorOutput(reading.output);
   if (!outputCheck.ok) {
     return { ok: false, error: { code: 'reading_output_invalid', reason: outputCheck.error.code } };
+  }
+  if (
+    reading.mirror_kind === 'yuejing' &&
+    reading.mirror_scope.kind === 'rolling_30_day' &&
+    reading.output.mirror_kind === 'yuejing'
+  ) {
+    for (let i = 0; i < reading.output.cells.length; i += 1) {
+      const cell = reading.output.cells[i]!;
+      if (cell.date !== reading.mirror_scope.start_date) {
+        return {
+          ok: false,
+          error: {
+            code: 'reading_yuejing_cell_date_must_match_scope_start_date',
+            index: i,
+            expected: reading.mirror_scope.start_date,
+            received: cell.date,
+          },
+        };
+      }
+    }
   }
   const readingMemoryRefs = new Set(reading.cited_event_memory_refs);
   const readingPlanRefs = new Set(reading.cited_plan_item_refs);
