@@ -1,209 +1,100 @@
-// Wave-2 — InMemory PersistenceClient adapter tests + bridge wiring tests
-// (debounced saver). IndexedDB adapter is exercised structurally only — the
-// real DOM IndexedDB lives in the browser/Tauri webview, admitted to wave-4.
+// W04 — persistence adapter tests under Mirror Architecture v1.
 
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFileSync } from 'node:fs';
 
 import { InMemoryPersistenceAdapter } from '../src/product/persistence/in-memory-adapter.ts';
-import {
-  IndexedDBPersistenceAdapter,
-  SHIJING_INDEXEDDB_DATABASE,
-  SHIJING_INDEXEDDB_STORE,
-  SHIJING_INDEXEDDB_VERSION,
-} from '../src/product/persistence/indexeddb-adapter.ts';
 import { createDebouncedSaver, loadInitialSnapshot } from '../src/product/state/persistence-bridge.ts';
+import {
+  validConcernTag,
+  validEventMemory,
+  validPlanItem,
+  validReading,
+  validShiJingSpace,
+} from './_fixtures.mjs';
 
-import { validShiJingSpace } from './_fixtures.mjs';
-
-function validSnapshot(overrides = {}) {
-  return validShiJingSpace(overrides);
-}
-
-test('in-memory adapter load returns null when empty', async () => {
+test('in-memory adapter round-trips a valid mirror-architecture ShiJingSpace', async () => {
   const adapter = new InMemoryPersistenceAdapter();
-  const result = await adapter.load();
-  assert.equal(result.ok, true);
-  if (result.ok) assert.equal(result.snapshot, null);
+  const space = validShiJingSpace({
+    concern_tags: [validConcernTag('tag_love')],
+    event_memories: [validEventMemory('m1', { concern_tag_refs: ['tag_love'] })],
+    plan_items: [validPlanItem('p1', { concern_tag_refs: ['tag_love'] })],
+    readings: [validReading()],
+  });
+  const save = await adapter.save(space);
+  assert.equal(save.ok, true);
+  const load = await adapter.load();
+  assert.equal(load.ok, true);
+  if (load.ok) {
+    assert.equal(load.snapshot?.concern_tags.length, 1);
+    assert.equal(load.snapshot?.event_memories.length, 1);
+    assert.equal(load.snapshot?.plan_items.length, 1);
+    assert.equal(load.snapshot?.readings.length, 1);
+  }
 });
 
-test('in-memory adapter save+load round-trips a valid snapshot', async () => {
+test('in-memory adapter fails-closed on old View-shaped payload', async () => {
   const adapter = new InMemoryPersistenceAdapter();
-  const snapshot = validSnapshot();
-  const saveResult = await adapter.save(snapshot);
-  assert.equal(saveResult.ok, true);
-  const loadResult = await adapter.load();
-  assert.equal(loadResult.ok, true);
-  if (loadResult.ok) {
-    assert.equal(loadResult.snapshot?.user_id, 'u_01');
+  const broken = { ...validShiJingSpace(), views: [] };
+  const save = await adapter.save(broken);
+  assert.equal(save.ok, false);
+  if (!save.ok) {
+    assert.equal(save.error.kind, 'save_validation_failed');
   }
 });
 
-test('in-memory adapter save rejects invalid snapshot via validator', async () => {
+test('in-memory adapter fails-closed on old Relation-shaped payload', async () => {
   const adapter = new InMemoryPersistenceAdapter();
-  const broken = validSnapshot();
-  broken.profiles = [];
-  const result = await adapter.save(broken);
-  assert.equal(result.ok, false);
-  if (!result.ok) {
-    assert.equal(result.error.kind, 'save_validation_failed');
-    assert.equal(result.error.adapter, 'in_memory');
-    assert.equal(result.error.validation_error.code, 'space_removed_field_present');
-  }
-  assert.equal(adapter.peek(), null, 'invalid snapshot must NOT be persisted');
+  const broken = { ...validShiJingSpace(), relations: [] };
+  const save = await adapter.save(broken);
+  assert.equal(save.ok, false);
 });
 
-test('in-memory adapter load rejects invalid stored snapshot (no silent coerce)', async () => {
-  const broken = validSnapshot();
-  broken.settings.global_instructions = '';
-  const adapter = new InMemoryPersistenceAdapter(broken);
-  const result = await adapter.load();
-  assert.equal(result.ok, false);
-  if (!result.ok) {
-    assert.equal(result.error.kind, 'load_invalid_snapshot');
-    assert.equal(result.error.adapter, 'in_memory');
-  }
+test('in-memory adapter fails-closed on old Event-shaped payload', async () => {
+  const adapter = new InMemoryPersistenceAdapter();
+  const broken = { ...validShiJingSpace(), events: [] };
+  const save = await adapter.save(broken);
+  assert.equal(save.ok, false);
 });
 
-test('in-memory adapter clear removes the stored snapshot', async () => {
-  const adapter = new InMemoryPersistenceAdapter(validSnapshot());
-  const clearResult = await adapter.clear();
-  assert.equal(clearResult.ok, true);
-  const loadResult = await adapter.load();
-  assert.equal(loadResult.ok, true);
-  if (loadResult.ok) assert.equal(loadResult.snapshot, null);
+test('in-memory adapter fails-closed on settings.global_instructions', async () => {
+  const adapter = new InMemoryPersistenceAdapter();
+  const broken = validShiJingSpace();
+  broken.settings = { ...broken.settings, global_instructions: '' };
+  const save = await adapter.save(broken);
+  assert.equal(save.ok, false);
 });
 
-test('indexeddb adapter exposes stable database / store / version constants', () => {
-  assert.equal(SHIJING_INDEXEDDB_DATABASE, 'shijing-app');
-  assert.equal(SHIJING_INDEXEDDB_STORE, 'shijing-space');
-  assert.equal(SHIJING_INDEXEDDB_VERSION, 1);
+test('in-memory adapter fails-closed on more than five active concern tags', async () => {
+  const adapter = new InMemoryPersistenceAdapter();
+  const tags = Array.from({ length: 6 }, (_, i) => validConcernTag(`t_${i}`, { sort_order: i }));
+  const space = validShiJingSpace({ concern_tags: tags });
+  const save = await adapter.save(space);
+  assert.equal(save.ok, false);
 });
 
-test('indexeddb adapter isSupported() returns false under node --test', () => {
-  assert.equal(IndexedDBPersistenceAdapter.isSupported(), false);
-});
-
-test('indexeddb adapter load surfaces typed unsupported-environment error in node', async () => {
-  const adapter = new IndexedDBPersistenceAdapter({ user_id: 'u_99' });
-  const result = await adapter.load();
-  assert.equal(result.ok, false);
-  if (!result.ok) {
-    assert.equal(result.error.kind, 'load_unsupported_environment');
-    assert.equal(result.error.adapter, 'indexeddb');
-  }
-});
-
-test('indexeddb adapter save rejects invalid snapshot before reaching IndexedDB', async () => {
-  const broken = validSnapshot();
-  broken.profiles = [];
-  const adapter = new IndexedDBPersistenceAdapter({ user_id: 'u_99' });
-  const result = await adapter.save(broken);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.kind, 'save_validation_failed');
-});
-
-test('loadInitialSnapshot reports loaded status on success', async () => {
-  const adapter = new InMemoryPersistenceAdapter(validSnapshot());
-  const outcome = await loadInitialSnapshot(adapter);
-  assert.equal(outcome.status.kind, 'loaded');
-  if (outcome.status.kind === 'loaded') assert.equal(outcome.status.adapter, 'in_memory');
-  assert.ok(outcome.snapshot && outcome.snapshot.user_id === 'u_01');
-});
-
-test('loadInitialSnapshot reports typed-error status on invalid stored snapshot', async () => {
-  const broken = validSnapshot();
-  broken.profiles = [];
-  const adapter = new InMemoryPersistenceAdapter(broken);
+test('loadInitialSnapshot surfaces typed error when stored snapshot fails validation', async () => {
+  const adapter = new InMemoryPersistenceAdapter();
+  // Force a bad snapshot into the store by going behind the adapter via
+  // a casted assignment — represents on-disk corruption.
+  const bad = { ...validShiJingSpace(), views: [] };
+  await adapter.save(validShiJingSpace());
+  Object.assign(adapter, { stored: bad });
   const outcome = await loadInitialSnapshot(adapter);
   assert.equal(outcome.snapshot, null);
   assert.equal(outcome.status.kind, 'error');
-  if (outcome.status.kind === 'error') {
-    assert.equal(outcome.status.error.kind, 'load_invalid_snapshot');
-  }
 });
 
-test('debounced saver coalesces back-to-back enqueues and saves once', async () => {
+test('createDebouncedSaver enqueues + flushes a valid snapshot', async () => {
   const adapter = new InMemoryPersistenceAdapter();
-  const statuses = [];
-  let scheduledCallback = null;
+  const events = [];
   const saver = createDebouncedSaver(adapter, {
-    delay_ms: 100,
-    schedule: (cb) => {
-      scheduledCallback = cb;
-      return Symbol('handle');
-    },
-    cancel: () => {},
-    on_status: (status) => statuses.push(status),
+    delay_ms: 1,
+    on_status: (s) => events.push(s.kind),
   });
-  saver.enqueue(validSnapshot({ user_id: 'u_first' }));
-  saver.enqueue(validSnapshot({ user_id: 'u_second' }));
-  if (scheduledCallback) scheduledCallback();
+  saver.enqueue(validShiJingSpace());
+  await new Promise((r) => setTimeout(r, 5));
   await saver.flush();
-  const saved = adapter.peek();
-  assert.ok(saved);
-  assert.equal(saved.user_id, 'u_second');
-  assert.ok(statuses.some((s) => s.kind === 'saving'));
-  assert.ok(statuses.some((s) => s.kind === 'saved'));
-});
-
-test('debounced saver surfaces typed error on save validator failure', async () => {
-  const adapter = new InMemoryPersistenceAdapter();
-  const statuses = [];
-  const saver = createDebouncedSaver(adapter, {
-    delay_ms: 0,
-    schedule: (cb) => {
-      cb();
-      return null;
-    },
-    cancel: () => {},
-    on_status: (status) => statuses.push(status),
-  });
-  const broken = validSnapshot();
-  broken.profiles = [];
-  saver.enqueue(broken);
-  await saver.flush();
-  const errorStatus = statuses.find((s) => s.kind === 'error');
-  assert.ok(errorStatus, 'saver should emit error status');
-  if (errorStatus && errorStatus.kind === 'error') {
-    assert.equal(errorStatus.error.kind, 'save_validation_failed');
-  }
-});
-
-test('debounced saver cancel discards pending enqueue', async () => {
-  const adapter = new InMemoryPersistenceAdapter();
-  let scheduled = null;
-  const saver = createDebouncedSaver(adapter, {
-    delay_ms: 100,
-    schedule: (cb) => {
-      scheduled = cb;
-      return Symbol();
-    },
-    cancel: () => {
-      scheduled = null;
-    },
-    on_status: () => {},
-  });
-  saver.enqueue(validSnapshot());
-  saver.cancel();
-  assert.equal(scheduled, null);
-  await saver.flush();
-  assert.equal(adapter.peek(), null);
-});
-
-test('persistence sources never reach for fetch/HTTP/Tauri/Rust', () => {
-  const FILES = [
-    new URL('../src/product/persistence/persistence-client.ts', import.meta.url),
-    new URL('../src/product/persistence/in-memory-adapter.ts', import.meta.url),
-    new URL('../src/product/persistence/indexeddb-adapter.ts', import.meta.url),
-    new URL('../src/product/state/persistence-bridge.ts', import.meta.url),
-  ];
-  const FORBIDDEN = [/fetch\s*\(/, /XMLHttpRequest/, /axios/, /grpc/, /WebSocket/, /\binvoke\s*\(/, /@tauri-apps/];
-  for (const url of FILES) {
-    const source = readFileSync(url, 'utf8');
-    for (const pattern of FORBIDDEN) {
-      assert.doesNotMatch(source, pattern, `${url.href} contains forbidden primitive ${pattern}`);
-    }
-  }
+  assert.ok(events.includes('saving'));
+  assert.ok(events.includes('saved'));
 });

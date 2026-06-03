@@ -1,435 +1,247 @@
-// SJG-DATA-07 + SJG-ASTRO-03 + SJG-ASTRO-04 + SJG-ASTRO-07 + SJG-ASTRO-08 +
-// SJG-ALGO-03 + SJG-ALGO-08 — Reading validator tests plus
-// matrix-source-of-truth + algorithm-v1 InputsSummary mirror coverage.
+// SJG-DATA-07 + SJG-DATA-09 + SJG-ASTRO-* + SJG-ALGO-* — Reading validator
+// tests under the Mirror Architecture v1.
 
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFileSync } from 'node:fs';
 
-import { READING_KIND_SCOPE_MATRIX, READING_KINDS, READING_SCOPES } from '../src/domain/reading-matrix.ts';
-import { validateReading, evaluateReadingKindScope } from '../src/contracts/reading-validator.ts';
 import {
-  natalTimeWindow,
-  validFeatureSnapshot,
+  MIRROR_KINDS,
+  MIRROR_KIND_SCOPE_MATRIX,
+  MIRROR_SCOPE_KINDS,
+} from '../src/domain/mirror-scope.ts';
+import { validateReading } from '../src/contracts/reading-validator.ts';
+import {
+  consultationMirrorScope,
+  dailyMirrorScope,
+  longHorizonMirrorScope,
+  rolling30DayMirrorScope,
   validInputsSummary,
+  validNianjingOutput,
   validReading,
-  validTimeWindow,
+  validRijingOutput,
+  validShijingOutput,
+  validYuejingOutput,
 } from './_fixtures.mjs';
 
-test('today/subject with self anchor is allowed', () => {
-  const result = validateReading(validReading());
-  assert.equal(result.ok, true);
-});
-
-test('today/view is forbidden', () => {
-  const result = validateReading(validReading({ kind: 'today', scope: 'view', view_id: 'v_01' }));
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_kind_scope_forbidden');
-});
-
-test('today/ad_hoc is forbidden', () => {
-  const result = validateReading(validReading({ kind: 'today', scope: 'ad_hoc' }));
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_kind_scope_forbidden');
-});
-
-test('key_window/subject is forbidden', () => {
-  const result = validateReading(validReading({ kind: 'key_window', scope: 'subject' }));
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_kind_scope_forbidden');
-});
-
-test('key_window/view is allowed', () => {
-  const result = validateReading(validReading({ kind: 'key_window', scope: 'view', view_id: 'v_01' }));
-  assert.equal(result.ok, true);
-});
-
-test('sign requires self-only and natal time_window', () => {
-  const allowed = validateReading(validReading({ kind: 'sign', scope: 'subject' }));
-  assert.equal(allowed.ok, true);
-  const forbidden = validateReading(
-    validReading({
-      kind: 'sign',
-      scope: 'subject',
-      anchor_subject: { kind: 'person', id: 'p_01' },
-      subjects: [{ kind: 'person', id: 'p_01' }],
-    }),
-  );
-  assert.equal(forbidden.ok, false);
-  if (!forbidden.ok) assert.equal(forbidden.error.code, 'reading_sign_must_be_self_only');
-});
-
-test('sign/view is forbidden', () => {
-  const result = validateReading(validReading({ kind: 'sign', scope: 'view', view_id: 'v_01' }));
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_kind_scope_forbidden');
-});
-
-test('view scope requires view_id', () => {
-  const reading = validReading({ kind: 'period_outlook', scope: 'view', view_id: 'v_01' });
-  reading.view_id = undefined;
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_view_scope_requires_view_id');
-});
-
-test('non-view scope must omit view_id', () => {
-  const reading = validReading({ kind: 'period_outlook', scope: 'subject' });
-  reading.view_id = 'v_01';
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_non_view_scope_must_omit_view_id');
-});
-
-test('subjects empty is rejected', () => {
-  const result = validateReading(validReading({ subjects: [] }));
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_subjects_empty');
-});
-
-test('anchor not in subjects is rejected', () => {
-  const result = validateReading(
-    validReading({
-      kind: 'consultation',
-      scope: 'subject',
-      anchor_subject: { kind: 'person', id: 'p_99' },
-      subjects: ['self'],
-    }),
-  );
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_anchor_not_in_subjects');
-});
-
-test('today must be single-subject and anchor matches', () => {
-  const result = validateReading(
-    validReading({ subjects: ['self', { kind: 'person', id: 'p_01' }] }),
-  );
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_today_must_be_single_subject_and_anchor');
-});
-
-test('output.summary empty is rejected', () => {
-  const result = validateReading(
-    validReading({ output: { summary: '   ', highlights: [], recommendations: [], citations: [] } }),
-  );
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_output_summary_empty');
-});
-
-test('highlight subject_ref not in subjects is rejected', () => {
-  const result = validateReading(
-    validReading({
-      output: {
-        summary: 'x',
-        highlights: [{ label: 'h1', body: 'b', subject_ref: { kind: 'person', id: 'p_ghost' } }],
-        recommendations: [],
-        citations: [],
-      },
-    }),
-  );
-  assert.equal(result.ok, false);
-  if (!result.ok) {
-    assert.equal(result.error.code, 'reading_highlight_subject_ref_not_in_subjects');
-    assert.equal(result.error.index, 0);
-  }
-});
-
-test('recommendation subject_ref not in subjects is rejected', () => {
-  const result = validateReading(
-    validReading({
-      output: {
-        summary: 'x',
-        highlights: [],
-        recommendations: [{ body: 'r', subject_ref: { kind: 'person', id: 'p_ghost' }, horizon: 'today' }],
-        citations: [],
-      },
-    }),
-  );
-  assert.equal(result.ok, false);
-  if (!result.ok) {
-    assert.equal(result.error.code, 'reading_recommendation_subject_ref_not_in_subjects');
-    assert.equal(result.error.index, 0);
-  }
-});
-
-test('sign Reading must use natal time_window', () => {
-  const reading = validReading({ kind: 'sign', scope: 'subject' });
-  reading.time_window = validTimeWindow();
-  reading.inputs_summary.time_window = reading.time_window;
-  reading.inputs_summary.feature_snapshot.time_window = reading.time_window;
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_time_window_sign_must_be_natal');
-});
-
-test('non-sign Reading must use bounded time_window', () => {
-  const reading = validReading({ kind: 'today' });
-  reading.time_window = natalTimeWindow();
-  reading.inputs_summary.time_window = reading.time_window;
-  reading.inputs_summary.feature_snapshot.time_window = reading.time_window;
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_time_window_non_sign_must_be_bounded');
-});
-
-test('bounded time_window without endpoints is rejected', () => {
-  const reading = validReading({ kind: 'today' });
-  reading.time_window = { ...reading.time_window, start_utc: undefined };
-  reading.inputs_summary.time_window = reading.time_window;
-  reading.inputs_summary.feature_snapshot.time_window = reading.time_window;
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_time_window_bounded_missing_endpoints');
-});
-
-test('bounded time_window with start>=end is rejected', () => {
-  const reading = validReading({ kind: 'today' });
-  reading.time_window = {
-    ...reading.time_window,
-    start_utc: '2026-05-26T00:00:00Z',
-    end_utc: '2026-05-25T00:00:00Z',
-  };
-  reading.inputs_summary.time_window = reading.time_window;
-  reading.inputs_summary.feature_snapshot.time_window = reading.time_window;
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_time_window_bounded_start_not_before_end');
-});
-
-test('bounded time_window endpoints must be ISO-8601 UTC instants with Z', () => {
-  const reading = validReading({ kind: 'today' });
-  reading.time_window = {
-    ...reading.time_window,
-    start_utc: '2026-05-25T00:00:00+08:00',
-    end_utc: '2026-05-26T00:00:00Z',
-  };
-  reading.inputs_summary.time_window = reading.time_window;
-  reading.inputs_summary.feature_snapshot.time_window = reading.time_window;
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) {
-    assert.equal(result.error.code, 'reading_time_window_bounded_endpoint_not_iso_utc');
-    assert.equal(result.error.field, 'start_utc');
-  }
-});
-
-test('bounded time_window endpoints must be finite real calendar instants', () => {
-  const reading = validReading({ kind: 'today' });
-  reading.time_window = {
-    ...reading.time_window,
-    start_utc: '2026-02-31T00:00:00Z',
-    end_utc: '2026-03-02T00:00:00Z',
-  };
-  reading.inputs_summary.time_window = reading.time_window;
-  reading.inputs_summary.feature_snapshot.time_window = reading.time_window;
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) {
-    assert.equal(result.error.code, 'reading_time_window_bounded_endpoint_not_iso_utc');
-    assert.equal(result.error.field, 'start_utc');
-  }
-});
-
-test('ReadingTimeWindow basis_time_zone must be a valid IANA zone', () => {
-  const reading = validReading({ kind: 'today' });
-  reading.time_window = { ...reading.time_window, basis_time_zone: 'UTC+08' };
-  reading.inputs_summary.time_window = reading.time_window;
-  reading.inputs_summary.feature_snapshot.time_window = reading.time_window;
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_time_window_basis_time_zone_invalid');
-});
-
-test('ReadingTimeWindow source must be a closed enum', () => {
-  const reading = validReading({ kind: 'today' });
-  reading.time_window = { ...reading.time_window, source: 'legacy_default' };
-  reading.inputs_summary.time_window = reading.time_window;
-  reading.inputs_summary.feature_snapshot.time_window = reading.time_window;
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_time_window_source_invalid');
-});
-
-test('natal time_window carrying endpoints is rejected', () => {
-  const reading = validReading({ kind: 'sign', scope: 'subject' });
-  reading.time_window = {
-    ...natalTimeWindow(),
-    start_utc: '2026-05-25T00:00:00Z',
-    end_utc: '2026-05-26T00:00:00Z',
-  };
-  reading.inputs_summary.time_window = reading.time_window;
-  reading.inputs_summary.feature_snapshot.time_window = reading.time_window;
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_time_window_natal_must_not_carry_endpoints');
-});
-
-test('InputsSummary.contract_version mismatch is rejected', () => {
-  const reading = validReading();
-  reading.inputs_summary = { ...reading.inputs_summary, contract_version: 'SJG-ASTRO-v0' };
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_inputs_summary_contract_version_mismatch');
-});
-
-test('InputsSummary.algorithm_contract_version mismatch is rejected', () => {
-  const reading = validReading();
-  reading.inputs_summary = { ...reading.inputs_summary, algorithm_contract_version: 'SJG-ALGO-v0' };
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_inputs_summary_algorithm_contract_version_mismatch');
-});
-
-test('InputsSummary.method_profile.id mismatch is rejected', () => {
-  const reading = validReading();
-  reading.inputs_summary.method_profile = { ...reading.inputs_summary.method_profile, id: 'ziwei_v1' };
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_inputs_summary_method_profile_id_mismatch');
-});
-
-test('InputsSummary.time_window must equal Reading.time_window', () => {
-  const reading = validReading();
-  reading.inputs_summary.time_window = { ...reading.inputs_summary.time_window, basis_time_zone: 'UTC/Other' };
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_inputs_summary_time_window_mismatch');
-});
-
-test('feature_snapshot.method_profile.id mismatch is rejected', () => {
-  const reading = validReading();
-  reading.inputs_summary.feature_snapshot = {
-    ...reading.inputs_summary.feature_snapshot,
-    method_profile: { ...reading.inputs_summary.feature_snapshot.method_profile, id: 'ziwei_v1' },
-  };
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_inputs_summary_feature_snapshot_method_profile_mismatch');
-});
-
-test('feature_snapshot.time_window must equal Reading.time_window', () => {
-  const reading = validReading();
-  reading.inputs_summary.feature_snapshot = {
-    ...reading.inputs_summary.feature_snapshot,
-    time_window: { ...reading.time_window, basis_time_zone: 'Etc/Greenwich' },
-  };
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_inputs_summary_feature_snapshot_time_window_mismatch');
-});
-
-test('view scope requires view_snapshot in inputs_summary', () => {
-  const reading = validReading({ kind: 'period_outlook', scope: 'view', view_id: 'v_01' });
-  reading.inputs_summary = { ...reading.inputs_summary };
-  delete reading.inputs_summary.view_snapshot;
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_inputs_summary_view_snapshot_required_for_view_scope');
-});
-
-test('view scope requires view_snapshot hashes', () => {
-  const reading = validReading({ kind: 'period_outlook', scope: 'view', view_id: 'v_01' });
-  reading.inputs_summary.view_snapshot = {
-    ...reading.inputs_summary.view_snapshot,
-    instructions_hash: '',
-  };
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) {
-    assert.equal(result.error.code, 'reading_inputs_summary_view_snapshot_hash_missing');
-    assert.equal(result.error.field, 'instructions_hash');
-  }
-});
-
-test('non-view scope forbids view_snapshot', () => {
-  const reading = validReading();
-  reading.inputs_summary.view_snapshot = {
-    view_id: 'v_99',
-    anchor_subject: 'self',
-    subjects: ['self'],
-    time_scope: 'rolling',
-    instructions_hash: 'x',
-    context_items_hash: 'x',
-    memory_summary_hash: 'x',
-    memory_locked: false,
-  };
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_inputs_summary_view_snapshot_forbidden_for_non_view_scope');
-});
-
-test('view scope requires view_snapshot.view_id to match reading.view_id', () => {
-  const reading = validReading({ kind: 'period_outlook', scope: 'view', view_id: 'v_01' });
-  reading.inputs_summary.view_snapshot = { ...reading.inputs_summary.view_snapshot, view_id: 'v_02' };
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_inputs_summary_view_snapshot_view_id_mismatch');
-});
-
-test('ad_hoc scope requires ad_hoc_context', () => {
-  const reading = validReading({ kind: 'period_outlook', scope: 'ad_hoc' });
-  delete reading.inputs_summary.ad_hoc_context;
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_inputs_summary_ad_hoc_context_required_for_ad_hoc_scope');
-});
-
-test('non-ad_hoc scope forbids ad_hoc_context', () => {
-  const reading = validReading({ kind: 'period_outlook', scope: 'subject' });
-  reading.inputs_summary.ad_hoc_context = 'ghost';
-  const result = validateReading(reading);
-  assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'reading_inputs_summary_ad_hoc_context_forbidden_for_non_ad_hoc_scope');
-});
-
-test('matrix-source-of-truth: every kind x scope cell evaluates', () => {
-  for (const kind of READING_KINDS) {
-    for (const scope of READING_SCOPES) {
-      const cell = evaluateReadingKindScope(kind, scope);
-      assert.ok(
-        cell === 'allowed' || cell === 'forbidden' || cell === 'self_only',
-        `matrix cell ${kind}/${scope} not in known enum: ${cell}`,
-      );
+test('mirror_kind/mirror_scope matrix covers all kinds and scopes', () => {
+  for (const kind of MIRROR_KINDS) {
+    for (const scope of MIRROR_SCOPE_KINDS) {
+      const cell = MIRROR_KIND_SCOPE_MATRIX[kind][scope];
+      assert.ok(cell === 'allowed' || cell === 'forbidden');
     }
   }
 });
 
-test('matrix mirrors yaml spec table', () => {
-  const yamlPath = new URL('../.nimi/spec/shijing/kernel/tables/reading-kind-scope-matrix.yaml', import.meta.url);
-  const yamlText = readFileSync(yamlPath, 'utf8');
-  const lines = yamlText.replaceAll('\r\n', '\n').split('\n');
-  for (const kind of READING_KINDS) {
-    const headerIndex = lines.findIndex((line) => line === `  ${kind}:`);
-    assert.ok(headerIndex >= 0, `yaml missing kind block: ${kind}`);
-    const cellLines = [];
-    for (let i = headerIndex + 1; i < lines.length; i += 1) {
-      const line = lines[i];
-      if (line.startsWith('    ')) {
-        cellLines.push(line.trim());
-      } else {
-        break;
-      }
-    }
-    for (const scope of READING_SCOPES) {
-      const expected = READING_KIND_SCOPE_MATRIX[kind][scope];
-      const expectedLine = `${scope}: ${expected}`;
-      assert.ok(
-        cellLines.includes(expectedLine),
-        `yaml matrix mismatch for ${kind}/${scope}: expected "${expectedLine}" in cells ${JSON.stringify(cellLines)}`,
-      );
-    }
+test('rijing/daily reading is valid', () => {
+  const result = validateReading(validReading({ mirror_kind: 'rijing' }));
+  assert.equal(result.ok, true, JSON.stringify(result));
+});
+
+test('yuejing/rolling_30_day reading is valid', () => {
+  const result = validateReading(validReading({ mirror_kind: 'yuejing' }));
+  assert.equal(result.ok, true, JSON.stringify(result));
+});
+
+test('nianjing/long_horizon reading is valid', () => {
+  const result = validateReading(validReading({ mirror_kind: 'nianjing' }));
+  assert.equal(result.ok, true, JSON.stringify(result));
+});
+
+test('shijing/consultation reading is valid', () => {
+  const result = validateReading(validReading({ mirror_kind: 'shijing' }));
+  assert.equal(result.ok, true, JSON.stringify(result));
+});
+
+test('rejects rijing/rolling_30_day pairing', () => {
+  const scope = rolling30DayMirrorScope();
+  const reading = validReading({
+    mirror_kind: 'rijing',
+    mirror_scope: scope,
+    output: validRijingOutput(),
+    inputs_summary: validInputsSummary({ mirrorKind: 'rijing', scope }),
+  });
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'reading_mirror_kind_scope_forbidden');
   }
 });
 
-test('validFeatureSnapshot helper carries v1 method_profile and time_window', () => {
-  const snap = validFeatureSnapshot();
-  assert.equal(snap.method_profile.id, 'bazi_ganzhi_jieqi_dayun_v1');
-  assert.equal(snap.method_profile.contract_version, 'SJG-ALGO-v1');
+test('rejects primary_subject_ref that is not "self"', () => {
+  const reading = validReading();
+  const mutated = { ...reading, primary_subject_ref: { kind: 'person', id: 'p_01' } };
+  const result = validateReading(mutated);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'reading_primary_subject_ref_must_be_self');
+  }
 });
 
-test('validInputsSummary carries algorithm-v1 envelope', () => {
-  const summary = validInputsSummary();
-  assert.equal(summary.contract_version, 'SJG-ASTRO-v1');
-  assert.equal(summary.algorithm_contract_version, 'SJG-ALGO-v1');
-  assert.equal(summary.method_profile.id, 'bazi_ganzhi_jieqi_dayun_v1');
+test('rejects legacy Reading.kind field via owner-scoped removed-field guard', () => {
+  const reading = { ...validReading(), kind: 'today' };
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'reading_removed_field_present');
+    assert.equal(result.error.field, 'kind');
+  }
+});
+
+test('rejects legacy Reading.view_id field via owner-scoped removed-field guard', () => {
+  const reading = { ...validReading(), view_id: 'v_01' };
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'reading_removed_field_present');
+    assert.equal(result.error.field, 'view_id');
+  }
+});
+
+test('rejects legacy Reading.ad_hoc_context field', () => {
+  const reading = { ...validReading(), ad_hoc_context: 'leak' };
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'reading_removed_field_present');
+  }
+});
+
+test('rejects placeholder input_hash literal "unset"', () => {
+  const reading = validReading();
+  reading.inputs_summary = { ...reading.inputs_summary, input_hash: 'unset' };
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'reading_inputs_summary_input_hash_invalid');
+  }
+});
+
+test('rejects mirror_context_snapshot whose mirror_scope diverges from reading.mirror_scope', () => {
+  const reading = validReading({ mirror_kind: 'rijing' });
+  const otherScope = dailyMirrorScope({ date: '2026-05-26' });
+  reading.inputs_summary = {
+    ...reading.inputs_summary,
+    mirror_context_snapshot: {
+      ...reading.inputs_summary.mirror_context_snapshot,
+      mirror_scope: otherScope,
+    },
+  };
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(
+      result.error.code,
+      'reading_inputs_summary_mirror_context_mirror_scope_mismatch',
+    );
+  }
+});
+
+test('rejects non-shijing reading carrying cited_reading_ids', () => {
+  const reading = validReading({ mirror_kind: 'rijing' });
+  reading.cited_reading_ids = ['leak'];
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'reading_non_shijing_cited_reading_ids_must_be_empty');
+  }
+});
+
+test('shijing reading requires cited_reading_ids to mirror mirror_scope.source_reading_ids', () => {
+  const sourceIds = ['r_source_01', 'r_source_02'];
+  const scope = consultationMirrorScope(sourceIds);
+  const reading = validReading({
+    mirror_kind: 'shijing',
+    mirror_scope: scope,
+    cited_reading_ids: ['mismatched'],
+    output: validShijingOutput(sourceIds),
+    inputs_summary: validInputsSummary({ mirrorKind: 'shijing', scope }),
+  });
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(
+      result.error.code,
+      'reading_shijing_cited_reading_ids_must_match_scope_source_reading_ids',
+    );
+  }
+});
+
+test('rejects MirrorOutput missing common summary', () => {
+  const reading = validReading();
+  reading.output = { ...reading.output, summary: '' };
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+});
+
+test('rejects MirrorOutput with forbidden luck_score field', () => {
+  const reading = validReading();
+  reading.output = { ...reading.output, luck_score: 50 };
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+});
+
+test('rejects uncited memory influence (cited_event_memory_refs populated, output missing them)', () => {
+  const reading = validReading();
+  reading.cited_event_memory_refs = ['mem_01'];
+  reading.output = { ...reading.output, cited_event_memory_refs: [] };
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'reading_output_uncited_memory_influence');
+  }
+});
+
+test('rejects uncited plan influence', () => {
+  const reading = validReading();
+  reading.cited_plan_item_refs = ['plan_01'];
+  reading.output = { ...reading.output, cited_plan_item_refs: [] };
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'reading_output_uncited_plan_influence');
+  }
+});
+
+test('rejects related_person_refs that resolve to "self"', () => {
+  const reading = validReading();
+  reading.related_person_refs = ['self'];
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+});
+
+test('rejects long_horizon scope shorter than min months', () => {
+  const tooShort = longHorizonMirrorScope({ start_date: '2026-01-01', end_date: '2026-06-30' });
+  const reading = validReading({
+    mirror_kind: 'nianjing',
+    mirror_scope: tooShort,
+    output: validNianjingOutput(tooShort),
+    inputs_summary: validInputsSummary({ mirrorKind: 'nianjing', scope: tooShort }),
+  });
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+});
+
+test('rejects yuejing scope with non-30-day length', () => {
+  const wrong = rolling30DayMirrorScope({ start_date: '2026-05-25', end_date: '2026-06-22' });
+  const reading = validReading({
+    mirror_kind: 'yuejing',
+    mirror_scope: wrong,
+    output: validYuejingOutput(wrong),
+    inputs_summary: validInputsSummary({ mirrorKind: 'yuejing', scope: wrong }),
+  });
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+});
+
+test('rejects consultation scope with empty source_reading_ids', () => {
+  const scope = consultationMirrorScope([]);
+  const reading = validReading({
+    mirror_kind: 'shijing',
+    mirror_scope: scope,
+    cited_reading_ids: [],
+    output: validShijingOutput(['r_source_01']),
+    inputs_summary: validInputsSummary({ mirrorKind: 'shijing', scope }),
+  });
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
 });

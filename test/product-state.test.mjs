@@ -1,107 +1,47 @@
-// Wave-1 — Pure reducer + snapshot-validation tests for the renderer store.
+// W04 — product state reducer tests under Mirror Architecture v1.
 
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { ALL_TAB_IDS, createInitialState, shijingReducer } from '../src/product/state/shijing-state.ts';
-import { SHIJING_IA_TABS } from '../src/contracts/ia-contract.ts';
-import { validPerson, validShiJingSpace } from './_fixtures.mjs';
+import {
+  ALL_TAB_IDS,
+  createInitialState,
+  shijingReducer,
+} from '../src/product/state/shijing-state.ts';
+import { validShiJingSpace, validConcernTag } from './_fixtures.mjs';
 
-function validSnapshot(overrides = {}) {
-  return validShiJingSpace(overrides);
-}
-
-test('initial state activates the first tab (今日)', () => {
-  const state = createInitialState(validSnapshot());
-  assert.equal(state.active_tab, 'today');
-});
-
-test('ALL_TAB_IDS mirrors SHIJING_IA_TABS ordering', () => {
-  assert.deepEqual(ALL_TAB_IDS, SHIJING_IA_TABS.map((tab) => tab.id));
-});
-
-test('initial state validates the snapshot eagerly', () => {
-  const state = createInitialState(validSnapshot());
+test('initial state activates the rijing tab', () => {
+  const state = createInitialState(validShiJingSpace());
+  assert.equal(state.active_tab, 'rijing');
   assert.equal(state.snapshot_status.kind, 'valid');
 });
 
-test('initial state resolves a missing default observation target back to self', () => {
-  const state = createInitialState(validSnapshot(), { kind: 'person', id: 'missing_person' });
-  assert.equal(state.observation_target, 'self');
-});
-
-test('initial state surfaces validator failure as typed-error status', () => {
-  const broken = validSnapshot();
-  broken.profiles = [];
-  const state = createInitialState(broken);
-  assert.equal(state.snapshot_status.kind, 'invalid');
-  if (state.snapshot_status.kind === 'invalid') {
-    assert.equal(state.snapshot_status.error.code, 'space_removed_field_present');
+test('tab/activate switches to admitted tab ids', () => {
+  const state = createInitialState(validShiJingSpace());
+  for (const tab of ALL_TAB_IDS) {
+    const next = shijingReducer(state, { type: 'tab/activate', tab });
+    assert.equal(next.active_tab, tab);
   }
 });
 
-test('tab/activate transitions to a different admitted tab', () => {
-  const state = createInitialState(validSnapshot());
-  const next = shijingReducer(state, { type: 'tab/activate', tab: 'consultation' });
-  assert.equal(next.active_tab, 'consultation');
-  assert.notEqual(next, state);
-});
-
-test('tab/activate is a no-op for the active tab', () => {
-  const state = createInitialState(validSnapshot());
+test('tab/activate ignores unknown tab id', () => {
+  const state = createInitialState(validShiJingSpace());
   const next = shijingReducer(state, { type: 'tab/activate', tab: 'today' });
   assert.equal(next, state);
 });
 
-test('tab/activate ignores unknown tab ids', () => {
-  const state = createInitialState(validSnapshot());
-  const next = shijingReducer(state, { type: 'tab/activate', tab: 'history' });
-  assert.equal(next, state);
-});
-
-test('observation/set switches observation target without touching active tab', () => {
-  const state = createInitialState(validSnapshot({ persons: [validPerson('p_01')] }));
-  const next = shijingReducer(state, { type: 'observation/set', target: { kind: 'person', id: 'p_01' } });
-  assert.deepEqual(next.observation_target, { kind: 'person', id: 'p_01' });
-  assert.equal(next.active_tab, state.active_tab);
-});
-
-test('observation/set refuses a person target absent from the snapshot roster', () => {
-  const state = createInitialState(validSnapshot());
-  const next = shijingReducer(state, { type: 'observation/set', target: { kind: 'person', id: 'missing_person' } });
-  assert.equal(next, state);
-  assert.equal(next.observation_target, 'self');
-});
-
-test('observation/set is a no-op when target equals current', () => {
-  const state = createInitialState(validSnapshot());
-  const next = shijingReducer(state, { type: 'observation/set', target: 'self' });
-  assert.equal(next, state);
-});
-
-test('snapshot/replace revalidates eagerly and switches status to invalid', () => {
-  const state = createInitialState(validSnapshot());
-  const broken = validSnapshot();
-  broken.settings.global_instructions = '';
+test('snapshot/replace surfaces invalid snapshot as snapshot_status.invalid', () => {
+  const state = createInitialState(validShiJingSpace());
+  const broken = validShiJingSpace();
+  broken.views = []; // removed surface
   const next = shijingReducer(state, { type: 'snapshot/replace', snapshot: broken });
   assert.equal(next.snapshot_status.kind, 'invalid');
 });
 
-test('snapshot/replace resets observation target to self when the current person is removed', () => {
-  const state = shijingReducer(createInitialState(validSnapshot({ persons: [validPerson('p_01')] })), {
-    type: 'observation/set',
-    target: { kind: 'person', id: 'p_01' },
-  });
-  assert.deepEqual(state.observation_target, { kind: 'person', id: 'p_01' });
-  const next = shijingReducer(state, { type: 'snapshot/replace', snapshot: validSnapshot({ persons: [] }) });
-  assert.equal(next.observation_target, 'self');
-});
-
-test('snapshot/replace recovers to valid status', () => {
-  const broken = validSnapshot();
-  broken.profiles = [];
-  const state = createInitialState(broken);
-  assert.equal(state.snapshot_status.kind, 'invalid');
-  const next = shijingReducer(state, { type: 'snapshot/replace', snapshot: validSnapshot() });
+test('snapshot/replace accepts valid snapshot containing concern tags', () => {
+  const state = createInitialState(validShiJingSpace());
+  const snapshot = validShiJingSpace({ concern_tags: [validConcernTag('tag_love')] });
+  const next = shijingReducer(state, { type: 'snapshot/replace', snapshot });
   assert.equal(next.snapshot_status.kind, 'valid');
+  assert.equal(next.snapshot.concern_tags.length, 1);
 });
