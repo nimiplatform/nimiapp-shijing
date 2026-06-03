@@ -34,6 +34,27 @@ export async function loadInitialSnapshot(client: PersistenceClient): Promise<Pe
   };
 }
 
+export async function saveSnapshotNow(
+  client: PersistenceClient,
+  snapshot: ShiJingSpace,
+  onStatus: (status: PersistenceLifecycleStatus) => void,
+): Promise<PersistenceLifecycleStatus> {
+  onStatus({ kind: 'saving', adapter: client.adapter_kind });
+  const result = await client.save(snapshot);
+  if (!result.ok) {
+    const status: PersistenceLifecycleStatus = { kind: 'error', adapter: client.adapter_kind, error: result.error };
+    onStatus(status);
+    return status;
+  }
+  const status: PersistenceLifecycleStatus = {
+    kind: 'saved',
+    adapter: client.adapter_kind,
+    saved_at: new Date().toISOString(),
+  };
+  onStatus(status);
+  return status;
+}
+
 export interface DebouncedSaverOptions {
   readonly delay_ms: number;
   readonly schedule?: (callback: () => void, delay_ms: number) => unknown;
@@ -58,20 +79,7 @@ export function createDebouncedSaver(
   let inFlight: Promise<PersistenceLifecycleStatus> | null = null;
 
   async function runSave(snapshot: ShiJingSpace): Promise<PersistenceLifecycleStatus> {
-    options.on_status({ kind: 'saving', adapter: client.adapter_kind });
-    const result = await client.save(snapshot);
-    if (!result.ok) {
-      const status: PersistenceLifecycleStatus = { kind: 'error', adapter: client.adapter_kind, error: result.error };
-      options.on_status(status);
-      return status;
-    }
-    const status: PersistenceLifecycleStatus = {
-      kind: 'saved',
-      adapter: client.adapter_kind,
-      saved_at: new Date().toISOString(),
-    };
-    options.on_status(status);
-    return status;
+    return saveSnapshotNow(client, snapshot, options.on_status);
   }
 
   function fire(snapshot: ShiJingSpace): void {

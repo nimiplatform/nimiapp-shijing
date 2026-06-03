@@ -5,7 +5,7 @@
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import type { ShijingSpaceValidationError } from '../../contracts/shijing-space-validator.ts';
 
-export type PersistenceAdapterKind = 'in_memory' | 'indexeddb';
+export type PersistenceAdapterKind = 'in_memory' | 'indexeddb' | 'runtime_app_storage';
 
 export type PersistenceError =
   | { kind: 'load_unsupported_environment'; adapter: PersistenceAdapterKind; reason: string }

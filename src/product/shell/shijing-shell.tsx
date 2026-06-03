@@ -20,12 +20,21 @@ import {
   type ShijingSettingsPageId,
 } from '../../contracts/ia-contract.ts';
 import { BRAND_NAME, SETTINGS_PAGE_LABELS } from '../i18n/copy.ts';
+import type { PersistenceError } from '../persistence/persistence-client.ts';
 
 // Derives the avatar fallback glyph from the account name — the first
 // character (works for both CJK and Latin names). Falls back to a neutral
 // dot when no name is projected (dev preview / unauthenticated mount).
 function avatarInitial(name: string): string {
   return name ? Array.from(name)[0] : '·';
+}
+
+function persistenceErrorDetail(error: PersistenceError): string {
+  if ('cause' in error) return `${error.kind}: ${error.cause}`;
+  if ('reason' in error) return `${error.kind}: ${error.reason}`;
+  if ('validation_error' in error) return `${error.kind}: ${error.validation_error.code}`;
+  const exhaustive = error as { readonly kind?: string };
+  return exhaustive.kind ?? 'unknown';
 }
 
 export interface ShijingShellAccount {
@@ -41,7 +50,7 @@ export interface ShijingShellProps {
 }
 
 export function ShijingShell(props: ShijingShellProps) {
-  const { state } = useShijingStore();
+  const { state, persistence_status } = useShijingStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePage, setActivePage] = useState<ShijingSettingsPageId | null>(null);
   const accountRef = useRef<HTMLDivElement>(null);
@@ -120,6 +129,11 @@ export function ShijingShell(props: ShijingShellProps) {
           <p className="shijing-shell__error" role="alert">
             数据快照校验未通过: {state.snapshot_status.error.code}
             。请点击右上角头像打开"设置 → 隐私与本地数据"清理已存数据后再试。
+          </p>
+        ) : null}
+        {persistence_status.kind === 'error' ? (
+          <p className="shijing-shell__error" role="alert">
+            本地数据读写失败: {persistenceErrorDetail(persistence_status.error)}
           </p>
         ) : null}
         {renderActiveTab(state.active_tab, (page) => openPage(page ?? 'profile'))}

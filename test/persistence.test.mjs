@@ -4,7 +4,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { InMemoryPersistenceAdapter } from '../src/product/persistence/in-memory-adapter.ts';
-import { createDebouncedSaver, loadInitialSnapshot } from '../src/product/state/persistence-bridge.ts';
+import {
+  createDebouncedSaver,
+  loadInitialSnapshot,
+  saveSnapshotNow,
+} from '../src/product/state/persistence-bridge.ts';
 import {
   validConcernTag,
   validEventMemory,
@@ -97,4 +101,39 @@ test('createDebouncedSaver enqueues + flushes a valid snapshot', async () => {
   await saver.flush();
   assert.ok(events.includes('saving'));
   assert.ok(events.includes('saved'));
+});
+
+test('saveSnapshotNow returns saved only after adapter write succeeds', async () => {
+  const adapter = new InMemoryPersistenceAdapter();
+  const events = [];
+  const status = await saveSnapshotNow(
+    adapter,
+    validShiJingSpace({
+      concern_tags: [validConcernTag('tag_love')],
+      readings: [validReading()],
+    }),
+    (s) => {
+      events.push(s.kind);
+    },
+  );
+  assert.equal(status.kind, 'saved');
+  assert.deepEqual(events, ['saving', 'saved']);
+  const loaded = await adapter.load();
+  assert.equal(loaded.ok, true);
+  if (loaded.ok) assert.equal(loaded.snapshot?.readings.length, 1);
+});
+
+test('saveSnapshotNow surfaces validation failure without fake success', async () => {
+  const adapter = new InMemoryPersistenceAdapter();
+  const events = [];
+  const broken = { ...validShiJingSpace(), views: [] };
+  const status = await saveSnapshotNow(adapter, broken, (s) => {
+    events.push(s.kind);
+  });
+  assert.equal(status.kind, 'error');
+  if (status.kind === 'error') assert.equal(status.error.kind, 'save_validation_failed');
+  assert.deepEqual(events, ['saving', 'error']);
+  const loaded = await adapter.load();
+  assert.equal(loaded.ok, true);
+  if (loaded.ok) assert.equal(loaded.snapshot, null);
 });
