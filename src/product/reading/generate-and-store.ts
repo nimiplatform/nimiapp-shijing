@@ -1,98 +1,56 @@
-// Wave-12 — orchestrates generateReading + snapshot/replace dispatch.
-// On runtime/parse/validation failure returns a typed status that the
-// tabs render verbatim (no synthesized content, no silent retry).
+// W03 — Reading orchestration entry that calls generateReading and
+// appends the resulting Reading to a new ShiJingSpace snapshot. Failure
+// modes are typed as `ReadingGenerationFailure` exactly per
+// SJG-DATA-07; no fake Reading is ever returned.
 
+import type { Reading, ReadingGenerationFailure } from '../../domain/reading.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
-import type { ReadingKind, ReadingScope } from '../../domain/reading-matrix.ts';
-import type { Reading, ReadingTimeWindow } from '../../domain/reading.ts';
+import type { MirrorKind, MirrorScope } from '../../domain/mirror-scope.ts';
 import type { SubjectRef } from '../../domain/subject-ref.ts';
-import { subjectRefKey } from '../../domain/subject-ref.ts';
-import type { View } from '../../domain/view.ts';
-import { generateReading, type GenerateReadingFailure } from '../astrology/generate-reading.ts';
-import type { RuntimeAiClient } from '../astrology/runtime-ai-client.ts';
 import {
-  natalReadinessSeverity,
-  subjectReadingReadiness,
-  type NatalReadinessReason,
-} from '../subjects/natal-readiness.ts';
+  generateReading,
+  type GenerateReadingDependencies,
+} from '../astrology/generate-reading.ts';
 
 export interface GenerateAndStoreInput {
   readonly id: string;
   readonly created_at: string;
-  readonly kind: ReadingKind;
-  readonly scope: ReadingScope;
-  readonly anchor_subject: SubjectRef;
-  readonly subjects: readonly SubjectRef[];
-  readonly time_window: ReadingTimeWindow;
+  readonly mirror_kind: MirrorKind;
+  readonly mirror_scope: MirrorScope;
+  readonly related_person_refs: readonly SubjectRef[];
+  readonly concern_tag_refs: readonly string[];
+  readonly cited_reading_ids?: readonly string[];
+  readonly cited_event_memory_refs?: readonly string[];
+  readonly cited_plan_item_refs?: readonly string[];
+  readonly question?: string;
   readonly space: ShiJingSpace;
-  readonly view?: View;
-  readonly ad_hoc_context_text?: string;
-  readonly runtime_ai_client?: RuntimeAiClient;
-  // When true, warning-level readiness issues (precision/location/sex
-  // gaps that the deterministic pipeline can still run with caveats) do
-  // not block generation. Blocker-level issues (subject missing,
-  // validator failure, scaffold defaults) still refuse. The resulting
-  // Reading carries the corresponding uncertainty caveats via the
-  // deriveUncertainty stage, so consumers see the gap visibly.
-  readonly allow_warnings?: boolean;
+  readonly deps?: GenerateReadingDependencies;
 }
-
-export type GenerateAndStoreFailure =
-  | GenerateReadingFailure
-  | {
-      kind: 'input_readiness_failed';
-      subject: SubjectRef;
-      reason: NatalReadinessReason;
-      detail: string;
-    };
 
 export type GenerateAndStoreOutcome =
   | { ok: true; reading: Reading; next_space: ShiJingSpace }
-  | { ok: false; error: GenerateAndStoreFailure };
+  | { ok: false; failure: ReadingGenerationFailure };
 
 export async function generateReadingForStorage(
   input: GenerateAndStoreInput,
 ): Promise<GenerateAndStoreOutcome> {
-  for (const subject of input.subjects) {
-    const readiness = subjectReadingReadiness({
-      subject,
-      space: input.space,
-      kind: input.kind,
-      scope: input.scope,
-      time_window: input.time_window,
-      ...(input.view ? { view: input.view } : {}),
-    });
-    if (!readiness.ok) {
-      const severity = natalReadinessSeverity(readiness.reason);
-      if (severity === 'blocker' || !input.allow_warnings) {
-        return {
-          ok: false,
-          error: {
-            kind: 'input_readiness_failed',
-            subject,
-            reason: readiness.reason,
-            detail: `${subjectRefKey(subject)} / ${readiness.detail}`,
-          },
-        };
-      }
-    }
-  }
   const result = await generateReading(
     {
       id: input.id,
       created_at: input.created_at,
-      kind: input.kind,
-      scope: input.scope,
-      anchor_subject: input.anchor_subject,
-      subjects: input.subjects,
-      time_window: input.time_window,
+      mirror_kind: input.mirror_kind,
+      mirror_scope: input.mirror_scope,
+      related_person_refs: input.related_person_refs,
+      concern_tag_refs: input.concern_tag_refs,
+      cited_reading_ids: input.cited_reading_ids ?? [],
+      cited_event_memory_refs: input.cited_event_memory_refs ?? [],
+      cited_plan_item_refs: input.cited_plan_item_refs ?? [],
       space: input.space,
-      ...(input.view ? { view: input.view } : {}),
-      ...(input.ad_hoc_context_text !== undefined ? { ad_hoc_context_text: input.ad_hoc_context_text } : {}),
+      ...(input.question ? { question: input.question } : {}),
     },
-    input.runtime_ai_client ? { runtime_ai_client: input.runtime_ai_client } : {},
+    input.deps ?? {},
   );
-  if (!result.ok) return { ok: false, error: result.error };
+  if (!result.ok) return { ok: false, failure: result.failure };
   const next_space: ShiJingSpace = {
     ...input.space,
     readings: [...input.space.readings, result.reading],

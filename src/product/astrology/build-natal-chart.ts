@@ -1,5 +1,7 @@
-// SJG-ALGO-06 — natal chart (four-pillar) derivation. Wave-10
-// implements year/month/day/hour pillars from true-solar-time.
+// SJG-ALGO-06 — natal chart (four-pillar) derivation under the W02
+// Mirror Architecture v1 shape (NatalChartSnapshot { subject_ref,
+// canonicalization_hash, year/month/day/hour pillars, day_master,
+// missing_pillars }).
 
 import type { SubjectRef } from '../../domain/subject-ref.ts';
 import type {
@@ -9,12 +11,7 @@ import type {
   NatalCanonicalization,
   NatalChartSnapshot,
 } from '../../domain/algorithm.ts';
-import {
-  ASTROLOGY_METHOD_PROFILE_ID,
-  HEAVENLY_STEMS,
-  SJG_ALGO_CONTRACT_VERSION,
-  SJG_ALGO_FEATURE_SCHEMA_VERSION,
-} from '../../domain/algorithm.ts';
+import { HEAVENLY_STEMS } from '../../domain/algorithm.ts';
 import { type StageResult } from './stage-result.ts';
 import {
   branchFromIndex,
@@ -27,7 +24,7 @@ import { EPHEMERIS_VERSION, bagayearStartUtcMs, currentJieForInstant } from './s
 import { computeCanonicalHash } from './canonical-hash.ts';
 
 export interface BuildNatalChartInput {
-  readonly subject: SubjectRef;
+  readonly subject_ref: SubjectRef;
   readonly canonicalization: NatalCanonicalization;
 }
 
@@ -36,7 +33,6 @@ function yearPillarFromInstant(utcMs: number): GanzhiPillar {
   const civilYear = date.getUTCFullYear();
   const liChun = bagayearStartUtcMs(civilYear);
   const baziYear = utcMs >= liChun ? civilYear : civilYear - 1;
-  // 1864 = jia-zi year (60-year cycle reference)
   const cycleOffset = ((baziYear - 1864) % 60 + 60) % 60;
   return {
     stem: stemFromIndex(cycleOffset),
@@ -49,15 +45,8 @@ function monthPillarFromInstant(utcMs: number, yearStem: HeavenlyStem): GanzhiPi
   const jie = currentJieForInstant(utcMs);
   const branchIdx = jie.jie.month_branch_index;
   const yearStemIdx = HEAVENLY_STEMS.indexOf(yearStem);
-  // Month stem table by year stem:
-  // jia/ji  → yin month stem starts at bing (idx 2)
-  // yi/geng → wu (idx 4)
-  // bing/xin → geng (idx 6)
-  // ding/ren → ren (idx 8)
-  // wu/gui   → jia (idx 0)
   const yinStartTable = [2, 4, 6, 8, 0, 2, 4, 6, 8, 0];
   const yinStart = yinStartTable[yearStemIdx]!;
-  // branchIdx 2 (yin) is the first month, branchIdx 3 (mao) the second, etc.
   const monthOffset = (branchIdx - 2 + 12) % 12;
   const stemIdxValue = (yinStart + monthOffset) % 10;
   return {
@@ -74,7 +63,7 @@ export function buildNatalChartSnapshot(input: BuildNatalChartInput): StageResul
       error: {
         stage: 'build_natal_chart',
         kind: 'stage_missing_input',
-        subject: input.subject,
+        subject_ref: input.subject_ref,
         detail: 'NatalCanonicalization missing true_solar_time_utc',
       },
     };
@@ -86,7 +75,7 @@ export function buildNatalChartSnapshot(input: BuildNatalChartInput): StageResul
       error: {
         stage: 'build_natal_chart',
         kind: 'stage_invalid_input',
-        subject: input.subject,
+        subject_ref: input.subject_ref,
         detail: 'true_solar_time_utc is not a valid Date instant',
       },
     };
@@ -98,8 +87,11 @@ export function buildNatalChartSnapshot(input: BuildNatalChartInput): StageResul
   const trueSolarHour = trueSolarDate.getUTCHours() + trueSolarDate.getUTCMinutes() / 60;
   const hourBranch = hourBranchFromTrueSolarHour(trueSolarHour);
   const hourStem = hourStemFromDayStemAndBranch(dayPillar.stem, hourBranch);
-  const hourPillar: GanzhiPillar = { stem: hourStem, branch: hourBranch, ephemeris_version: EPHEMERIS_VERSION };
-
+  const hourPillar: GanzhiPillar = {
+    stem: hourStem,
+    branch: hourBranch,
+    ephemeris_version: EPHEMERIS_VERSION,
+  };
   const precision = input.canonicalization.canonical_birth_precision;
   const missing: MissingPillarName[] = [];
   let yp: GanzhiPillar | undefined = yearPillar;
@@ -122,14 +114,8 @@ export function buildNatalChartSnapshot(input: BuildNatalChartInput): StageResul
     missing.push('year');
     yp = undefined;
   }
-
   const snapshot: NatalChartSnapshot = {
-    subject: input.subject,
-    method_profile: {
-      id: ASTROLOGY_METHOD_PROFILE_ID,
-      contract_version: SJG_ALGO_CONTRACT_VERSION,
-      feature_schema_version: SJG_ALGO_FEATURE_SCHEMA_VERSION,
-    },
+    subject_ref: input.subject_ref,
     canonicalization_hash: computeCanonicalHash(input.canonicalization),
     ...(yp ? { year_pillar: yp } : {}),
     ...(mp ? { month_pillar: mp } : {}),

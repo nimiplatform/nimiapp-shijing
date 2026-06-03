@@ -1,50 +1,61 @@
-// Wave-11 — SDK-backed factory shape. Accepts a
-// `runtimeGenerateText`-compatible callable (the SDK exports one as
-// `runtimeGenerateText` on RuntimeAiModule; this app slice does NOT
-// construct a Runtime instance because Runtime construction +
-// auth wiring belongs to a later admitted install / lifecycle wave).
+// SJG-ASTRO-11 — Nimi runtime SDK factory.
 
-import {
-  RuntimeTextGeneratorAiClient,
-  type RuntimeAiClient,
-  type RuntimeTextGenerator,
-  type RuntimeTextGeneratorRequest,
-  type RuntimeTextGeneratorResponse,
+import type { MirrorKind } from '../../domain/mirror-scope.ts';
+import { parseRuntimeAiOutput } from './runtime-ai-parse.ts';
+import type {
+  RuntimeAiClient,
+  RuntimeAiResult,
 } from './runtime-ai-client.ts';
+import type { RuntimeAiPromptRequest } from './runtime-ai-prompt.ts';
 
-// Shape of the SDK runtime's text-generation call after we strip ctx/route
-// concerns. The caller composes this around the Runtime instance they
-// already hold; wave-11 does not import @nimiplatform/sdk/runtime to
-// avoid pulling SDK construction concerns into this app slice.
-export interface SdkRuntimeTextCaller {
-  generateText(input: {
-    readonly model: string;
-    readonly system?: string;
-    readonly input: ReadonlyArray<{ readonly role: 'user' | 'assistant' | 'system'; readonly content: string }>;
-  }): Promise<{ readonly text: string; readonly trace?: { readonly traceId?: string } }>;
+interface NimiRuntimeLike {
+  readonly generate: (request: {
+    readonly system: string;
+    readonly user: string;
+    readonly schema_name: string;
+  }) => Promise<{ readonly text: string }>;
 }
 
-export interface SdkRuntimeAiAdapterOptions {
-  readonly modelId: string;
-  readonly textCaller: SdkRuntimeTextCaller;
-  readonly adapterKind?: string;
+export interface SdkRuntimeFactoryOptions {
+  readonly nimi_runtime?: NimiRuntimeLike;
 }
 
-export function createSdkRuntimeAiAdapter(options: SdkRuntimeAiAdapterOptions): RuntimeAiClient {
-  const generator: RuntimeTextGenerator = async (request: RuntimeTextGeneratorRequest): Promise<RuntimeTextGeneratorResponse> => {
-    const response = await options.textCaller.generateText({
-      model: request.modelId,
-      system: request.system,
-      input: [{ role: 'user', content: request.user }],
-    });
-    return {
-      text: response.text,
-      ...(response.trace?.traceId !== undefined ? { traceId: response.trace.traceId } : {}),
-    };
-  };
-  return new RuntimeTextGeneratorAiClient({
-    modelId: options.modelId,
-    generator,
-    adapterKind: options.adapterKind ?? 'sdk_runtime_text',
-  });
+class SdkRuntimeAiClient implements RuntimeAiClient {
+  private readonly runtime: NimiRuntimeLike | undefined;
+  constructor(runtime: NimiRuntimeLike | undefined) {
+    this.runtime = runtime;
+  }
+  async generate(
+    mirror_kind: MirrorKind,
+    request: RuntimeAiPromptRequest,
+  ): Promise<RuntimeAiResult> {
+    if (!this.runtime) {
+      return {
+        ok: false,
+        failure: { kind: 'runtime_unavailable', detail: 'Nimi runtime not provided to factory' },
+      };
+    }
+    let result;
+    try {
+      result = await this.runtime.generate({
+        system: request.system_prompt,
+        user: request.user_prompt,
+        schema_name: request.schema_name,
+      });
+    } catch (err) {
+      return {
+        ok: false,
+        failure: { kind: 'runtime_unavailable', detail: String((err as Error).message) },
+      };
+    }
+    const parsed = parseRuntimeAiOutput(mirror_kind, result.text);
+    if (!parsed.ok) {
+      return { ok: false, failure: { kind: 'parse_failure', failure: parsed.failure } };
+    }
+    return { ok: true, output: parsed.output };
+  }
+}
+
+export function createSdkRuntimeAiClient(options: SdkRuntimeFactoryOptions): RuntimeAiClient {
+  return new SdkRuntimeAiClient(options.nimi_runtime);
 }

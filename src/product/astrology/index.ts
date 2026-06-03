@@ -1,7 +1,4 @@
-// Barrel — wave-10 real SJG-ALGO-02 pipeline + SJG-ALGO-12 boundary +
-// wave-13 correctness gaps (canonical hashes, summaries, uncertainty,
-// stage drivers, relation features, forbidden-content screen,
-// inputs-summary expiry).
+// Barrel — W03 mirror reading pipeline + Runtime AI boundary.
 
 export * from './stage-result.ts';
 export * from './ganzhi.ts';
@@ -17,7 +14,12 @@ export * from './branch-relations.ts';
 export * from './element-relations.ts';
 export * from './uncertainty-decision.ts';
 export * from './inputs-summary-expiry.ts';
+export * from './mirror-window.ts';
 export * from './build-feature-snapshot.ts';
+export * from './rijing-generator.ts';
+export * from './yuejing-generator.ts';
+export * from './nianjing-generator.ts';
+export * from './shijing-generator.ts';
 export * from './runtime-ai-prompt.ts';
 export * from './runtime-ai-parse.ts';
 export * from './runtime-ai-client.ts';

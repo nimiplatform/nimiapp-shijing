@@ -9,9 +9,10 @@ import type { NatalInputs, RawBirthInput } from '../../domain/person.ts';
 import type { NatalCanonicalization } from '../../domain/algorithm.ts';
 import { type StageResult } from './stage-result.ts';
 import { trueSolarTimeFromInstant, standardHoursForTimeZone } from './true-solar-time.ts';
+import { localWallClockToUtcInstant } from './local-wall-clock.ts';
 import { computeCanonicalHash } from './canonical-hash.ts';
 import { EPHEMERIS_VERSION } from './solar-terms.ts';
-import { parseNaturalBirthTime } from '../inputs/natural-birth-time.ts';
+import { parseNaturalBirthTime } from './natural-birth-time.ts';
 
 // Back-compat alias for the wave-10 module-local constant. The single
 // source of truth lives in `solar-terms.ts::EPHEMERIS_VERSION` per
@@ -85,31 +86,6 @@ function lunarToGregorianLocalIso(components: LunarComponents): string | null {
     const solar = lh.getSolarTime();
     const sd = solar.getSolarDay();
     return `${pad4(sd.getYear())}-${pad2(sd.getMonth())}-${pad2(sd.getDay())}T${pad2(solar.getHour())}:${pad2(solar.getMinute())}:${pad2(solar.getSecond())}`;
-  } catch {
-    return null;
-  }
-}
-
-function localWallClockToUtcInstant(localIso: string, ianaTimeZone: string): Date | null {
-  try {
-    const probe = new Date(`${localIso}Z`);
-    if (Number.isNaN(probe.getTime())) return null;
-    const dtf = new Intl.DateTimeFormat('en-US', {
-      timeZone: ianaTimeZone,
-      hour12: false,
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    });
-    const parts = dtf.formatToParts(probe);
-    const get = (type: Intl.DateTimeFormatPartTypes): number => {
-      const part = parts.find((p) => p.type === type);
-      return part ? Number(part.value) : NaN;
-    };
-    const tzY = get('year'), tzM = get('month'), tzD = get('day');
-    const tzH = get('hour'), tzMin = get('minute'), tzS = get('second');
-    const asUtcAgain = Date.UTC(tzY, tzM - 1, tzD, tzH, tzMin, tzS);
-    const offsetMs = asUtcAgain - probe.getTime();
-    return new Date(probe.getTime() - offsetMs);
   } catch {
     return null;
   }

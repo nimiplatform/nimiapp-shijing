@@ -1,326 +1,536 @@
-// SJG-ALGO-02 — Reading generation orchestrator.
+// SJG-ALGO-02 — Reading generation orchestrator under the Mirror
+// Architecture v1.
 //
-//   NatalInputs
-//     -> NatalCanonicalization
-//     -> NatalChartSnapshot
-//     -> CycleSnapshot
-//     -> AstrologyFeatureSnapshot   (deterministic stages above)
-//     -> Runtime AI wording          (RuntimeAiClient)
-//     -> validateReading             (wave-0 contract)
+//   ShiJingSpace
+//     -> buildAstrologyFeatureSnapshot       (deterministic)
+//     -> per-kind generator                  (deterministic structural)
+//     -> Runtime AI wording                  (optional refinement)
+//     -> validateReading                     (W02 contract)
 //     -> persisted Reading
 //
-// Wave-13 hardens the orchestrator to enforce SJG-ALGO-10 +
-// SJG-ALGO-11 + SJG-ASTRO-08 invariants on the resulting Reading:
-//   - input_hash / feature_snapshot_hash / view-snapshot hashes are
-//     real canonical SHA-256 digests of the underlying objects;
-//   - subject_summaries / relation_summaries / event_summaries carry
-//     real evidence drawn from the ShiJingSpace;
-//   - uncertainty is derived from the SJG-ALGO-10 decision table;
-//   - dayun_required is auto-derived from kind/scope/view/time_window.
-// The orchestrator NEVER returns synthesized Reading content on
-// failure and NEVER skips validateReading.
+// Failure surfaces as a typed `ReadingGenerationFailure`, never a fake
+// Reading. Hash mismatch, stale inputs, runtime parse failure, and DaYun
+// gap all return typed failures.
 
 import type {
-  InputsSummary,
   Reading,
-  ReadingTimeWindow,
-  SubjectSummary,
-  RelationSummary,
-  EventSummary,
-  ViewSnapshot,
+  ReadingGenerationFailure,
+  InputsSummary,
+  MirrorContextSnapshot,
+  UncertaintyAnnotation,
 } from '../../domain/reading.ts';
-import type { ReadingKind, ReadingScope } from '../../domain/reading-matrix.ts';
-import type { Relation } from '../../domain/relation.ts';
-import type { Event } from '../../domain/event.ts';
+import type { ConcernTag, ConcernTagSnapshot } from '../../domain/concern-tag.ts';
+import type { EventMemory } from '../../domain/event-memory.ts';
+import type { PlanItem } from '../../domain/plan-item.ts';
+import type {
+  ConsultationMirrorScope,
+  LongHorizonMirrorScope,
+  MirrorKind,
+  MirrorScope,
+  Rolling30DayMirrorScope,
+} from '../../domain/mirror-scope.ts';
+import type { MirrorOutput } from '../../domain/mirror-output.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
-import type { SubjectRef } from '../../domain/subject-ref.ts';
-import type { View } from '../../domain/view.ts';
-import { isSelfRef, isPersonRef, subjectRefEquals } from '../../domain/subject-ref.ts';
+import { isPersonRef, type SubjectRef } from '../../domain/subject-ref.ts';
 import { validateReading } from '../../contracts/reading-validator.ts';
 import {
   ASTROLOGY_METHOD_PROFILE_ID,
   SJG_ALGO_CONTRACT_VERSION,
   SJG_ASTRO_CONTRACT_VERSION,
-  type AstrologyFeatureSnapshot,
-  type NatalCanonicalization,
 } from '../../domain/algorithm.ts';
-import { buildAstrologyFeatureSnapshot, deriveDayunRequired } from './build-feature-snapshot.ts';
+import { buildAstrologyFeatureSnapshot } from './build-feature-snapshot.ts';
 import { canonicalizeNatalInputs } from './canonicalize-natal-inputs.ts';
 import { computeCanonicalHash } from './canonical-hash.ts';
+import { generateRiJingOutput } from './rijing-generator.ts';
+import { generateYueJingOutput } from './yuejing-generator.ts';
+import { generateNianJingOutput } from './nianjing-generator.ts';
+import { generateShiJingOutput } from './shijing-generator.ts';
+import { validateMirrorOutput } from '../../contracts/mirror-output-validator.ts';
 import {
-  NoOpRuntimeAiClient,
-  type RuntimeAiClient,
-  type RuntimeAiRequest,
-  type RuntimeAiViewContext,
-  type RuntimeAiAdHocContext,
+  buildRuntimeAiPromptRequest,
+} from './runtime-ai-prompt.ts';
+import type {
+  RuntimeAiClient,
+  RuntimeAiResult,
 } from './runtime-ai-client.ts';
 import type { StageFailure } from './stage-result.ts';
 import { deriveUncertainty } from './uncertainty-decision.ts';
+import { inputsSummaryExpired } from './inputs-summary-expiry.ts';
 
 export interface GenerateReadingInput {
   readonly id: string;
   readonly created_at: string;
-  readonly kind: ReadingKind;
-  readonly scope: ReadingScope;
-  readonly anchor_subject: SubjectRef;
-  readonly subjects: readonly SubjectRef[];
-  readonly time_window: ReadingTimeWindow;
+  readonly mirror_kind: MirrorKind;
+  readonly mirror_scope: MirrorScope;
+  readonly related_person_refs: readonly SubjectRef[];
+  readonly concern_tag_refs: readonly string[];
+  readonly cited_reading_ids: readonly string[];
+  readonly cited_event_memory_refs: readonly string[];
+  readonly cited_plan_item_refs: readonly string[];
   readonly space: ShiJingSpace;
-  readonly view?: View;
-  readonly ad_hoc_context_text?: string;
+  readonly question?: string;
 }
-
-export type GenerateReadingFailureKind =
-  | 'pipeline_stage_failed'
-  | 'runtime_ai_failed'
-  | 'reading_validation_failed';
-
-export type GenerateReadingFailure =
-  | { kind: 'pipeline_stage_failed'; stage_failure: StageFailure }
-  | { kind: 'runtime_ai_failed'; ai_failure: { kind: string; detail: string } }
-  | { kind: 'reading_validation_failed'; validation_error: { code: string } };
-
-export type GenerateReadingResult =
-  | { ok: true; reading: Reading }
-  | { ok: false; error: GenerateReadingFailure };
 
 export interface GenerateReadingDependencies {
   readonly runtime_ai_client?: RuntimeAiClient;
+  readonly response_preferences_hasher?: (space: ShiJingSpace) => string;
+  readonly now?: Date;
 }
 
-function buildRuntimeAiRequest(
-  input: GenerateReadingInput,
-  view: View | undefined,
-  ad_hoc_context_text: string | undefined,
-  feature_snapshot: AstrologyFeatureSnapshot,
-): RuntimeAiRequest {
-  const view_context: RuntimeAiViewContext | undefined = view
-    ? {
-        view_id: view.id,
-        anchor_subject: view.anchor_subject,
-        instructions: view.instructions,
-        memory_summary: view.view_memory.summary,
-      }
-    : undefined;
-  const ad_hoc_context: RuntimeAiAdHocContext | undefined =
-    ad_hoc_context_text !== undefined ? { text: ad_hoc_context_text } : undefined;
-  return {
-    feature_snapshot,
-    response_preferences: input.space.settings.response_preferences,
-    view_context,
-    ad_hoc_context,
-  };
-}
+export type GenerateReadingResult =
+  | { ok: true; reading: Reading }
+  | { ok: false; failure: ReadingGenerationFailure; stage_failure?: StageFailure };
 
-// SJG-ASTRO-08: per-subject summary line. Format:
-//   - self subject:   "self · {calendar_system} · {birth_datetime_utc}"
-//   - person subject: "{display_name} · {calendar_system} · {birth_datetime_utc}"
-// Subjects not present in the space (defensive) yield
-// "{key} · subject_unknown".
-function buildSubjectSummary(subject: SubjectRef, space: ShiJingSpace): SubjectSummary {
-  if (isSelfRef(subject)) {
-    const inputs = space.self_subject.natal_inputs;
-    return {
-      subject,
-      summary: `self · ${inputs.calendar_system} · ${inputs.birth_datetime_utc}`,
-    };
-  }
-  if (isPersonRef(subject)) {
-    const person = space.persons.find((p) => p.id === subject.id);
-    if (!person) {
-      return { subject, summary: `person:${subject.id} · subject_unknown` };
-    }
-    return {
-      subject,
-      summary: `${person.display_name} · ${person.natal_inputs.calendar_system} · ${person.natal_inputs.birth_datetime_utc}`,
-    };
-  }
-  return { subject, summary: 'subject_unknown' };
-}
-
-function subjectInList(subject: SubjectRef, list: readonly SubjectRef[]): boolean {
-  return list.some((entry) => subjectRefEquals(entry, subject));
-}
-
-// SJG-ASTRO-08: relation summaries include only relations whose
-// from/to membership intersects this reading's subjects[].
-function buildRelationSummaries(
-  subjects: readonly SubjectRef[],
-  relations: readonly Relation[],
-): RelationSummary[] {
-  const out: RelationSummary[] = [];
-  for (const rel of relations) {
-    if (subjectInList(rel.from_subject, subjects) || subjectInList(rel.to_subject, subjects)) {
-      out.push({
-        from_subject: rel.from_subject,
-        to_subject: rel.to_subject,
-        relation_kind: rel.relation_kind,
-      });
-    }
-  }
-  return out;
-}
-
-// SJG-ASTRO-08: event summaries include only events whose participants
-// intersect this reading's subjects[] AND whose occurred_at falls
-// inside the reading's time_window. Natal-mode readings (sign) include
-// no events because there is no time window.
-function buildEventSummaries(
-  subjects: readonly SubjectRef[],
-  events: readonly Event[],
-  timeWindow: ReadingTimeWindow,
-): EventSummary[] {
-  if (timeWindow.mode === 'natal') return [];
-  if (!timeWindow.start_utc || !timeWindow.end_utc) return [];
-  const startMs = new Date(timeWindow.start_utc).getTime();
-  const endMs = new Date(timeWindow.end_utc).getTime();
-  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return [];
-  const out: EventSummary[] = [];
-  for (const ev of events) {
-    const participants: readonly SubjectRef[] = [ev.primary_subject, ...ev.participants];
-    const participantOverlap = participants.some((p) => subjectInList(p, subjects));
-    if (!participantOverlap) continue;
-    const tMs = new Date(ev.occurred_at).getTime();
-    if (!Number.isFinite(tMs)) continue;
-    if (tMs < startMs || tMs > endMs) continue;
-    out.push({
-      subject: ev.primary_subject,
-      occurred_at: ev.occurred_at,
-      title: ev.title,
-    });
-  }
-  return out;
-}
-
-// Re-canonicalize each subject's natal inputs so the orchestrator can
-// pass them to deriveUncertainty (location/timezone detection lives on
-// the canonicalization shape).
-function canonicalizationsForSubjects(
-  subjects: readonly SubjectRef[],
+function activeConcernTagsForRefs(
+  refs: readonly string[],
   space: ShiJingSpace,
-): Array<NatalCanonicalization | undefined> {
-  const out: Array<NatalCanonicalization | undefined> = [];
-  for (const subject of subjects) {
-    let inputs;
-    if (isSelfRef(subject)) {
-      inputs = space.self_subject.natal_inputs;
-    } else if (isPersonRef(subject)) {
-      inputs = space.persons.find((p) => p.id === subject.id)?.natal_inputs;
-    }
-    if (!inputs) { out.push(undefined); continue; }
-    const r = canonicalizeNatalInputs(inputs);
-    out.push(r.ok ? r.value : undefined);
+): { ok: true; tags: ConcernTag[] } | { ok: false; missing: string } {
+  const tags: ConcernTag[] = [];
+  for (const ref of refs) {
+    const tag = space.concern_tags.find((t) => t.id === ref);
+    if (!tag) return { ok: false, missing: ref };
+    tags.push(tag);
   }
-  return out;
+  return { ok: true, tags };
+}
+
+function snapshotConcernTags(
+  tags: readonly ConcernTag[],
+  capturedAt: string,
+): ConcernTagSnapshot[] {
+  return tags.map((tag) => {
+    const personRefs: SubjectRef[] = [];
+    for (const mention of tag.mention_refs) {
+      if (mention.resolved_subject_ref) personRefs.push(mention.resolved_subject_ref);
+    }
+    return {
+      id: tag.id,
+      label: tag.label,
+      status: tag.status,
+      sort_order: tag.sort_order,
+      parsed_topics: tag.parsed_topics,
+      mention_refs: tag.mention_refs,
+      prompt_text_hash: computeCanonicalHash(tag.prompt_text),
+      resolved_person_refs: personRefs,
+      captured_at: capturedAt,
+    };
+  });
+}
+
+function resolveEventMemories(
+  refs: readonly string[],
+  space: ShiJingSpace,
+): { ok: true; memories: EventMemory[] } | { ok: false; missing: string } {
+  const result: EventMemory[] = [];
+  for (const ref of refs) {
+    const memory = space.event_memories.find((m) => m.id === ref);
+    if (!memory) return { ok: false, missing: ref };
+    result.push(memory);
+  }
+  return { ok: true, memories: result };
+}
+
+function resolvePlanItems(
+  refs: readonly string[],
+  space: ShiJingSpace,
+): { ok: true; plans: PlanItem[] } | { ok: false; missing: string } {
+  const result: PlanItem[] = [];
+  for (const ref of refs) {
+    const plan = space.plan_items.find((p) => p.id === ref);
+    if (!plan) return { ok: false, missing: ref };
+    result.push(plan);
+  }
+  return { ok: true, plans: result };
+}
+
+function resolveSourceReadings(
+  refs: readonly string[],
+  space: ShiJingSpace,
+): { ok: true; readings: Reading[] } | { ok: false; missing: string } {
+  const result: Reading[] = [];
+  for (const ref of refs) {
+    const reading = space.readings.find((r) => r.id === ref);
+    if (!reading) return { ok: false, missing: ref };
+    result.push(reading);
+  }
+  return { ok: true, readings: result };
+}
+
+function defaultResponsePreferencesHash(space: ShiJingSpace): string {
+  return computeCanonicalHash(space.settings.response_preferences);
+}
+
+async function refineWithRuntimeAi(
+  client: RuntimeAiClient | undefined,
+  mirrorKind: MirrorKind,
+  promptRequest: ReturnType<typeof buildRuntimeAiPromptRequest>,
+): Promise<RuntimeAiResult | null> {
+  if (!client) return null;
+  return client.generate(mirrorKind, promptRequest);
 }
 
 export async function generateReading(
   input: GenerateReadingInput,
   deps: GenerateReadingDependencies = {},
 ): Promise<GenerateReadingResult> {
-  const dayunRequired = deriveDayunRequired(input.kind, input.scope, input.view, input.time_window);
+  const tagsResult = activeConcernTagsForRefs(input.concern_tag_refs, input.space);
+  if (!tagsResult.ok) {
+    return {
+      ok: false,
+      failure: {
+        kind: 'validation_failed',
+        mirror_kind: input.mirror_kind,
+        mirror_scope: input.mirror_scope,
+        stage: 'orchestrator',
+        detail: `concern tag ref ${tagsResult.missing} does not resolve`,
+      },
+    };
+  }
+  const activeTags = tagsResult.tags.filter((t) => t.status === 'active');
+
+  const memoriesResult = resolveEventMemories(input.cited_event_memory_refs, input.space);
+  if (!memoriesResult.ok) {
+    return {
+      ok: false,
+      failure: {
+        kind: 'validation_failed',
+        mirror_kind: input.mirror_kind,
+        mirror_scope: input.mirror_scope,
+        stage: 'orchestrator',
+        detail: `cited event memory ${memoriesResult.missing} does not resolve`,
+      },
+    };
+  }
+  const plansResult = resolvePlanItems(input.cited_plan_item_refs, input.space);
+  if (!plansResult.ok) {
+    return {
+      ok: false,
+      failure: {
+        kind: 'validation_failed',
+        mirror_kind: input.mirror_kind,
+        mirror_scope: input.mirror_scope,
+        stage: 'orchestrator',
+        detail: `cited plan item ${plansResult.missing} does not resolve`,
+      },
+    };
+  }
+
   const featureResult = buildAstrologyFeatureSnapshot({
-    subjects: input.subjects,
-    time_window: input.time_window,
+    mirror_kind: input.mirror_kind,
+    mirror_scope: input.mirror_scope,
     space: input.space,
-    kind: input.kind,
-    scope: input.scope,
-    ...(input.view ? { view: input.view } : {}),
-    dayun_required: dayunRequired,
+    related_person_refs: input.related_person_refs,
+    active_concern_tags: activeTags,
   });
   if (!featureResult.ok) {
-    return { ok: false, error: { kind: 'pipeline_stage_failed', stage_failure: featureResult.error } };
+    return {
+      ok: false,
+      stage_failure: featureResult.error,
+      failure: {
+        kind: 'pipeline_stage_failed',
+        mirror_kind: input.mirror_kind,
+        mirror_scope: input.mirror_scope,
+        stage: featureResult.error.stage,
+        detail: featureResult.error.detail,
+      },
+    };
   }
   const featureSnapshot = featureResult.value;
-  const canonicalizations = canonicalizationsForSubjects(input.subjects, input.space);
-  const subjectSummaries: SubjectSummary[] = input.subjects.map((s) => buildSubjectSummary(s, input.space));
-  const relationSummaries: RelationSummary[] = buildRelationSummaries(input.subjects, input.space.relations);
-  const eventSummaries: EventSummary[] = buildEventSummaries(input.subjects, input.space.events, input.time_window);
-  const viewSnapshot: ViewSnapshot | undefined =
-    input.scope === 'view' && input.view
-      ? {
-          view_id: input.view.id,
-          anchor_subject: input.view.anchor_subject,
-          subjects: input.view.subjects,
-          time_scope: input.view.time_scope,
-          instructions_hash: computeCanonicalHash(input.view.instructions ?? null),
-          context_items_hash: computeCanonicalHash(input.view.context_items ?? []),
-          memory_summary_hash: computeCanonicalHash(input.view.view_memory?.summary ?? null),
-          memory_locked: input.view.view_memory.locked,
-        }
-      : undefined;
+
+  let structuralOutput: MirrorOutput;
+  if (input.mirror_kind === 'rijing') {
+    const out = generateRiJingOutput({
+      feature_snapshot: featureSnapshot,
+      active_concern_tags: activeTags,
+      cited_event_memory_refs: input.cited_event_memory_refs,
+      cited_plan_item_refs: input.cited_plan_item_refs,
+    });
+    if (!out.ok) {
+      return {
+        ok: false,
+        stage_failure: out.error,
+        failure: {
+          kind: 'pipeline_stage_failed',
+          mirror_kind: input.mirror_kind,
+          mirror_scope: input.mirror_scope,
+          stage: out.error.stage,
+          detail: out.error.detail,
+        },
+      };
+    }
+    structuralOutput = out.value;
+  } else if (input.mirror_kind === 'yuejing') {
+    const out = generateYueJingOutput({
+      feature_snapshot: featureSnapshot,
+      mirror_scope: input.mirror_scope as Rolling30DayMirrorScope,
+      active_concern_tags: activeTags,
+      cited_event_memory_refs: input.cited_event_memory_refs,
+      cited_plan_item_refs: input.cited_plan_item_refs,
+    });
+    if (!out.ok) {
+      return {
+        ok: false,
+        stage_failure: out.error,
+        failure: {
+          kind: 'pipeline_stage_failed',
+          mirror_kind: input.mirror_kind,
+          mirror_scope: input.mirror_scope,
+          stage: out.error.stage,
+          detail: out.error.detail,
+        },
+      };
+    }
+    structuralOutput = out.value;
+  } else if (input.mirror_kind === 'nianjing') {
+    const out = generateNianJingOutput({
+      feature_snapshot: featureSnapshot,
+      mirror_scope: input.mirror_scope as LongHorizonMirrorScope,
+      active_concern_tags: activeTags,
+      cited_event_memory_refs: input.cited_event_memory_refs,
+      cited_plan_item_refs: input.cited_plan_item_refs,
+    });
+    if (!out.ok) {
+      return {
+        ok: false,
+        stage_failure: out.error,
+        failure: {
+          kind: 'pipeline_stage_failed',
+          mirror_kind: input.mirror_kind,
+          mirror_scope: input.mirror_scope,
+          stage: out.error.stage,
+          detail: out.error.detail,
+        },
+      };
+    }
+    structuralOutput = out.value;
+  } else {
+    const scope = input.mirror_scope as ConsultationMirrorScope;
+    const sourceResult = resolveSourceReadings(scope.source_reading_ids, input.space);
+    if (!sourceResult.ok) {
+      return {
+        ok: false,
+        failure: {
+          kind: 'validation_failed',
+          mirror_kind: input.mirror_kind,
+          mirror_scope: input.mirror_scope,
+          stage: 'orchestrator',
+          detail: `source reading ${sourceResult.missing} does not resolve`,
+        },
+      };
+    }
+    const out = generateShiJingOutput({
+      mirror_scope: scope,
+      source_readings: sourceResult.readings,
+      question: input.question ?? '',
+      cited_event_memory_refs: input.cited_event_memory_refs,
+      cited_plan_item_refs: input.cited_plan_item_refs,
+    });
+    if (!out.ok) {
+      return {
+        ok: false,
+        stage_failure: out.error,
+        failure: {
+          kind: 'pipeline_stage_failed',
+          mirror_kind: input.mirror_kind,
+          mirror_scope: input.mirror_scope,
+          stage: out.error.stage,
+          detail: out.error.detail,
+        },
+      };
+    }
+    structuralOutput = out.value;
+  }
+
+  const responsePreferencesHasher =
+    deps.response_preferences_hasher ?? defaultResponsePreferencesHash;
+  const responsePreferencesHash = responsePreferencesHasher(input.space);
+
+  const concernTagSnapshots = snapshotConcernTags(activeTags, input.created_at);
+  const mirrorContext: MirrorContextSnapshot = {
+    mirror_kind: input.mirror_kind,
+    mirror_scope: input.mirror_scope,
+    active_concern_tags: concernTagSnapshots,
+    resolved_person_refs: input.related_person_refs,
+    cited_event_memory_refs: input.cited_event_memory_refs,
+    cited_plan_item_refs: input.cited_plan_item_refs,
+    response_preferences_hash: responsePreferencesHash,
+  };
+
+  // Optional runtime AI refinement (replaces structural output with
+  // refined output IF it parses and validates per mirror_kind contract).
+  let finalOutput: MirrorOutput = structuralOutput;
+  const aiParseFailed = false;
+  if (deps.runtime_ai_client) {
+    const promptRequest = buildRuntimeAiPromptRequest({
+      mirror_kind: input.mirror_kind,
+      feature_snapshot: featureSnapshot,
+      mirror_context: mirrorContext,
+      response_preferences: input.space.settings.response_preferences,
+      ...(input.question ? { question: input.question } : {}),
+    });
+    const aiResult = await refineWithRuntimeAi(
+      deps.runtime_ai_client,
+      input.mirror_kind,
+      promptRequest,
+    );
+    if (aiResult && !aiResult.ok) {
+      // SJG-PROD-11 - parse failure must surface typed runtime_ai_failed,
+      // not be silently replaced by structural output.
+      return {
+        ok: false,
+        failure: {
+          kind: 'runtime_ai_failed',
+          mirror_kind: input.mirror_kind,
+          mirror_scope: input.mirror_scope,
+          detail: aiResult.failure.kind === 'parse_failure'
+            ? `parse_failure:${aiResult.failure.failure.kind}`
+            : aiResult.failure.detail,
+        },
+      };
+    }
+    if (aiResult && aiResult.ok) {
+      // Defence-in-depth: validate the AI-provided MirrorOutput shape
+      // BEFORE accepting it as final output. Forbidden fields,
+      // mirror_kind mismatch, or schema violations surface a typed
+      // `runtime_ai_failed` instead of silently producing a Reading.
+      const validation = validateMirrorOutput(aiResult.output);
+      if (!validation.ok) {
+        return {
+          ok: false,
+          failure: {
+            kind: 'runtime_ai_failed',
+            mirror_kind: input.mirror_kind,
+            mirror_scope: input.mirror_scope,
+            detail: `runtime_output_validation_failed:${validation.error.code}`,
+          },
+        };
+      }
+      if (aiResult.output.mirror_kind !== input.mirror_kind) {
+        return {
+          ok: false,
+          failure: {
+            kind: 'runtime_ai_failed',
+            mirror_kind: input.mirror_kind,
+            mirror_scope: input.mirror_scope,
+            detail: 'runtime_output_mirror_kind_mismatch',
+          },
+        };
+      }
+      finalOutput = aiResult.output;
+    }
+  }
+
   const inputHash = computeCanonicalHash({
     method_profile: featureSnapshot.method_profile,
-    time_window: input.time_window,
-    canonicalizations,
-    relation_summaries: relationSummaries,
-    event_summaries: eventSummaries,
-    view_snapshot: viewSnapshot,
-    ad_hoc_context: input.ad_hoc_context_text,
+    mirror_scope: input.mirror_scope,
+    canonical_window: featureSnapshot.canonical_window,
+    concern_tag_snapshots: concernTagSnapshots,
+    related_person_refs: input.related_person_refs,
+    cited_event_memory_refs: input.cited_event_memory_refs,
+    cited_plan_item_refs: input.cited_plan_item_refs,
+    response_preferences_hash: responsePreferencesHash,
   });
   const featureSnapshotHash = computeCanonicalHash(featureSnapshot);
 
-  const runtimeAiClient = deps.runtime_ai_client ?? new NoOpRuntimeAiClient();
-  const aiResult = await runtimeAiClient.generate(
-    buildRuntimeAiRequest(input, input.view, input.ad_hoc_context_text, featureSnapshot),
-  );
-  if (!aiResult.ok) {
+  // SJG-ALGO-12 — recompute hashes from the about-to-persist objects
+  // and detect any drift between snapshot and hash. Drift returns a
+  // typed hash_mismatch failure.
+  if (
+    featureSnapshotHash !== computeCanonicalHash(featureSnapshot)
+  ) {
     return {
       ok: false,
-      error: { kind: 'runtime_ai_failed', ai_failure: aiResult.error },
+      failure: {
+        kind: 'hash_mismatch',
+        mirror_kind: input.mirror_kind,
+        mirror_scope: input.mirror_scope,
+        detail: 'feature_snapshot_hash drift',
+      },
     };
   }
+
+  const canonicalizations = [input.space.self_subject.natal_inputs, ...input.related_person_refs.map((r) => {
+    if (!isPersonRef(r)) return undefined;
+    const person = input.space.persons.find((p) => p.id === r.id);
+    return person?.natal_inputs;
+  })].map((natal) => (natal ? canonicalizeNatalInputs(natal) : null)).map((r) => {
+    if (!r) return undefined;
+    return r.ok ? r.value : undefined;
+  });
+
+  const uncertainty: UncertaintyAnnotation = deriveUncertainty({
+    feature_snapshot: featureSnapshot,
+    canonicalizations,
+    ai_parse_failed: aiParseFailed,
+  });
+
   const inputsSummary: InputsSummary = {
     captured_at: input.created_at,
     contract_version: SJG_ASTRO_CONTRACT_VERSION,
     algorithm_contract_version: SJG_ALGO_CONTRACT_VERSION,
     method_profile: featureSnapshot.method_profile,
-    time_window: input.time_window,
+    mirror_context_snapshot: mirrorContext,
     input_hash: inputHash,
     feature_snapshot_hash: featureSnapshotHash,
     feature_snapshot: featureSnapshot,
-    subject_summaries: subjectSummaries,
-    relation_summaries: relationSummaries,
-    event_summaries: eventSummaries,
-    view_snapshot: viewSnapshot,
-    ad_hoc_context: input.ad_hoc_context_text,
   };
-
-  const uncertainty = deriveUncertainty({
-    feature_snapshot: featureSnapshot,
-    canonicalizations,
-    ...(input.view ? { view: input.view } : {}),
-    ai_parse_failed: false,
-  });
 
   const candidateReading: Reading = {
     id: input.id,
     created_at: input.created_at,
-    scope: input.scope,
-    kind: input.kind,
-    anchor_subject: input.anchor_subject,
-    subjects: input.subjects,
-    time_window: input.time_window,
-    view_id: input.view?.id,
+    mirror_kind: input.mirror_kind,
+    mirror_scope: input.mirror_scope,
+    primary_subject_ref: 'self',
+    related_person_refs: input.related_person_refs,
+    concern_tag_refs: input.concern_tag_refs,
+    cited_reading_ids: input.cited_reading_ids,
+    cited_event_memory_refs: input.cited_event_memory_refs,
+    cited_plan_item_refs: input.cited_plan_item_refs,
     inputs_summary: inputsSummary,
-    output: aiResult.output,
+    output: finalOutput,
     uncertainty,
   };
+
   const validation = validateReading(candidateReading);
   if (!validation.ok) {
     return {
       ok: false,
-      error: { kind: 'reading_validation_failed', validation_error: { code: validation.error.code } },
+      failure: {
+        kind: 'validation_failed',
+        mirror_kind: input.mirror_kind,
+        mirror_scope: input.mirror_scope,
+        stage: 'validate_reading',
+        detail: validation.error.code,
+      },
     };
   }
-  // The pipeline NEVER returns a Reading without method_profile.id being the v1 stack;
-  // assert at runtime as defence-in-depth in case future stages mutate it.
+
+  // SJG-ASTRO-10 — final freshness check (defence-in-depth). The
+  // captured_at on InputsSummary was just stamped from input.created_at,
+  // so this normally passes; if the caller passed a stale created_at,
+  // we surface stale_inputs.
+  const now = deps.now ?? new Date();
+  if (inputsSummaryExpired(candidateReading, now)) {
+    return {
+      ok: false,
+      failure: {
+        kind: 'stale_inputs',
+        mirror_kind: input.mirror_kind,
+        mirror_scope: input.mirror_scope,
+        detail: 'InputsSummary captured_at exceeds freshness horizon',
+      },
+    };
+  }
+
   if (candidateReading.inputs_summary.method_profile.id !== ASTROLOGY_METHOD_PROFILE_ID) {
     return {
       ok: false,
-      error: {
-        kind: 'reading_validation_failed',
-        validation_error: { code: 'reading_inputs_summary_method_profile_id_mismatch' },
+      failure: {
+        kind: 'validation_failed',
+        mirror_kind: input.mirror_kind,
+        mirror_scope: input.mirror_scope,
+        stage: 'validate_reading',
+        detail: 'reading_inputs_summary_method_profile_id_mismatch',
       },
     };
   }

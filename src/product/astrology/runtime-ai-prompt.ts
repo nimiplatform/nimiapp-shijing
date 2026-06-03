@@ -1,66 +1,65 @@
-// SJG-ALGO-12 — deterministic prompt builder. Hands the runtime AI the
-// AstrologyFeatureSnapshot summary + response_preferences + admitted
-// context. Output schema reference is embedded so the AI returns
-// AstrologyOutput-shaped JSON. NO provider/model literal here; the
-// caller supplies the connector/model via the injected generator.
+// SJG-ALGO-13 — Runtime AI prompt builder.
 
 import type { AstrologyFeatureSnapshot } from '../../domain/algorithm.ts';
+import type { ConcernTagSnapshot } from '../../domain/concern-tag.ts';
+import type { MirrorContextSnapshot, Reading } from '../../domain/reading.ts';
+import type { MirrorKind } from '../../domain/mirror-scope.ts';
 import type { ResponsePreferences } from '../../domain/settings.ts';
-import { subjectRefKey } from '../../domain/subject-ref.ts';
-import type { RuntimeAiAdHocContext, RuntimeAiViewContext } from './runtime-ai-client.ts';
 
-export interface RuntimeAiPromptParts {
-  readonly system: string;
-  readonly user: string;
+export interface RuntimeAiPromptRequest {
+  readonly mirror_kind: MirrorKind;
+  readonly system_prompt: string;
+  readonly user_prompt: string;
+  readonly schema_name: string;
 }
 
-const OUTPUT_SCHEMA_NOTE = [
-  'Return ONLY a JSON object matching this shape:',
-  '{',
-  '  "summary": string (1-3 sentence reflection, non-empty),',
-  '  "highlights": Array<{ label: string, body: string, subject_ref: SubjectRef }>,',
-  '  "recommendations": Array<{ body: string, subject_ref: SubjectRef, horizon: "today"|"this_week"|"this_month"|"long_term" }>,',
-  '  "citations": Array<{ method: string, reference: string }>,',
-  '}',
-  'SubjectRef is either the string "self" or { "kind": "person", "id": string }.',
-  'Use a subject_ref that appears in the snapshot\'s subjects[]; never invent one.',
-  'Do NOT include luck scores, monthly reports, yearly reports, trend charts, Huangli daily entries, or third-party consultant CTAs.',
+const SYSTEM_PREAMBLE = [
+  'You are the ShiJing wording layer.',
+  'Deterministic astrology features are the source of truth.',
+  'NEVER calculate pillars, DaYun, or solar terms.',
+  'NEVER invent uncited memory or plan influence.',
+  'Output MUST be a single JSON object matching the requested schema.',
+  'NEVER emit markdown, prose-only text, score, luck_score, trend_chart, k_line, report, or task fields.',
 ].join('\n');
 
-export function buildRuntimeAiPrompt(
-  featureSnapshot: AstrologyFeatureSnapshot,
-  responsePreferences: ResponsePreferences,
-  viewContext?: RuntimeAiViewContext,
-  adHocContext?: RuntimeAiAdHocContext,
-): RuntimeAiPromptParts {
-  const subjectKeys = featureSnapshot.subjects.map((s) => subjectRefKey(s.subject)).join(', ');
-  const stageLabel = featureSnapshot.stage_label;
-  const keyWindows = featureSnapshot.key_windows
-    .map((w) => `${w.label}@${w.start_utc}-${w.end_utc}`)
-    .join('; ');
-  const uncertainty = featureSnapshot.uncertainty_inputs
-    .map((u) => `${u.code}(${u.severity})`)
-    .join(', ');
+function summarizeConcernTags(tags: readonly ConcernTagSnapshot[]): string {
+  if (tags.length === 0) return '(no active concern tags)';
+  return tags
+    .map((tag) => `${tag.label} (id=${tag.id}; status=${tag.status}; topics=${tag.parsed_topics.join(',')})`)
+    .join('\n');
+}
 
-  const system = [
-    'You are ShiJing astrology wording-layer. You do NOT compute astrology — you only word the deterministic snapshot.',
-    `Wording tone: ${responsePreferences.tone}; length: ${responsePreferences.length}; language: ${responsePreferences.language}.`,
-    OUTPUT_SCHEMA_NOTE,
-  ].join('\n\n');
-
-  const featurePayload = JSON.stringify(featureSnapshot);
-  const userParts = [
-    `subjects: ${subjectKeys}`,
-    `stage_label: ${stageLabel}`,
-    `key_windows: ${keyWindows || 'none'}`,
-    `uncertainty_inputs: ${uncertainty || 'none'}`,
-    viewContext
-      ? `view_context: id=${viewContext.view_id}; anchor=${subjectRefKey(viewContext.anchor_subject)}; instructions=${viewContext.instructions}; memory_summary=${viewContext.memory_summary}`
-      : 'view_context: none',
-    adHocContext ? `ad_hoc_context: ${adHocContext.text}` : 'ad_hoc_context: none',
-    `feature_snapshot_json: ${featurePayload}`,
-    'Produce JSON only — no preface, no markdown.',
+export function buildRuntimeAiPromptRequest(args: {
+  readonly mirror_kind: MirrorKind;
+  readonly feature_snapshot: AstrologyFeatureSnapshot;
+  readonly mirror_context: MirrorContextSnapshot;
+  readonly response_preferences: ResponsePreferences;
+  readonly question?: string;
+  readonly source_readings?: readonly Reading[];
+}): RuntimeAiPromptRequest {
+  const userPromptLines = [
+    `mirror_kind: ${args.mirror_kind}`,
+    `tone: ${args.response_preferences.tone}; length: ${args.response_preferences.length}; language: ${args.response_preferences.language}`,
+    `active_concern_tags:\n${summarizeConcernTags(args.mirror_context.active_concern_tags)}`,
+    `canonical_window: ${args.feature_snapshot.canonical_window.start_utc} → ${args.feature_snapshot.canonical_window.end_utc} (${args.feature_snapshot.canonical_window.basis_time_zone})`,
+    `cited_event_memory_refs: ${JSON.stringify(args.mirror_context.cited_event_memory_refs)}`,
+    `cited_plan_item_refs: ${JSON.stringify(args.mirror_context.cited_plan_item_refs)}`,
   ];
-
-  return { system, user: userParts.join('\n') };
+  if (args.question) {
+    userPromptLines.push(`question: ${args.question}`);
+  }
+  if (args.source_readings && args.source_readings.length > 0) {
+    userPromptLines.push(
+      `source_readings: ${args.source_readings.map((r) => `${r.mirror_kind}:${r.id}`).join(', ')}`,
+    );
+  }
+  if (args.response_preferences.extra_instructions) {
+    userPromptLines.push(`extra_instructions: ${args.response_preferences.extra_instructions}`);
+  }
+  return {
+    mirror_kind: args.mirror_kind,
+    system_prompt: SYSTEM_PREAMBLE,
+    user_prompt: userPromptLines.join('\n\n'),
+    schema_name: `shijing.mirror_output.${args.mirror_kind}.v1`,
+  };
 }

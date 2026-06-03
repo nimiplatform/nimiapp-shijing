@@ -1,110 +1,92 @@
-// SJG-ALGO-08 — orchestrates per-subject canonicalization → natal chart
-// → cycle snapshot → DaYun → stage label → key windows → uncertainty
-// inputs. Wave-13 extends:
-//   - dayun_required auto-derivation from kind/scope/time_window per
-//     SJG-ALGO-07;
-//   - stage_drivers populated from active cycle markers;
-//   - relation_features populated from natal pillar branch interactions
-//     (六合 / 三合 / 相冲 / 相害) using `branch-relations.ts`.
+// SJG-ALGO-08 — AstrologyFeatureSnapshot builder under the W02 Mirror
+// Architecture v1 shape.
+//
+// Per-mirror feature snapshot:
+//   method_profile, mirror_kind, canonical_window,
+//   self_subject (SubjectFeatureSnapshot),
+//   related_persons (SubjectFeatureSnapshot[]),
+//   stage_drivers, key_windows,
+//   yuejing_tendency_drivers (for YueJing),
+//   nianjing_phase_drivers + nianjing_inflection_drivers (for NianJing),
+//   uncertainty_inputs.
 
-import type { SubjectRef } from '../../domain/subject-ref.ts';
+import type { ConcernTag } from '../../domain/concern-tag.ts';
+import type { NatalInputs } from '../../domain/person.ts';
 import type {
   AstrologyFeatureSnapshot,
+  CanonicalMirrorWindow,
   CycleMarker,
-  GanzhiPillar,
   KeyWindowFeature,
-  NatalChartSnapshot,
-  ReadingTimeWindow,
-  RelationFeatureSnapshot,
+  NianJingInflectionDriver,
+  NianJingPhaseDriver,
   StageDriver,
   SubjectFeatureSnapshot,
   UncertaintyInput,
+  YueJingTendencyDriver,
 } from '../../domain/algorithm.ts';
 import {
   ASTROLOGY_METHOD_PROFILE_ID,
   SJG_ALGO_CONTRACT_VERSION,
   SJG_ALGO_FEATURE_SCHEMA_VERSION,
 } from '../../domain/algorithm.ts';
-import type { NatalInputs } from '../../domain/person.ts';
+import type { MirrorKind, MirrorScope } from '../../domain/mirror-scope.ts';
+import type { TendencyClass } from '../../domain/mirror-output.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
-import type { ReadingKind, ReadingScope } from '../../domain/reading-matrix.ts';
-import type { View } from '../../domain/view.ts';
-import type { StageResult } from './stage-result.ts';
+import { isPersonRef, isSelfRef, type SubjectRef } from '../../domain/subject-ref.ts';
 import { canonicalizeNatalInputs } from './canonicalize-natal-inputs.ts';
-import { buildNatalChartSnapshot } from './build-natal-chart.ts';
 import { buildCycleSnapshot } from './build-cycle-snapshot.ts';
+import { buildNatalChartSnapshot } from './build-natal-chart.ts';
 import { computeDayun } from './dayun.ts';
-import { pickStageLabel } from './stage-label.ts';
-import { classifyBranchPair } from './branch-relations.ts';
+import { resolveCanonicalMirrorWindow } from './mirror-window.ts';
+import { type StageResult } from './stage-result.ts';
 
 export interface BuildFeatureSnapshotInput {
-  readonly subjects: readonly SubjectRef[];
-  readonly time_window: ReadingTimeWindow;
+  readonly mirror_kind: MirrorKind;
+  readonly mirror_scope: MirrorScope;
   readonly space: ShiJingSpace;
-  // Wave-13 — explicit kind/scope/view drive the dayun_required
-  // calculation per SJG-ALGO-07. Optional for back-compat with wave-10
-  // call sites; when omitted, dayun_required defaults to false (legacy
-  // wave-10 behavior).
-  readonly kind?: ReadingKind;
-  readonly scope?: ReadingScope;
-  readonly view?: View;
-  // Explicit override (e.g. tests). When provided, wins over the
-  // SJG-ALGO-07 auto-derivation.
-  readonly dayun_required?: boolean;
+  readonly related_person_refs: readonly SubjectRef[];
+  readonly active_concern_tags: readonly ConcernTag[];
+  readonly dayun_required_override?: boolean;
 }
 
 function natalInputsForSubject(subject: SubjectRef, space: ShiJingSpace): NatalInputs | undefined {
-  if (subject === 'self') return space.self_subject.natal_inputs;
-  const person = space.persons.find((entry) => entry.id === subject.id);
-  return person?.natal_inputs;
+  if (isSelfRef(subject)) return space.self_subject.natal_inputs;
+  if (isPersonRef(subject)) return space.persons.find((p) => p.id === subject.id)?.natal_inputs;
+  return undefined;
 }
 
-function consentCaveat(subject: SubjectRef, space: ShiJingSpace): UncertaintyInput | null {
-  if (subject === 'self') return null;
-  const person = space.persons.find((entry) => entry.id === subject.id);
-  if (!person) return null;
-  if (person.consent_state === 'withheld') {
-    return { code: 'consent_withheld', severity: 'caveat', subject };
-  }
-  return null;
+// SJG-ALGO-07 — DaYun is required for NianJing always, for YueJing
+// when scope intersects a DaYun boundary (proxy: span > 90 days), for
+// ShiJing consultation when cited source requires DaYun (we treat
+// `mirror_kind === 'shijing'` as opt-in DaYun-aware), and for any
+// daily/rolling scope longer than 90 local days. RiJing/daily never
+// requires DaYun, except when calculation deems it required from
+// upstream context (override).
+function localDateDeltaDays(startDate: string, endDate: string): number {
+  const startMs = Date.parse(startDate + 'T00:00:00Z');
+  const endMs = Date.parse(endDate + 'T00:00:00Z');
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return 0;
+  return Math.round((endMs - startMs) / (24 * 60 * 60 * 1000));
 }
 
-// SJG-ALGO-07 — DaYun is required when:
-//   - kind ∈ {period_outlook, key_window} for any scope; OR
-//   - scope === 'view' AND view.time_scope ∈ {bounded, rolling}; OR
-//   - kind === 'consultation' AND time_window duration > 90 days; OR
-//   - any subject/ad_hoc bounded window > 90 days for period_outlook.
-// Note the spec body lists "every View-scoped period_outlook" and
-// "every View-scoped key_window" — both are covered by the kind set.
-// Sign + today never require DaYun.
-export function deriveDayunRequired(
-  kind: ReadingKind | undefined,
-  scope: ReadingScope | undefined,
-  view: View | undefined,
-  timeWindow: ReadingTimeWindow,
-): boolean {
-  if (kind === 'period_outlook' || kind === 'key_window') return true;
-  if (kind === 'today' || kind === 'sign') return false;
-  if (scope === 'view' && view && (view.time_scope === 'bounded' || view.time_scope === 'rolling')) {
-    return true;
+function deriveDayunRequired(mirrorKind: MirrorKind, scope: MirrorScope): boolean {
+  if (mirrorKind === 'nianjing') return true;
+  if (scope.kind === 'long_horizon') return true;
+  if (scope.kind === 'rolling_30_day') {
+    // Yuejing requires DaYun only when the 30-day window intersects a
+    // DaYun boundary. v1 proxy: any scope >90 local days. Standard 30-day
+    // rolling never triggers; only an unusually long custom rolling
+    // would.
+    return localDateDeltaDays(scope.start_date, scope.end_date) > 90;
   }
-  if (timeWindow.mode === 'bounded' && timeWindow.start_utc && timeWindow.end_utc) {
-    const startMs = new Date(timeWindow.start_utc).getTime();
-    const endMs = new Date(timeWindow.end_utc).getTime();
-    if (Number.isFinite(startMs) && Number.isFinite(endMs)) {
-      const durationDays = (endMs - startMs) / (24 * 60 * 60 * 1000);
-      if (durationDays > 90) return true;
-    }
-  }
+  // ShiJing consultation may require DaYun via cited source readings; the
+  // orchestrator passes a `dayun_required_override` based on cited
+  // readings. The default here is false to avoid blocking consultations
+  // that cite only RiJing/YueJing sources.
   return false;
 }
 
-// SJG-ALGO-08 — stage_drivers map active markers onto the
-// five-stage label palette. The stage label assigned to the snapshot
-// is the one that wins SJG-ALGO-09 tie-break; each driver explains
-// *why* that label might be chosen, keyed back to the marker that
-// contributed evidence.
-const MARKER_TO_STAGE: Readonly<Record<CycleMarker['kind'], StageDriver['stage_label']>> = {
+const MARKER_TO_STAGE: Readonly<Record<string, StageDriver['stage_label']>> = {
   dayun_boundary: '转时',
   annual_transition: '转时',
   monthly_transition: '转时',
@@ -115,78 +97,157 @@ const MARKER_TO_STAGE: Readonly<Record<CycleMarker['kind'], StageDriver['stage_l
   output: '进时',
   wealth: '进时',
   resource: '养时',
-} as const;
+};
 
 function buildStageDrivers(markers: readonly CycleMarker[]): StageDriver[] {
   const drivers: StageDriver[] = [];
   for (const marker of markers) {
+    const stage = MARKER_TO_STAGE[marker.kind];
+    if (!stage) continue;
     drivers.push({
-      stage_label: MARKER_TO_STAGE[marker.kind],
-      marker_kind: marker.kind,
-      strength: marker.strength,
+      stage_label: stage,
+      marker_refs: [`${marker.kind}@${marker.start_utc}`],
       explanation_key: `marker.${marker.kind}.${marker.source}`,
     });
   }
   return drivers;
 }
 
-interface PillarSlot { readonly name: 'year' | 'month' | 'day' | 'hour'; readonly pillar: GanzhiPillar | undefined; }
-
-function pillarSlots(chart: NatalChartSnapshot): PillarSlot[] {
-  return [
-    { name: 'year', pillar: chart.year_pillar },
-    { name: 'month', pillar: chart.month_pillar },
-    { name: 'day', pillar: chart.day_pillar },
-    { name: 'hour', pillar: chart.hour_pillar },
-  ];
-}
-
-// SJG-ALGO-08 — natal-pillar branch interactions produce
-// `relation_features` describing the static (natal) relation between
-// each subject and itself; the from/to subjects are the same subject
-// because v1 has no cross-subject pillar diff. Once cross-subject
-// astrology is admitted, this same shape can describe person-A vs.
-// person-B pillar interactions.
-function buildSelfRelationFeatures(
-  subject: SubjectRef,
-  chart: NatalChartSnapshot,
-): RelationFeatureSnapshot[] {
-  const features: RelationFeatureSnapshot[] = [];
-  const slots = pillarSlots(chart);
-  for (let i = 0; i < slots.length; i += 1) {
-    for (let j = i + 1; j < slots.length; j += 1) {
-      const a = slots[i]!;
-      const b = slots[j]!;
-      if (!a.pillar || !b.pillar) continue;
-      const relation = classifyBranchPair(a.pillar.branch, b.pillar.branch);
-      if (!relation) continue;
-      features.push({
-        from_subject: subject,
-        to_subject: subject,
-        relation_kind: `natal_pillar_${a.name}_${b.name}_${relation}`,
-        interaction_markers: [],
-        anchor_relevance: 'primary',
-      });
+function buildKeyWindows(snapshots: readonly SubjectFeatureSnapshot[]): KeyWindowFeature[] {
+  const features: KeyWindowFeature[] = [];
+  for (const subject of snapshots) {
+    for (const marker of subject.cycle_snapshot.markers) {
+      if (marker.kind === 'annual_transition' || marker.kind === 'dayun_boundary') {
+        features.push({
+          start_utc: marker.start_utc,
+          end_utc: marker.end_utc,
+          label: 'transition',
+          driver_refs: [`${marker.kind}@${marker.start_utc}`],
+          subject_refs: marker.subject_refs,
+        });
+      } else if (marker.kind === 'monthly_transition') {
+        features.push({
+          start_utc: marker.start_utc,
+          end_utc: marker.end_utc,
+          label: 'support',
+          driver_refs: [`${marker.kind}@${marker.start_utc}`],
+          subject_refs: marker.subject_refs,
+        });
+      }
     }
   }
   return features;
 }
 
-function buildSubjectSnapshot(
+function classifyDailyTendency(
+  marker: CycleMarker | undefined,
+): TendencyClass {
+  if (!marker) return 'steady';
+  switch (marker.kind) {
+    case 'clash':
+    case 'annual_transition':
+    case 'dayun_boundary':
+    case 'monthly_transition':
+      return 'turning';
+    case 'combination':
+    case 'resource':
+      return 'supportive';
+    case 'output':
+    case 'wealth':
+      return 'supportive';
+    case 'constraint':
+    case 'storage':
+      return 'watch';
+    default:
+      return 'steady';
+  }
+}
+
+function buildYueJingDrivers(
+  snapshots: readonly SubjectFeatureSnapshot[],
+  activeConcernTags: readonly ConcernTag[],
+): YueJingTendencyDriver[] {
+  if (snapshots.length === 0) return [];
+  const drivers: YueJingTendencyDriver[] = [];
+  const self = snapshots[0]!;
+  const dailyPillars = self.cycle_snapshot.daily_pillars;
+  for (const tp of dailyPillars) {
+    const date = tp.start_utc.slice(0, 10);
+    // pick the strongest marker overlapping this day
+    const overlapping = self.cycle_snapshot.markers.find(
+      (m) => m.start_utc.slice(0, 10) === date,
+    );
+    const tendency = classifyDailyTendency(overlapping);
+    for (const tag of activeConcernTags) {
+      drivers.push({
+        date,
+        concern_tag_ref: tag.id,
+        tendency_class: tendency,
+        driver_refs: overlapping
+          ? [`${overlapping.kind}@${overlapping.start_utc}`]
+          : [`cycle_baseline@${date}`],
+      });
+    }
+  }
+  return drivers;
+}
+
+function buildNianJingDrivers(
+  snapshots: readonly SubjectFeatureSnapshot[],
+  scope: MirrorScope,
+  activeConcernTags: readonly ConcernTag[],
+): { phases: NianJingPhaseDriver[]; inflections: NianJingInflectionDriver[] } {
+  if (scope.kind !== 'long_horizon') return { phases: [], inflections: [] };
+  const phases: NianJingPhaseDriver[] = [];
+  const inflections: NianJingInflectionDriver[] = [];
+  const self = snapshots[0];
+  if (!self) return { phases, inflections };
+  for (const tag of activeConcernTags) {
+    phases.push({
+      concern_tag_ref: tag.id,
+      start_date: scope.start_date,
+      end_date: scope.end_date,
+      nature: 'steady',
+      driver_refs: ['cycle_baseline'],
+    });
+    // Long-horizon 年镜 inflections are scoped to DaYun + annual markers
+    // only. Monthly (流月) transitions fire ~once per 节气 month — over a
+    // ~10-year horizon that is 120+ markers per concern, which floods the
+    // timeline into an unreadable smear. Monthly granularity belongs to
+    // 月镜; the 年镜 timeline legend itself lists only 大运边界 / 流年切换
+    // / 多重节点 (never 流月). Dropping monthly here keeps the data shape
+    // aligned with what the year view is designed to render.
+    for (const marker of self.cycle_snapshot.markers) {
+      if (
+        marker.kind === 'dayun_boundary' ||
+        marker.kind === 'annual_transition'
+      ) {
+        inflections.push({
+          concern_tag_ref: tag.id,
+          date: marker.start_utc.slice(0, 10),
+          kind: marker.kind,
+          driver_refs: [`${marker.kind}@${marker.start_utc}`],
+        });
+      }
+    }
+  }
+  return { phases, inflections };
+}
+
+function buildSubjectFeatureSnapshot(
   subject: SubjectRef,
-  inputs: NatalInputs,
-  timeWindow: ReadingTimeWindow,
+  natalInputs: NatalInputs,
+  canonicalWindow: CanonicalMirrorWindow,
   dayunRequired: boolean,
-): StageResult<{ snapshot: SubjectFeatureSnapshot; uncertainty: readonly UncertaintyInput[]; relations: readonly RelationFeatureSnapshot[] }> {
-  const canon = canonicalizeNatalInputs(inputs);
+): StageResult<{ snapshot: SubjectFeatureSnapshot; uncertainty: readonly UncertaintyInput[] }> {
+  const canon = canonicalizeNatalInputs(natalInputs);
   if (!canon.ok) return canon;
-  const chart = buildNatalChartSnapshot({ subject, canonicalization: canon.value });
+  const chart = buildNatalChartSnapshot({ subject_ref: subject, canonicalization: canon.value });
   if (!chart.ok) return chart;
   const cycle = buildCycleSnapshot({
-    subject,
+    subject_ref: subject,
     natal_chart: chart.value,
-    time_window: timeWindow,
-    canonicalization: canon.value,
+    canonical_window: canonicalWindow,
   });
   if (!cycle.ok) return cycle;
   const trueSolarMs = canon.value.true_solar_time_utc
@@ -194,7 +255,7 @@ function buildSubjectSnapshot(
     : Number.NaN;
   const dayun = computeDayun({
     required: dayunRequired,
-    calculation_sex: inputs.calculation_sex,
+    calculation_sex: natalInputs.calculation_sex,
     year_pillar: chart.value.year_pillar,
     true_solar_birth_utc_ms: trueSolarMs,
   });
@@ -204,8 +265,8 @@ function buildSubjectSnapshot(
         ok: false,
         error: {
           stage: 'build_feature_snapshot',
-          kind: 'stage_invalid_input',
-          subject,
+          kind: 'stage_dayun_calculation_sex_unspecified',
+          subject_ref: subject,
           detail: 'SJG-ALGO-07: calculation_sex required when DaYun is required',
         },
       };
@@ -215,82 +276,113 @@ function buildSubjectSnapshot(
       error: {
         stage: 'build_feature_snapshot',
         kind: 'stage_invalid_input',
-        subject,
+        subject_ref: subject,
         detail: 'DaYun: year_pillar missing (insufficient birth_precision)',
       },
     };
   }
   const uncertainty: UncertaintyInput[] = [];
-  const precCode = `birth_precision_${inputs.birth_precision}` as UncertaintyInput['code'];
-  uncertainty.push({ code: precCode, severity: inputs.birth_precision === 'exact' ? 'info' : 'caveat', subject });
-  const stageDrivers = buildStageDrivers(cycle.value.active_markers);
-  const snapshot: SubjectFeatureSnapshot = {
-    subject,
-    natal_chart: chart.value,
-    dayun: dayun.value,
-    cycle_snapshot: cycle.value,
-    stage_drivers: stageDrivers,
+  const precCode = `birth_precision_${natalInputs.birth_precision}` as UncertaintyInput['code'];
+  uncertainty.push({
+    code: precCode,
+    severity: natalInputs.birth_precision === 'exact' ? 'info' : 'caveat',
+    subject_ref: subject,
+  });
+  return {
+    ok: true,
+    value: {
+      snapshot: {
+        subject_ref: subject,
+        natal_chart: chart.value,
+        dayun: dayun.value,
+        cycle_snapshot: cycle.value,
+      },
+      uncertainty,
+    },
   };
-  const relations = buildSelfRelationFeatures(subject, chart.value);
-  return { ok: true, value: { snapshot, uncertainty, relations } };
+}
+
+function consentCaveat(subject: SubjectRef, space: ShiJingSpace): UncertaintyInput | null {
+  if (isSelfRef(subject)) return null;
+  if (!isPersonRef(subject)) return null;
+  const person = space.persons.find((p) => p.id === subject.id);
+  if (!person) return null;
+  if (person.consent_state === 'withheld') {
+    return { code: 'consent_withheld', severity: 'caveat', subject_ref: subject };
+  }
+  return null;
 }
 
 export function buildAstrologyFeatureSnapshot(
   input: BuildFeatureSnapshotInput,
 ): StageResult<AstrologyFeatureSnapshot> {
-  const subjectsOut: SubjectFeatureSnapshot[] = [];
-  const uncertainty: UncertaintyInput[] = [];
-  const relationFeatures: RelationFeatureSnapshot[] = [];
-  const dayunRequired = input.dayun_required ?? deriveDayunRequired(input.kind, input.scope, input.view, input.time_window);
-  for (const subject of input.subjects) {
-    const natalInputs = natalInputsForSubject(subject, input.space);
-    if (!natalInputs) {
+  const windowResult = resolveCanonicalMirrorWindow(input.mirror_scope);
+  if (!windowResult.ok) return windowResult;
+  const canonicalWindow = windowResult.value;
+  const dayunRequired = input.dayun_required_override ?? deriveDayunRequired(input.mirror_kind, input.mirror_scope);
+
+  const selfRef: SubjectRef = 'self';
+  const selfInputs = input.space.self_subject.natal_inputs;
+  const selfResult = buildSubjectFeatureSnapshot(selfRef, selfInputs, canonicalWindow, dayunRequired);
+  if (!selfResult.ok) return selfResult;
+
+  const relatedSnapshots: SubjectFeatureSnapshot[] = [];
+  const uncertainty: UncertaintyInput[] = [...selfResult.value.uncertainty];
+  for (const ref of input.related_person_refs) {
+    const inputs = natalInputsForSubject(ref, input.space);
+    if (!inputs) {
       return {
         ok: false,
         error: {
           stage: 'build_feature_snapshot',
           kind: 'stage_missing_input',
-          subject,
-          detail: 'subject not present in ShiJingSpace.persons or self_subject',
+          subject_ref: ref,
+          detail: 'related person not present in ShiJingSpace.persons',
         },
       };
     }
-    const subjectResult = buildSubjectSnapshot(subject, natalInputs, input.time_window, dayunRequired);
-    if (!subjectResult.ok) return subjectResult;
-    subjectsOut.push(subjectResult.value.snapshot);
-    uncertainty.push(...subjectResult.value.uncertainty);
-    relationFeatures.push(...subjectResult.value.relations);
-    const personCaveat = consentCaveat(subject, input.space);
-    if (personCaveat && !uncertainty.some((u) => u.code === 'consent_withheld' && u.subject === subject)) {
-      uncertainty.push(personCaveat);
-    }
+    const personResult = buildSubjectFeatureSnapshot(ref, inputs, canonicalWindow, dayunRequired);
+    if (!personResult.ok) return personResult;
+    relatedSnapshots.push(personResult.value.snapshot);
+    uncertainty.push(...personResult.value.uncertainty);
+    const consent = consentCaveat(ref, input.space);
+    if (consent) uncertainty.push(consent);
   }
-  const stageLabel = pickStageLabel(
-    subjectsOut.flatMap((s) => s.cycle_snapshot.active_markers),
+
+  if (input.active_concern_tags.length === 0 && input.mirror_kind !== 'shijing') {
+    uncertainty.push({ code: 'no_active_concern_tags', severity: 'fail_close' });
+  }
+
+  const allSubjectSnapshots: SubjectFeatureSnapshot[] = [selfResult.value.snapshot, ...relatedSnapshots];
+  const stageDrivers = buildStageDrivers(
+    allSubjectSnapshots.flatMap((s) => s.cycle_snapshot.markers),
   );
-  const keyWindows: KeyWindowFeature[] = subjectsOut.flatMap((s) =>
-    s.cycle_snapshot.active_markers
-      .filter((m) => m.kind === 'annual_transition' || m.kind === 'dayun_boundary')
-      .map<KeyWindowFeature>((m) => ({
-        start_utc: m.start_utc,
-        end_utc: m.end_utc,
-        label: 'transition',
-        driver: m.kind,
-        subjects: m.subjects,
-      })),
-  );
-  const featureSnapshot: AstrologyFeatureSnapshot = {
+  const keyWindows = buildKeyWindows(allSubjectSnapshots);
+  const yuejingDrivers =
+    input.mirror_kind === 'yuejing'
+      ? buildYueJingDrivers(allSubjectSnapshots, input.active_concern_tags)
+      : [];
+  const { phases: nianjingPhases, inflections: nianjingInflections } =
+    input.mirror_kind === 'nianjing'
+      ? buildNianJingDrivers(allSubjectSnapshots, input.mirror_scope, input.active_concern_tags)
+      : { phases: [], inflections: [] };
+
+  const snapshot: AstrologyFeatureSnapshot = {
     method_profile: {
       id: ASTROLOGY_METHOD_PROFILE_ID,
       contract_version: SJG_ALGO_CONTRACT_VERSION,
       feature_schema_version: SJG_ALGO_FEATURE_SCHEMA_VERSION,
     },
-    time_window: input.time_window,
-    subjects: subjectsOut,
-    relation_features: relationFeatures,
-    stage_label: stageLabel,
+    mirror_kind: input.mirror_kind,
+    canonical_window: canonicalWindow,
+    self_subject: selfResult.value.snapshot,
+    related_persons: relatedSnapshots,
+    stage_drivers: stageDrivers,
     key_windows: keyWindows,
+    yuejing_tendency_drivers: yuejingDrivers,
+    nianjing_phase_drivers: nianjingPhases,
+    nianjing_inflection_drivers: nianjingInflections,
     uncertainty_inputs: uncertainty,
   };
-  return { ok: true, value: featureSnapshot };
+  return { ok: true, value: snapshot };
 }

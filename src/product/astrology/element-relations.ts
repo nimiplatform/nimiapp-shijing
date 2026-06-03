@@ -22,7 +22,9 @@
 // other code paths (e.g. natal pillar-set storage detection) but the
 // element-relations module owns only the transit-relation classification.
 
-import type { CycleMarkerKind, HeavenlyStem } from '../../domain/algorithm.ts';
+import type { HeavenlyStem } from '../../domain/algorithm.ts';
+
+type MarkerKind = 'resource' | 'output' | 'constraint' | 'wealth';
 
 export type FiveElement = 'wood' | 'fire' | 'earth' | 'metal' | 'water';
 
@@ -105,7 +107,7 @@ export function classifyTransitToDayStem(
  */
 export function transitRelationToMarkerKind(
   relation: TransitElementRelation,
-): Exclude<CycleMarkerKind, 'dayun_boundary' | 'annual_transition' | 'monthly_transition' | 'clash' | 'combination' | 'storage'> | null {
+): MarkerKind | null {
   switch (relation) {
     case 'same':
       return null;
