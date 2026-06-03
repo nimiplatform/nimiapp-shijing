@@ -1,0 +1,43 @@
+contract: SJG-DATA-05
+version: 2
+principles:
+  - memory_and_plans_are_not_concern_tags
+  - memory_or_plan_use_must_be_cited
+  - unavailable_memory_retrieval_must_not_be_faked
+  - uncited_memory_influence_is_forbidden
+event_memory:
+  eligible_when:
+    - admissible_use_is_eligible_for_retrieval
+    - date_is_relevant_to_mirror_scope
+    - concern_tag_ref_matches_or_semantically_matches_request
+    - person_ref_matches_resolved_related_person_when_applicable
+  forbidden_when:
+    - admissible_use_is_record_only
+    - memory_is_unrelated_to_scope
+    - memory_would_replace_deterministic_astrology_features
+plan_item:
+  eligible_when:
+    - planned_date_is_inside_or_adjacent_to_mirror_scope
+    - concern_tag_ref_matches_request
+    - person_ref_matches_resolved_related_person_when_applicable
+  forbidden_when:
+    - plan_item_is_used_as_task_status
+    - plan_item_would_create_project_management_semantics
+per_mirror:
+  rijing:
+    event_memory: optional_cited_context
+    plan_item: optional_cited_context
+  yuejing:
+    event_memory: optional_cited_context_for_past_date_details
+    plan_item: optional_cited_context_for_future_date_details
+  nianjing:
+    event_memory: optional_cited_context_for_phase_explanation
+    plan_item: not_default_context
+  shijing:
+    event_memory: eligible_when_retrieved_and_cited
+    plan_item: eligible_when_retrieved_and_cited
+disclosure:
+  required_fields_when_used:
+    - cited_event_memory_refs
+    - cited_plan_item_refs
+    - concise_human_summary

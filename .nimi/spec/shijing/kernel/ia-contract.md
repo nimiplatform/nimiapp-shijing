@@ -1,65 +1,104 @@
-# SJG-IA — Information Architecture Contract
+# SJG-IA - Information Architecture Contract
 
-> Defines exactly four primary tabs and the observation-target switcher
-> contract. No fifth primary tab may be added without an explicit human-gate
-> admission.
-
-## SJG-IA-01 — Exactly Four Primary Tabs
+## SJG-IA-01 - Exactly Four Primary Tabs
 
 The ShiJing renderer exposes exactly four primary tabs, in this order:
 
-| Order | Tab Id | Chinese Label | English Anchor |
-|-------|--------|---------------|----------------|
-| 1 | `today` | `今日` | Today |
-| 2 | `views` | `关注` | Views |
-| 3 | `consultation` | `问时镜` | Consultation |
-| 4 | `me` | `我` | Me |
+| Order | Tab id | Chinese label | English anchor |
+| --- | --- | --- | --- |
+| 1 | `rijing` | `日镜` | Daily Mirror |
+| 2 | `yuejing` | `月镜` | Monthly Mirror |
+| 3 | `nianjing` | `年镜` | Yearly Mirror |
+| 4 | `shijing` | `时镜` | Consultation Mirror |
 
-A fifth primary tab is forbidden in Wave 0. Adding a fifth primary tab is a
-human-gate trigger and may not be done silently.
+No fifth primary tab is admitted.
 
-## SJG-IA-02 — Tab Identity Is Stable
+## SJG-IA-02 - Removed Primary Tabs
 
-Tab ids `today`, `views`, `consultation`, `me` are stable identifiers.
-Renaming a tab id is a human-gate change. Display labels may be localized
-but Chinese labels above are the canonical product labels.
+The following must not appear as primary tabs:
 
-## SJG-IA-03 — Removed Tabs
+- `today`
+- `views`
+- `consultation`
+- `me`
+- `history`
+- `huangli`
+- `reports`
+- `customers`
+- `clients`
+- `trends`
+- `consultants`
 
-The following are forbidden primary tabs in Wave 0:
+Old labels `今日`, `关注`, `问时镜`, and `我` are not active primary labels.
 
-- `history` — there is no History tab. Past `Reading`s are surfaced inside
-  the relevant `View` detail or via subject filter, not under a global
-  History tab.
-- `huangli` — there is no Huangli mode tab.
-- `reports` — there is no aggregated Report tab. Reading is the only
-  persisted astrology output entity (`SJG-PROD-04`).
-- `customers` / `clients` — ShiJing is not a customer-management product
-  (`SJG-PROD-03`).
-- `trends` — no luck-score trend chart tab.
-- `consultants` — no third-party consultant directory tab.
+## SJG-IA-03 - No CurrentObservationTarget
 
-## SJG-IA-04 — CurrentObservationTarget Switcher
+CurrentObservationTarget is removed. Mirror readings are self-anchored by
+default. Related persons are included only through resolved concern tags,
+plan items, or memory references.
 
-The top-of-screen switcher sets `CurrentObservationTarget: SubjectRef`. It
-does not switch identity, account, or session. Identity remains the
-authenticated NimiUser.
+## SJG-IA-04 - Secondary Settings
 
-```text
-CurrentObservationTarget = SubjectRef            // "self" | { kind: "person", id }
-```
+Removing `我` as a primary tab requires a complete secondary Settings surface.
 
-Invariants:
+Settings must include:
 
-- `CurrentObservationTarget` always resolves to a subject present in the
-  active `ShiJingSpace` (`self` or a `persons[].id`).
-- Switching observation target does not change `NimiUser` session, does
-  not switch which `ShiJingSpace` is loaded, and does not change ownership
-  of `Conversation`s.
+- Self;
+- People;
+- Concern Tags;
+- Memory & Plans;
+- Response Preferences;
+- Privacy / Local Data;
+- Diagnostics.
 
-## SJG-IA-05 — Tab Routing Hint
+Settings is reached from a global account/settings button and from typed
+readiness blockers.
 
-Wave 0 source includes a routing-hint constant
-`SHIJING_IA_TABS` under `src/contracts/ia-contract.ts` carrying the ordered
-tab descriptor list. Renderer surfaces MUST consume this constant rather
-than hardcoding parallel tab lists.
+The seven surfaces are grouped into ordered sub-pages inside the Settings
+surface. The grouping is presentation-only: every surface appears in exactly
+one page (the union is total and disjoint), and all seven remain required.
+
+| Order | Page id | Chinese label | Surfaces |
+| --- | --- | --- | --- |
+| 1 | `profile` | `档案` | Self, People |
+| 2 | `memory` | `发生过的事` | Memory & Plans |
+| 3 | `concerns` | `关注` | Concern Tags |
+| 4 | `settings` | `设置` | Response Preferences, Privacy / Local Data, Diagnostics |
+
+Concern Tags are a forward-looking, cross-cutting lens (low-frequency
+configuration), so they own a dedicated `concerns` page. Memory & Plans is
+timeline content anchored to when an event occurred: its primary entry and
+display live on the time mirrors (RiJing event input, YueJing day panel,
+NianJing phase/inflection recorder). The `memory` settings page is the
+full-life archive and backfill entry for events that fall outside any open
+mirror window. It must remain a record list, not a View-like workspace
+(see SJG-IA-06).
+
+Downstream source must expose one ordered page constant matching this table.
+Renderer code must consume that constant rather than hardcoding a parallel page
+list (see SJG-IA-07).
+
+## SJG-IA-05 - Readiness and Failure Routing
+
+Every mirror surface must display typed blockers and recovery routes for:
+
+- missing self natal inputs;
+- invalid self natal inputs;
+- unresolved person mention;
+- incomplete related-person natal inputs;
+- stale reading inputs;
+- runtime AI failure;
+- persistence failure;
+- hash mismatch.
+
+## SJG-IA-06 - Concern Tag Controls
+
+Concern tag creation, archive/unarchive, mention resolution, and active-count
+feedback may appear inside mirror filters and Settings. They must not become a
+standalone View-like workspace, roster editor, or time-window builder.
+
+## SJG-IA-07 - Routing Hint
+
+Downstream source must expose one ordered IA constant matching this contract.
+Renderer code must consume that contract rather than hardcoding a parallel
+primary tab list.

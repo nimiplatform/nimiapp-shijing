@@ -1,0 +1,77 @@
+contract: SJG-ASTRO-02
+version: 2
+mirror_kinds:
+  - rijing
+  - yuejing
+  - nianjing
+  - shijing
+mirror_scopes:
+  - daily
+  - rolling_30_day
+  - long_horizon
+  - consultation
+matrix:
+  rijing:
+    daily: allowed
+    rolling_30_day: forbidden
+    long_horizon: forbidden
+    consultation: forbidden
+  yuejing:
+    daily: forbidden
+    rolling_30_day: allowed
+    long_horizon: forbidden
+    consultation: forbidden
+  nianjing:
+    daily: forbidden
+    rolling_30_day: forbidden
+    long_horizon: allowed
+    consultation: forbidden
+  shijing:
+    daily: forbidden
+    rolling_30_day: forbidden
+    long_horizon: forbidden
+    consultation: allowed
+scope_requirements:
+  daily:
+    required_fields:
+      - date
+      - basis_time_zone
+    primary_subject_ref: self
+  rolling_30_day:
+    required_fields:
+      - start_date
+      - end_date
+      - basis_time_zone
+    length_local_days: 30
+    primary_subject_ref: self
+  long_horizon:
+    required_fields:
+      - start_date
+      - end_date
+      - basis_time_zone
+    primary_subject_ref: self
+    admitted_windows:
+      default:
+        label: next_10_years_from_anchor_year
+        start_rule: anchor_year_january_1
+        end_rule: anchor_year_plus_10_december_31
+      presets:
+        - next_3_years_from_anchor_year
+        - next_5_years_from_anchor_year
+        - next_10_years_from_anchor_year
+        - current_dayun_period_when_available
+      min_local_months: 12
+      max_local_years: 10
+      user_freeform_window: forbidden
+      reusable_time_container: forbidden
+  consultation:
+    required_fields:
+      - source_reading_ids
+      - basis_time_zone
+    optional_fields:
+      - question_window
+    source_reading_ids_min: 1
+    question_window:
+      min_local_days: 1
+      max_local_days: 365
+      reusable_time_container: forbidden

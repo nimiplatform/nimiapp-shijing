@@ -1,70 +1,87 @@
-# SJG-PROD — Product Contract
+# SJG-PROD - Product Contract
 
-> Product-level invariants. Concrete data shapes live in
-> `data-model-contract.md`. AI behavior lives in `astrology-contract.md`.
-> Deterministic astrology generation rules live in `algorithm-contract.md`.
-> IA lives in `ia-contract.md`. Removals live in
-> `removed-surfaces-contract.md`.
+## SJG-PROD-01 - Single Product Authority
 
-## SJG-PROD-01 — Single Product Authority
+ShiJing product authority is `.nimi/spec/shijing/kernel/**`. Guide documents
+under `.nimi/spec/shijing/*.md` must not contradict kernel authority.
 
-ShiJing product authority is exactly `.nimi/spec/shijing/**`. No other
-location may carry ShiJing-specific product truth without an explicit
-human-gate admission.
+## SJG-PROD-02 - Embedded App
 
-## SJG-PROD-02 — Embedded App, Not Standalone Account
+ShiJing is a Nimi-embedded app. Nimi owns account identity, login, runtime
+access, and platform safety boundaries. ShiJing owns only app-local astrology
+data under `ShiJingSpace`.
 
-ShiJing is a Nimi-embedded app. Nimi owns the account, login, runtime
-safety boundaries, and cross-device primitives. ShiJing owns only its
-app-local astrology extension and user-space data under `ShiJingSpace`.
+## SJG-PROD-03 - Personal Time-Mirror Product
 
-## SJG-PROD-03 — Personal Scale
+ShiJing is a personal astrology time-mirror product. It is organized by four
+mirrors: RiJing, YueJing, NianJing, and ShiJing consultation. It is not a CRM,
+consultant workspace, report builder, project manager, batch import/export
+tool, or free-form context container.
 
-ShiJing operates at personal scale. Subjects are `self_subject` plus
-other-person `Person` objects representing normal family and friends.
-ShiJing is not a customer-management product. Mass import, batch report
-export, third-party consultant workflow, and customer segmentation are
-forbidden surfaces.
+## SJG-PROD-04 - Four Primary Mirrors
 
-## SJG-PROD-04 — One Reading Entity
+The product has exactly four primary surfaces:
 
-`Reading` is the only persisted astrology output entity. Any alternative
-output entity (DailyCard, Report, VentureJudgment, HuangliDaily, monthly
-report, yearly report, trend chart, luck-score record) is forbidden.
+- RiJing (`日镜`) for daily reflection.
+- YueJing (`月镜`) for a rolling 30-day calendar.
+- NianJing (`年镜`) for long-horizon phase bands and inflection points.
+- ShiJing (`时镜`) for session-based consultation grounded in cited readings.
 
-## SJG-PROD-05 — Workspace Instructions Single Name
+## SJG-PROD-05 - Concern Tags Replace View / Focus
 
-The only workspace-level instruction setting is
-`Settings.response_preferences`. `global_instructions`, `project_memory`,
-and `long-line` style settings are forbidden naming.
+Long-running projection intent is expressed only through `ConcernTag`.
+View, Focus, ViewTemplate, roster, context item, instruction, view memory, and
+user-facing View time-window concepts are removed active surfaces.
 
-## SJG-PROD-06 — ViewTemplate Is Catalog Not User Data
+At most five concern tags may be active in one `ShiJingSpace`.
 
-`ShiJingCatalog.view_templates[]` is product catalog authority. It is
-shared across users, is not stored under `ShiJingSpace`, and is not
-user-mutable through the user-data path.
+## SJG-PROD-06 - Person Is First-Class But Not a Surface Owner
 
-## SJG-PROD-07 — Runtime Boundary
+`Person` is first-class for natal inputs, validation, and consent posture.
+Person is not a customer/contact/account and does not own conversations,
+events, memories, plans, settings, relationships, notifications, or lifecycle.
 
-AI access uses the nimi runtime through `@nimiplatform/sdk/runtime` only.
-ShiJing must not perform direct HTTP/gRPC calls, host provider/model
-literals, or implement Reading content fallback that hides a runtime
-contract failure.
+## SJG-PROD-07 - Event Memory and Plan Item Separation
 
-Runtime AI is a wording layer over deterministic Algorithm Contract feature
-snapshots. It is not the owner of pillars, DaYun, true solar time, stage
-labels, key windows, or uncertainty gating.
+Past facts are `EventMemory`. Future intentions are `PlanItem`. They are not
+tags and do not consume concern-tag quota. `PlanItem` must not become a task,
+deadline, project, workflow, priority, dependency, or progress object.
 
-## SJG-PROD-08 — No Pseudo-Success
+## SJG-PROD-08 - One Reading Entity
 
-ShiJing must not synthesize Reading content as a fallback for a failed
-runtime call, a missing schema field, a missing MIME type, or a missing
-typed output. Reading absence is a typed failure, not a placeholder
-success.
+`Reading` is the only persisted astrology output entity. Daily cards, reports,
+monthly/yearly reports, trend charts, luck-score records, and parallel reading
+entities are forbidden.
 
-## SJG-PROD-09 — No Algorithm Stub
+## SJG-PROD-09 - No User-Space Catalog Truth
 
-No canned horoscope text, placeholder Reading content, or prompt-only
-astrology calculation may ship as Reading content. Algorithm authority is
-frozen in `algorithm-contract.md`; executable implementation must later prove
-it follows that contract.
+`ShiJingSpace` must not contain a catalog snapshot. Built-in concern-tag
+semantics, mirror matrices, output schemas, memory policy, and removed names
+are product/spec authority, not mutable user data.
+
+## SJG-PROD-10 - Runtime Boundary
+
+AI access uses the Nimi runtime through `@nimiplatform/sdk/runtime` only.
+Runtime AI is wording and consultation over deterministic feature snapshots.
+It must not calculate pillars, DaYun, true solar time, stage labels, key
+windows, YueJing tendency classes, NianJing phase bands, or NianJing
+inflection points.
+
+## SJG-PROD-11 - No Pseudo-Success
+
+ShiJing must not synthesize Reading content as fallback for runtime failure,
+parse failure, missing typed output, hash mismatch, stale inputs, missing
+natal data, or pipeline failure. Reading absence is a typed failure.
+
+## SJG-PROD-12 - Workspace Preferences Single Name
+
+The only workspace-level wording preference field is
+`Settings.response_preferences`. `global_instructions`, `project_memory`, and
+long-line-style settings are forbidden.
+
+## SJG-PROD-13 - No Algorithm Stub
+
+No canned horoscope text, placeholder Reading content, prompt-only astrology
+calculation, randomized fortune text, or Runtime-AI-only substitute may ship as
+Reading content. Executable implementation must prove it follows
+`algorithm-contract.md`.

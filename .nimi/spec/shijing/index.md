@@ -1,27 +1,32 @@
 # ShiJing Domain Guide
 
-This file is a reading guide. ShiJing normative authority lives in
+This file is a reading guide. Normative ShiJing authority lives in
 [kernel/index.md](kernel/index.md).
 
-Reading path:
+## Reading Path
 
 | Document | Role |
-|----------|------|
-| [kernel/index.md](kernel/index.md) | ShiJing kernel authority map (SJG-* rule families) |
-| [shijing.md](shijing.md) | Product overview, positioning, root model snapshot |
-| [design-system.md](design-system.md) | Design System (color / type / spacing / components / brand signatures) |
-| [AGENTS.md](AGENTS.md) | Authoring rules for AI agents editing this spec |
-| [kernel/product-contract.md](kernel/product-contract.md) | `SJG-PROD-*` invariants |
-| [kernel/data-model-contract.md](kernel/data-model-contract.md) | `SJG-DATA-*` entities |
-| [kernel/astrology-contract.md](kernel/astrology-contract.md) | `SJG-ASTRO-*` reading kind/scope/output/uncertainty |
-| [kernel/algorithm-contract.md](kernel/algorithm-contract.md) | `SJG-ALGO-*` pipeline, hashing, runtime-AI wording |
-| [kernel/ia-contract.md](kernel/ia-contract.md) | `SJG-IA-*` four-tab IA + observation switcher |
+| --- | --- |
+| [kernel/index.md](kernel/index.md) | Kernel authority map and source-sync status |
+| [shijing.md](shijing.md) | Product overview and root model snapshot |
+| [user-storybook.md](user-storybook.md) | Guide-level user stories and acceptance expectations |
+| [design-system.md](design-system.md) | Guide-level four-mirror UI and interaction rules |
+| [AGENTS.md](AGENTS.md) | Spec authoring rules |
+| [kernel/product-contract.md](kernel/product-contract.md) | `SJG-PROD-*` product invariants |
+| [kernel/data-model-contract.md](kernel/data-model-contract.md) | `SJG-DATA-*` data entities and invariants |
+| [kernel/astrology-contract.md](kernel/astrology-contract.md) | `SJG-ASTRO-*` mirror reading contracts |
+| [kernel/algorithm-contract.md](kernel/algorithm-contract.md) | `SJG-ALGO-*` deterministic pipeline and Runtime AI boundary |
+| [kernel/ia-contract.md](kernel/ia-contract.md) | `SJG-IA-*` four-mirror IA |
 | [kernel/removed-surfaces-contract.md](kernel/removed-surfaces-contract.md) | `SJG-REMOVED-*` hard removals |
-| [kernel/tables/reading-kind-scope-matrix.yaml](kernel/tables/reading-kind-scope-matrix.yaml) | kind × scope cell admissions |
-| [kernel/tables/view-template-catalog.yaml](kernel/tables/view-template-catalog.yaml) | admitted ViewTemplate seeds |
-| [kernel/tables/removed-surface-names.yaml](kernel/tables/removed-surface-names.yaml) | hard-removed surface name catalog |
+| [kernel/tables/concern-tag-catalog.yaml](kernel/tables/concern-tag-catalog.yaml) | Built-in concern tags and tag rules |
+| [kernel/tables/mirror-kind-scope-matrix.yaml](kernel/tables/mirror-kind-scope-matrix.yaml) | Legal mirror kind / scope combinations |
+| [kernel/tables/mirror-output-contract.yaml](kernel/tables/mirror-output-contract.yaml) | Structured output requirements by mirror |
+| [kernel/tables/memory-use-policy.yaml](kernel/tables/memory-use-policy.yaml) | Memory and plan eligibility / disclosure policy |
+| [kernel/tables/removed-surface-names.yaml](kernel/tables/removed-surface-names.yaml) | Hard-removed name catalog |
 
-Implementation cross-references live in the project root under
-`/src/{domain,contracts,product}/**` and `/test/**`. Every spec change
-must keep the matching source modules in sync or open a dated drift
-note in the relevant `kernel/*.md`.
+## Implementation Status
+
+This authority cut intentionally does not edit source. Source synchronization
+is a downstream W02+ blocker for `/src/{domain,contracts,product}/**` and
+`/test/**`. No source-consuming wave may claim semantic closure until the code
+matches this spec.

@@ -15,8 +15,10 @@ top-level domain files are reading guides.
 3. Open the relevant `shijing/kernel/*.md` contract for normative rules,
    then the matching `shijing/kernel/tables/*.yaml` if your change is
    table-shaped.
-4. Update the implementation under `/src/{domain,contracts,product}/**`
-   and the tests under `/test/**` in the same change.
+4. For implementation-bearing waves, update `/src/{domain,contracts,product}/**`
+   and `/test/**` in the same change. A spec-only authority cut may leave
+   source synchronization pending only when the topic records that downstream
+   source-consuming waves are blocked until implementation catches up.
 
 ## Authority Rules
 

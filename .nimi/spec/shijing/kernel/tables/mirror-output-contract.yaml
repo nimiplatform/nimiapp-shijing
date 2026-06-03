@@ -1,0 +1,108 @@
+contract: SJG-ASTRO-03
+version: 2
+common:
+  merge_rule: common_required_fields_are_required_on_every_mirror_output
+  required_fields:
+    - mirror_kind
+    - summary
+    - citations
+  forbidden_fields:
+    - score
+    - luck_score
+    - trend_chart
+    - k_line
+    - report
+    - task_status
+    - progress
+citations:
+  required_fields:
+    - method
+    - reference
+  allowed_method:
+    - bazi_ganzhi_jieqi_dayun_v1
+rijing:
+  required_fields:
+    - mirror_kind
+    - summary
+    - daily_overview
+    - concern_projections
+    - cited_event_memory_refs
+    - cited_plan_item_refs
+    - citations
+  concern_projection:
+    required_fields:
+      - concern_tag_ref
+      - tendency_class
+      - summary
+      - recommendations
+yuejing:
+  required_fields:
+    - mirror_kind
+    - summary
+    - range
+    - cells
+    - cited_event_memory_refs
+    - cited_plan_item_refs
+    - citations
+  cell:
+    required_fields:
+      - date
+      - concern_tag_ref
+      - tendency_class
+      - summary
+    tendency_class:
+      - supportive
+      - steady
+      - watch
+      - blocked
+      - turning
+nianjing:
+  required_fields:
+    - mirror_kind
+    - summary
+    - horizon
+    - phase_bands
+    - inflection_points
+    - cited_event_memory_refs
+    - cited_plan_item_refs
+    - citations
+  phase_band:
+    required_fields:
+      - concern_tag_ref
+      - start_date
+      - end_date
+      - nature
+      - driver_refs
+      - summary
+  inflection_point:
+    required_fields:
+      - concern_tag_ref
+      - date
+      - kind
+      - driver_refs
+      - summary
+    optional_fields:
+      - date_window
+    date_window:
+      required_fields:
+        - start_date
+        - end_date
+  forbidden_authoritative_visual_data:
+    - curve
+    - k_line_bar
+    - numeric_series
+    - luck_score
+    - trend_chart
+shijing:
+  required_fields:
+    - mirror_kind
+    - summary
+    - answer
+    - cited_reading_ids
+    - cited_event_memory_refs
+    - cited_plan_item_refs
+    - citations
+  rules:
+    - cited_reading_ids_must_be_non_empty
+    - cannot_mutate_deterministic_facts
+    - cannot_create_parallel_astrology_output_entity

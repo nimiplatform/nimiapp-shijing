@@ -1,10 +1,31 @@
-# SJG-REMOVED-02 — Authoritative removed-surface names.
-# Source guard module: src/contracts/removed-surfaces.ts must export a
-# REMOVED_SURFACE_NAMES set whose membership matches this table; the
-# matching test verifies that guard.
-
 contract: SJG-REMOVED-02
-version: 1
+version: 3
+guard_semantics:
+  match: exact_symbol_or_field_or_surface_name
+  case_sensitive: true
+  no_substring_matching: true
+  admitted_names_allowlist:
+    - EventMemory
+    - event_memory
+    - event_memories
+    - cited_event_memory_refs
+    - PlanItem
+    - plan_item
+    - plan_items
+    - cited_plan_item_refs
+    - ConcernTag
+    - concern_tag
+    - concern_tags
+    - concern_tag_refs
+  owner_scoped_removed_fields:
+    Reading:
+      - kind
+      - scope
+      - anchor_subject
+      - subjects
+      - time_window
+      - view_id
+      - ad_hoc_context
 removed_names:
   - Profile
   - profile
@@ -16,6 +37,8 @@ removed_names:
   - VentureNode
   - venture_node
   - venture_nodes
+  - Huangli
+  - huangli
   - HuangliDaily
   - huangli_daily
   - huangli_mode
@@ -31,11 +54,23 @@ removed_names:
   - TrendChart
   - trend_chart
   - trend_charts
+  - trend
+  - trends
+  - score_trend
   - LuckScore
   - luck_score
   - luck_scores
   - LuckCurve
   - luck_curve
+  - LuckRank
+  - luck_rank
+  - percentile
+  - KLine
+  - kline
+  - k_line
+  - k_line_bar
+  - curve
+  - numeric_series
   - ProjectMemory
   - project_memory
   - LongLine
@@ -43,3 +78,75 @@ removed_names:
   - long_lines
   - GlobalInstructions
   - global_instructions
+  - View
+  - view
+  - views
+  - ViewTemplate
+  - view_template
+  - view_templates
+  - ViewWorkspace
+  - view_workspace
+  - ViewMemory
+  - view_memory
+  - ViewSnapshot
+  - view_snapshot
+  - Focus
+  - focus
+  - Event
+  - event
+  - events
+  - recap
+  - Relation
+  - relation
+  - relations
+  - relation_hint
+  - subject_context
+  - CurrentObservationTarget
+  - current_observation_target
+  - ShiJingCatalog
+  - shijing_catalog
+  - catalog_snapshot
+  - roster
+  - context_item
+  - context_items
+  - History
+  - history
+  - history_tab
+  - Customer
+  - customer
+  - customers
+  - Client
+  - client
+  - clients
+  - CRM
+  - crm
+  - customer_management
+  - Consultant
+  - consultant
+  - consultants
+  - consultant_booking
+  - booking
+  - commerce
+  - batch_import
+  - batch_export
+  - Task
+  - task
+  - tasks
+  - Project
+  - project
+  - projects
+  - deadline
+  - due
+  - overdue
+  - dependency
+  - dependencies
+  - board
+  - boards
+  - milestone
+  - priority
+  - priorities
+  - progress
+  - assignee
+  - workflow
+  - Gantt
+  - gantt

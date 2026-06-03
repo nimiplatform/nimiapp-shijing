@@ -1,0 +1,41 @@
+contract: SJG-DATA-04
+version: 1
+active_limit: 5
+seed_tags:
+  - id: built_in_love
+    label: "#姻缘"
+    topic: love
+    default_status: active
+  - id: built_in_career
+    label: "#事业"
+    topic: career
+    default_status: active
+  - id: built_in_health
+    label: "#健康"
+    topic: health
+    default_status: active
+  - id: built_in_wealth
+    label: "#财富"
+    topic: wealth
+    default_status: active
+rules:
+  - active_concern_tags_must_not_exceed_active_limit
+  - archived_tags_do_not_enter_default_mirror_generation
+  - person_and_event_counts_do_not_consume_tag_quota
+  - unresolved_mentions_remain_text
+  - prompt_text_is_runtime_ai_wording_context_only
+custom_tag:
+  label_max_length: 80
+  parsed_tokens:
+    topic_prefix: "#"
+    person_prefix: "@"
+  required_fields:
+    - id
+    - label
+    - status
+    - sort_order
+    - parsed_topics
+    - mention_refs
+    - prompt_text
+    - created_at
+    - updated_at

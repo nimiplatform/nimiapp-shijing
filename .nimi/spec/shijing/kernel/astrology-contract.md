@@ -1,211 +1,148 @@
-# SJG-ASTRO — Astrology Contract v1
+# SJG-ASTRO - Astrology Contract v1
 
-> Freezes inputs, outputs, kind/scope matrix, anchor rules, uncertainty
-> surface, forbidden outputs, and `inputs_summary` expiry for `Reading`.
-> Wave 0 does not freeze real astrology formulas; formula implementation
-> is admitted in a later wave.
-> Astrology Algorithm Contract v1 (`algorithm-contract.md`) freezes the
-> deterministic method stack and AI wording boundary before persistence or
-> runtime integration consumes generated Readings.
+## SJG-ASTRO-01 - Mirror Kinds
 
-## SJG-ASTRO-01 — Reading Kinds
+`Reading.mirror_kind` is exactly one of:
 
-`Reading.kind` is exactly one of:
+- `rijing`: daily mirror.
+- `yuejing`: rolling 30-day mirror.
+- `nianjing`: long-horizon phase and inflection mirror.
+- `shijing`: consultation mirror grounded in cited readings.
 
-- `today` — short reflection covering today for one subject.
-- `period_outlook` — longer reflection covering a contiguous future window
-  recorded in `Reading.time_window`.
-- `key_window` — narrow window picking out high-salience days/periods inside
-  `Reading.time_window`.
-- `sign` — natal pattern summary for the self subject only.
-- `consultation` — anchored consultation reflection that may include
-  multiple subjects, with a single anchor for output perspective.
+## SJG-ASTRO-02 - Mirror Scopes
 
-## SJG-ASTRO-02 — Reading Scopes
+`Reading.mirror_scope.kind` is exactly one of:
 
-`Reading.scope` is exactly one of:
+- `daily`
+- `rolling_30_day`
+- `long_horizon`
+- `consultation`
 
-- `subject` — input scope is a single subject.
-- `view` — input scope is a saved `View` with anchor and subjects.
-- `ad_hoc` — input scope is a transient subject set assembled at request
-  time without saving a View.
+Valid kind/scope pairings are listed in
+`tables/mirror-kind-scope-matrix.yaml`.
 
-## SJG-ASTRO-03 — Kind / Scope Matrix
+## SJG-ASTRO-03 - Output Structure
 
-The valid pairings of `kind` and `scope` are listed authoritatively in
-`kernel/tables/reading-kind-scope-matrix.yaml`. The matrix is reproduced
-here for human reading; the YAML is the machine source of truth.
+`Reading.output` is a discriminated `MirrorOutput` whose required shape is
+listed in `tables/mirror-output-contract.yaml`.
 
-| kind | subject | view | ad_hoc |
-|------|---------|------|--------|
-| today | allowed | forbidden | forbidden |
-| period_outlook | allowed | allowed | allowed |
-| key_window | forbidden | allowed | allowed |
-| sign | self only | forbidden | forbidden |
-| consultation | allowed | allowed | allowed |
+Common invariants:
 
-`sign` with `subject` scope additionally requires `anchor_subject === "self"`
-per `SJG-ASTRO-07`.
+- Output must be structured JSON, not prose-only markdown.
+- Output must cite any event memory or plan item it uses.
+- Output must not include fields outside the admitted mirror output contract.
+- Runtime AI wording may fill prose fields only after deterministic feature
+  snapshots exist.
 
-## SJG-ASTRO-04 — Output Structure
+## SJG-ASTRO-04 - RiJing Output
 
-```text
-AstrologyOutput {
-  summary: string                                    // 1-3 sentence reflection
-  highlights: Highlight[]                            // 0+ structured highlights
-  recommendations: Recommendation[]                  // 0+ actionable suggestions
-  citations: AstrologyCitation[]                     // 0+ method-level citations
-}
+RiJing output contains:
 
-Highlight {
-  label: string
-  body: string
-  subject_ref: SubjectRef                            // subject this highlight is about
-}
+- daily overview,
+- per-active-concern projection blocks,
+- bounded tendency class,
+- evidence citations,
+- optional cited memory and plan refs.
 
-Recommendation {
-  body: string
-  subject_ref: SubjectRef
-  horizon: "today" | "this_week" | "this_month" | "long_term"
-}
+RiJing is self-anchored and may include related persons only when active
+concern tags or cited context resolve them.
 
-AstrologyCitation {
-  method: string                                     // "bazi_ganzhi_jieqi_dayun_v1" in v1
-  reference: string                                  // human-readable method reference
-}
-```
+## SJG-ASTRO-05 - YueJing Output
 
-Invariants:
+YueJing output contains a 30-day calendar from the scope start date:
 
-- `summary` is non-empty.
-- Every `Highlight.subject_ref` and `Recommendation.subject_ref` must
-  reference a subject in the parent `Reading.subjects[]`.
+- one cell per local date,
+- one or more active concern-tag projections per cell when requested,
+- tendency class from the closed set in `SJG-ALGO-09`,
+- detail payloads for selected dates,
+- cited plan and memory refs when used.
 
-## SJG-ASTRO-05 — Forbidden Outputs
+Tendency classes are not numeric scores, rankings, or curve inputs.
 
-The AstrologyOutput MUST NOT include:
+## SJG-ASTRO-06 - NianJing Output
 
-- numeric luck scores, luck-score deltas, luck curves, luck percentile, or
-  any 0-100 / 0-10 ranking of subjects;
-- monthly-report or yearly-report structured payloads (these are removed
-  product surfaces);
-- HuangliDaily-style daily fortune calendar entries;
-- VentureJudgment, project-status, milestone, or task entries;
-- third-party consultant identity, business address, or commercial booking
-  CTA;
-- placeholder vocabularies as enumerated by
-  `removed-surfaces-contract.md` SJG-REMOVED-03 (synthesized substitute
-  Reading content, fabricated astrology output stubs, randomized fortune
-  text, completion-marker stubs, empty-output stubs), or any
-  near-equivalent in source code or fixtures.
+NianJing output contains:
 
-A Reading that would produce a forbidden output MUST fail-close. It MUST
-NOT be returned as a successful Reading with substitute content.
+- phase bands by concern tag,
+- inflection points by concern tag,
+- deterministic reasons / citation keys,
+- wording summaries.
 
-## SJG-ASTRO-06 — Uncertainty Surface
+NianJing must not output authoritative curves, K-line bars, trend charts,
+numeric luck scores, rankable yearly/day-level numbers, or aggregatable
+score series. Phase bands and inflection points are the only authoritative
+visual data.
+
+## SJG-ASTRO-07 - ShiJing Consultation Output
+
+ShiJing consultation output is grounded in `source_reading_ids[]`.
+
+It may:
+
+- explain cited readings,
+- compare cited mirror results,
+- answer user questions using cited readings and eligible memory refs,
+- propose reflection language.
+
+It must not:
+
+- create a new astrology output entity outside `Reading`,
+- mutate deterministic facts,
+- infer missing natal inputs,
+- pretend uncited memory influenced the answer.
+
+## SJG-ASTRO-08 - Forbidden Outputs
+
+Reading output must not include:
+
+- numeric luck scores, luck deltas, luck curves, percentiles, ranks, or 0-100 /
+  0-10 scales;
+- reports, monthly reports, yearly reports, report exports, or report-like
+  aggregate entities;
+- trend charts or subject-comparison trend charts;
+- Huangli daily fortune calendar entries;
+- Venture, project, task, milestone, deadline, overdue, board, dependency,
+  Gantt, or progress payloads;
+- customer, client, consultant booking, or commerce CTA payloads;
+- placeholder, mock, randomized, substitute, empty-success, or completion-marker
+  content.
+
+A reading that would require a forbidden output must fail closed.
+
+## SJG-ASTRO-09 - Uncertainty Surface
 
 ```text
 UncertaintyAnnotation {
   confidence: "low" | "medium" | "high"
-  caveats: string[]                                  // human-readable caveats
-  data_gaps: string[]                                // missing inputs that limited output
+  caveats: string[]
+  data_gaps: string[]
 }
 ```
 
 Invariants:
 
-- Every Reading carries an `UncertaintyAnnotation`.
-- The final annotation MUST respect Algorithm Contract
-  `SJG-ALGO-10`. AI wording may lower confidence when wording reveals an
-  extra limitation, but it MUST NOT raise confidence beyond the deterministic
-  uncertainty decision table.
-- AI MUST NOT inflate confidence beyond the supporting input quality.
-  Missing natal precision, missing event context, or missing relation
-  context MUST surface as either `data_gaps` entries or a lowered
-  `confidence`.
-- Fabricating supporting context to elevate confidence is forbidden.
+- Every ready Reading carries uncertainty.
+- The deterministic uncertainty decision table in `SJG-ALGO-10` sets the
+  maximum confidence.
+- Runtime AI may lower confidence in wording but must not raise it.
+- Missing natal precision, incomplete related-person inputs, unresolved
+  mentions, unavailable memory, and withheld consent must be surfaced.
 
-## SJG-ASTRO-07 — Consultation And Sign Anchor Rules
+## SJG-ASTRO-10 - Inputs Summary Expiry
 
-- `Reading.kind === "consultation"` MUST have exactly one
-  `anchor_subject`. The output perspective MUST be that anchor. Other
-  subjects in `subjects[]` are context, not output focus.
-- `Reading.kind === "sign"` MUST have `scope === "subject"`,
-  `subjects[] === ["self"]`, and `anchor_subject === "self"`. `sign` does
-  not run for `Person` subjects in v1.
-- `Reading.kind === "today"` MUST have a single-subject `subjects[]` and
-  `anchor_subject === subjects[0]`.
+`InputsSummary.captured_at` defines freshness:
 
-## SJG-ASTRO-08 — Inputs Snapshot
+- RiJing expires after 24 hours.
+- YueJing expires after 7 days or when the rolling 30-day scope changes.
+- NianJing expires after 30 days or when active concern tags / natal inputs
+  change.
+- ShiJing consultation expires after 7 days for new AI turns.
 
-```text
-InputsSummary {
-  captured_at: string                                // ISO-8601 UTC timestamp
-  contract_version: string                           // "SJG-ASTRO-v1"
-  algorithm_contract_version: string                 // "SJG-ALGO-v1"
-  method_profile: AstrologyMethodProfile
-  time_window: ReadingTimeWindow
-  input_hash: string
-  feature_snapshot_hash: string
-  feature_snapshot: AstrologyFeatureSnapshot
-  subject_summaries: SubjectSummary[]                // per-subject snapshot
-  relation_summaries: RelationSummary[]              // relevant relations only
-  event_summaries: EventSummary[]                    // relevant events only
-  view_snapshot?: ViewSnapshot                       // present iff scope === "view"
-  ad_hoc_context?: string                            // free-text iff scope === "ad_hoc"
-}
-```
+Expired snapshots are retained on historical readings but must not be reused to
+generate new wording.
 
-Invariants:
+## SJG-ASTRO-11 - Runtime Boundary
 
-- `InputsSummary` is frozen at Reading creation time. Source-of-truth
-  `Person` / `View` / `Event` changes after creation MUST NOT mutate an
-  existing `Reading.inputs_summary`.
-- `InputsSummary.time_window` MUST equal `Reading.time_window`.
-- `feature_snapshot.method_profile.id` MUST equal
-  `"bazi_ganzhi_jieqi_dayun_v1"` in v1.
-- `input_hash` covers the canonicalized subject inputs, selected relations,
-  selected events, View snapshot, and time window used for generation.
-- `view_snapshot` is present if and only if `Reading.scope === "view"`.
-- `ad_hoc_context` is present only when `Reading.scope === "ad_hoc"`.
-
-`ViewSnapshot` includes:
-
-```text
-ViewSnapshot {
-  view_id: string
-  anchor_subject: SubjectRef
-  subjects: SubjectRef[]
-  time_scope: "bounded" | "open_ended" | "rolling"
-  instructions_hash: string
-  context_items_hash: string
-  memory_summary_hash: string
-  memory_locked: boolean
-}
-```
-
-The snapshot hashes are reproducibility evidence. AI wording may receive
-summaries of the context, but the persisted Reading must retain hashes that
-prove which View context was used.
-
-## SJG-ASTRO-09 — Inputs Summary Expiry
-
-`InputsSummary.captured_at` defines the freshness window:
-
-- Default expiry horizon is 24 hours from `captured_at` for
-  `kind === "today"`.
-- Default expiry horizon is 7 days for `period_outlook`, `key_window`,
-  and `consultation`.
-- `sign` has no expiry — natal inputs are stable.
-
-When the expiry horizon passes, a new Reading run MUST recapture
-`InputsSummary` instead of reusing the prior snapshot. The expired snapshot
-is retained on the historical Reading record for evidence and is not
-mutated.
-
-## SJG-ASTRO-10 — Runtime Boundary
-
-All AI generation for Reading runs through the nimi runtime via
-`@nimiplatform/sdk/runtime`. Direct HTTP/gRPC calls, hardcoded provider or
-model literals, and fallback paths that mask a runtime contract failure
-with synthesized Reading content are forbidden.
+All AI generation for Reading runs through the Nimi runtime via
+`@nimiplatform/sdk/runtime`. Direct HTTP/gRPC calls, hardcoded provider/model
+literals, and fallback paths that mask runtime failure are forbidden.

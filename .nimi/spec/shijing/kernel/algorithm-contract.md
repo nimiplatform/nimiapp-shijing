@@ -1,12 +1,8 @@
-# SJG-ALGO — Astrology Algorithm Contract v1
+# SJG-ALGO - Astrology Algorithm Contract v1
 
-> Product authority for how ShiJing generates a `Reading`. This contract
-> freezes the deterministic astrology method stack and the AI boundary. It is
-> not source implementation.
+## SJG-ALGO-01 - V1 Method Stack
 
-## SJG-ALGO-01 — V1 Method Stack
-
-ShiJing v1 uses exactly one astrology method profile:
+ShiJing v1 uses exactly one method profile:
 
 ```text
 AstrologyMethodProfile {
@@ -16,22 +12,11 @@ AstrologyMethodProfile {
 }
 ```
 
-The v1 method stack is:
+The method stack includes BaZi four pillars, ganzhi cycles, jieqi boundaries,
+DaYun where required, stage labels, YueJing tendency classes, and NianJing
+phase/inflection derivation.
 
-1. BaZi / four pillars from canonicalized birth time;
-2. sexagenary stem-branch cycles;
-3. solar-term month and year boundaries;
-4. DaYun for long-window and View Readings;
-5. five ShiJing stage labels (`进时`, `收时`, `养时`, `转时`, `守时`) as
-   product interpretation over deterministic cycle features.
-
-Western astrology, Zi Wei Dou Shu, randomized fortune text, numeric scoring,
-and provider/model-specific reasoning are not part of v1. Adding another method
-stack is an admitted Algorithm Contract change.
-
-## SJG-ALGO-02 — Generation Pipeline
-
-A successful Reading generation MUST follow this pipeline:
+## SJG-ALGO-02 - Generation Pipeline
 
 ```text
 NatalInputs
@@ -39,108 +24,50 @@ NatalInputs
   -> NatalChartSnapshot
   -> CycleSnapshot
   -> AstrologyFeatureSnapshot
+  -> MirrorProjection
   -> Runtime AI wording
   -> validateReading
   -> persisted Reading
 ```
 
-The deterministic stages own astrology calculation. Runtime AI owns wording
-only. Runtime AI MUST NOT derive pillars, DaYun, cycle windows, stage labels, or
-key windows directly from raw birth data.
+Deterministic stages own astrology calculation. Runtime AI owns wording only.
+Any deterministic failure is a typed failure, never a successful Reading.
 
-If any deterministic stage cannot produce its required output, generation
-fails with a typed error. ShiJing MUST NOT return substitute text, canned
-fortune copy, partial success, or a successful Reading without deterministic
-feature evidence.
+## SJG-ALGO-03 - Mirror Window Canonicalization
 
-## SJG-ALGO-03 — Reading Time Window
+Mirror windows are derived from `MirrorScope`:
 
-Every Reading carries a `ReadingTimeWindow`.
+| Scope | Canonical window |
+| --- | --- |
+| `daily` | local civil day in `basis_time_zone` |
+| `rolling_30_day` | exactly 30 local dates from `start_date` through `end_date` |
+| `long_horizon` | admitted NianJing window from `tables/mirror-kind-scope-matrix.yaml` |
+| `consultation` | union/summary of cited source reading scopes plus explicit question window when present |
 
-```text
-ReadingTimeWindow {
-  mode: "bounded" | "natal"
-  start_utc?: string
-  end_utc?: string
-  basis_time_zone: string
-  source: "kind_default" | "view_time_scope" | "user_selected" | "ad_hoc_question"
-}
-```
+All persisted hashes use ISO-8601 UTC instants derived from the local scope and
+captured `basis_time_zone`.
 
-Invariants:
+NianJing does not admit arbitrary user-defined time containers. Its default
+window is the next 10 years from the anchor year, and the only admitted
+alternates are the presets listed in the mirror kind/scope table. A
+consultation `question_window`, when present, is transient to that question and
+must not become a reusable saved window.
 
-- `mode === "bounded"` requires `start_utc < end_utc`, both ISO-8601 UTC.
-- `mode === "natal"` forbids `start_utc` and `end_utc`; it is allowed only
-  for `kind === "sign"`.
-- `basis_time_zone` is the user-facing local timezone used to interpret
-  "today", month boundaries, and user-selected windows. It is captured at
-  Reading creation time and never inferred later.
+## SJG-ALGO-04 - Natal Canonicalization
 
-Default windows:
-
-| Reading kind / scope | Default time window |
-|---|---|
-| `today / subject` | the local civil day in `basis_time_zone` |
-| `sign / subject` | `mode="natal"` |
-| `period_outlook / subject` | next 30 local days |
-| `period_outlook / view` + `bounded` View | View bounded range |
-| `period_outlook / view` + `rolling` View | next `rolling_window_days` local days |
-| `period_outlook / view` + `open_ended` View | next 180 local days |
-| `key_window / view` | next 90 local days unless View bounded range is shorter |
-| `key_window / ad_hoc` | next 90 local days unless user states a narrower window |
-| `consultation` | question-specified window; otherwise next 30 local days |
-
-Persistence and AI prompt assembly MUST NOT create or reuse a Reading without
-this window.
-
-## SJG-ALGO-04 — Natal Canonicalization
-
-`NatalInputs` stores both canonical calculation input and the raw user input
-evidence.
-
-```text
-RawBirthInput {
-  calendar_system: "gregorian" | "lunar_chinese"
-  local_date_text: string
-  local_time_text?: string
-  lunar_year?: number
-  lunar_month?: number
-  lunar_day?: number
-  lunar_is_leap_month?: boolean
-  place_text?: string
-}
-
-NatalCanonicalization {
-  raw_birth_input: RawBirthInput
-  canonical_birth_datetime_utc: string
-  canonical_birth_precision: BirthPrecision
-  true_solar_time_utc?: string
-  standard_meridian_longitude?: number
-  longitude_correction_minutes?: number
-  equation_of_time_minutes?: number
-  calendar_conversion_source: "input_gregorian" | "lunar_to_gregorian"
-  ephemeris_version: string
-  status: "exact" | "approximate" | "insufficient"
-}
-```
+`NatalInputs` stores raw input evidence and canonical calculation input.
 
 Rules:
 
-- Gregorian input is preserved as raw input and canonicalized to UTC.
-- Chinese lunar input MUST preserve `lunar_is_leap_month`; lunar input without
-  leap-month evidence is invalid when the lunar month is ambiguous.
-- Lunar-to-Gregorian conversion uses the admitted ephemeris table named in
-  `ephemeris_version`. If the table is unavailable, canonicalization fails
-  closed.
-- Canonicalization output is captured in `InputsSummary` by hash and by
-  feature snapshot; source-of-truth subject changes do not mutate an existing
-  Reading.
+- Gregorian input is preserved and canonicalized to UTC.
+- Chinese lunar input must preserve leap-month evidence when ambiguous.
+- Lunar conversion uses an admitted ephemeris table.
+- True-solar correction is required where exact pillars are required.
+- Source subject changes never mutate historical Reading summaries.
 
-## SJG-ALGO-05 — True Solar Time
+## SJG-ALGO-05 - True Solar Time
 
-ShiJing v1 uses true solar time for pillar calculation.
-
-For a birth instant with known longitude and IANA timezone:
+ShiJing v1 uses true solar time for pillar calculation:
 
 ```text
 standard_meridian_longitude = utc_offset_hours_at_birth * 15
@@ -150,120 +77,85 @@ true_solar_time = local_standard_time
   + equation_of_time_minutes
 ```
 
-`equation_of_time_minutes` comes from the admitted ephemeris version, not from
-AI or provider output.
+Missing location, timezone, or ephemeris data fails closed when exact pillars
+are required.
 
-If birth location, timezone, or ephemeris data is missing, any Reading that
-requires exact pillars fails closed. Readings that can legally proceed with
-approximate pillars MUST lower confidence and record the missing field in
-`uncertainty.data_gaps`.
+## SJG-ALGO-06 - Pillars
 
-## SJG-ALGO-06 — Pillars
+Year pillar changes at Li Chun. Month pillar changes at the twelve `jie` solar
+terms. Day pillar uses a deterministic sexagenary day index. Hour pillar uses
+true-solar two-hour branches.
 
-`NatalChartSnapshot` contains the deterministically derived four-pillar
-evidence:
+Missing precision removes dependent pillars according to `SJG-ALGO-10`.
+
+## SJG-ALGO-07 - DaYun Predicate
+
+DaYun is required for:
+
+- every NianJing Reading;
+- every YueJing Reading whose scope intersects a DaYun boundary;
+- every ShiJing consultation that cites a DaYun-required source Reading;
+- any mirror scope longer than 90 local days.
+
+DaYun requires `calculation_sex`. If required and `calculation_sex` is
+`unspecified`, generation fails closed.
+
+## SJG-ALGO-08 - Feature Snapshot
+
+`AstrologyFeatureSnapshot` is deterministic evidence consumed by Runtime AI.
 
 ```text
-NatalChartSnapshot {
-  subject: SubjectRef
+AstrologyFeatureSnapshot {
   method_profile: AstrologyMethodProfile
+  mirror_kind: "rijing" | "yuejing" | "nianjing" | "shijing"
+  canonical_window: CanonicalMirrorWindow
+  self_subject: SubjectFeatureSnapshot
+  related_persons: SubjectFeatureSnapshot[]
+  stage_drivers: StageDriver[]
+  key_windows: KeyWindowFeature[]
+  yuejing_tendency_drivers: YueJingTendencyDriver[]
+  nianjing_phase_drivers: NianJingPhaseDriver[]
+  nianjing_inflection_drivers: NianJingInflectionDriver[]
+  uncertainty_inputs: UncertaintyInput[]
+}
+
+CanonicalMirrorWindow {
+  start_utc: string
+  end_utc: string
+  basis_time_zone: string
+  scope_kind: "daily" | "rolling_30_day" | "long_horizon" | "consultation"
+}
+
+SubjectFeatureSnapshot {
+  subject_ref: SubjectRef
+  natal_chart: NatalChartSnapshot
+  dayun?: DayunSnapshot
+  cycle_snapshot: CycleSnapshot
+}
+
+NatalChartSnapshot {
+  subject_ref: SubjectRef
   canonicalization_hash: string
   year_pillar?: GanzhiPillar
   month_pillar?: GanzhiPillar
   day_pillar?: GanzhiPillar
   hour_pillar?: GanzhiPillar
-  day_master?: HeavenlyStem
+  day_master?: string
   missing_pillars: ("year" | "month" | "day" | "hour")[]
 }
 
 GanzhiPillar {
-  stem: HeavenlyStem
-  branch: EarthlyBranch
-}
-```
-
-Rules:
-
-- Year pillar changes at Li Chun, not at lunar new year.
-- Month pillar changes at the twelve `jie` solar terms, not at civil month
-  boundaries.
-- Day pillar uses a deterministic sexagenary day index from the admitted
-  ephemeris.
-- Hour pillar uses true solar time two-hour branches; hour stem is derived
-  from day stem.
-- Missing hour precision removes only the hour pillar. Missing day precision
-  removes day and hour pillars. Missing month precision removes month, day,
-  and hour pillars.
-
-## SJG-ALGO-07 — DaYun
-
-DaYun is required for:
-
-- every View-scoped `period_outlook`;
-- every View-scoped `key_window`;
-- every subject or ad-hoc `period_outlook` whose window is longer than
-  90 days.
-
-DaYun requires `calculation_sex`.
-
-```text
-calculation_sex: "male" | "female" | "unspecified"
-```
-
-If DaYun is required and `calculation_sex === "unspecified"`, generation fails
-closed with a missing-input error. The UI may ask the user for this field; AI
-must not infer it.
-
-Direction rule:
-
-```text
-forward = (calculation_sex == "male" and birth_year_stem is yang)
-       or (calculation_sex == "female" and birth_year_stem is yin)
-reverse = otherwise
-```
-
-Start rule:
-
-- Forward DaYun measures from canonical true solar birth time to the next
-  `jie` solar term.
-- Reverse DaYun measures from canonical true solar birth time to the previous
-  `jie` solar term.
-- Conversion uses `3 solar days = 1 DaYun year`.
-- The computed start age, start timestamp, direction, and current DaYun pillar
-  are stored in `AstrologyFeatureSnapshot`.
-
-## SJG-ALGO-08 — Feature Snapshot
-
-`AstrologyFeatureSnapshot` is deterministic evidence consumed by AI wording.
-
-```text
-AstrologyFeatureSnapshot {
-  method_profile: AstrologyMethodProfile
-  time_window: ReadingTimeWindow
-  subjects: SubjectFeatureSnapshot[]
-  relation_features: RelationFeatureSnapshot[]
-  stage_label: "进时" | "收时" | "养时" | "转时" | "守时"
-  key_windows: KeyWindowFeature[]
-  uncertainty_inputs: UncertaintyInput[]
-}
-
-SubjectFeatureSnapshot {
-  subject: SubjectRef
-  natal_chart: NatalChartSnapshot
-  dayun?: DayunSnapshot
-  cycle_snapshot: CycleSnapshot
-  stage_drivers: StageDriver[]
+  stem: string
+  branch: string
 }
 
 DayunSnapshot {
   required: boolean
   direction?: "forward" | "reverse"
   start_age_years?: number
-  start_utc?: string
   current_period_start_utc?: string
   current_period_end_utc?: string
   current_pillar?: GanzhiPillar
-  next_boundary_utc?: string
 }
 
 CycleSnapshot {
@@ -272,7 +164,7 @@ CycleSnapshot {
   annual_pillar?: GanzhiPillar
   monthly_pillars: TimedPillar[]
   daily_pillars: TimedPillar[]
-  active_markers: CycleMarker[]
+  markers: CycleMarker[]
 }
 
 TimedPillar {
@@ -282,36 +174,17 @@ TimedPillar {
 }
 
 CycleMarker {
-  kind:
-    "dayun_boundary"
-    | "annual_transition"
-    | "monthly_transition"
-    | "clash"
-    | "combination"
-    | "storage"
-    | "resource"
-    | "output"
-    | "wealth"
-    | "constraint"
+  kind: string
   strength: "low" | "medium" | "high"
   start_utc: string
   end_utc: string
-  subjects: SubjectRef[]
+  subject_refs: SubjectRef[]
   source: "natal" | "dayun" | "annual" | "monthly" | "daily"
-}
-
-RelationFeatureSnapshot {
-  from_subject: SubjectRef
-  to_subject: SubjectRef
-  relation_kind: string
-  interaction_markers: CycleMarker[]
-  anchor_relevance: "primary" | "context"
 }
 
 StageDriver {
   stage_label: "进时" | "收时" | "养时" | "转时" | "守时"
-  marker_kind: CycleMarker.kind
-  strength: "low" | "medium" | "high"
+  marker_refs: string[]
   explanation_key: string
 }
 
@@ -319,81 +192,103 @@ KeyWindowFeature {
   start_utc: string
   end_utc: string
   label: "transition" | "support" | "closure" | "maintenance"
-  driver: string
-  subjects: SubjectRef[]
+  driver_refs: string[]
+  subject_refs: SubjectRef[]
+}
+
+YueJingTendencyDriver {
+  date: string
+  concern_tag_ref: string
+  tendency_class: "supportive" | "steady" | "watch" | "blocked" | "turning"
+  driver_refs: string[]
+}
+
+NianJingPhaseDriver {
+  concern_tag_ref: string
+  start_date: string
+  end_date: string
+  nature: "supportive" | "steady" | "watch" | "blocked" | "turning"
+  driver_refs: string[]
+}
+
+NianJingInflectionDriver {
+  concern_tag_ref: string
+  date: string
+  date_window?: { start_date: string; end_date: string }
+  kind: "dayun_boundary" | "annual_transition" | "monthly_transition" | "marker_cluster"
+  driver_refs: string[]
 }
 
 UncertaintyInput {
-  code:
-    "birth_precision_exact"
-    | "birth_precision_rough_day"
-    | "birth_precision_rough_month"
-    | "birth_precision_rough_year"
-    | "birth_precision_unknown"
-    | "location_missing"
-    | "timezone_missing"
-    | "ephemeris_missing"
-    | "calculation_sex_unspecified"
-    | "consent_withheld"
-    | "view_context_sparse"
-    | "ai_parse_failed"
+  code: string
   severity: "info" | "caveat" | "degrade" | "fail_close"
-  subject?: SubjectRef
+  subject_ref?: SubjectRef
 }
 ```
 
-Feature snapshots are not user-authored context and are not AI output. They are
-deterministic calculation evidence. A persisted Reading stores the snapshot or
-its immutable hash inside `inputs_summary`.
+Feature snapshots are not user-authored context and not AI output.
+The field list above is the minimal admitted v1 shape for hashing, Runtime AI
+wording input, validators, and evidence UI. W02 must not infer additional
+feature snapshot fields from source code.
 
-Nested feature snapshot types above are closed for v1. Additional marker kinds,
-driver categories, or uncertainty input codes require an Algorithm Contract
-change.
+## SJG-ALGO-09 - Stage Labels and YueJing Tendency Classes
 
-## SJG-ALGO-09 — Stage Label Assignment
+Stage labels are product language over deterministic features:
 
-Stage labels are product language over deterministic features. They are not
-scores and do not form a curve.
+- `进时`
+- `收时`
+- `养时`
+- `转时`
+- `守时`
 
-Assignment priority:
+YueJing tendency class is exactly one of:
 
-1. `转时` when the time window contains a DaYun boundary, annual/monthly pillar
-   transition, or major clash marker involving the anchor subject.
-2. `收时` when closure, depletion, storage, or constraint markers dominate the
-   anchor subject's cycle features.
-3. `进时` when output, wealth, expansion, or forward-action markers dominate
-   and no higher-priority transition/closure marker is active.
-4. `养时` when resource, self-support, recovery, or low-action markers dominate.
-5. `守时` when none of the above dominates and the feature snapshot is stable.
+- `supportive`
+- `steady`
+- `watch`
+- `blocked`
+- `turning`
 
-Tie-break order is exactly:
+Tendency classes are bounded ordinal labels for UI grouping. They are not
+numeric scores, ranks, percentiles, or curve points.
 
-```text
-转时 > 收时 > 进时 > 养时 > 守时
-```
-
-Renderer text MUST use qualified forms such as `守时阶段` or `守时·第 N 天`.
-
-## SJG-ALGO-10 — Uncertainty Decision Table
-
-The generator maps deterministic input quality to `UncertaintyAnnotation`.
+## SJG-ALGO-10 - Uncertainty Decision Table
 
 | Condition | Result |
-|---|---|
-| `birth_precision === "exact"` and all required pillars available | max confidence `high`; add `birth_precision_exact` |
-| `birth_precision === "rough_day"` | max confidence `medium`; omit hour pillar; add `birth_precision_rough_day` |
-| `birth_precision === "rough_month"` | max confidence `low`; omit day/hour pillars; fail closed for DaYun-dependent Reading; add `birth_precision_rough_month` |
-| `birth_precision === "rough_year"` | fail closed for every Reading except `sign`; add `birth_precision_rough_year` |
-| `birth_precision === "unknown"` | fail closed for every Reading except manual data-entry repair flow; add `birth_precision_unknown` |
+| --- | --- |
+| exact birth inputs and required pillars available | max confidence `high` |
+| `rough_day` | max confidence `medium`; omit hour pillar |
+| `rough_month` | max confidence `low`; fail closed for DaYun-required mirrors |
+| `rough_year` | fail closed for RiJing, YueJing, NianJing, and runtime consultation |
+| `unknown` | fail closed except data-entry repair |
 | missing location/timezone/ephemeris when exact pillars required | fail closed |
 | DaYun required and `calculation_sex === "unspecified"` | fail closed |
-| Person `consent_state === "withheld"` | max confidence `medium`; add consent caveat |
-| View has empty `context_items` and empty `view_memory.summary` | max confidence `medium`; add `view_context_sparse` |
-| AI parse fails or output violates Astrology Contract | fail closed |
+| related Person consent withheld | max confidence `medium`; add caveat |
+| unresolved person mention in active ConcernTag | omit person chart and add caveat |
+| incomplete related-person natal inputs | omit person chart or fail closed when relation-specific output is requested |
+| no active concern tags | fail closed for mirror generation |
+| memory retrieval unavailable | proceed only when memory is optional; disclose unavailability |
+| Runtime AI parse or validation failure | fail closed |
 
-Confidence can only be lowered by later stages, never raised beyond this table.
+Confidence can only be lowered by later stages.
 
-## SJG-ALGO-11 — Canonical Hashing
+## SJG-ALGO-11 - NianJing Phase and Inflection Derivation
+
+NianJing derives discrete phase bands and inflection points from deterministic
+cycle, DaYun, annual, and monthly markers.
+
+Rules:
+
+- A phase band has `concern_tag_ref`, `start_date`, `end_date`, `nature`,
+  `driver_refs`, and `summary`.
+- An inflection point has `concern_tag_ref`, `date`, optional `date_window`,
+  `kind`, `driver_refs`, and `summary`. `date_window` is allowed only for a
+  bounded marker window and must not become a reusable time container.
+- Phase bands and inflection points are authoritative.
+- Curves, K-line bars, numeric trend series, luck scores, and rankable numbers
+  are forbidden as authoritative data.
+
+## SJG-ALGO-12 - Canonical Hashing
 
 `input_hash` and `feature_snapshot_hash` use:
 
@@ -405,53 +300,34 @@ encoding = "utf-8"
 digest_format = "hex-lowercase"
 ```
 
-Canonical serialization rules:
+`input_hash` covers method profile, mirror scope, canonical natal inputs,
+active concern tag snapshots, resolved person refs, eligible plan refs, cited
+memory refs, response preference hash, and the deterministic mirror window.
 
-1. Object keys are sorted lexicographically by Unicode code point.
-2. Arrays preserve order.
-3. Strings are normalized to NFC before encoding.
-4. `undefined`, comments, and transient UI fields are omitted.
-5. Numbers are finite JSON numbers; `NaN`, `Infinity`, and `-Infinity` are
-   invalid.
-6. Dates are ISO-8601 UTC strings with `Z`.
+`feature_snapshot_hash` covers the whole deterministic feature snapshot.
 
-Hash inputs:
-
-- `input_hash` covers `method_profile`, `time_window`,
-  `NatalCanonicalization` for each subject, selected relation summaries,
-  selected event summaries, and View/ad-hoc context snapshot.
-- `feature_snapshot_hash` covers the entire `AstrologyFeatureSnapshot`.
-
-Hash values are evidence, not security credentials. They exist so persistence,
-expiry checks, and audit views can determine whether a Reading was generated
-from the same contract inputs.
-
-## SJG-ALGO-12 — Runtime AI Wording Boundary
+## SJG-ALGO-13 - Runtime AI Wording Boundary
 
 Runtime AI receives only:
 
-- the `AstrologyFeatureSnapshot`;
-- allowed user/View context;
-- response preferences;
-- the Astrology Contract output schema.
+- deterministic feature snapshot,
+- frozen MirrorContextSnapshot,
+- allowed concern-tag prompt text as wording context,
+- cited memory/plan summaries admitted by `memory-use-policy.yaml`,
+- response preferences,
+- the mirror output schema.
 
-Runtime AI returns JSON matching `AstrologyOutput`. The caller parses JSON,
-validates it with `validateReading`, and persists only a valid Reading.
+Runtime AI returns structured JSON matching the mirror output contract.
 
 Forbidden:
 
-- asking AI to calculate pillars, DaYun, true solar time, stage labels, or key
-  windows;
-- passing provider/model choices from ShiJing product code;
-- accepting markdown/prose as a successful Reading payload;
-- fallback copy when runtime is unavailable or JSON parse fails.
+- asking AI to calculate deterministic astrology features;
+- accepting prose/markdown as successful Reading output;
+- fallback copy when runtime is unavailable or parsing fails;
+- letting concern-tag prompt text alter deterministic calculation.
 
-If Nimi runtime session projection is unavailable, Reading generation fails
-with typed runtime-unavailable state. It must not render a fabricated Reading.
+## SJG-ALGO-14 - Implementation Boundary
 
-## SJG-ALGO-13 — Implementation Boundary
-
-This contract is source-of-truth for future implementation. The current
-spec-only wave does not modify source files. Any downstream persistence,
-runtime, or renderer wave that consumes `Reading` MUST first synchronize source
-contracts and validators with this Algorithm Contract.
+This contract is source-of-truth for downstream implementation. This authority
+cut does not modify source. W02+ must synchronize source contracts, validators,
+state, persistence, runtime prompts/parsers, renderer surfaces, and tests.
