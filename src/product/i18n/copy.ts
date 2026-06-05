@@ -12,7 +12,7 @@ import type {
   TendencyClass,
 } from '../../domain/mirror-output.ts';
 import type { ConversationRole } from '../../domain/conversation.ts';
-import type { ResponseLength, ResponseTone } from '../../domain/settings.ts';
+import type { ResponseLanguage, ResponseLength, ResponseTone } from '../../domain/settings.ts';
 import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
 
 export const BRAND_NAME = '时镜';
@@ -87,6 +87,12 @@ export const RESPONSE_LENGTH_LABELS: Record<ResponseLength, string> = {
   short: '简短',
   standard: '标准',
   long: '详尽',
+};
+
+export const RESPONSE_LANGUAGE_LABELS: Record<ResponseLanguage, string> = {
+  'zh-Hans': '简体中文',
+  'zh-Hant': '繁體中文',
+  en: 'English',
 };
 
 export const CONVERSATION_ROLE_LABELS: Record<ConversationRole, string> = {

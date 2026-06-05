@@ -39,6 +39,16 @@ test('commitResponsePreferences rejects empty language', () => {
   if (!r.ok) assert.equal(r.error.code, 'language_empty');
 });
 
+test('commitResponsePreferences rejects unsupported language', () => {
+  const r = commitResponsePreferences(validShiJingSpace(), {
+    tone: 'neutral',
+    length: 'standard',
+    language: 'fr-FR',
+  });
+  assert.equal(r.ok, false);
+  if (!r.ok) assert.equal(r.error.code, 'language_invalid');
+});
+
 test('commitResponsePreferences carries extra_instructions when present', () => {
   const r = commitResponsePreferences(validShiJingSpace(), {
     tone: 'neutral',

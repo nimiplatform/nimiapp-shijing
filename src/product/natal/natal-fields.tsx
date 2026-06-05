@@ -16,14 +16,19 @@
 // The owning entity's free-text `notes` is rendered by the parent.
 
 import { useState } from 'react';
+import { DatePicker } from '@nimiplatform/kit/ui';
 import {
   CALCULATION_SEXES,
   CALENDAR_SYSTEMS,
 } from '../../domain/person.ts';
 import { SjpSelect } from '../components/sjp-select.tsx';
-import { BirthDatePicker } from './birth-date-picker.tsx';
+import {
+  LunarBirthDatePicker,
+  type LunarBirthDateChange,
+} from './lunar-birth-date-picker.tsx';
 import { BirthTimePicker } from './birth-time-picker.tsx';
 import { PlaceAutocomplete } from './place-autocomplete.tsx';
+import { isUnknownClockTimeChecked } from './birth-time-precision.ts';
 import { fullPlaceName } from './gazetteer.ts';
 import { isDaylightSavingActive } from '../astrology/local-wall-clock.ts';
 import {
@@ -42,16 +47,28 @@ export interface NatalFieldsProps {
 export function NatalFields({ draft, onChange, idPrefix }: NatalFieldsProps) {
   const id = (suffix: string) => `${idPrefix}-${suffix}`;
   const [calibrationOpen, setCalibrationOpen] = useState(false);
+  function applyLunarDate(next: LunarBirthDateChange) {
+    onChange('local_date_text', next.local_date_text);
+    onChange('lunar_year', next.lunar_year);
+    onChange('lunar_month', next.lunar_month);
+    onChange('lunar_day', next.lunar_day);
+    onChange('lunar_is_leap_month', next.lunar_is_leap_month);
+  }
+  function clearLunarDate() {
+    onChange('local_date_text', '');
+    onChange('lunar_year', '');
+    onChange('lunar_month', '');
+    onChange('lunar_day', '');
+    onChange('lunar_is_leap_month', 'unanswered');
+  }
   // Only meaningful for civil (gregorian) clock times; a lunar date string is
   // not a wall-clock instant in the zone.
   const dstActive =
     draft.calendar_system === 'gregorian' &&
     isDaylightSavingActive(draft.local_date_text, draft.local_time_text, draft.iana_time_zone);
-  // The birth date is always known; the only real uncertainty is the clock
-  // time. So precision is a binary toggle: exact (time entered) vs rough_day
-  // (time unknown → hour pillar omitted). Any legacy coarser precision
-  // (rough_month / rough_year / unknown) reads as "time unknown" here.
-  const timeUnknown = draft.birth_precision !== 'exact';
+  // This checkbox represents the explicit "date known, clock time unknown"
+  // choice only. Broader precision states must not auto-check it.
+  const timeUnknown = isUnknownClockTimeChecked(draft.birth_precision);
   return (
     <>
       <div className="sjp-field">
@@ -79,20 +96,26 @@ export function NatalFields({ draft, onChange, idPrefix }: NatalFieldsProps) {
         {draft.calendar_system === 'gregorian' ? (
           // 公历:nimi kit 日期面板的本仓库包装,年份轮从 1900 起。
           <div className="sjp-datepicker">
-            <BirthDatePicker
+            <DatePicker
+              id={id('date')}
               value={draft.local_date_text}
               onChange={(next) => onChange('local_date_text', next)}
             />
           </div>
         ) : (
           // 农历:保留文本输入(农历日期不是公历日历项)。
-          <input
-            id={id('date')}
-            type="text"
-            className="sjp-input sjp-input--mono"
-            value={draft.local_date_text}
-            onChange={(e) => onChange('local_date_text', e.currentTarget.value)}
-          />
+          <div className="sjp-datepicker">
+            <LunarBirthDatePicker
+              id={id('date')}
+              localDateText={draft.local_date_text}
+              lunarYear={draft.lunar_year}
+              lunarMonth={draft.lunar_month}
+              lunarDay={draft.lunar_day}
+              lunarIsLeapMonth={draft.lunar_is_leap_month}
+              onChange={applyLunarDate}
+              onClear={clearLunarDate}
+            />
+          </div>
         )}
       </div>
 
@@ -123,7 +146,12 @@ export function NatalFields({ draft, onChange, idPrefix }: NatalFieldsProps) {
         >
           <BirthTimePicker
             value={timeUnknown ? '' : draft.local_time_text}
-            onChange={(next) => onChange('local_time_text', next)}
+            onChange={(next) => {
+              onChange('local_time_text', next);
+              if (next.trim().length > 0 && draft.birth_precision !== 'exact') {
+                onChange('birth_precision', 'exact');
+              }
+            }}
           />
         </div>
       </div>

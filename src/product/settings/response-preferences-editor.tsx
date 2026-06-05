@@ -3,12 +3,17 @@
 import { useState } from 'react';
 import {
   RESPONSE_LENGTHS,
+  RESPONSE_LANGUAGES,
   RESPONSE_TONES,
   type ResponseLength,
   type ResponsePreferences,
   type ResponseTone,
 } from '../../domain/settings.ts';
-import { RESPONSE_LENGTH_LABELS, RESPONSE_TONE_LABELS } from '../i18n/copy.ts';
+import {
+  RESPONSE_LANGUAGE_LABELS,
+  RESPONSE_LENGTH_LABELS,
+  RESPONSE_TONE_LABELS,
+} from '../i18n/copy.ts';
 import { SjpSelect } from '../components/sjp-select.tsx';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { commitResponsePreferences } from './response-preferences-state.ts';
@@ -85,15 +90,15 @@ export function ResponsePreferencesEditor() {
           </div>
 
           <div className="sjp-field sjp-field--full">
-            <label className="sjp-label" htmlFor="resp-language">
-              语言 <span className="sjp-opt">(IETF BCP-47, 例如 zh-Hans)</span>
-            </label>
-            <input
+            <label className="sjp-label" htmlFor="resp-language">语言</label>
+            <SjpSelect
               id="resp-language"
-              type="text"
-              className="sjp-input sjp-input--mono"
               value={draft.language}
-              onChange={(e) => setDraft({ ...draft, language: e.currentTarget.value })}
+              onValueChange={(v) => setDraft({ ...draft, language: v })}
+              options={RESPONSE_LANGUAGES.map((l) => ({
+                value: l,
+                label: RESPONSE_LANGUAGE_LABELS[l],
+              }))}
             />
           </div>
 

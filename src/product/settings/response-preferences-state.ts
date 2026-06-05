@@ -3,6 +3,7 @@
 import {
   RESPONSE_LENGTHS,
   RESPONSE_TONES,
+  isResponseLanguage,
   type ResponseLength,
   type ResponsePreferences,
   type ResponseTone,
@@ -12,7 +13,8 @@ import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 export type ResponsePreferencesError =
   | { code: 'tone_invalid'; received: unknown }
   | { code: 'length_invalid'; received: unknown }
-  | { code: 'language_empty' };
+  | { code: 'language_empty' }
+  | { code: 'language_invalid'; received: unknown };
 
 export type ResponsePreferencesCommitOutcome =
   | { ok: true; next_space: ShiJingSpace }
@@ -31,6 +33,10 @@ export function commitResponsePreferences(
   if (typeof draft.language !== 'string' || draft.language.trim().length === 0) {
     return { ok: false, error: { code: 'language_empty' } };
   }
+  const language = draft.language.trim();
+  if (!isResponseLanguage(language)) {
+    return { ok: false, error: { code: 'language_invalid', received: draft.language } };
+  }
   const next_space: ShiJingSpace = {
     ...space,
     settings: {
@@ -38,7 +44,7 @@ export function commitResponsePreferences(
       response_preferences: {
         tone: draft.tone,
         length: draft.length,
-        language: draft.language.trim(),
+        language,
         ...(draft.extra_instructions && draft.extra_instructions.length > 0
           ? { extra_instructions: draft.extra_instructions }
           : {}),
