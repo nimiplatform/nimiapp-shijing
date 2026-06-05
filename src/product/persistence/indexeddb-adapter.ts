@@ -4,6 +4,7 @@
 
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts';
+import { dropIncompatibleReadings } from './sanitize-loaded-space.ts';
 import type {
   ClearResult,
   LoadResult,
@@ -13,7 +14,9 @@ import type {
 
 export const SHIJING_INDEXEDDB_DATABASE = 'shijing-app';
 export const SHIJING_INDEXEDDB_STORE = 'shijing-space';
-export const SHIJING_INDEXEDDB_VERSION = 1;
+// v2: SJG-FEATURE-v2 envelope refactor (common + method_evidence). Pre-release
+// hard cut — the upgrade drops any store written under the old snapshot shape.
+export const SHIJING_INDEXEDDB_VERSION = 2;
 
 function getIndexedDB(): IDBFactory | null {
   return typeof globalThis !== 'undefined' && 'indexedDB' in globalThis
@@ -34,9 +37,12 @@ function openDatabase(): Promise<IDBDatabase> {
     const request = idb.open(SHIJING_INDEXEDDB_DATABASE, SHIJING_INDEXEDDB_VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
-      if (!db.objectStoreNames.contains(SHIJING_INDEXEDDB_STORE)) {
-        db.createObjectStore(SHIJING_INDEXEDDB_STORE);
+      // Hard cut: drop a store persisted under the old feature-snapshot shape
+      // and recreate empty. No migration is owed (pre-release).
+      if (db.objectStoreNames.contains(SHIJING_INDEXEDDB_STORE)) {
+        db.deleteObjectStore(SHIJING_INDEXEDDB_STORE);
       }
+      db.createObjectStore(SHIJING_INDEXEDDB_STORE);
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error ?? new Error('IndexedDB open failed'));
@@ -117,14 +123,15 @@ export class IndexedDBPersistenceAdapter implements PersistenceClient {
     }
     db.close();
     if (raw === undefined || raw === null) return { ok: true, snapshot: null };
-    const validation = validateShiJingSpace(raw as ShiJingSpace);
+    const sanitized = dropIncompatibleReadings(raw as ShiJingSpace).space;
+    const validation = validateShiJingSpace(sanitized);
     if (!validation.ok) {
       return {
         ok: false,
         error: { kind: 'load_invalid_snapshot', adapter: 'indexeddb', validation_error: validation.error },
       };
     }
-    return { ok: true, snapshot: raw as ShiJingSpace };
+    return { ok: true, snapshot: sanitized };
   }
 
   async save(snapshot: ShiJingSpace): Promise<SaveResult> {

@@ -6,6 +6,7 @@ import {
   validateEventMemory,
   type EventMemoryValidationError,
 } from '../../contracts/event-memory-validator.ts';
+import { cascadeOnEntityRemoval } from '../reading/cascade-delete.ts';
 
 export type MemoryUpsertError =
   | { code: 'memory_invalid'; detail: EventMemoryValidationError }
@@ -46,15 +47,25 @@ export function upsertEventMemory(
 }
 
 export type MemoryDeleteOutcome =
-  | { ok: true; next_space: ShiJingSpace }
+  | { ok: true; next_space: ShiJingSpace; dropped_readings: number; dropped_conversations: number }
   | { ok: false; error: { code: 'memory_not_found'; id: string } };
 
 export function deleteEventMemory(space: ShiJingSpace, id: string): MemoryDeleteOutcome {
   if (!space.event_memories.some((m) => m.id === id)) {
     return { ok: false, error: { code: 'memory_not_found', id } };
   }
+  // Cascade: drop Readings/Conversations that cited this memory so the space stays
+  // valid (no orphan refs) instead of being silently repaired on the next load.
+  const cascade = cascadeOnEntityRemoval(space, { event_memory_id: id });
   return {
     ok: true,
-    next_space: { ...space, event_memories: space.event_memories.filter((m) => m.id !== id) },
+    next_space: {
+      ...space,
+      event_memories: space.event_memories.filter((m) => m.id !== id),
+      readings: cascade.readings,
+      conversations: cascade.conversations,
+    },
+    dropped_readings: cascade.dropped_readings,
+    dropped_conversations: cascade.dropped_conversations,
   };
 }

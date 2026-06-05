@@ -19,6 +19,7 @@ import { newEventMemoryId } from '../ids/index.ts';
 import { SjpSelect } from '../components/sjp-select.tsx';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { deleteEventMemory, upsertEventMemory } from './memory-editor-state.ts';
+import { cascadeOnEntityRemoval } from '../reading/cascade-delete.ts';
 
 interface MemoryDraft {
   readonly id: string;
@@ -101,6 +102,15 @@ export function MemoryEditor() {
     }
     dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
     closeDrawer();
+  }
+
+  function deleteMemoryMessage(memory: EventMemory): string {
+    const cascade = cascadeOnEntityRemoval(state.snapshot, { event_memory_id: memory.id });
+    const parts: string[] = [];
+    if (cascade.dropped_readings > 0) parts.push(`${cascade.dropped_readings} 条引用它的解读`);
+    if (cascade.dropped_conversations > 0) parts.push(`${cascade.dropped_conversations} 条相关对话`);
+    const extra = parts.length > 0 ? `同时会移除${parts.join('、')}。` : '';
+    return `「${memory.body}」将被永久删除，解读时不再引用。${extra}此操作不可撤销。`;
   }
 
   function confirmDelete() {
@@ -343,11 +353,7 @@ export function MemoryEditor() {
       <ConfirmDialog
         open={confirmingDelete !== null}
         title="删除这条记录？"
-        message={
-          confirmingDelete
-            ? `「${confirmingDelete.body}」将被永久删除，解读时不再引用。此操作不可撤销。`
-            : ''
-        }
+        message={confirmingDelete ? deleteMemoryMessage(confirmingDelete) : ''}
         confirmLabel="删除"
         cancelLabel="取消"
         confirmTone="danger"

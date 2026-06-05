@@ -6,6 +6,7 @@ import {
   validatePlanItem,
   type PlanItemValidationError,
 } from '../../contracts/plan-item-validator.ts';
+import { cascadeOnEntityRemoval } from '../reading/cascade-delete.ts';
 
 export type PlanUpsertError =
   | { code: 'plan_invalid'; detail: PlanItemValidationError }
@@ -43,15 +44,25 @@ export function upsertPlanItem(space: ShiJingSpace, plan: PlanItem): PlanUpsertO
 }
 
 export type PlanDeleteOutcome =
-  | { ok: true; next_space: ShiJingSpace }
+  | { ok: true; next_space: ShiJingSpace; dropped_readings: number; dropped_conversations: number }
   | { ok: false; error: { code: 'plan_not_found'; id: string } };
 
 export function deletePlanItem(space: ShiJingSpace, id: string): PlanDeleteOutcome {
   if (!space.plan_items.some((p) => p.id === id)) {
     return { ok: false, error: { code: 'plan_not_found', id } };
   }
+  // Cascade: drop Readings/Conversations that cited this plan item so the space
+  // stays valid (no orphan refs) rather than being silently repaired on load.
+  const cascade = cascadeOnEntityRemoval(space, { plan_item_id: id });
   return {
     ok: true,
-    next_space: { ...space, plan_items: space.plan_items.filter((p) => p.id !== id) },
+    next_space: {
+      ...space,
+      plan_items: space.plan_items.filter((p) => p.id !== id),
+      readings: cascade.readings,
+      conversations: cascade.conversations,
+    },
+    dropped_readings: cascade.dropped_readings,
+    dropped_conversations: cascade.dropped_conversations,
   };
 }

@@ -7,6 +7,7 @@ import {
   toShellBridgeNimiError,
 } from '@nimiplatform/kit/shell/renderer/bridge';
 import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts';
+import { dropIncompatibleReadings } from '../../product/persistence/sanitize-loaded-space.ts';
 import { SHIJING_APP_ID } from '../../contracts/app-identity.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import type {
@@ -73,7 +74,11 @@ export class RuntimeAppStoragePersistenceAdapter implements PersistenceClient {
         },
       };
     }
-    const validation = validateShiJingSpace(parsed as ShiJingSpace);
+    // Pre-release hard-cut recovery: drop Readings persisted under the old
+    // pre-envelope schema (and Conversations citing them) so a valid profile
+    // still loads instead of failing the whole space. Self-heals on next save.
+    const sanitized = dropIncompatibleReadings(parsed as ShiJingSpace).space;
+    const validation = validateShiJingSpace(sanitized);
     if (!validation.ok) {
       return {
         ok: false,
@@ -84,7 +89,7 @@ export class RuntimeAppStoragePersistenceAdapter implements PersistenceClient {
         },
       };
     }
-    return { ok: true, snapshot: parsed as ShiJingSpace };
+    return { ok: true, snapshot: sanitized };
   }
 
   async save(snapshot: ShiJingSpace): Promise<SaveResult> {

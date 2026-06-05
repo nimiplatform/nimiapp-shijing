@@ -11,6 +11,7 @@ import {
   generateReading,
   type GenerateReadingDependencies,
 } from '../astrology/generate-reading.ts';
+import { pruneReadings } from './prune-readings.ts';
 
 export interface GenerateAndStoreInput {
   readonly id: string;
@@ -51,9 +52,11 @@ export async function generateReadingForStorage(
     input.deps ?? {},
   );
   if (!result.ok) return { ok: false, failure: result.failure };
+  // Bound + dedup: regenerating the same mirror supersedes its prior copy, and
+  // per-kind history is capped — both citation-safe (see pruneReadings).
   const next_space: ShiJingSpace = {
     ...input.space,
-    readings: [...input.space.readings, result.reading],
+    readings: pruneReadings([...input.space.readings, result.reading], input.space.conversations),
   };
   return { ok: true, reading: result.reading, next_space };
 }
