@@ -66,9 +66,11 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
     shijingReducer,
     createInitialState(props.snapshot),
   );
-  const [persistenceStatus, setPersistenceStatus] = useState<PersistenceLifecycleStatus>({
-    kind: 'idle',
-  });
+  const [persistenceStatus, setPersistenceStatus] = useState<PersistenceLifecycleStatus>(() =>
+    props.persistenceClient
+      ? { kind: 'loading', adapter: props.persistenceClient.adapter_kind }
+      : { kind: 'idle' },
+  );
   const saverRef = useRef<DebouncedSaver | null>(null);
   const lastSavedRef = useRef<ShiJingSpace | null>(null);
 

@@ -11,18 +11,13 @@ import { useAppStore } from './shell/app-shell/app-store.js';
 import { ShijingStoreProvider } from './product/state/shijing-store.tsx';
 import { ShijingShell } from './product/shell/shijing-shell.tsx';
 import { InMemoryPersistenceAdapter } from './product/persistence/in-memory-adapter.ts';
-import { buildMockShiJingSpace } from './product/dev/mock-snapshot.ts';
+import { buildEmptyShiJingSpace } from './product/dev/initial-space.ts';
 import { i18n } from './shell/i18n/index.js';
 import './styles.css';
 
 function DevPreviewProductArea() {
-  const snapshot = React.useMemo(() => buildMockShiJingSpace('dev-preview-user'), []);
+  const snapshot = React.useMemo(() => buildEmptyShiJingSpace('dev-preview-user'), []);
   const persistence = React.useMemo(() => new InMemoryPersistenceAdapter(), []);
-  // Dev preview intentionally omits the Runtime AI client. The generate
-  // pipeline then runs through structural-output-only and renders the
-  // deterministic feature snapshot without needing a network/AI bridge.
-  // To exercise the typed `runtime_ai_failed` path, swap in a
-  // MockRuntimeAiClient with no canned output.
   return (
     <ShijingStoreProvider snapshot={snapshot} persistenceClient={persistence}>
       <ShijingShell account={{ name: '演示用户' }} />

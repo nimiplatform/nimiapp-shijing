@@ -8,10 +8,7 @@ import { ShijingShell } from '../../product/shell/shijing-shell.tsx';
 import { IndexedDBPersistenceAdapter } from '../../product/persistence/indexeddb-adapter.ts';
 import { InMemoryPersistenceAdapter } from '../../product/persistence/in-memory-adapter.ts';
 import { RuntimeAppStoragePersistenceAdapter } from '../persistence/runtime-app-storage-adapter.ts';
-import {
-  buildEmptyShiJingSpace,
-  buildMockShiJingSpace,
-} from '../../product/dev/mock-snapshot.ts';
+import { buildEmptyShiJingSpace } from '../../product/dev/initial-space.ts';
 import type { PersistenceClient } from '../../product/persistence/persistence-client.ts';
 import { createShijingRuntimeAiClient } from '../ai/shijing-runtime-ai-client.ts';
 
@@ -30,13 +27,7 @@ function isTauriRuntime(): boolean {
 export function ProductArea() {
   const user = useAppStore((s) => s.auth.user);
   const userId = user?.id ?? '';
-  const snapshot = useMemo(
-    () =>
-      import.meta.env?.DEV === true
-        ? buildMockShiJingSpace(userId)
-        : buildEmptyShiJingSpace(userId),
-    [userId],
-  );
+  const snapshot = useMemo(() => buildEmptyShiJingSpace(userId), [userId]);
   const persistenceClient = useMemo(() => pickPersistenceClient(userId), [userId]);
   const runtimeAiClient = useMemo(() => createShijingRuntimeAiClient(), []);
 

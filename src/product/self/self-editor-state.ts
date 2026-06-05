@@ -20,6 +20,7 @@ import {
   type NatalInputsValidationError,
 } from '../../contracts/natal-inputs-validator.ts';
 import { localWallClockToUtcInstant } from '../astrology/local-wall-clock.ts';
+import { isScaffoldNatalInputs } from '../subjects/natal-readiness.ts';
 
 export interface SelfNatalDraft {
   readonly calendar_system: CalendarSystem;
@@ -68,6 +69,7 @@ export function emptyNatalDraft(): SelfNatalDraft {
 
 export function selfDraftFromSpace(space: ShiJingSpace): SelfNatalDraft {
   const inputs = space.self_subject.natal_inputs;
+  if (isScaffoldNatalInputs(inputs)) return emptyNatalDraft();
   const raw = inputs.raw_birth_input;
   const loc = inputs.birth_location;
   return {

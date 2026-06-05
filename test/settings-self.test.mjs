@@ -8,6 +8,8 @@ import {
   commitSelfDraft,
   selfDraftFromSpace,
 } from '../src/product/self/self-editor-state.ts';
+import { buildEmptyShiJingSpace } from '../src/product/dev/initial-space.ts';
+import { isUnknownClockTimeChecked } from '../src/product/natal/birth-time-precision.ts';
 import { validShiJingSpace } from './_fixtures.mjs';
 
 function gregorianDraft(overrides = {}) {
@@ -37,6 +39,20 @@ test('selfDraftFromSpace mirrors snapshot natal inputs', () => {
   const draft = selfDraftFromSpace(validShiJingSpace());
   assert.equal(draft.calendar_system, 'gregorian');
   assert.equal(draft.birth_precision, 'exact');
+});
+
+test('empty self draft defaults to exact precision so unknown-time is not auto-checked', () => {
+  const draft = selfDraftFromSpace(buildEmptyShiJingSpace('u_empty'));
+  assert.equal(draft.birth_precision, 'exact');
+  assert.equal(isUnknownClockTimeChecked(draft.birth_precision), false);
+});
+
+test('unknown clock-time checkbox is checked only for rough_day precision', () => {
+  assert.equal(isUnknownClockTimeChecked('rough_day'), true);
+  assert.equal(isUnknownClockTimeChecked('exact'), false);
+  assert.equal(isUnknownClockTimeChecked('rough_month'), false);
+  assert.equal(isUnknownClockTimeChecked('rough_year'), false);
+  assert.equal(isUnknownClockTimeChecked('unknown'), false);
 });
 
 test('buildSelfNatalInputs returns a valid NatalInputs for gregorian draft', () => {

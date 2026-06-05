@@ -18,4 +18,4 @@ export * from './astrology/index.ts';
 export * from './conversations/index.ts';
 export * from './reading/index.ts';
 export * from './i18n/copy.ts';
-export * from './dev/mock-snapshot.ts';
+export * from './dev/initial-space.ts';
