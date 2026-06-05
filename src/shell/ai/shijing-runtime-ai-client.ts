@@ -1,16 +1,15 @@
-import { getPlatformClient, type PlatformClient } from '@nimiplatform/sdk';
+import type { NimiClient } from '@nimiplatform/sdk';
 import {
-  createAIConfigEvidence,
-  type AIConfig,
+  createNimiAIConfigEvidence,
+  createNimiAIRuntimeEvidence,
+  createNimiRuntimeAIModel,
+  createNimiRuntimeAISchedulingClient,
+  projectNimiAIRuntimeEvidenceMetadata,
+  type NimiAIConfig,
+  type NimiAIConfigTargetRef,
+  type NimiAISchedulingTargetInput,
+  type NimiRuntimeAIRoutePolicy,
 } from '@nimiplatform/sdk/ai';
-import {
-  createAIRuntimeEvidence,
-  peekRuntimeSchedulingBatch,
-  projectAIRuntimeEvidenceMetadata,
-  resolveAIConfigRuntimeSchedulingTargetForCapability,
-  type NimiRoutePolicy,
-  type RuntimeRouteBinding,
-} from '@nimiplatform/sdk/runtime';
 import type { MirrorKind } from '../../domain/mirror-scope.ts';
 import {
   createSdkRuntimeAiClient,
@@ -25,6 +24,7 @@ import {
   createShijingReadingAIScopeRef,
   loadShijingAIConfig,
 } from './shijing-ai-config.ts';
+import { getShijingNimiClient } from '../infra/shijing-nimi-client.ts';
 
 export const SHIJING_TEXT_GENERATE_CAPABILITY_ID = 'text.generate';
 
@@ -38,12 +38,12 @@ type RuntimeTextParams = {
 export type ResolvedShijingTextGenerateBinding =
   | {
       ok: true;
-      binding: RuntimeRouteBinding;
       model: string;
-      route: NimiRoutePolicy;
+      route: NimiRuntimeAIRoutePolicy;
       connectorId?: string;
       params: RuntimeTextParams;
       metadata: Record<string, string>;
+      schedulingTarget: NimiAISchedulingTargetInput | null;
     }
   | {
       ok: false;
@@ -51,12 +51,32 @@ export type ResolvedShijingTextGenerateBinding =
     };
 
 export type ShijingRuntimeAiClientOptions = {
-  readonly loadConfig?: () => AIConfig;
-  readonly getPlatformClient?: () => PlatformClient;
+  readonly loadConfig?: () => NimiAIConfig;
+  readonly getClient?: () => NimiClient;
 };
 
-function bindingModel(binding: RuntimeRouteBinding): string {
-  return String(binding.model || binding.modelId || binding.localModelId || '').trim();
+function targetRefModel(targetRef: NimiAIConfigTargetRef): string {
+  if (targetRef.kind === 'cloud-connector') {
+    return String(targetRef.providerModelId || '').trim();
+  }
+  if (targetRef.kind === 'local-runtime') {
+    return String(targetRef.profileId || targetRef.targetId || targetRef.readinessRef || '').trim();
+  }
+  return '';
+}
+
+function schedulingTargetFor(
+  capability: string,
+  targetRef: NimiAIConfigTargetRef,
+): NimiAISchedulingTargetInput | null {
+  if (targetRef.kind === 'profile-slice') return null;
+  return { capability, targetRef };
+}
+
+function paramsRecord(value: unknown): Readonly<Record<string, unknown>> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Readonly<Record<string, unknown>>
+    : undefined;
 }
 
 function numberParam(params: Readonly<Record<string, unknown>> | undefined, key: string): number | undefined {
@@ -80,52 +100,39 @@ function extractTextParams(params: Readonly<Record<string, unknown>> | undefined
 }
 
 export function resolveShijingTextGenerateBinding(
-  config: AIConfig,
+  config: NimiAIConfig,
 ): ResolvedShijingTextGenerateBinding {
-  const binding = config.capabilities.selectedBindings[SHIJING_TEXT_GENERATE_CAPABILITY_ID] || null;
-  if (!binding) {
+  const targetRef = config.capabilities.targetRefs[SHIJING_TEXT_GENERATE_CAPABILITY_ID] || null;
+  if (!targetRef) {
     return {
       ok: false,
       detail:
-        'AIConfig binding is required for text.generate; ShiJing Runtime AI failed closed before request dispatch.',
+        'AIConfig targetRef is required for text.generate; ShiJing Runtime AI failed closed before request dispatch.',
     };
   }
-  const model = bindingModel(binding);
+  if (targetRef.kind === 'profile-slice') {
+    return {
+      ok: false,
+      detail: `AIConfig targetRef for text.generate still points to profile-slice ${targetRef.sliceId}; apply/materialize a live Runtime target before dispatch.`,
+    };
+  }
+  const model = targetRefModel(targetRef);
   if (!model) {
     return {
       ok: false,
-      detail: 'AIConfig binding for text.generate does not include a runtime model id.',
+      detail: 'AIConfig targetRef for text.generate does not include a Runtime model id.',
     };
   }
-  const connectorId = String(binding.connectorId || '').trim();
-  if (binding.source === 'local' && connectorId) {
-    return {
-      ok: false,
-      detail:
-        'AIConfig binding for text.generate is local but includes connectorId; local Runtime bindings must use connectorId="".',
-    };
-  }
-  if (binding.source === 'cloud' && !connectorId) {
-    return {
-      ok: false,
-      detail: 'AIConfig binding for text.generate is cloud but does not include connectorId.',
-    };
-  }
-  if (binding.source !== 'local' && binding.source !== 'cloud') {
-    return {
-      ok: false,
-      detail: `AIConfig binding for text.generate has unsupported source "${String(binding.source)}".`,
-    };
-  }
-
-  const evidence = createAIConfigEvidence(config);
+  const connectorId = targetRef.kind === 'cloud-connector' ? String(targetRef.connectorId || '').trim() : '';
+  const route = targetRef.kind === 'cloud-connector' ? 'cloud' : 'local';
+  const evidence = createNimiAIConfigEvidence(config);
   return {
     ok: true,
-    binding,
     model,
-    route: binding.source,
+    route,
     ...(connectorId ? { connectorId } : {}),
-    params: extractTextParams(config.capabilities.selectedParams[SHIJING_TEXT_GENERATE_CAPABILITY_ID]),
+    params: extractTextParams(paramsRecord(config.capabilities.selectedParams[SHIJING_TEXT_GENERATE_CAPABILITY_ID])),
+    schedulingTarget: schedulingTargetFor(SHIJING_TEXT_GENERATE_CAPABILITY_ID, targetRef),
     metadata: {
       aiConfigScopeKind: config.scopeRef.kind,
       aiConfigScopeOwnerId: config.scopeRef.ownerId,
@@ -133,7 +140,8 @@ export function resolveShijingTextGenerateBinding(
       aiConfigProfileId: config.profileOrigin?.profileId || '',
       aiConfigProfileTitle: config.profileOrigin?.title || '',
       aiConfigCapabilityId: SHIJING_TEXT_GENERATE_CAPABILITY_ID,
-      aiConfigBindingSource: binding.source,
+      aiConfigTargetRefKind: targetRef.kind,
+      aiConfigBindingSource: route,
       aiConfigBindingConnectorId: connectorId,
       aiConfigBindingModel: model,
       aiConfigHash: evidence.configHash,
@@ -144,27 +152,25 @@ export function resolveShijingTextGenerateBinding(
 }
 
 async function schedulingMetadata(
-  client: PlatformClient,
-  config: AIConfig,
+  client: NimiClient,
+  config: NimiAIConfig,
+  target: NimiAISchedulingTargetInput | null,
 ): Promise<Record<string, string> | { readonly failure: string }> {
-  const target = resolveAIConfigRuntimeSchedulingTargetForCapability(
-    config,
-    SHIJING_TEXT_GENERATE_CAPABILITY_ID,
-  );
   if (!target) return {};
   try {
-    const batch = await peekRuntimeSchedulingBatch({
+    const scheduling = createNimiRuntimeAISchedulingClient({
       appId: SHIJING_APP_ID,
+      runtime: client.runtime,
       targets: [target],
-      peekScheduling: (request, options) => client.runtime.ai.peekScheduling(request, options),
     });
-    const judgement = batch?.aggregateJudgement ?? null;
+    const batch = await scheduling.peek({ config });
+    const judgement = batch.aggregateJudgement ?? null;
     if (judgement?.state === 'denied') {
       return {
         failure: `Runtime scheduling denied text.generate: ${judgement.detail || 'denied'}`,
       };
     }
-    return projectAIRuntimeEvidenceMetadata(createAIRuntimeEvidence({
+    return projectNimiAIRuntimeEvidenceMetadata(createNimiAIRuntimeEvidence({
       schedulingJudgement: judgement,
     }));
   } catch (error) {
@@ -175,19 +181,19 @@ async function schedulingMetadata(
 }
 
 class AIConfigBackedRuntimeAiClient implements RuntimeAiClient {
-  private readonly loadConfig: () => AIConfig;
-  private readonly getClient: () => PlatformClient;
+  private readonly loadConfig: () => NimiAIConfig;
+  private readonly getClient: () => NimiClient;
 
   constructor(options: ShijingRuntimeAiClientOptions = {}) {
     this.loadConfig = options.loadConfig ?? (() => loadShijingAIConfig(createShijingReadingAIScopeRef()));
-    this.getClient = options.getPlatformClient ?? (() => getPlatformClient());
+    this.getClient = options.getClient ?? (() => getShijingNimiClient());
   }
 
   async generate(
     mirror_kind: MirrorKind,
     request: RuntimeAiPromptRequest,
   ): Promise<RuntimeAiResult> {
-    let config: AIConfig;
+    let config: NimiAIConfig;
     try {
       config = this.loadConfig();
     } catch (error) {
@@ -205,7 +211,7 @@ class AIConfigBackedRuntimeAiClient implements RuntimeAiClient {
       return { ok: false, failure: { kind: 'runtime_unavailable', detail: resolved.detail } };
     }
 
-    let client: PlatformClient;
+    let client: NimiClient;
     try {
       client = this.getClient();
     } catch (error) {
@@ -218,16 +224,25 @@ class AIConfigBackedRuntimeAiClient implements RuntimeAiClient {
       };
     }
 
-    const scheduling = await schedulingMetadata(client, config);
+    const scheduling = await schedulingMetadata(client, config, resolved.schedulingTarget);
     if ('failure' in scheduling) {
       return { ok: false, failure: { kind: 'runtime_unavailable', detail: scheduling.failure } };
     }
 
-    return createSdkRuntimeAiClient({
+    const model = createNimiRuntimeAIModel({
       runtime: client.runtime,
-      model: resolved.model,
-      route: resolved.route,
-      ...(resolved.connectorId ? { connectorId: resolved.connectorId } : {}),
+      appId: SHIJING_APP_ID,
+      routePolicy: resolved.route,
+      connectorId: resolved.connectorId,
+      timeoutMs: resolved.params.timeoutMs,
+      model: {
+        modelId: resolved.model,
+        ...(resolved.connectorId ? { providerId: resolved.connectorId } : {}),
+      },
+    });
+
+    return createSdkRuntimeAiClient({
+      runtime: { model },
       metadata: {
         ...resolved.metadata,
         ...scheduling,

@@ -7,7 +7,12 @@ import {
   type ModelConfigProjectionStatus,
   type SharedAIConfigService,
 } from '@nimiplatform/kit/features/model-config';
-import type { AIConfig, AIScopeRef } from '@nimiplatform/sdk/ai';
+import type {
+  NimiAICapabilityRequirementDeclaration,
+  NimiAIConfig,
+  NimiAIConfigTargetRef,
+  NimiAIScopeRef,
+} from '@nimiplatform/sdk/ai';
 import { useAppStore } from '../app-shell/app-store.js';
 import {
   createShijingAIConfigService,
@@ -20,7 +25,7 @@ import {
 import { translateShijingModelConfig } from './model-config-copy.ts';
 
 function bindingStatus(
-  config: AIConfig,
+  config: NimiAIConfig,
   runtimeReady: boolean,
   runtimeDetail: string | null,
 ): ModelConfigProjectionStatus {
@@ -33,32 +38,58 @@ function bindingStatus(
       detail: runtimeDetail || 'Runtime bootstrap 尚未完成。',
     };
   }
-  const binding = config.capabilities.selectedBindings[SHIJING_TEXT_GENERATE_CAPABILITY_ID] || null;
-  if (!binding) {
+  const targetRef = config.capabilities.targetRefs[SHIJING_TEXT_GENERATE_CAPABILITY_ID] || null;
+  if (!targetRef) {
     return {
       supported: false,
       tone: 'attention',
-      badgeLabel: '需要绑定',
-      title: '缺少模型绑定',
-      detail: '四镜生成会在缺少 text.generate 绑定时 fail-close。',
+      badgeLabel: '需要目标',
+      title: '缺少模型目标',
+      detail: '四镜生成会在缺少 text.generate targetRef 时 fail-close。',
     };
   }
   return {
     supported: true,
     tone: 'ready',
-    badgeLabel: '已绑定',
+    badgeLabel: '已配置',
     title: '模型已配置',
-    detail: binding.modelLabel || binding.model || null,
+    detail: targetRefLabel(targetRef),
   };
 }
 
-function useLiveAIConfig(service: SharedAIConfigService, scopeRef: AIScopeRef): AIConfig {
-  const [config, setConfig] = useState<AIConfig>(() => service.aiConfig.get(scopeRef));
+function targetRefLabel(targetRef: NimiAIConfigTargetRef): string {
+  if (targetRef.kind === 'cloud-connector') {
+    return targetRef.providerModelId || targetRef.connectorId;
+  }
+  if (targetRef.kind === 'local-runtime') {
+    return targetRef.profileId || targetRef.targetId || targetRef.readinessRef || 'local-runtime';
+  }
+  return targetRef.sliceId;
+}
+
+function useLiveAIConfig(service: SharedAIConfigService, scopeRef: NimiAIScopeRef): NimiAIConfig {
+  const [config, setConfig] = useState<NimiAIConfig>(() => service.aiConfig.get(scopeRef));
   useEffect(() => {
     setConfig(service.aiConfig.get(scopeRef));
     return service.aiConfig.subscribe(scopeRef, setConfig);
   }, [service, scopeRef]);
   return config;
+}
+
+function createShijingModelRequirementDeclaration(
+  scopeRef: NimiAIScopeRef,
+): NimiAICapabilityRequirementDeclaration {
+  return {
+    requirementId: 'shijing.reading.text-generate',
+    scopeRef,
+    requiredSlices: [{
+      requirementSliceId: 'shijing.reading.text-generate.required',
+      capability: SHIJING_TEXT_GENERATE_CAPABILITY_ID,
+      profileSliceRef: 'shijing.reading.text-generate',
+      readinessPolicy: 'required',
+    }],
+    setupProjectionPolicy: 'sdk-ai-config-setup-projection',
+  };
 }
 
 export function ShijingAiModelConfigSection() {
@@ -72,6 +103,7 @@ export function ShijingAiModelConfigSection() {
   const surface = useMemo<AppModelConfigSurface>(() => ({
     scopeRef,
     aiConfigService: service,
+    requirementDeclaration: createShijingModelRequirementDeclaration(scopeRef),
     enabledCapabilities: [SHIJING_TEXT_GENERATE_CAPABILITY_ID],
     providerResolver: (capabilityId: string) => (bootstrapReady ? providerCache(capabilityId) : null),
     projectionResolver: () => bindingStatus(config, bootstrapReady, bootstrapError),

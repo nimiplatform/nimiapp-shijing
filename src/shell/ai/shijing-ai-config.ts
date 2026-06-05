@@ -1,15 +1,14 @@
 import {
-  aiConfigScopeKeyFromRef,
-  computeAIConfigVersion,
-  createAIConfigSubscriptionRegistry,
-  createAppAIScopeRef,
-  createHostAIProfileSurface,
-  createScopedAIConfigStore,
-  validateAIConfigRuntimeBindings,
-  type AIConfig,
-  type AIConfigStorageLike,
-  type AIProfile,
-  type AIScopeRef,
+  createNimiAIConfigStore,
+  createNimiAIConfigSubscriptionRegistry,
+  createNimiAIHostSurface,
+  createNimiAppAIScopeRef,
+  validateNimiAIConfig,
+  versionNimiAIConfig,
+  type NimiAIConfig,
+  type NimiAIHostStorage,
+  type NimiAIProfile,
+  type NimiAIScopeRef,
 } from '@nimiplatform/sdk/ai';
 import type {
   SharedAIConfigService,
@@ -26,15 +25,12 @@ export const SHIJING_AI_PROFILE_LIBRARY_SCHEMA_VERSION = 1;
 
 type ShijingAIProfileLibraryStore = {
   schemaVersion: typeof SHIJING_AI_PROFILE_LIBRARY_SCHEMA_VERSION;
-  profiles: AIProfile[];
+  profiles: NimiAIProfile[];
 };
 
-const configSubscriptions = createAIConfigSubscriptionRegistry({
-  resolveScopeKey: (config) => aiConfigScopeKeyFromRef(config.scopeRef),
-  cloneOnNotify: true,
-});
+const configSubscriptions = createNimiAIConfigSubscriptionRegistry();
 
-const ephemeralProfiles: AIProfile[] = [];
+const ephemeralProfiles: NimiAIProfile[] = [];
 
 function getStorage(): Storage | null {
   return resolveBrowserStorage('local');
@@ -44,15 +40,14 @@ function useEphemeralStore(): boolean {
   return typeof window === 'undefined';
 }
 
-const aiConfigStore = createScopedAIConfigStore({
-  storage: () => getStorage() as AIConfigStorageLike | null,
+const aiConfigStore = createNimiAIConfigStore({
+  storage: () => getStorage() as NimiAIHostStorage | null,
   configKeyForScope: () => SHIJING_AI_CONFIG_STORAGE_KEY,
-  validateRuntimeBindings: true,
   enableEphemeralStore: useEphemeralStore(),
 });
 
-export function createShijingReadingAIScopeRef(): AIScopeRef {
-  return createAppAIScopeRef(SHIJING_APP_ID, SHIJING_READING_AI_SURFACE_ID);
+export function createShijingReadingAIScopeRef(): NimiAIScopeRef {
+  return createNimiAppAIScopeRef(SHIJING_APP_ID, SHIJING_READING_AI_SURFACE_ID);
 }
 
 function defaultProfileLibraryStore(): ShijingAIProfileLibraryStore {
@@ -90,18 +85,18 @@ function loadProfileLibraryStore(storage: Storage | null = getStorage()): Shijin
   return raw ? parseProfileLibrary(raw) : defaultProfileLibraryStore();
 }
 
-export function listShijingAIProfiles(): AIProfile[] {
+export function listShijingAIProfiles(): NimiAIProfile[] {
   return [...loadProfileLibraryStore().profiles];
 }
 
 export function loadShijingAIConfig(
-  scopeRef: AIScopeRef = createShijingReadingAIScopeRef(),
-): AIConfig {
+  scopeRef: NimiAIScopeRef = createShijingReadingAIScopeRef(),
+): NimiAIConfig {
   try {
     return aiConfigStore.load(scopeRef);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (message.startsWith('AIConfig binding is invalid: ')) {
+    if (message.startsWith('AIConfig targetRef is invalid: ')) {
       throw new Error(`Stored ${message}`, { cause: error });
     }
     if (message === 'AIConfig schema is invalid.') {
@@ -114,21 +109,21 @@ export function loadShijingAIConfig(
 }
 
 export function saveShijingAIConfig(
-  next: AIConfig,
-  scopeRef: AIScopeRef = createShijingReadingAIScopeRef(),
+  next: NimiAIConfig,
+  scopeRef: NimiAIScopeRef = createShijingReadingAIScopeRef(),
   options?: { readonly expectedBaseVersion?: string },
-): AIConfig {
+): NimiAIConfig {
   const normalized = { ...next, scopeRef };
   const expectedBaseVersion = options?.expectedBaseVersion?.trim();
   if (expectedBaseVersion) {
-    const currentVersion = computeAIConfigVersion(loadShijingAIConfig(scopeRef));
+    const currentVersion = versionNimiAIConfig(loadShijingAIConfig(scopeRef));
     if (currentVersion !== expectedBaseVersion) {
       throw new Error('AIConfig CAS conflict: baseVersion is stale');
     }
   }
-  const bindingErrors = validateAIConfigRuntimeBindings(normalized);
-  if (bindingErrors.length > 0) {
-    throw new Error(`AIConfig binding validation failed: ${bindingErrors.join('; ')}`);
+  const validation = validateNimiAIConfig(normalized);
+  if (!validation.valid) {
+    throw new Error(`AIConfig validation failed: ${validation.errors.join('; ')}`);
   }
   const saved = aiConfigStore.save(normalized);
   configSubscriptions.notify(saved);
@@ -136,33 +131,31 @@ export function saveShijingAIConfig(
 }
 
 export function createShijingAIConfigService(): SharedAIConfigService {
-  const aiProfile = createHostAIProfileSurface({
-    listProfiles: () => listShijingAIProfiles(),
-    loadConfig: (scopeRef) => loadShijingAIConfig(scopeRef),
-    saveConfig: (scopeRef, next, options) => saveShijingAIConfig(next, scopeRef, options),
-    missingProfileMessage: (profileId) =>
-      `AIProfile ${profileId} is not in the ShiJing profile library.`,
+  const surface = createNimiAIHostSurface({
+    configStore: aiConfigStore,
+    subscriptions: configSubscriptions,
+    profiles: listShijingAIProfiles(),
   });
 
   return {
     aiConfig: {
-      get(scopeRef: AIScopeRef): AIConfig {
+      get(scopeRef: NimiAIScopeRef): NimiAIConfig {
         return loadShijingAIConfig(scopeRef);
       },
-      update(scopeRef: AIScopeRef, next: AIConfig): void {
+      update(scopeRef: NimiAIScopeRef, next: NimiAIConfig): void {
         saveShijingAIConfig(next, scopeRef);
       },
       subscribe(
-        scopeRef: AIScopeRef,
+        scopeRef: NimiAIScopeRef,
         listener: SharedAIConfigSubscribeListener,
       ): SharedAIConfigUnsubscribe {
-        return configSubscriptions.subscribe(aiConfigScopeKeyFromRef(scopeRef), listener);
+        return configSubscriptions.subscribe(scopeRef, listener);
       },
     },
     aiProfile: {
-      list: () => aiProfile.list(),
-      previewApply: (scopeRef, profileId) => aiProfile.previewApply(scopeRef, profileId),
-      apply: (scopeRef, profileId, options) => aiProfile.apply(scopeRef, profileId, options),
+      list: async () => [...(await surface.aiProfile.list())],
+      previewApply: (scopeRef, profileId) => surface.aiProfile.previewApply(scopeRef, profileId),
+      apply: (scopeRef, profileId, options) => surface.aiProfile.apply(scopeRef, profileId, options),
     },
   };
 }

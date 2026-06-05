@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@nimiplatform/kit": "link:../../nimi-realm/nimi/kit",
-    "@nimiplatform/sdk": "link:../../nimi-realm/nimi/sdk",
+    "@nimiplatform/sdk": "link:../../nimi-realm/nimi/sdks/typescript",
     "@tauri-apps/api": "^2.9.1",
     "i18next": "^25.10.10",
     "iztro": "^2.5.8",

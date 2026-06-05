@@ -1,14 +1,13 @@
 // SJG-ASTRO-11 — Nimi runtime SDK factory.
 
 import {
-  runAppAiTextGenerate,
-  type AppAiStructuredOutputParseFailure,
-} from '@nimiplatform/sdk/ai-app';
+  runNimiTextGenerate,
+  type NimiAiModel,
+} from '@nimiplatform/sdk/ai';
 import type {
-  NimiRoutePolicy,
-  TextGenerateInput,
-  TextGenerateOutput,
-} from '@nimiplatform/sdk/runtime';
+  NimiStructuredOutputParseFailure,
+} from '@nimiplatform/sdk/features/evaluation';
+import { parseNimiStructuredJson } from '@nimiplatform/sdk/features/evaluation';
 import type { MirrorKind } from '../../domain/mirror-scope.ts';
 import {
   RuntimeAiOutputValidationError,
@@ -28,18 +27,11 @@ import type {
 import type { RuntimeAiPromptRequest } from './runtime-ai-prompt.ts';
 
 interface NimiRuntimeLike {
-  readonly ai: {
-    readonly text: {
-      readonly generate: (request: TextGenerateInput) => Promise<TextGenerateOutput>;
-    };
-  };
+  readonly model: NimiAiModel;
 }
 
 export interface SdkRuntimeFactoryOptions {
   readonly runtime?: NimiRuntimeLike;
-  readonly model: string;
-  readonly route?: NimiRoutePolicy;
-  readonly connectorId?: string;
   readonly metadata?: Record<string, string>;
   readonly temperature?: number;
   readonly topP?: number;
@@ -48,24 +40,63 @@ export interface SdkRuntimeFactoryOptions {
 }
 
 function structuredFailureToRuntimeParseFailure(
-  failure: AppAiStructuredOutputParseFailure,
+  failure: NimiStructuredOutputParseFailure,
+  validationError?: unknown,
 ): RuntimeAiParseFailure {
-  if (failure.reason === 'json-missing' || failure.reason === 'json-invalid') {
+  if (failure.reason === 'invalid-json' || failure.reason === 'expectation-failed') {
     return {
       kind: 'invalid_json',
       detail: failure.message,
     };
   }
-  if (failure.error instanceof RuntimeAiOutputValidationError) {
-    return failure.error.failure;
+  const error = validationError ?? failure.error;
+  if (error instanceof RuntimeAiOutputValidationError) {
+    return error.failure;
   }
-  if (failure.error instanceof RuntimeAiWordingPatchValidationError) {
-    return wordingPatchValidationFailure(failure.error.detail);
+  if (error instanceof RuntimeAiWordingPatchValidationError) {
+    return wordingPatchValidationFailure(error.detail);
   }
   return {
     kind: 'validation_failed',
     detail: failure.message,
   };
+}
+
+function parseRuntimeAiWordingPatch(
+  mirrorKind: MirrorKind,
+  text: string,
+): { ok: true; value: RuntimeAiWordingPatch } | { ok: false; failure: RuntimeAiParseFailure } {
+  let normalized: RuntimeAiWordingPatch | null = null;
+  let validationError: unknown;
+  const parsed = parseNimiStructuredJson<RuntimeAiWordingPatch>({
+    raw: text,
+    expect: 'object',
+    validate: (value): value is RuntimeAiWordingPatch => {
+      try {
+        normalized = validateRuntimeAiWordingPatchValue(mirrorKind, value);
+        return true;
+      } catch (error) {
+        validationError = error;
+        return false;
+      }
+    },
+  });
+  if (!parsed.ok) {
+    return {
+      ok: false,
+      failure: structuredFailureToRuntimeParseFailure(parsed, validationError),
+    };
+  }
+  if (!normalized) {
+    return {
+      ok: false,
+      failure: {
+        kind: 'validation_failed',
+        detail: 'Runtime AI wording patch validator did not return a normalized patch.',
+      },
+    };
+  }
+  return { ok: true, value: normalized };
 }
 
 class SdkRuntimeAiClient implements RuntimeAiClient {
@@ -86,7 +117,7 @@ class SdkRuntimeAiClient implements RuntimeAiClient {
         failure: { kind: 'runtime_unavailable', detail: 'Nimi runtime not provided to factory' },
       };
     }
-    const model = String(this.options.model || '').trim();
+    const model = String(this.runtime.model.model.modelId || '').trim();
     if (!model) {
       return {
         ok: false,
@@ -96,44 +127,25 @@ class SdkRuntimeAiClient implements RuntimeAiClient {
         },
       };
     }
-    const result = await runAppAiTextGenerate<RuntimeAiWordingPatch>({
-      runtime: {
-        generateText: (runtimeRequest) => this.runtime!.ai.text.generate(runtimeRequest),
-      },
+    const result = await runNimiTextGenerate({
+      runtime: this.runtime,
       request: {
-        model,
-        input: request.user_prompt,
-        system: request.system_prompt,
-        ...(this.options.route ? { route: this.options.route } : {}),
-        ...(this.options.connectorId ? { connectorId: this.options.connectorId } : {}),
-        ...(this.options.metadata ? { metadata: this.options.metadata } : {}),
-        ...(typeof this.options.temperature === 'number'
-          ? { temperature: this.options.temperature }
-          : {}),
-        ...(typeof this.options.topP === 'number' ? { topP: this.options.topP } : {}),
-        ...(typeof this.options.maxTokens === 'number' ? { maxTokens: this.options.maxTokens } : {}),
-        ...(typeof this.options.timeoutMs === 'number' ? { timeoutMs: this.options.timeoutMs } : {}),
-      },
-      structuredOutput: {
-        expect: 'object',
-        validate: (value) => validateRuntimeAiWordingPatchValue(mirror_kind, value),
-        repairInstruction: [
-          'Return one JSON object matching the requested ShiJing runtime AI wording patch schema.',
-          'Do not include markdown fences, explanations, or any text before or after the JSON object.',
-          'Do not return the full MirrorOutput. Return patch_kind, mirror_kind, and allowed wording patch fields only.',
-        ].join(' '),
+        model: this.runtime.model.model,
+        messages: [
+          { role: 'system', content: [{ type: 'text', text: request.system_prompt }] },
+          { role: 'user', content: [{ type: 'text', text: request.user_prompt }] },
+        ],
+        parameters: {
+          ...(this.options.metadata ? { metadata: this.options.metadata } : {}),
+          ...(typeof this.options.temperature === 'number'
+            ? { temperature: this.options.temperature }
+            : {}),
+          ...(typeof this.options.topP === 'number' ? { topP: this.options.topP } : {}),
+          ...(typeof this.options.maxTokens === 'number' ? { maxTokens: this.options.maxTokens } : {}),
+        },
       },
     });
     if (!result.ok) {
-      if (result.structuredOutputFailure) {
-        return {
-          ok: false,
-          failure: {
-            kind: 'parse_failure',
-            failure: structuredFailureToRuntimeParseFailure(result.structuredOutputFailure),
-          },
-        };
-      }
       return {
         ok: false,
         failure: {
@@ -142,24 +154,16 @@ class SdkRuntimeAiClient implements RuntimeAiClient {
         },
       };
     }
-    if (!result.structuredOutput) {
-      return {
-        ok: false,
-        failure: {
-          kind: 'parse_failure',
-          failure: {
-            kind: 'invalid_json',
-            detail: 'SDK structured output parser did not return a parsed object',
-          },
-        },
-      };
+    const parsed = parseRuntimeAiWordingPatch(mirror_kind, result.text);
+    if (!parsed.ok) {
+      return { ok: false, failure: { kind: 'parse_failure', failure: parsed.failure } };
     }
     try {
       return {
         ok: true,
         output: applyRuntimeAiWordingPatch(
           request.deterministic_output,
-          result.structuredOutput.value,
+          parsed.value,
         ),
       };
     } catch (error) {

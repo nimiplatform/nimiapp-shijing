@@ -1,15 +1,10 @@
-import {
-  clearPlatformClient,
-  createNimiAppRuntimePlatformClient,
-  getPlatformClient,
-  type PlatformClient,
-} from '@nimiplatform/sdk';
+import { createNimiClient, createRealmFetchTransport, type NimiClient } from '@nimiplatform/sdk';
 import {
   AccountCallerMode,
   AccountSessionState,
   type AccountCaller,
   type AccountProjection,
-} from '@nimiplatform/sdk/runtime/browser';
+} from '@nimiplatform/sdk/runtime/generated';
 import type { Runtime } from '@nimiplatform/sdk/runtime';
 import { getShijingRuntimeDefaults } from '../bridge/index.js';
 import { useAppStore } from '../app-shell/app-store.js';
@@ -17,6 +12,7 @@ import {
   ensureShijingReadingAIConfigFromFirstRunEvidence,
 } from '../ai/shijing-ai-config-bootstrap.ts';
 import { describeError, logRendererEvent } from './renderer-log.js';
+import { getShijingNimiClient, hasShijingNimiClient, setShijingNimiClient } from './shijing-nimi-client.js';
 import {
   SHIJING_APP_ID,
   SHIJING_APP_INSTANCE_ID as CANONICAL_SHIJING_APP_INSTANCE_ID,
@@ -88,51 +84,43 @@ export async function ensureShijingBootstrapReady(): Promise<void> {
   }
 }
 
-function hasShijingPlatformClient(): boolean {
-  try {
-    getPlatformClient();
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export async function ensureShijingRuntimeClientReady(): Promise<void> {
   await ensureShijingBootstrapReady();
-  if (hasShijingPlatformClient()) return;
+  if (hasShijingNimiClient()) return;
   await runShijingBootstrap({ force: true });
-  if (!hasShijingPlatformClient()) {
-    throw new Error('ShiJing runtime platform client is unavailable after bootstrap retry');
+  if (!hasShijingNimiClient()) {
+    throw new Error('ShiJing Nimi client is unavailable after bootstrap retry');
   }
 }
 
-async function buildShijingPlatformClient(realmBaseUrl: string): Promise<PlatformClient> {
+async function buildShijingNimiClient(realmBaseUrl: string): Promise<NimiClient> {
   // SJG-PROD-02: type-level rejection of any app-owned token surface.
   // Runtime is the sole owner of access/refresh token custody.
-  const projection = await createNimiAppRuntimePlatformClient({
-    mode: 'local-first-party',
+  const client = createNimiClient({
     appId: SHIJING_RUNTIME_APP_ID,
-    developerRegistration: import.meta.env?.DEV === true,
-    realmBaseUrl,
-    runtimeOptions: {
-      protectedAccess: {
-        autoIssueForAi: true,
+    runtime: {
+      appId: SHIJING_RUNTIME_APP_ID,
+      metadata: {
+        callerId: SHIJING_RUNTIME_APP_ID,
+        surfaceId: 'shijing.reading',
+      },
+      transport: {
+        type: 'tauri-ipc',
+        commandNamespace: 'runtime_bridge',
+        eventNamespace: 'runtime_bridge',
       },
     },
-    runtimeTransport: {
-      type: 'tauri-ipc',
-      commandNamespace: 'runtime_bridge',
-      eventNamespace: 'runtime_bridge',
+    realm: {
+      transport: createRealmFetchTransport({
+        baseUrl: realmBaseUrl,
+        credentials: 'include',
+      }),
     },
-    runtimeDefaults: {
-      callerId: SHIJING_RUNTIME_APP_ID,
-      surfaceId: 'shijing.reading',
-    },
+    app: false,
+    permissions: false,
   });
-  if (projection.status !== 'ready') {
-    throw new Error(projection.message);
-  }
-  return projection.client;
+  await client.runtime.ready();
+  return client;
 }
 
 async function doRunShijingBootstrap(): Promise<void> {
@@ -144,10 +132,11 @@ async function doRunShijingBootstrap(): Promise<void> {
     const runtimeDefaults = await getShijingRuntimeDefaults();
     store.setRuntimeDefaults(runtimeDefaults);
 
-    // Step 2: Construct the local-first-party-runtime platform client.
-    clearPlatformClient();
-    const platformClient = await buildShijingPlatformClient(runtimeDefaults.realm.realmBaseUrl);
-    const runtime = platformClient.runtime;
+    // Step 2: Construct the explicit vNext Nimi client.
+    setShijingNimiClient(null);
+    const client = await buildShijingNimiClient(runtimeDefaults.realm.realmBaseUrl);
+    setShijingNimiClient(client);
+    const runtime = client.runtime;
 
     // Step 3: Resolve current account from runtime projection.
     const runtimeAccountUser = runtime
@@ -174,9 +163,7 @@ async function doRunShijingBootstrap(): Promise<void> {
       await runtime.ready();
     }
 
-    const aiConfigInit = await ensureShijingReadingAIConfigFromFirstRunEvidence({
-      platformClient,
-    });
+    const aiConfigInit = await ensureShijingReadingAIConfigFromFirstRunEvidence({ client });
     if (aiConfigInit.outcome === 'not-initialized') {
       logRendererEvent({
         level: 'warn',
@@ -193,6 +180,7 @@ async function doRunShijingBootstrap(): Promise<void> {
     store.setBootstrapReady(true);
     store.setBootstrapError(null);
   } catch (error) {
+    setShijingNimiClient(null);
     const message = error instanceof Error ? error.message : String(error);
     logRendererEvent({
       level: 'error',
@@ -208,7 +196,7 @@ async function doRunShijingBootstrap(): Promise<void> {
 
 export async function logoutShijingRuntimeAccount(): Promise<void> {
   await ensureShijingRuntimeClientReady();
-  await getPlatformClient().runtime.account.logout({
+  await getShijingNimiClient().runtime.account.logout({
     caller: shijingRuntimeAccountCaller,
     reason: 'shijing_logout',
   });

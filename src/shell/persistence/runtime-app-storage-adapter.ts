@@ -1,10 +1,11 @@
 // Runtime-owned app storage persistence adapter for ShiJingSpace.
 
-import { getPlatformClient, type PlatformClient } from '@nimiplatform/sdk';
-import { resolveRuntimeAppStorageRoots } from '@nimiplatform/sdk/runtime';
+import type { NimiClient } from '@nimiplatform/sdk';
+import { resolveNimiRuntimeAppStorageRoots } from '@nimiplatform/sdk/runtime';
 import {
   invoke,
   toShellBridgeNimiError,
+  type JsonObject,
 } from '@nimiplatform/kit/shell/renderer/bridge';
 import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts';
 import { dropIncompatibleReadings } from '../../product/persistence/sanitize-loaded-space.ts';
@@ -16,19 +17,20 @@ import type {
   PersistenceClient,
   SaveResult,
 } from '../../product/persistence/persistence-client.ts';
+import { getShijingNimiClient } from '../infra/shijing-nimi-client.ts';
 
 const STORAGE_LABEL = 'shijing app';
 
 export interface RuntimeAppStoragePersistenceAdapterOptions {
-  readonly getPlatformClient?: () => PlatformClient;
+  readonly getClient?: () => NimiClient;
 }
 
 export class RuntimeAppStoragePersistenceAdapter implements PersistenceClient {
   readonly adapter_kind = 'runtime_app_storage' as const;
-  private readonly getClient: () => PlatformClient;
+  private readonly getClient: () => NimiClient;
 
   constructor(options: RuntimeAppStoragePersistenceAdapterOptions = {}) {
-    this.getClient = options.getPlatformClient ?? (() => getPlatformClient());
+    this.getClient = options.getClient ?? (() => getShijingNimiClient());
   }
 
   async load(): Promise<LoadResult> {
@@ -169,7 +171,7 @@ export class RuntimeAppStoragePersistenceAdapter implements PersistenceClient {
   private async dataRoot(): Promise<string> {
     const client = this.getClient();
     await client.runtime.ready();
-    const roots = await resolveRuntimeAppStorageRoots({
+    const roots = await resolveNimiRuntimeAppStorageRoots({
       appLifecycle: client.runtime.appLifecycle,
       appId: SHIJING_APP_ID,
       label: STORAGE_LABEL,
@@ -180,7 +182,7 @@ export class RuntimeAppStoragePersistenceAdapter implements PersistenceClient {
 
 async function invokeShijingCommand<T = void>(
   command: string,
-  args?: Record<string, unknown>,
+  args?: JsonObject,
 ): Promise<T> {
   try {
     return await invoke(command, args ?? {}) as T;

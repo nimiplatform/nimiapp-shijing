@@ -1,5 +1,4 @@
 import type { AuthPlatformAdapter } from '@nimiplatform/kit/auth';
-import { getPlatformClient } from '@nimiplatform/sdk';
 import { shijingTauriOAuthBridge } from '../../bridge/index.js';
 import {
   ensureShijingRuntimeClientReady,
@@ -8,6 +7,7 @@ import {
   shijingRuntimeAccountCaller,
   type ShijingAuthUser,
 } from '../../infra/shijing-bootstrap.js';
+import { getShijingNimiClient } from '../../infra/shijing-nimi-client.ts';
 
 const SHIJING_EMBEDDED_AUTH_UNSUPPORTED =
   'Embedded auth flow is not supported in ShiJing desktop-browser mode.';
@@ -22,7 +22,7 @@ function unsupported<T>(): Promise<T> {
 
 export async function loadCurrentUser(): Promise<ShijingAuthUser | null> {
   await ensureShijingRuntimeClientReady();
-  return loadShijingRuntimeAccountUser(getPlatformClient().runtime);
+  return loadShijingRuntimeAccountUser(getShijingNimiClient().runtime);
 }
 
 export function createShijingDesktopBrowserAuthAdapter(): AuthPlatformAdapter {
@@ -55,7 +55,7 @@ export function createShijingRuntimeAccountBrowserBroker() {
   return {
     begin: async (input: { callbackUrl: string; baseUrl?: string; timeoutMs: number }) => {
       await ensureShijingRuntimeClientReady();
-      const response = await getPlatformClient().runtime.account.beginLogin({
+      const response = await getShijingNimiClient().runtime.account.beginLogin({
         caller: shijingRuntimeAccountCaller,
         redirectUri: input.callbackUrl,
         callbackOrigin: new URL(input.callbackUrl).origin,
@@ -88,7 +88,7 @@ export function createShijingRuntimeAccountBrowserBroker() {
       callbackUrl: string;
     }) => {
       await ensureShijingRuntimeClientReady();
-      const response = await getPlatformClient().runtime.account.completeLogin({
+      const response = await getShijingNimiClient().runtime.account.completeLogin({
         caller: shijingRuntimeAccountCaller,
         loginAttemptId: input.loginAttemptId,
         code: input.code,

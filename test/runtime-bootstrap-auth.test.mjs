@@ -7,10 +7,11 @@ const BOOTSTRAP_SOURCE = readFileSync(
   'utf8',
 );
 
-test('ShiJing Nimi App Runtime client registers the local dev app and auto-issues protected AI access', () => {
-  assert.match(BOOTSTRAP_SOURCE, /createNimiAppRuntimePlatformClient/);
-  assert.match(BOOTSTRAP_SOURCE, /mode:\s*'local-first-party'/);
-  assert.match(BOOTSTRAP_SOURCE, /developerRegistration:\s*import\.meta\.env\?\.DEV\s*===\s*true/);
-  assert.match(BOOTSTRAP_SOURCE, /protectedAccess:\s*\{/);
-  assert.match(BOOTSTRAP_SOURCE, /autoIssueForAi:\s*true/);
+test('ShiJing Nimi client uses explicit vNext Runtime and Realm transports', () => {
+  assert.match(BOOTSTRAP_SOURCE, /createNimiClient/);
+  assert.match(BOOTSTRAP_SOURCE, /createRealmFetchTransport/);
+  assert.match(BOOTSTRAP_SOURCE, /type:\s*'tauri-ipc'/);
+  assert.match(BOOTSTRAP_SOURCE, /commandNamespace:\s*'runtime_bridge'/);
+  assert.match(BOOTSTRAP_SOURCE, /app:\s*false/);
+  assert.match(BOOTSTRAP_SOURCE, /permissions:\s*false/);
 });

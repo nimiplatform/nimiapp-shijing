@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { AmbientBackground } from '@nimiplatform/kit/ui';
-import { getPlatformClient } from '@nimiplatform/sdk';
 import { useAppStore } from './app-store.js';
 import { runShijingBootstrap } from '../infra/shijing-bootstrap.js';
 import { ShijingLoginPage } from '../features/auth/shijing-login-page.js';
@@ -13,15 +12,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     void runShijingBootstrap();
   }, []);
-
-  useEffect(() => {
-    if (authStatus !== 'unauthenticated') return;
-    try {
-      getPlatformClient().realm.clearAuth();
-    } catch {
-      // Platform client may not be ready yet
-    }
-  }, [authStatus]);
 
   if (bootstrapError) {
     return (

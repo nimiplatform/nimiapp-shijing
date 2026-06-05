@@ -37,6 +37,53 @@ function runtimeTextOutput(text) {
   };
 }
 
+function createTextRuntime({ modelId = 'local/test-text-model', generateText }) {
+  return {
+    model: {
+      model: { modelId },
+      generateText,
+    },
+  };
+}
+
+function runtimeScenarioTextOutput(text, { modelResolved = 'local/test-text-model', routeDecision = 1 } = {}) {
+  return {
+    output: {
+      output: {
+        oneofKind: 'textGenerate',
+        textGenerate: { text },
+      },
+    },
+    finishReason: 1,
+    usage: {},
+    traceId: 'trace:shijing-test',
+    modelResolved,
+    routeDecision,
+    ignoredExtensions: [],
+  };
+}
+
+function createScenarioRuntime({ executeScenario, peekScheduling }) {
+  return {
+    ai: {
+      executeScenario,
+      streamScenario: async function* streamScenario() {
+        throw new Error('streamScenario is not used by ShiJing Runtime AI tests');
+      },
+    },
+    generated: {
+      peekScheduling: peekScheduling ?? (async () => ({
+        aggregateJudgement: {
+          state: 1,
+          detail: '',
+          resourceWarnings: [],
+        },
+        targetJudgements: [],
+      })),
+    },
+  };
+}
+
 function minimalPromptRequest() {
   return {
     mirror_kind: 'rijing',
@@ -98,8 +145,7 @@ function emptyAIConfig() {
   return {
     scopeRef: createShijingReadingAIScopeRef(),
     capabilities: {
-      selectedBindings: {},
-      localProfileRefs: {},
+      targetRefs: {},
       selectedParams: {},
     },
     profileOrigin: null,
@@ -162,10 +208,10 @@ function verifiedFirstRunEvidenceRef() {
   };
 }
 
-function firstRunReadyPlatformClient() {
+function firstRunReadyClient() {
   return {
     runtime: {
-      local: {
+      generated: {
         getProductControlRecord: async () => ({
           json: JSON.stringify({
             path: 'D:\\nimi\\product-control.json',
@@ -402,46 +448,38 @@ test('MockRuntimeAiClient surfaces canned failure when configured', async () => 
   if (!result.ok) assert.equal(result.failure.kind, 'runtime_unavailable');
 });
 
-test('SdkRuntimeAiClient delegates through runtime.ai.text.generate', async () => {
+test('SdkRuntimeAiClient delegates through a vNext NimiAiModel', async () => {
   let capturedRequest = null;
-  const runtime = {
-    ai: {
-      text: {
-        generate: async (request) => {
-          capturedRequest = request;
-          return runtimeTextOutput(JSON.stringify(rijingPatch()));
-        },
-      },
+  const runtime = createTextRuntime({
+    generateText: async (request) => {
+      capturedRequest = request;
+      return runtimeTextOutput(JSON.stringify(rijingPatch()));
     },
-  };
+  });
   const client = createSdkRuntimeAiClient({
     runtime,
-    model: 'local/test-text-model',
-    route: 'local',
     metadata: { surfaceId: 'shijing.test.runtime-ai' },
   });
   const result = await client.generate('rijing', minimalPromptRequest());
   assert.equal(result.ok, true);
-  assert.equal(capturedRequest.model, 'local/test-text-model');
-  assert.equal(capturedRequest.route, 'local');
-  assert.equal(capturedRequest.system, 'system contract');
-  assert.equal(capturedRequest.input, 'user contract');
-  assert.equal(capturedRequest.metadata.surfaceId, 'shijing.test.runtime-ai');
+  assert.equal(capturedRequest.model.modelId, 'local/test-text-model');
+  assert.equal(capturedRequest.messages[0].role, 'system');
+  assert.equal(capturedRequest.messages[0].content[0].text, 'system contract');
+  assert.equal(capturedRequest.messages[1].role, 'user');
+  assert.equal(capturedRequest.messages[1].content[0].text, 'user contract');
+  assert.equal(capturedRequest.parameters.metadata.surfaceId, 'shijing.test.runtime-ai');
 });
 
 test('SdkRuntimeAiClient fails closed when no text model is provided', async () => {
   let called = false;
-  const runtime = {
-    ai: {
-      text: {
-        generate: async () => {
-          called = true;
-          return runtimeTextOutput(JSON.stringify(rijingPatch()));
-        },
-      },
+  const runtime = createTextRuntime({
+    modelId: '',
+    generateText: async () => {
+      called = true;
+      return runtimeTextOutput(JSON.stringify(rijingPatch()));
     },
-  };
-  const client = createSdkRuntimeAiClient({ runtime, model: '' });
+  });
+  const client = createSdkRuntimeAiClient({ runtime });
   const result = await client.generate('rijing', minimalPromptRequest());
   assert.equal(result.ok, false);
   assert.equal(called, false);
@@ -453,14 +491,10 @@ test('SdkRuntimeAiClient fails closed when no text model is provided', async () 
 
 test('SdkRuntimeAiClient uses SDK structured output extraction for fenced JSON', async () => {
   const fenced = `\`\`\`json\n${JSON.stringify(rijingPatch())}\n\`\`\``;
-  const runtime = {
-    ai: {
-      text: {
-        generate: async () => runtimeTextOutput(fenced),
-      },
-    },
-  };
-  const client = createSdkRuntimeAiClient({ runtime, model: 'local/test-text-model' });
+  const runtime = createTextRuntime({
+    generateText: async () => runtimeTextOutput(fenced),
+  });
+  const client = createSdkRuntimeAiClient({ runtime });
   const result = await client.generate('rijing', minimalPromptRequest());
   assert.equal(result.ok, true);
   if (result.ok) {
@@ -470,14 +504,10 @@ test('SdkRuntimeAiClient uses SDK structured output extraction for fenced JSON',
 });
 
 test('SdkRuntimeAiClient fails closed when wording patch violates ShiJing target identity', async () => {
-  const runtime = {
-    ai: {
-      text: {
-        generate: async () => runtimeTextOutput(JSON.stringify({ ...rijingPatch(), mirror_kind: 'yuejing' })),
-      },
-    },
-  };
-  const client = createSdkRuntimeAiClient({ runtime, model: 'local/test-text-model' });
+  const runtime = createTextRuntime({
+    generateText: async () => runtimeTextOutput(JSON.stringify({ ...rijingPatch(), mirror_kind: 'yuejing' })),
+  });
+  const client = createSdkRuntimeAiClient({ runtime });
   const result = await client.generate('rijing', minimalPromptRequest());
   assert.equal(result.ok, false);
   if (!result.ok) {
@@ -496,14 +526,10 @@ test('SdkRuntimeAiClient preserves deterministic recommendations when wording pa
       },
     ],
   };
-  const runtime = {
-    ai: {
-      text: {
-        generate: async () => runtimeTextOutput(JSON.stringify(patch)),
-      },
-    },
-  };
-  const client = createSdkRuntimeAiClient({ runtime, model: 'local/test-text-model' });
+  const runtime = createTextRuntime({
+    generateText: async () => runtimeTextOutput(JSON.stringify(patch)),
+  });
+  const client = createSdkRuntimeAiClient({ runtime });
   const result = await client.generate('rijing', minimalPromptRequest());
   assert.equal(result.ok, true);
   if (result.ok) {
@@ -532,14 +558,10 @@ test('SdkRuntimeAiClient fails closed when YueJing wording duplicates same-date 
       },
     ],
   };
-  const runtime = {
-    ai: {
-      text: {
-        generate: async () => runtimeTextOutput(JSON.stringify(patch)),
-      },
-    },
-  };
-  const client = createSdkRuntimeAiClient({ runtime, model: 'local/test-text-model' });
+  const runtime = createTextRuntime({
+    generateText: async () => runtimeTextOutput(JSON.stringify(patch)),
+  });
+  const client = createSdkRuntimeAiClient({ runtime });
   const result = await client.generate('yuejing', yuejingPromptRequest());
   assert.equal(result.ok, false);
   if (!result.ok) {
@@ -549,7 +571,7 @@ test('SdkRuntimeAiClient fails closed when YueJing wording duplicates same-date 
   }
 });
 
-test('resolveShijingTextGenerateBinding fails closed when AIConfig has no text.generate binding', () => {
+test('resolveShijingTextGenerateBinding fails closed when AIConfig has no text.generate targetRef', () => {
   const resolved = resolveShijingTextGenerateBinding(emptyAIConfig());
   assert.equal(resolved.ok, false);
   if (!resolved.ok) {
@@ -558,10 +580,10 @@ test('resolveShijingTextGenerateBinding fails closed when AIConfig has no text.g
   }
 });
 
-test('first-run evidence initializes ShiJing text.generate AIConfig binding', async () => {
+test('first-run evidence initializes ShiJing text.generate AIConfig targetRef', async () => {
   let savedConfig = null;
   const result = await ensureShijingReadingAIConfigFromFirstRunEvidence({
-    platformClient: firstRunReadyPlatformClient(),
+    client: firstRunReadyClient(),
     loadConfig: () => emptyAIConfig(),
     saveConfig: (next) => {
       savedConfig = next;
@@ -570,37 +592,33 @@ test('first-run evidence initializes ShiJing text.generate AIConfig binding', as
   });
 
   assert.equal(result.outcome, 'initialized');
-  assert.equal(savedConfig.capabilities.selectedBindings['text.generate'].source, 'local');
-  assert.equal(savedConfig.capabilities.selectedBindings['text.generate'].model, 'asset:text');
-  assert.equal(savedConfig.capabilities.selectedBindings['text.generate'].engine, 'llama.cpp.cpu');
-  assert.equal(
-    savedConfig.capabilities.selectedBindings['text.generate'].runtimeExecutionEvidenceRef,
-    'execution_evidence_ready',
-  );
+  assert.equal(savedConfig.capabilities.targetRefs['text.generate'].kind, 'local-runtime');
+  assert.equal(savedConfig.capabilities.targetRefs['text.generate'].targetId, 'local');
+  assert.equal(savedConfig.capabilities.targetRefs['text.generate'].profileId, 'runtime-baseline:ready');
+  assert.equal(savedConfig.capabilities.targetRefs['text.generate'].readinessRef, 'execution_evidence_ready');
 });
 
-test('first-run evidence init does not overwrite an existing ShiJing text.generate binding', async () => {
+test('first-run evidence init does not overwrite an existing ShiJing text.generate targetRef', async () => {
   let productControlRead = false;
   let saved = false;
   const existing = {
     ...emptyAIConfig(),
     capabilities: {
-      selectedBindings: {
+      targetRefs: {
         'text.generate': {
-          source: 'cloud',
+          kind: 'cloud-connector',
           connectorId: 'connector-openai',
-          model: 'gpt-runtime',
+          providerModelId: 'gpt-runtime',
           provider: 'openai',
         },
       },
-      localProfileRefs: {},
       selectedParams: {},
     },
   };
   const result = await ensureShijingReadingAIConfigFromFirstRunEvidence({
-    platformClient: {
+    client: {
       runtime: {
-        local: {
+        generated: {
           getProductControlRecord: async () => {
             productControlRead = true;
             throw new Error('should not read product control');
@@ -618,24 +636,24 @@ test('first-run evidence init does not overwrite an existing ShiJing text.genera
   assert.equal(result.outcome, 'already-bound');
   assert.equal(productControlRead, false);
   assert.equal(saved, false);
-  assert.equal(result.config.capabilities.selectedBindings['text.generate'].model, 'gpt-runtime');
+  assert.equal(result.config.capabilities.targetRefs['text.generate'].providerModelId, 'gpt-runtime');
 });
 
-test('AIConfig-backed RuntimeAiClient routes text.generate through configured cloud binding', async () => {
+test('AIConfig-backed RuntimeAiClient routes text.generate through configured cloud targetRef', async () => {
   let capturedRequest = null;
+  let capturedOptions = null;
+  let capturedSchedulingRequest = null;
   const config = {
     ...emptyAIConfig(),
     capabilities: {
-      selectedBindings: {
+      targetRefs: {
         'text.generate': {
-          source: 'cloud',
+          kind: 'cloud-connector',
           connectorId: 'connector-openai',
-          model: 'gpt-runtime',
-          modelLabel: 'GPT Runtime',
+          providerModelId: 'gpt-runtime',
           provider: 'openai',
         },
       },
-      localProfileRefs: {},
       selectedParams: {
         'text.generate': {
           temperature: 0.2,
@@ -646,32 +664,44 @@ test('AIConfig-backed RuntimeAiClient routes text.generate through configured cl
       },
     },
   };
-  const platformClient = {
-    runtime: {
-      ai: {
-        text: {
-          generate: async (request) => {
-            capturedRequest = request;
-            return runtimeTextOutput(JSON.stringify(rijingPatch()));
-          },
-        },
-      },
+  const runtime = createScenarioRuntime({
+    executeScenario: async (request, options) => {
+      capturedRequest = request;
+      capturedOptions = options;
+      return runtimeScenarioTextOutput(JSON.stringify(rijingPatch()), {
+        modelResolved: 'gpt-runtime',
+        routeDecision: 2,
+      });
     },
-  };
+    peekScheduling: async (request) => {
+      capturedSchedulingRequest = request;
+      return {
+        aggregateJudgement: {
+          state: 1,
+          detail: '',
+          resourceWarnings: [],
+        },
+        targetJudgements: [],
+      };
+    },
+  });
   const client = createShijingRuntimeAiClient({
     loadConfig: () => config,
-    getPlatformClient: () => platformClient,
+    getClient: () => ({ runtime }),
   });
   const result = await client.generate('rijing', minimalPromptRequest());
   assert.equal(result.ok, true);
-  assert.equal(capturedRequest.model, 'gpt-runtime');
-  assert.equal(capturedRequest.route, 'cloud');
-  assert.equal(capturedRequest.connectorId, 'connector-openai');
-  assert.equal(capturedRequest.temperature, 0.2);
-  assert.equal(capturedRequest.topP, 0.9);
-  assert.equal(capturedRequest.maxTokens, 1200);
-  assert.equal(capturedRequest.timeoutMs, 15000);
-  assert.equal(capturedRequest.metadata.aiConfigScopeOwnerId, 'ai.nimi.apps.shijing');
-  assert.equal(capturedRequest.metadata.aiConfigBindingSource, 'cloud');
-  assert.match(capturedRequest.metadata.aiConfigHash, /^ai-config-v1:/);
+  assert.equal(capturedRequest.head.modelId, 'gpt-runtime');
+  assert.equal(capturedRequest.head.routePolicy, 2);
+  assert.equal(capturedRequest.head.connectorId, 'connector-openai');
+  assert.equal(capturedRequest.head.timeoutMs, 15000);
+  assert.equal(capturedRequest.spec.spec.oneofKind, 'textGenerate');
+  assert.equal(capturedRequest.spec.spec.textGenerate.temperature, 0.2);
+  assert.equal(capturedRequest.spec.spec.textGenerate.topP, 0.9);
+  assert.equal(capturedRequest.spec.spec.textGenerate.maxTokens, 1200);
+  assert.equal(capturedOptions.metadata.aiConfigScopeOwnerId, 'ai.nimi.apps.shijing');
+  assert.equal(capturedOptions.metadata.aiConfigBindingSource, 'cloud');
+  assert.match(capturedOptions.metadata.aiConfigHash, /^v1-/);
+  assert.equal(capturedSchedulingRequest.targets[0].targetId, 'connector-openai');
+  assert.equal(capturedSchedulingRequest.targets[0].profileId, 'gpt-runtime');
 });
