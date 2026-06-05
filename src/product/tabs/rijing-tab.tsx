@@ -16,17 +16,19 @@
 //   ImportToShiJingButton — quick action: ask 时镜 about this reading
 //   RiJingEvidenceRow     — collapsible wrapping CitationDrawer
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { ReadingGenerationFailure } from '../../domain/reading.ts';
 import type { RiJingMirrorOutput } from '../../domain/mirror-output.ts';
 import { generateReadingForStorage } from '../reading/generate-and-store.ts';
-import { inputsSummaryExpired } from '../astrology/inputs-summary-expiry.ts';
+import { computeCanonicalHash } from '../astrology/canonical-hash.ts';
+import { inputsSummaryStaleForSpace } from '../astrology/inputs-summary-expiry.ts';
 import { newReadingId } from '../ids/index.ts';
 import { latestReadingByMirrorKind } from '../reading/reading-selectors.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { MIRROR_KIND_LABELS } from '../i18n/copy.ts';
 import { classifyMirrorTabState } from './mirror-state.ts';
+import { persistenceReadyForAutoGeneration } from './auto-generation-readiness.ts';
 import { dailyMirrorScopeForToday } from './mirror-scope-helpers.ts';
 import { subjectMirrorReadiness } from '../subjects/natal-readiness.ts';
 import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
@@ -55,30 +57,42 @@ export interface RiJingTabProps {
 }
 
 export function RiJingTab(props: RiJingTabProps) {
-  const { state, dispatch, runtime_ai_client } = useShijingStore();
+  const { state, dispatch, persistence_status, persistence_client, runtime_ai_client } = useShijingStore();
   const [loading, setLoading] = useState(false);
   const [failure, setFailure] = useState<ReadingGenerationFailure | null>(null);
 
+  const activeTags = useMemo(
+    () => state.snapshot.concern_tags.filter((t) => t.status === 'active'),
+    [state.snapshot.concern_tags],
+  );
+  const activeTagIds = useMemo(() => activeTags.map((t) => t.id), [activeTags]);
+  const today = new Date().toISOString().slice(0, 10);
+  const dailyScope = useMemo(() => dailyMirrorScopeForToday(), [today]);
   const reading = latestReadingByMirrorKind({
     readings: state.snapshot.readings,
     mirror_kind: 'rijing',
   });
-  const stale = reading ? inputsSummaryExpired(reading, new Date()) : false;
+  const stale = reading
+    ? inputsSummaryStaleForSpace({
+        reading,
+        space: state.snapshot,
+        now: new Date(),
+        expected_mirror_scope: dailyScope,
+        expected_concern_tag_refs: activeTagIds,
+      })
+    : false;
+  const currentReading = reading && !stale ? reading : undefined;
   const tabState = useMemo(
     () =>
       classifyMirrorTabState({
-        ...(reading ? { reading } : {}),
+        ...(currentReading ? { reading: currentReading } : {}),
         ...(failure ? { failure } : {}),
         loading,
-        stale,
+        stale: false,
       }),
-    [reading, failure, loading, stale],
+    [currentReading, failure, loading],
   );
 
-  const activeTags = state.snapshot.concern_tags.filter((t) => t.status === 'active');
-  const activeTagIds = activeTags.map((t) => t.id);
-
-  const dailyScope = useMemo(() => dailyMirrorScopeForToday(), []);
   const readiness = useMemo(
     () =>
       subjectMirrorReadiness({
@@ -90,9 +104,49 @@ export function RiJingTab(props: RiJingTabProps) {
     [state.snapshot, dailyScope],
   );
 
-  const hero = deriveRiJingHero(reading);
-  const actions = deriveRiJingActions(reading);
-  const evidenceChips = deriveEvidenceChips(reading);
+  const autoGenSignature = useMemo(
+    () =>
+      computeCanonicalHash({
+        mirror_scope: dailyScope,
+        self_natal_inputs: state.snapshot.self_subject.natal_inputs,
+        active_concern_tags: activeTags.map((tag) => ({
+          id: tag.id,
+          label: tag.label,
+          status: tag.status,
+          sort_order: tag.sort_order,
+          parsed_topics: tag.parsed_topics,
+          mention_refs: tag.mention_refs,
+          prompt_text: tag.prompt_text,
+        })),
+        response_preferences: state.snapshot.settings.response_preferences,
+      }),
+    [
+      dailyScope,
+      state.snapshot.self_subject.natal_inputs,
+      activeTags,
+      state.snapshot.settings.response_preferences,
+    ],
+  );
+  const autoGenAttemptRef = useRef<string | null>(null);
+  const persistenceReady = persistenceReadyForAutoGeneration({
+    persistence_status,
+    has_persistence_client: persistence_client !== null,
+  });
+
+  useEffect(() => {
+    if (loading) return;
+    if (!persistenceReady) return;
+    if (!readiness.ok) return;
+    if (activeTagIds.length === 0) return;
+    if (currentReading) return;
+    if (autoGenAttemptRef.current === autoGenSignature) return;
+    autoGenAttemptRef.current = autoGenSignature;
+    void handleGenerate();
+  }, [loading, persistenceReady, readiness, activeTagIds, currentReading, autoGenSignature]);
+
+  const hero = deriveRiJingHero(currentReading);
+  const actions = deriveRiJingActions(currentReading);
+  const evidenceChips = deriveEvidenceChips(currentReading);
   const dateLabel = rijingDateLabel(dailyScope.basis_time_zone);
 
   async function handleGenerate() {
@@ -157,12 +211,6 @@ export function RiJingTab(props: RiJingTabProps) {
         <p role="status">正在生成今日日镜…</p>
       ) : null}
       {tabState.kind === 'failure' ? <FailureBanner failure={tabState.failure} /> : null}
-      {tabState.kind === 'ready' && tabState.stale ? (
-        <p role="alert" className="shijing-rijing__stale">
-          当前日镜已超过 24 小时,建议重新生成。
-        </p>
-      ) : null}
-
       <RiJingHero
         content={hero}
         refreshDisabled={refreshDisabled}
@@ -189,8 +237,8 @@ export function RiJingTab(props: RiJingTabProps) {
         </div>
       ) : null}
 
-      <RiJingEvidenceRow chips={evidenceChips} disabled={!reading}>
-        {reading ? <CitationDrawer reading={reading} /> : null}
+      <RiJingEvidenceRow chips={evidenceChips} disabled={!currentReading}>
+        {currentReading ? <CitationDrawer reading={currentReading} /> : null}
       </RiJingEvidenceRow>
     </section>
   );

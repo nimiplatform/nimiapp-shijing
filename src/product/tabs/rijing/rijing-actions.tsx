@@ -3,9 +3,8 @@
 // Three small cards beneath the event-input that translate the day into
 // one concrete action, one thing to say, and one thing to avoid. Each
 // card carries a colored badge icon and a bottom accent line keyed to its
-// slot. Content comes from `deriveRiJingActions`; the section always
-// renders (with calm fallback copy) so the guidance is present even
-// before a reading is generated.
+// slot. Content comes from `deriveRiJingActions`; empty derived content
+// means the section is not rendered.
 
 import { ChatIcon, DoubleChevronIcon, ProhibitIcon } from './rijing-icons.tsx';
 import type { RiJingActionItem, RiJingActionSlot } from './rijing-derive.ts';
@@ -26,6 +25,8 @@ function IconForSlot({ slot }: { slot: RiJingActionSlot }) {
 }
 
 export function RiJingActions(props: RiJingActionsProps) {
+  if (props.items.length === 0) return null;
+
   return (
     <section className="shijing-rijing__actions" aria-label="今日行动">
       <header className="shijing-rijing__actions-head">

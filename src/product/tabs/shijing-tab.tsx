@@ -141,19 +141,7 @@ export function ShiJingTab(props: ShiJingTabProps) {
     if (seedCount > 0) composerRef.current?.focus();
   }, [seedCount]);
 
-  // Fallback: if no imported source, use the latest reading of each kind.
-  const fallbackSourceIds = useMemo(() => {
-    const ids: string[] = [];
-    for (const kind of ['rijing', 'yuejing', 'nianjing'] as const) {
-      const r = latestReadingByMirrorKind({
-        readings: state.snapshot.readings,
-        mirror_kind: kind,
-      });
-      if (r) ids.push(r.id);
-    }
-    return ids;
-  }, [state.snapshot.readings]);
-  const sourceReadingIds = importedIds.length > 0 ? importedIds : fallbackSourceIds;
+  const sourceReadingIds = importedIds;
 
   // History rail, newest first.
   const conversations = useMemo(

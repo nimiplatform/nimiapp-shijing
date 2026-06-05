@@ -86,7 +86,7 @@ export function deriveRiJingHero(
       eyebrow: '今日总览',
       headline: HEADLINE_FALLBACK,
       description: '点击右上角的"刷新"，会基于你的生辰资料与当下时空，生成今日的判断。',
-      leanings: ['平稳'],
+      leanings: [],
       confidence_label: '—',
       confidence_note: '今日日镜尚未生成。',
       reminder: '生成前请先确认上方的关注标签是否符合你想要的视角。',
@@ -125,14 +125,10 @@ export function deriveRiJingHero(
   };
 }
 
-// ----- 「今天怎么做」 do / say / avoid action cards -----
+// ----- action cards -----
 //
-// The mockup surfaces a three-card action triptych (做一件事 / 说一句话 /
-// 避免一件事) that does not map 1:1 to the mirror output. We shape it from
-// whatever the Reading already carries — projection recommendations for
-// the "do" / "say" slots and an uncertainty caveat for the "avoid" slot —
-// and fall back to calm static copy when the generator has not run. We do
-// not invent claims beyond what the Reading says.
+// Action cards are rendered only from generated Reading content. Empty output
+// stays empty; the product must not synthesize guidance copy.
 
 export type RiJingActionSlot = 'do' | 'say' | 'avoid';
 
@@ -143,9 +139,24 @@ export interface RiJingActionItem {
   readonly body: string;
 }
 
+const NON_ACTIONABLE_UNCERTAINTY_CODES = new Set<string>([
+  'birth_precision_exact',
+]);
+
+function firstActionableCaveat(reading: Reading | undefined): string | undefined {
+  if (!reading) return undefined;
+  for (let i = 0; i < reading.uncertainty.caveats.length; i += 1) {
+    const code = reading.uncertainty.data_gaps[i];
+    if (code && NON_ACTIONABLE_UNCERTAINTY_CODES.has(code)) continue;
+    return reading.uncertainty.caveats[i];
+  }
+  return undefined;
+}
+
 export function deriveRiJingActions(
   reading: Reading | undefined,
 ): readonly RiJingActionItem[] {
+  if (!reading) return [];
   const output = reading?.output as RiJingMirrorOutput | undefined;
   const recs = output
     ? output.concern_projections.flatMap((p) => p.recommendations)
@@ -153,31 +164,40 @@ export function deriveRiJingActions(
   const summaries = output
     ? output.concern_projections.map((p) => p.summary).filter((s) => s.length > 0)
     : [];
-  const avoidCaveat = reading?.uncertainty.caveats[0];
+  const avoidCaveat = firstActionableCaveat(reading);
 
   const doText = recs[0];
   const sayText = recs[1] ?? summaries[0];
+  const items: RiJingActionItem[] = [];
 
-  return [
-    {
+  if (doText) {
+    items.push({
       slot: 'do',
       eyebrow: '今天做一件事',
-      title: doText ? condense(doText, 14) : '推进一件已经准备好的事情',
-      body: doText ?? '选一件已有基础的事，把它往前送一步，不必追求一次完成。',
-    },
-    {
+      title: condense(doText, 14),
+      body: doText,
+    });
+  }
+
+  if (sayText) {
+    items.push({
       slot: 'say',
       eyebrow: '今天说一句话',
-      title: sayText ? condense(sayText, 14) : '和关键人物确认彼此预期',
-      body: sayText ?? '适合把时间、分工、边界说清楚，减少后面反复解释。',
-    },
-    {
+      title: condense(sayText, 14),
+      body: sayText,
+    });
+  }
+
+  if (avoidCaveat) {
+    items.push({
       slot: 'avoid',
       eyebrow: '今天避免一件事',
-      title: avoidCaveat ? condense(avoidCaveat, 14) : '不要为了赶进度而打乱原本节奏',
-      body: avoidCaveat ?? '今天不适合临时加码，也不适合因为一时焦虑就推翻原本计划。',
-    },
-  ];
+      title: condense(avoidCaveat, 14),
+      body: avoidCaveat,
+    });
+  }
+
+  return items;
 }
 
 // Friendly Chinese name for common IANA timezones; falls back to

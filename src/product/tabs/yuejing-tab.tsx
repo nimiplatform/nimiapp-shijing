@@ -35,7 +35,9 @@ import type { EventMemory } from '../../domain/event-memory.ts';
 import type { PlanItem } from '../../domain/plan-item.ts';
 import type { Reading, ReadingGenerationFailure } from '../../domain/reading.ts';
 import { generateReadingForStorage } from '../reading/generate-and-store.ts';
-import { inputsSummaryExpired } from '../astrology/inputs-summary-expiry.ts';
+import {
+  yuejingInputsSummaryStaleForActiveSubset,
+} from '../astrology/inputs-summary-expiry.ts';
 import {
   newConcernTagId,
   newEventMemoryId,
@@ -47,9 +49,11 @@ import {
   yuejingReadingStartsOn,
 } from '../reading/reading-selectors.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
+import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import { MIRROR_KIND_LABELS, TENDENCY_CLASS_LABELS } from '../i18n/copy.ts';
 import { rolling30DayMirrorScopeFromDate } from './mirror-scope-helpers.ts';
 import { classifyMirrorTabState } from './mirror-state.ts';
+import { persistenceReadyForAutoGeneration } from './auto-generation-readiness.ts';
 import {
   deriveConcernTagLabelForDisplay,
   parseConcernTagInput,
@@ -198,12 +202,25 @@ function aggregateYuejingCellsByDate(input: {
   readonly readings: readonly Reading[];
   readonly dates: readonly string[];
   readonly activeTagIdSet: ReadonlySet<string>;
+  readonly activeTagIds: readonly string[];
+  readonly space: ShiJingSpace;
+  readonly now: Date;
 }): Map<string, readonly YueJingCell[]> {
   const dateSet = new Set(input.dates);
   const latestByKey = new Map<string, { readonly createdAtMs: number; readonly cell: YueJingCell }>();
   for (const reading of yuejingReadings(input.readings)) {
     if (reading.output.mirror_kind !== 'yuejing') continue;
     if (!yuejingReadingHasDomainizedDrivers(reading)) continue;
+    if (
+      yuejingInputsSummaryStaleForActiveSubset({
+        reading,
+        space: input.space,
+        now: input.now,
+        active_concern_tag_refs: input.activeTagIds,
+      })
+    ) {
+      continue;
+    }
     const createdAtMs = Date.parse(reading.created_at);
     const output = reading.output as YueJingMirrorOutput;
     for (const cell of output.cells) {
@@ -237,14 +254,240 @@ function nextMissingYuejingDate(input: {
   return null;
 }
 
+type TendencyCounts = Record<TendencyClass, number>;
+
+const MONTH_TENDENCY_CLASSES: readonly TendencyClass[] = [
+  'supportive',
+  'steady',
+  'watch',
+  'turning',
+  'blocked',
+] as const;
+
+function emptyTendencyCounts(): TendencyCounts {
+  return {
+    supportive: 0,
+    steady: 0,
+    watch: 0,
+    blocked: 0,
+    turning: 0,
+  };
+}
+
+function countTendencies(cells: readonly YueJingCell[]): TendencyCounts {
+  const counts = emptyTendencyCounts();
+  for (const cell of cells) counts[cell.tendency_class] += 1;
+  return counts;
+}
+
+function primaryTendencyFromCounts(counts: TendencyCounts): TendencyClass {
+  let best: TendencyClass = 'steady';
+  let bestCount = -1;
+  for (const tendency of MONTH_TENDENCY_CLASSES) {
+    const count = counts[tendency];
+    if (
+      count > bestCount ||
+      (count === bestCount && TENDENCY_SEVERITY[tendency] > TENDENCY_SEVERITY[best])
+    ) {
+      best = tendency;
+      bestCount = count;
+    }
+  }
+  return best;
+}
+
+function cellsForConcernInWindow(input: {
+  readonly dates: readonly string[];
+  readonly cellsByDate: ReadonlyMap<string, readonly YueJingCell[]>;
+  readonly concernTagId: string;
+}): YueJingCell[] {
+  const cells: YueJingCell[] = [];
+  for (const date of input.dates) {
+    const cell = (input.cellsByDate.get(date) ?? []).find(
+      (candidate) => candidate.concern_tag_ref === input.concernTagId,
+    );
+    if (cell) cells.push(cell);
+  }
+  return cells;
+}
+
+function compactDateRangeLabel(startDate: string, endDate: string): string {
+  if (startDate === endDate) return shortMonthDay(startDate);
+  return `${shortMonthDay(startDate)}-${shortMonthDay(endDate)}`;
+}
+
+function contiguousDateRanges(
+  cells: readonly YueJingCell[],
+  dates: readonly string[],
+  predicate: (cell: YueJingCell) => boolean,
+): string[] {
+  const dateIndex = new Map(dates.map((date, index) => [date, index] as const));
+  const selected = cells
+    .filter(predicate)
+    .map((cell) => cell.date)
+    .filter((date, index, arr) => arr.indexOf(date) === index)
+    .sort((a, b) => (dateIndex.get(a) ?? 0) - (dateIndex.get(b) ?? 0));
+  const ranges: string[] = [];
+  let start: string | null = null;
+  let previous: string | null = null;
+  for (const date of selected) {
+    if (!start || !previous) {
+      start = date;
+      previous = date;
+      continue;
+    }
+    if ((dateIndex.get(date) ?? -1) === (dateIndex.get(previous) ?? -3) + 1) {
+      previous = date;
+      continue;
+    }
+    ranges.push(compactDateRangeLabel(start, previous));
+    start = date;
+    previous = date;
+  }
+  if (start && previous) ranges.push(compactDateRangeLabel(start, previous));
+  return ranges;
+}
+
+function limitedRangeText(ranges: readonly string[]): string {
+  if (ranges.length === 0) return '暂无集中窗口';
+  const head = ranges.slice(0, 3).join('、');
+  return ranges.length > 3 ? `${head} 等` : head;
+}
+
+function meaningfulCellDetails(cells: readonly YueJingCell[]): string[] {
+  const seen = new Set<string>();
+  const details: string[] = [];
+  for (const cell of cells) {
+    const detail = yuejingCellDetail(cell).replace(/^#[^:：]+[:：]\s*/, '').trim();
+    if (!detail || seen.has(detail)) continue;
+    seen.add(detail);
+    details.push(detail);
+    if (details.length >= 2) break;
+  }
+  return details;
+}
+
+function countCells(
+  cells: readonly YueJingCell[],
+  predicate: (cell: YueJingCell) => boolean,
+): number {
+  let count = 0;
+  for (const cell of cells) {
+    if (predicate(cell)) count += 1;
+  }
+  return count;
+}
+
+function attentionWeight(counts: TendencyCounts): number {
+  return counts.blocked * 5 + counts.turning * 4 + counts.watch * 3 + counts.supportive * 2 + counts.steady;
+}
+
+function monthOperatingAdvice(primary: TendencyClass): {
+  readonly posture: string;
+  readonly doFirst: string;
+  readonly protect: string;
+} {
+  switch (primary) {
+    case 'supportive':
+      return {
+        posture: '这 30 天适合把已经有把握的事往前放,不要只停留在观察。',
+        doFirst: '先安排需要主动表达、提交、见面、确认资源的事项。',
+        protect: '阻滞日保留缓冲,避免把所有关键动作挤在同一段。',
+      };
+    case 'steady':
+      return {
+        posture: '主节奏偏稳,适合维持长期动作,用连续性换结果。',
+        doFirst: '先固定每个关注的基础节奏,把大动作拆成可确认的小步。',
+        protect: '不要因为单日助力就突然加码,保持低损耗推进。',
+      };
+    case 'watch':
+      return {
+        posture: '这 30 天的重点是校准,先看清反馈再决定是否加速。',
+        doFirst: '先检查沟通、承诺、身体负荷和资源安排里的不确定点。',
+        protect: '观察日不急着定性,把判断留到连续信号出现之后。',
+      };
+    case 'turning':
+      return {
+        posture: '窗口内有明显转向信号,旧节奏可能不再完全适用。',
+        doFirst: '先把转折日附近的变化记录下来,判断是机会、边界还是节奏变化。',
+        protect: '不要用过去的处理方式硬套新局面,给调整预留空间。',
+      };
+    case 'blocked':
+      return {
+        posture: '阻力偏重时,最有价值的是止损、复核和保存余地。',
+        doFirst: '先收束高消耗事项,把必须推进的动作放到阻滞段之外。',
+        protect: '避免硬碰硬、逼问、冲动承诺和一次性投入过多资源。',
+      };
+  }
+}
+
+interface ConcernMonthLanguage {
+  readonly supportive: string;
+  readonly steady: string;
+  readonly watch: string;
+  readonly turning: string;
+  readonly blocked: string;
+}
+
+const GENERIC_MONTH_LANGUAGE: ConcernMonthLanguage = {
+  supportive: '适合把已经明确的事往前推,让行动落到可确认的节点上。',
+  steady: '适合维持既有节奏,把基础动作做稳定,不必额外制造变化。',
+  watch: '适合多观察反馈与细节,先校准节奏,再决定是否加速。',
+  turning: '适合识别方向变化,把新信号记录下来,避免用旧节奏处理新局面。',
+  blocked: '适合收束、复盘和保留余地,不要在阻力最重的位置硬推。',
+};
+
+const MONTH_LANGUAGE_BY_LABEL: Record<string, ConcernMonthLanguage> = {
+  '姻缘': {
+    supportive: '适合增加真实接触、把话说清楚,推进见面、确认边界或修复沟通。',
+    steady: '适合维持稳定互动,让关系在低压节奏里自然显形。',
+    watch: '适合观察对方回应与自己的情绪波动,先不要急着定义关系。',
+    turning: '适合留意关系角色、距离或表达方式的变化,新信号比旧判断更重要。',
+    blocked: '适合降低拉扯,暂停追问和施压,把边界与期待先放回自己这里。',
+  },
+  '事业': {
+    supportive: '适合推进协作、提交方案、争取资源,把想法落到可执行安排。',
+    steady: '适合维护既有工作流,处理例行产出和长期建设。',
+    watch: '适合检查沟通成本、排期和外部依赖,先把风险点摊开。',
+    turning: '适合识别岗位、项目或合作关系里的换轨信号,预留调整空间。',
+    blocked: '适合减少正面硬碰,把重心放在复盘、补材料和等待结构松动。',
+  },
+  '身体': {
+    supportive: '适合恢复规律作息、温和训练和主动修复,让身体节律回到可持续状态。',
+    steady: '适合维持已经有效的生活作息,不必临时增加负荷。',
+    watch: '适合观察睡眠、饮食和精力波动,及时减少透支。',
+    turning: '适合捕捉身体状态的变化点,调整运动、休息或检查安排。',
+    blocked: '适合优先休整,避免硬扛、熬夜和高强度消耗。',
+  },
+  '财运': {
+    supportive: '适合整理现金流、推进稳妥回款、做理性配置或资源整合。',
+    steady: '适合维持预算纪律,处理固定收支与长期储备。',
+    watch: '适合审查合同、报价、冲动消费和不确定投入。',
+    turning: '适合留意收入结构、资源来源或合作分配方式的变化。',
+    blocked: '适合保守处理大额承诺,先止损、延后和复核。',
+  },
+};
+
+function monthLanguageForConcern(tag: ConcernTag): ConcernMonthLanguage {
+  const label = yuejingTagLabel(tag).replace(/^#/, '');
+  return MONTH_LANGUAGE_BY_LABEL[label] ?? GENERIC_MONTH_LANGUAGE;
+}
+
 // ===== Top-level component ==========================================
 
 export function YueJingTab() {
-  const { state, replace_snapshot, runtime_ai_client } = useShijingStore();
+  const {
+    state,
+    replace_snapshot,
+    persistence_status,
+    persistence_client,
+    runtime_ai_client,
+  } = useShijingStore();
   const [loading, setLoading] = useState(false);
   const [generatingDate, setGeneratingDate] = useState<string | null>(null);
   const [failure, setFailure] = useState<ReadingGenerationFailure | null>(null);
   const [filterTagId, setFilterTagId] = useState<string | null>(null);
+  const [monthPanelOpen, setMonthPanelOpen] = useState(false);
   // Lifted so the day-detail panel can render at the YueJingTab level
   // (full-viewport right-side drawer) instead of being trapped inside
   // the calendar grid as an inline row-spanning element.
@@ -272,7 +515,15 @@ export function YueJingTab() {
     readings: state.snapshot.readings,
     mirror_kind: 'yuejing',
   });
-  const stale = reading ? inputsSummaryExpired(reading, new Date()) : false;
+  const freshnessNow = useMemo(() => new Date(), [state.snapshot]);
+  const stale = reading
+    ? yuejingInputsSummaryStaleForActiveSubset({
+        reading,
+        space: state.snapshot,
+        now: freshnessNow,
+        active_concern_tag_refs: activeTagIds,
+      })
+    : false;
   const tabState = useMemo(
     () =>
       classifyMirrorTabState({
@@ -290,8 +541,11 @@ export function YueJingTab() {
         readings: state.snapshot.readings,
         dates: placeholderDates,
         activeTagIdSet,
+        activeTagIds,
+        space: state.snapshot,
+        now: freshnessNow,
       }),
-    [state.snapshot.readings, placeholderDates, activeTagIdSet],
+    [state.snapshot, placeholderDates, activeTagIdSet, activeTagIds, freshnessNow],
   );
   const nextGenerationDate = useMemo(
     () => nextMissingYuejingDate({ dates: placeholderDates, cellsByDate, activeTagIds }),
@@ -337,6 +591,9 @@ export function YueJingTab() {
           readings: currentSpace.readings,
           dates: placeholderDates,
           activeTagIdSet: targetTagIdSet,
+          activeTagIds: targetTagIds,
+          space: currentSpace,
+          now: new Date(),
         });
         currentDate = nextMissingYuejingDate({
           dates: placeholderDates,
@@ -370,15 +627,20 @@ export function YueJingTab() {
     state.snapshot.self_subject.natal_inputs.birth_datetime_utc.trim().length > 0;
   const autoGenSignature = `${today}|${state.snapshot.self_subject.natal_inputs.birth_datetime_utc}|${activeTagIds.join(',')}`;
   const autoGenAttemptRef = useRef<string | null>(null);
+  const persistenceReady = persistenceReadyForAutoGeneration({
+    persistence_status,
+    has_persistence_client: persistence_client !== null,
+  });
   useEffect(() => {
     if (loading) return;
+    if (!persistenceReady) return;
     if (!selfNatalReady) return;
     if (activeTagIds.length === 0) return;
     if (nextGenerationDate === null && reading && !stale) return;
     if (autoGenAttemptRef.current === autoGenSignature) return;
     autoGenAttemptRef.current = autoGenSignature;
     void handleGenerate(nextGenerationDate ?? today);
-  }, [loading, selfNatalReady, activeTagIds, reading, stale, autoGenSignature, nextGenerationDate]);
+  }, [loading, persistenceReady, selfNatalReady, activeTagIds, reading, stale, autoGenSignature, nextGenerationDate]);
 
   const output = latestReading?.output.mirror_kind === 'yuejing'
     ? (latestReading.output as YueJingMirrorOutput)
@@ -389,18 +651,27 @@ export function YueJingTab() {
   );
   const isReady = generatedCellCount > 0;
 
-
-  const cellsForToday = cellsByDate.get(today) ?? [];
-
-  const visibleByDate = useMemo(() => {
+  const scopedActiveTags = useMemo(
+    () => filterTagId ? activeTags.filter((tag) => tag.id === filterTagId) : activeTags,
+    [activeTags, filterTagId],
+  );
+  const scopedCellsByDate = useMemo(() => {
     if (!filterTagId) return cellsByDate;
     const filtered = new Map<string, readonly YueJingCell[]>();
     for (const [date, entries] of cellsByDate) {
       const kept = entries.filter((e) => e.concern_tag_ref === filterTagId);
-      if (kept.length > 0) filtered.set(date, kept);
+      filtered.set(date, kept);
     }
     return filtered;
   }, [cellsByDate, filterTagId]);
+  const cellsForToday = cellsByDate.get(today) ?? [];
+  const scopedCellsForToday = scopedCellsByDate.get(today) ?? [];
+
+  function handleFilterChange(nextTagId: string | null) {
+    setFilterTagId(nextTagId);
+    setSelectedDate(null);
+    setMonthPanelOpen(false);
+  }
 
   // Tag-drift detection — when the user's active-tag set no longer
   // matches the one the current reading was generated against, we
@@ -476,8 +747,12 @@ export function YueJingTab() {
       {isReady && cellsForToday.length > 0 ? (
         <YueJingTodayHero
           date={today}
-          cellsForToday={cellsForToday}
-          activeTags={activeTags}
+          cellsForToday={scopedCellsForToday}
+          activeTags={scopedActiveTags}
+          onOpenDetails={() => {
+            setSelectedDate(null);
+            setMonthPanelOpen(true);
+          }}
         />
       ) : null}
 
@@ -486,21 +761,21 @@ export function YueJingTab() {
         <YueJingFilterRow
           activeTags={activeTags}
           filterTagId={filterTagId}
-          onFilterChange={setFilterTagId}
+          onFilterChange={handleFilterChange}
         />
       ) : null}
 
       {/* Calendar — always rendered, with either real per-concern
        * cells or empty placeholder cells. */}
       <YueJingCalendar
-        cellsByDate={visibleByDate}
+        cellsByDate={scopedCellsByDate}
         today={today}
         selectedDate={selectedDate}
         onSelectDate={setSelectedDate}
       />
 
       {/* Details — only when a reading exists (has summary + cite). */}
-      {isReady && latestReading && output ? (
+      {isReady && latestReading && output && filterTagId === null ? (
         <details className="shijing-yuejing__details">
           <summary>30 日解读摘要与生成依据</summary>
           <p className="shijing-yuejing__summary">{output.summary}</p>
@@ -517,9 +792,18 @@ export function YueJingTab() {
         <YueJingDayPanel
           date={selectedDate}
           today={today}
-          entries={cellsByDate.get(selectedDate) ?? []}
-          activeTags={activeTags}
+          entries={scopedCellsByDate.get(selectedDate) ?? []}
+          activeTags={scopedActiveTags}
+          filterTagId={filterTagId}
           onClose={() => setSelectedDate(null)}
+        />
+      ) : null}
+      {monthPanelOpen ? (
+        <YueJingMonthPanel
+          dates={placeholderDates}
+          cellsByDate={scopedCellsByDate}
+          activeTags={scopedActiveTags}
+          onClose={() => setMonthPanelOpen(false)}
         />
       ) : null}
     </section>
@@ -568,6 +852,7 @@ function YueJingTodayHero(props: {
   readonly date: string;
   readonly cellsForToday: readonly YueJingCell[];
   readonly activeTags: readonly ConcernTag[];
+  readonly onOpenDetails: () => void;
 }) {
   const dominant = dominantTendency(props.cellsForToday);
   const tendencyLabel = TENDENCY_CLASS_LABELS[dominant];
@@ -613,7 +898,6 @@ function YueJingTodayHero(props: {
             );
           }
           const tendency: TendencyClass = cell.tendency_class;
-          const detail = yuejingCellDetail(cell);
           return (
             <li key={tag.id}>
               <span className="shijing-yuejing__hero-row-label">
@@ -626,12 +910,18 @@ function YueJingTodayHero(props: {
                 <span className="shijing-yuejing__hero-row-chip-dot" aria-hidden />
                 {TENDENCY_CLASS_LABELS[tendency]}
               </span>
-              {detail ? (
-                <span className="shijing-yuejing__hero-row-detail">{detail}</span>
-              ) : null}
             </li>
           );
         })}
+        <li className="shijing-yuejing__hero-action-row">
+          <button
+            type="button"
+            className="shijing-yuejing__hero-detail-button"
+            onClick={props.onOpenDetails}
+          >
+            查看完整解读
+          </button>
+        </li>
       </ul>
     </article>
   );
@@ -1078,18 +1368,6 @@ function YueJingDayCard(props: YueJingDayCardProps) {
 // Closes on Esc, backdrop click, or the × button. The backdrop blurs
 // the rest of the page so the panel reads as a focused workspace.
 
-// Friendly fallback prose for each tendency, used when the cell's
-// `summary` is the algorithm's placeholder form (e.g. `watch (...)`).
-// Once the Runtime AI wording layer rewrites summaries, that prose
-// passes through `yuejingCellDetail` and these fallbacks are not used.
-const PANEL_TENDENCY_FALLBACK: Record<TendencyClass, string> = {
-  supportive: '能量助力 · 适合主动推进与新的尝试。',
-  steady: '周期基线 · 节奏稳定,无需为情绪 / 方向额外调整。',
-  watch: '需要观察 · 留意细节与节奏调整。',
-  blocked: '运势阻滞 · 宜守不宜攻,等待结构松动。',
-  turning: '处于转折 · 留意拐点信号与窗口期。',
-};
-
 // Concern → themed pastel palette for the round icon background and
 // stroke color in the tendency rows. Falls back to a neutral gray for
 // custom labels that don't match a preset.
@@ -1218,11 +1496,267 @@ function ClipboardIcon() {
   );
 }
 
+function YueJingMonthPanel(props: {
+  readonly dates: readonly string[];
+  readonly cellsByDate: ReadonlyMap<string, readonly YueJingCell[]>;
+  readonly activeTags: readonly ConcernTag[];
+  readonly onClose: () => void;
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') props.onClose();
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [props]);
+
+  const allCells = useMemo(
+    () => props.dates.flatMap((date) => [...(props.cellsByDate.get(date) ?? [])]),
+    [props.dates, props.cellsByDate],
+  );
+  const monthCounts = useMemo(() => countTendencies(allCells), [allCells]);
+  const monthPrimary = primaryTendencyFromCounts(monthCounts);
+  const rangeLabel = props.dates.length > 0
+    ? compactDateRangeLabel(props.dates[0], props.dates[props.dates.length - 1])
+    : '当前窗口';
+  const supportiveRanges = contiguousDateRanges(
+    allCells,
+    props.dates,
+    (cell) => cell.tendency_class === 'supportive',
+  );
+  const cautionRanges = contiguousDateRanges(
+    allCells,
+    props.dates,
+    (cell) => cell.tendency_class === 'watch' || cell.tendency_class === 'blocked',
+  );
+  const turningRanges = contiguousDateRanges(
+    allCells,
+    props.dates,
+    (cell) => cell.tendency_class === 'turning',
+  );
+  const blockedRanges = contiguousDateRanges(
+    allCells,
+    props.dates,
+    (cell) => cell.tendency_class === 'blocked',
+  );
+  const monthAdvice = monthOperatingAdvice(monthPrimary);
+  const generatedDayCount = useMemo(
+    () => props.dates.filter((date) => (props.cellsByDate.get(date) ?? []).length > 0).length,
+    [props.dates, props.cellsByDate],
+  );
+  const supportiveCount = countCells(allCells, (cell) => cell.tendency_class === 'supportive');
+  const cautionCount = countCells(
+    allCells,
+    (cell) => cell.tendency_class === 'watch' || cell.tendency_class === 'blocked',
+  );
+  const turningCount = countCells(allCells, (cell) => cell.tendency_class === 'turning');
+
+  const insights = useMemo(
+    () =>
+      props.activeTags.map((tag) => {
+        const cells = cellsForConcernInWindow({
+          dates: props.dates,
+          cellsByDate: props.cellsByDate,
+          concernTagId: tag.id,
+        });
+        const counts = countTendencies(cells);
+        return {
+          tag,
+          cells,
+          counts,
+          primary: primaryTendencyFromCounts(counts),
+          supportiveRanges: contiguousDateRanges(
+            cells,
+            props.dates,
+            (cell) => cell.tendency_class === 'supportive',
+          ),
+          cautionRanges: contiguousDateRanges(
+            cells,
+            props.dates,
+            (cell) => cell.tendency_class === 'watch' || cell.tendency_class === 'blocked',
+          ),
+          turningRanges: contiguousDateRanges(
+            cells,
+            props.dates,
+            (cell) => cell.tendency_class === 'turning',
+          ),
+          blockedRanges: contiguousDateRanges(
+            cells,
+            props.dates,
+            (cell) => cell.tendency_class === 'blocked',
+          ),
+          detailExamples: meaningfulCellDetails(cells),
+        };
+      }).sort((a, b) => attentionWeight(b.counts) - attentionWeight(a.counts)),
+    [props.activeTags, props.cellsByDate, props.dates],
+  );
+
+  return (
+    <>
+      <div
+        className="shijing-yuejing__panel-backdrop"
+        onClick={props.onClose}
+        role="presentation"
+        aria-hidden
+      />
+      <aside
+        className="shijing-yuejing__panel shijing-yuejing__month-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${rangeLabel} 完整解读`}
+        data-panel-kind="month"
+      >
+        <button
+          type="button"
+          className="shijing-yuejing__panel-close"
+          onClick={props.onClose}
+          aria-label="关闭"
+        >
+          <CloseIcon />
+        </button>
+
+        <header className="shijing-yuejing__panel-head shijing-yuejing__month-head">
+          <strong>30 日解读</strong>
+          <small>{rangeLabel} · 已生成 {generatedDayCount}/30 日 · {props.activeTags.length} 个关注</small>
+        </header>
+
+        <section className="shijing-yuejing__month-brief" aria-label="本轮最需要先看的内容">
+          {allCells.length > 0 ? (
+            <>
+              <article className="shijing-yuejing__month-primary" data-tendency={monthPrimary}>
+                <span>本轮主节奏</span>
+                <strong>{TENDENCY_CLASS_LABELS[monthPrimary]}</strong>
+                <p>{monthAdvice.posture}</p>
+              </article>
+              <ul className="shijing-yuejing__month-focus">
+                <li data-tendency="supportive">
+                  <span>可以主动推进</span>
+                  <strong>{limitedRangeText(supportiveRanges)}</strong>
+                  <small>{supportiveCount} 个关注日</small>
+                </li>
+                <li data-tendency="watch">
+                  <span>需要放慢判断</span>
+                  <strong>{limitedRangeText(cautionRanges)}</strong>
+                  <small>{cautionCount} 个关注日</small>
+                </li>
+                <li data-tendency="turning">
+                  <span>留意转向信号</span>
+                  <strong>{limitedRangeText(turningRanges)}</strong>
+                  <small>{turningCount} 个关注日</small>
+                </li>
+              </ul>
+            </>
+          ) : (
+            <div className="shijing-yuejing__month-empty">
+              当前 30 日窗口还没有可解读的月镜数据。生成后这里会按关注给出推进、观察和转折窗口。
+            </div>
+          )}
+        </section>
+
+        {allCells.length > 0 ? (
+          <section className="shijing-yuejing__panel-section shijing-yuejing__month-overview">
+            <h3>这 30 天怎么用</h3>
+            <div className="shijing-yuejing__month-use">
+              <p>{monthAdvice.doFirst}</p>
+              <p>{monthAdvice.protect}</p>
+            </div>
+            <ul className="shijing-yuejing__month-counts" aria-label="月内倾向分布">
+              {MONTH_TENDENCY_CLASSES.filter((tendency) => monthCounts[tendency] > 0).map((tendency) => (
+                <li key={tendency} data-tendency={tendency}>
+                  <span className="shijing-yuejing__panel-tend-dot" aria-hidden />
+                  {TENDENCY_CLASS_LABELS[tendency]} {monthCounts[tendency]} 条
+                </li>
+              ))}
+            </ul>
+            {blockedRanges.length > 0 ? (
+              <p className="shijing-yuejing__month-warning">
+                阻滞集中在 {limitedRangeText(blockedRanges)}。这些日期更适合复核、收束和保留余地。
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+
+        <section className="shijing-yuejing__panel-section shijing-yuejing__month-insight-section">
+          <div className="shijing-yuejing__month-section-head">
+            <h3>按关注处理</h3>
+            <span>优先显示本轮更需要注意的关注</span>
+          </div>
+          <ul className="shijing-yuejing__month-insights">
+            {insights.map((insight) => {
+              const tagName = yuejingTagLabel(insight.tag);
+              const iconStyle = concernIconStyle(insight.tag.label ?? tagName);
+              const language = monthLanguageForConcern(insight.tag);
+              const insightAdvice = monthOperatingAdvice(insight.primary);
+              return (
+                <li key={insight.tag.id} data-primary={insight.primary}>
+                  <div className="shijing-yuejing__month-insight-head">
+                    <ConcernIcon style={iconStyle} />
+                    <div>
+                      <strong>{tagName}</strong>
+                      <span>
+                        {insight.cells.length > 0
+                          ? `主调: ${TENDENCY_CLASS_LABELS[insight.primary]}`
+                          : '尚未生成'}
+                      </span>
+                    </div>
+                  </div>
+                  {insight.cells.length > 0 ? (
+                    <>
+                      <p className="shijing-yuejing__month-reading">
+                        {language[insight.primary]} {insightAdvice.protect}
+                        {insight.blockedRanges.length > 0
+                          ? ` 阻滞段落在 ${limitedRangeText(insight.blockedRanges)},这些日期更适合收束和复核。`
+                          : ''}
+                      </p>
+                      <dl className="shijing-yuejing__month-windows">
+                        <div>
+                          <dt>适合推进</dt>
+                          <dd>{limitedRangeText(insight.supportiveRanges)}</dd>
+                        </div>
+                        <div>
+                          <dt>先观察</dt>
+                          <dd>{limitedRangeText(insight.cautionRanges)}</dd>
+                        </div>
+                        <div>
+                          <dt>可能转向</dt>
+                          <dd>{limitedRangeText(insight.turningRanges)}</dd>
+                        </div>
+                      </dl>
+                      <ul className="shijing-yuejing__month-counts shijing-yuejing__month-counts--compact" aria-label={`${tagName} 倾向分布`}>
+                        {MONTH_TENDENCY_CLASSES.filter((tendency) => insight.counts[tendency] > 0).map((tendency) => (
+                          <li key={tendency} data-tendency={tendency}>
+                            <span className="shijing-yuejing__panel-tend-dot" aria-hidden />
+                            {TENDENCY_CLASS_LABELS[tendency]} {insight.counts[tendency]} 日
+                          </li>
+                        ))}
+                      </ul>
+                      {insight.detailExamples.length > 0 ? (
+                        <p className="shijing-yuejing__month-detail">
+                          细节线索: {insight.detailExamples.join(' / ')}
+                        </p>
+                      ) : null}
+                    </>
+                  ) : (
+                    <p className="shijing-yuejing__month-reading">
+                      这个关注还没有进入当前 30 日窗口的生成结果。重新生成后再纳入完整解读。
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      </aside>
+    </>
+  );
+}
+
 function YueJingDayPanel(props: {
   readonly date: string;
   readonly today: string;
   readonly entries: readonly YueJingCell[];
   readonly activeTags: readonly ConcernTag[];
+  readonly filterTagId: string | null;
   readonly onClose: () => void;
 }) {
   const { state, dispatch } = useShijingStore();
@@ -1285,7 +1819,9 @@ function YueJingDayPanel(props: {
     const body = draft.trim();
     if (body.length === 0) return;
     const ts = nowIso();
-    const concernRefs = props.entries.map((c) => c.concern_tag_ref);
+    const concernRefs = props.entries.length > 0
+      ? props.entries.map((c) => c.concern_tag_ref)
+      : props.filterTagId ? [props.filterTagId] : [];
     if (isPlan) {
       const plan: PlanItem = {
         id: newPlanItemId(),
@@ -1416,6 +1952,9 @@ function YueJingDayPanel(props: {
   const entryPlaceholder = isPlan ? '这一天计划…' : '这一天发生了什么…';
   const saveLabel = isPlan ? '保存计划' : '保存事件';
   const records = isPlan ? plansForDate : memoriesForDate;
+  const visibleRecords = props.filterTagId
+    ? records.filter((record) => record.concern_tag_refs.includes(props.filterTagId as string))
+    : records;
   const recordKind = isPlan ? '计划' : '事件';
 
   return (
@@ -1457,7 +1996,7 @@ function YueJingDayPanel(props: {
               {props.entries.map((entry, i) => {
                 const tag = tagById.get(entry.concern_tag_ref);
                 const tagName = tag ? yuejingTagLabel(tag) : entry.concern_tag_ref;
-                const detail = yuejingCellDetail(entry) || PANEL_TENDENCY_FALLBACK[entry.tendency_class];
+                const detail = yuejingCellDetail(entry);
                 const iconStyle = concernIconStyle(tag?.label ?? tagName);
                 return (
                   <li
@@ -1467,7 +2006,7 @@ function YueJingDayPanel(props: {
                     <ConcernIcon style={iconStyle} />
                     <div className="shijing-yuejing__panel-tend-text">
                       <strong>{tagName}</strong>
-                      <p>{detail}</p>
+                      {detail ? <p>{detail}</p> : null}
                     </div>
                     <span
                       className="shijing-yuejing__panel-tend-chip"
@@ -1509,8 +2048,8 @@ function YueJingDayPanel(props: {
         </section>
 
         <section className="shijing-yuejing__panel-section">
-          <h3>已记录 ({records.length})</h3>
-          {records.length === 0 ? (
+          <h3>已记录 ({visibleRecords.length})</h3>
+          {visibleRecords.length === 0 ? (
             <div className="shijing-yuejing__panel-records-empty" role="status">
               <span className="shijing-yuejing__panel-records-empty-icon" aria-hidden>
                 <ClipboardIcon />
@@ -1519,7 +2058,7 @@ function YueJingDayPanel(props: {
             </div>
           ) : (
             <ul className="shijing-yuejing__panel-records" aria-label={`已记录的${recordKind}`}>
-              {records.map((r) => {
+              {visibleRecords.map((r) => {
                 const isEditing = editingId === r.id;
                 return (
                   <li key={r.id} data-editing={isEditing || undefined}>

@@ -39,8 +39,9 @@ import {
 } from '../../domain/concern-tag.ts';
 import type { ReadingGenerationFailure, Reading } from '../../domain/reading.ts';
 import { generateReadingForStorage } from '../reading/generate-and-store.ts';
-import { inputsSummaryExpired } from '../astrology/inputs-summary-expiry.ts';
+import { inputsSummaryStaleForSpace } from '../astrology/inputs-summary-expiry.ts';
 import { newConcernTagId, newReadingId } from '../ids/index.ts';
+import { readingHasSyntheticNianjingBaseline } from '../reading/reading-selectors.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import {
   MIRROR_KIND_LABELS,
@@ -381,18 +382,25 @@ export function NianJingTab(props: NianJingTabProps) {
   // back. If they ever re-generate, the toggle re-points at "the new
   // latest" automatically (see effect below).
   const [viewingPrevious, setViewingPrevious] = useState(false);
+  const nianjingScope = useMemo(() => longHorizonMirrorScopeNextTenYears(), []);
+  const activeTags = useMemo(
+    () => state.snapshot.concern_tags.filter((t) => t.status === 'active'),
+    [state.snapshot.concern_tags],
+  );
+  const activeTagIds = useMemo(() => activeTags.map((t) => t.id), [activeTags]);
 
   // All NianJing readings sorted newest-first. Computed once per
   // snapshot change so the toggle is stable across re-renders.
   const nianjingReadings = useMemo(
     () =>
       [...state.snapshot.readings]
-        .filter((r) => r.mirror_kind === 'nianjing')
+        .filter((r) => r.mirror_kind === 'nianjing' && !readingHasSyntheticNianjingBaseline(r))
         .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)),
     [state.snapshot.readings],
   );
 
   const hasPreviousReading = nianjingReadings.length >= 2;
+  const latestNianjingReading = nianjingReadings[0];
 
   // When a new reading lands in the store (count grows), jump the
   // user to that new "latest". Otherwise a stale viewingPrevious=true
@@ -410,9 +418,17 @@ export function NianJingTab(props: NianJingTabProps) {
   const reading =
     viewingPrevious && hasPreviousReading
       ? nianjingReadings[1]
-      : nianjingReadings[0];
+      : latestNianjingReading;
 
-  const stale = reading ? inputsSummaryExpired(reading, new Date()) : false;
+  const stale = reading
+    ? inputsSummaryStaleForSpace({
+        reading,
+        space: state.snapshot,
+        now: new Date(),
+        expected_mirror_scope: nianjingScope,
+        expected_concern_tag_refs: activeTagIds,
+      })
+    : false;
   const tabState = useMemo(
     () =>
       classifyMirrorTabState({
@@ -424,12 +440,6 @@ export function NianJingTab(props: NianJingTabProps) {
     [reading, failure, loading, stale],
   );
 
-  const activeTags = useMemo(
-    () => state.snapshot.concern_tags.filter((t) => t.status === 'active'),
-    [state.snapshot.concern_tags],
-  );
-  const activeTagIds = useMemo(() => activeTags.map((t) => t.id), [activeTags]);
-
   async function handleGenerate() {
     setLoading(true);
     setFailure(null);
@@ -437,7 +447,7 @@ export function NianJingTab(props: NianJingTabProps) {
       id: newReadingId(),
       created_at: nowIso(),
       mirror_kind: 'nianjing',
-      mirror_scope: longHorizonMirrorScopeNextTenYears(),
+      mirror_scope: nianjingScope,
       related_person_refs: [],
       concern_tag_refs: activeTagIds,
       space: state.snapshot,
