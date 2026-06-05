@@ -4,7 +4,7 @@
 
 import type {
   AstrologyFeatureSnapshot,
-  AstrologyMethodProfile,
+  MethodProfile,
 } from './algorithm.ts';
 import type { ConcernTagSnapshot } from './concern-tag.ts';
 import type { MirrorKind, MirrorScope } from './mirror-scope.ts';
@@ -35,7 +35,7 @@ export interface InputsSummary {
   readonly captured_at: string;
   readonly contract_version: 'SJG-ASTRO-v1';
   readonly algorithm_contract_version: 'SJG-ALGO-v1';
-  readonly method_profile: AstrologyMethodProfile;
+  readonly method_profile: MethodProfile;
   readonly mirror_context_snapshot: MirrorContextSnapshot;
   readonly input_hash: string;
   readonly feature_snapshot_hash: string;
@@ -63,7 +63,8 @@ export type ReadingGenerationFailureKind =
   | 'pipeline_stage_failed'
   | 'validation_failed'
   | 'stale_inputs'
-  | 'hash_mismatch';
+  | 'hash_mismatch'
+  | 'algorithm_fail_closed';
 
 export const READING_GENERATION_FAILURE_KINDS: readonly ReadingGenerationFailureKind[] = [
   'runtime_ai_failed',
@@ -71,6 +72,7 @@ export const READING_GENERATION_FAILURE_KINDS: readonly ReadingGenerationFailure
   'validation_failed',
   'stale_inputs',
   'hash_mismatch',
+  'algorithm_fail_closed',
 ] as const;
 
 export interface ReadingGenerationFailure {

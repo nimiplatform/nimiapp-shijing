@@ -31,15 +31,14 @@ import type {
 } from '../../domain/mirror-scope.ts';
 import type { MirrorOutput } from '../../domain/mirror-output.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
-import { isPersonRef, type SubjectRef } from '../../domain/subject-ref.ts';
+import type { SubjectRef } from '../../domain/subject-ref.ts';
 import { validateReading } from '../../contracts/reading-validator.ts';
 import {
-  ASTROLOGY_METHOD_PROFILE_ID,
+  isAdmittedMethodProfileId,
   SJG_ALGO_CONTRACT_VERSION,
   SJG_ASTRO_CONTRACT_VERSION,
 } from '../../domain/algorithm.ts';
 import { buildAstrologyFeatureSnapshot } from './build-feature-snapshot.ts';
-import { canonicalizeNatalInputs } from './canonicalize-natal-inputs.ts';
 import { computeCanonicalHash } from './canonical-hash.ts';
 import { generateRiJingOutput } from './rijing-generator.ts';
 import { generateYueJingOutput } from './yuejing-generator.ts';
@@ -55,7 +54,7 @@ import type {
   RuntimeAiResult,
 } from './runtime-ai-client.ts';
 import type { StageFailure } from './stage-result.ts';
-import { deriveUncertainty } from './uncertainty-decision.ts';
+import { deriveUncertainty, evaluateFailClose } from './uncertainty-decision.ts';
 import { inputsSummaryExpired } from './inputs-summary-expiry.ts';
 
 export interface GenerateReadingInput {
@@ -238,6 +237,7 @@ export async function generateReading(
     space: input.space,
     related_person_refs: input.related_person_refs,
     active_concern_tags: activeTags,
+    method_profile_id: input.space.settings.method_profile_id,
   });
   if (!featureResult.ok) {
     return {
@@ -253,6 +253,24 @@ export async function generateReading(
     };
   }
   const featureSnapshot = featureResult.value;
+
+  // SJG-ALGO-10 — fail closed in the deterministic layer (defence-in-depth):
+  // any uncertainty input a producer marked fail_close (precision below the
+  // usable floor, DaYun-required gaps, no active concern tags, ...) yields a
+  // typed failure — never a low-confidence reading — and never reaches the AI.
+  const failClose = evaluateFailClose(featureSnapshot);
+  if (failClose.failed) {
+    return {
+      ok: false,
+      failure: {
+        kind: 'algorithm_fail_closed',
+        mirror_kind: input.mirror_kind,
+        mirror_scope: input.mirror_scope,
+        stage: 'uncertainty_decision',
+        detail: `SJG-ALGO-10 fail-closed: ${failClose.codes.join(',')}`,
+      },
+    };
+  }
 
   let structuralOutput: MirrorOutput;
   if (input.mirror_kind === 'rijing') {
@@ -456,35 +474,13 @@ export async function generateReading(
   });
   const featureSnapshotHash = computeCanonicalHash(featureSnapshot);
 
-  // SJG-ALGO-12 — recompute hashes from the about-to-persist objects
-  // and detect any drift between snapshot and hash. Drift returns a
-  // typed hash_mismatch failure.
-  if (
-    featureSnapshotHash !== computeCanonicalHash(featureSnapshot)
-  ) {
-    return {
-      ok: false,
-      failure: {
-        kind: 'hash_mismatch',
-        mirror_kind: input.mirror_kind,
-        mirror_scope: input.mirror_scope,
-        detail: 'feature_snapshot_hash drift',
-      },
-    };
-  }
-
-  const canonicalizations = [input.space.self_subject.natal_inputs, ...input.related_person_refs.map((r) => {
-    if (!isPersonRef(r)) return undefined;
-    const person = input.space.persons.find((p) => p.id === r.id);
-    return person?.natal_inputs;
-  })].map((natal) => (natal ? canonicalizeNatalInputs(natal) : null)).map((r) => {
-    if (!r) return undefined;
-    return r.ok ? r.value : undefined;
-  });
+  // SJG-ALGO-11/12 — the canonical hash stamped here is re-derived and
+  // compared against this same snapshot inside validateReading() below
+  // (and again on every load), so snapshot↔hash drift fails closed as a
+  // typed validation_failed:reading_inputs_summary_feature_snapshot_hash_mismatch.
 
   const uncertainty: UncertaintyAnnotation = deriveUncertainty({
     feature_snapshot: featureSnapshot,
-    canonicalizations,
     ai_parse_failed: aiParseFailed,
   });
 
@@ -546,7 +542,7 @@ export async function generateReading(
     };
   }
 
-  if (candidateReading.inputs_summary.method_profile.id !== ASTROLOGY_METHOD_PROFILE_ID) {
+  if (!isAdmittedMethodProfileId(candidateReading.inputs_summary.method_profile.id)) {
     return {
       ok: false,
       failure: {

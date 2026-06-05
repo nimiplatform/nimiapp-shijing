@@ -54,6 +54,7 @@ import { MIRROR_KIND_LABELS, TENDENCY_CLASS_LABELS } from '../i18n/copy.ts';
 import { rolling30DayMirrorScopeFromDate } from './mirror-scope-helpers.ts';
 import { classifyMirrorTabState } from './mirror-state.ts';
 import { persistenceReadyForAutoGeneration } from './auto-generation-readiness.ts';
+import { subjectMirrorReadiness } from '../subjects/natal-readiness.ts';
 import {
   deriveConcernTagLabelForDisplay,
   parseConcernTagInput,
@@ -182,18 +183,23 @@ function latestYuejingReadingForDate(
     .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
 }
 
-function yuejingReadingHasDomainizedDrivers(reading: Reading): boolean {
+// SJG-ALGO-08 — Layer-3 binds to the common surface STRUCTURE, never parses the
+// opaque, method-namespaced driver_refs. A reading is aggregatable iff every
+// cell has a matching per-concern tendency driver (keyed by date + concern_tag_ref)
+// that carries at least one evidence ref; the ref payload stays opaque (a 八字
+// `bazi:domain.*` and a 紫微 `ziwei:hua@*` are treated identically here).
+// (Old-schema readings without this shape already fail validateReading and are
+// dropped on load, so this is a structural integrity guard, not a format sniff.)
+function yuejingReadingHasPerConcernDrivers(reading: Reading): boolean {
   if (reading.output.mirror_kind !== 'yuejing') return false;
   const output = reading.output as YueJingMirrorOutput;
   for (const cell of output.cells) {
-    const driver = reading.inputs_summary.feature_snapshot.yuejing_tendency_drivers.find(
+    const driver = reading.inputs_summary.feature_snapshot.common.yuejing_tendency_drivers.find(
       (candidate) =>
         candidate.date === cell.date &&
         candidate.concern_tag_ref === cell.concern_tag_ref,
     );
-    if (!driver) return false;
-    if (!driver.driver_refs.some((ref) => ref.startsWith('domain.'))) return false;
-    if (!driver.driver_refs.some((ref) => ref.startsWith('daily_relation.'))) return false;
+    if (!driver || driver.driver_refs.length === 0) return false;
   }
   return true;
 }
@@ -210,7 +216,7 @@ function aggregateYuejingCellsByDate(input: {
   const latestByKey = new Map<string, { readonly createdAtMs: number; readonly cell: YueJingCell }>();
   for (const reading of yuejingReadings(input.readings)) {
     if (reading.output.mirror_kind !== 'yuejing') continue;
-    if (!yuejingReadingHasDomainizedDrivers(reading)) continue;
+    if (!yuejingReadingHasPerConcernDrivers(reading)) continue;
     if (
       yuejingInputsSummaryStaleForActiveSubset({
         reading,
@@ -623,9 +629,18 @@ export function YueJingTab() {
   // self data or changing concerns re-triggers it, but a failure won't
   // loop (the user can still retry via the button). Manual 生成 stays
   // available and bypasses this guard.
-  const selfNatalReady =
-    state.snapshot.self_subject.natal_inputs.birth_datetime_utc.trim().length > 0;
-  const autoGenSignature = `${today}|${state.snapshot.self_subject.natal_inputs.birth_datetime_utc}|${activeTagIds.join(',')}`;
+  // Capability-aware readiness (not a bare non-empty birth string): the scaffold
+  // default has a birth_datetime_utc but is NOT ready, and 紫微 needs an exact
+  // 时辰. Auto-gen must not fire on data the engine would fail closed on.
+  const selfNatalReady = subjectMirrorReadiness({
+    subject: 'self',
+    space: state.snapshot,
+    mirror_kind: 'yuejing',
+    mirror_scope: rolling30DayMirrorScopeFromDate(today),
+  }).ok;
+  // Signature includes method_profile_id so switching the 命理 method
+  // invalidates the attempt and regenerates the month under the new engine.
+  const autoGenSignature = `${today}|${state.snapshot.settings.method_profile_id ?? 'default'}|${state.snapshot.self_subject.natal_inputs.birth_datetime_utc}|${activeTagIds.join(',')}`;
   const autoGenAttemptRef = useRef<string | null>(null);
   const persistenceReady = persistenceReadyForAutoGeneration({
     persistence_status,

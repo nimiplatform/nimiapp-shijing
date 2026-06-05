@@ -53,6 +53,11 @@ function readinessCopy(reason: NatalReadinessReason): ReadinessCopy {
         title: '资料完整度：性别待补充',
         body: '补充后可推算大运起运方向。',
       };
+    case 'birth_time_required_for_method':
+      return {
+        title: '资料完整度：所选方法需精确时辰',
+        body: '紫微斗数需精确到时辰才能安命宫，请先补全准确的出生时刻。',
+      };
     default: {
       const exhaustive: never = reason;
       void exhaustive;

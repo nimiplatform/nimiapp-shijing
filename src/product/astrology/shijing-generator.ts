@@ -7,6 +7,7 @@
 import type { Reading } from '../../domain/reading.ts';
 import type { ConsultationMirrorScope } from '../../domain/mirror-scope.ts';
 import type { ShiJingMirrorOutput } from '../../domain/mirror-output.ts';
+import { BAZI_ZIPING_V1 } from '../../domain/algorithm.ts';
 import { type StageResult } from './stage-result.ts';
 
 export interface ShiJingGenerateInput {
@@ -62,7 +63,7 @@ export function generateShiJingOutput(
     cited_event_memory_refs: [...input.cited_event_memory_refs],
     cited_plan_item_refs: [...input.cited_plan_item_refs],
     citations: [
-      { method: 'bazi_ganzhi_jieqi_dayun_v1', reference: 'shijing.consultation_grounding' },
+      { method: input.source_readings[0]?.inputs_summary.method_profile.id ?? BAZI_ZIPING_V1, reference: 'shijing.consultation_grounding' },
     ],
   };
   return { ok: true, value: output };

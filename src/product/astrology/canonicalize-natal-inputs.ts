@@ -11,13 +11,11 @@ import { type StageResult } from './stage-result.ts';
 import { trueSolarTimeFromInstant, standardHoursForTimeZone } from './true-solar-time.ts';
 import { localWallClockToUtcInstant } from './local-wall-clock.ts';
 import { computeCanonicalHash } from './canonical-hash.ts';
-import { EPHEMERIS_VERSION } from './solar-terms.ts';
+import { CALENDAR_EPHEMERIS_VERSION } from './ephemeris.ts';
 import { parseNaturalBirthTime } from './natural-birth-time.ts';
 
-// Back-compat alias for the wave-10 module-local constant. The single
-// source of truth lives in `solar-terms.ts::EPHEMERIS_VERSION` per
-// SJG-ALGO-06 + SJG-ALGO-08 + SJG-ALGO-11.
-export const SHIJING_EPHEMERIS_VERSION = EPHEMERIS_VERSION;
+// Back-compat alias. Single source of truth is ephemeris.ts::CALENDAR_EPHEMERIS_VERSION.
+export const SHIJING_EPHEMERIS_VERSION = CALENDAR_EPHEMERIS_VERSION;
 
 interface LunarComponents {
   readonly year: number;
@@ -173,7 +171,7 @@ export function canonicalizeNatalInputs(inputs: NatalInputs): StageResult<NatalC
     longitude_correction_minutes: trueSolar.longitude_correction_minutes,
     equation_of_time_minutes: trueSolar.equation_of_time_minutes,
     calendar_conversion_source: calendarConversionSource,
-    ephemeris_version: EPHEMERIS_VERSION,
+    ephemeris_version: CALENDAR_EPHEMERIS_VERSION,
     status,
   };
   return { ok: true, value: canonical };

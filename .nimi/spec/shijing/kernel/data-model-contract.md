@@ -262,7 +262,7 @@ InputsSummary {
   captured_at: string
   contract_version: "SJG-ASTRO-v1"
   algorithm_contract_version: "SJG-ALGO-v1"
-  method_profile: AstrologyMethodProfile
+  method_profile: MethodProfile
   mirror_context_snapshot: MirrorContextSnapshot
   input_hash: string
   feature_snapshot_hash: string

@@ -20,6 +20,7 @@ const SYSTEM_PREAMBLE = [
   'Deterministic astrology features are the source of truth.',
   'NEVER calculate pillars, DaYun, or solar terms.',
   'NEVER invent uncited memory or plan influence.',
+  'interpretive_evidence (用神/旺衰/十神/四化) is read-only 命理 grounding: use it to make wording specific and causal, but never recompute it or echo it as output fields.',
   'Output MUST be a single JSON wording patch object, not a full MirrorOutput.',
   'patch_kind MUST equal shijing.runtime_ai_wording_patch.v1.',
   'mirror_kind MUST equal required_top_level_mirror_kind exactly.',
@@ -64,6 +65,39 @@ function schemaShapeForKind(kind: MirrorKind): string {
 
 function tagSnapshotById(tags: readonly ConcernTagSnapshot[]): Map<string, ConcernTagSnapshot> {
   return new Map(tags.map((tag) => [tag.id, tag]));
+}
+
+const ELEMENT_CN: Record<string, string> = { wood: '木', fire: '火', earth: '土', metal: '金', water: '水' };
+
+// SJG-ALGO-13 — read-only, method-namespaced evidence projection (display labels
+// only, no recompute hooks). Grounds the wording in the engine's interpretive
+// layer without exposing raw method_evidence structure.
+function interpretiveEvidenceProjection(snapshot: AstrologyFeatureSnapshot): string | null {
+  const me = snapshot.method_evidence;
+  if (me.method_id === 'bazi_ziping_v1') {
+    const it = me.bazi.self_subject.interpretation;
+    if (!it) return null;
+    const els = (xs: readonly string[]) => xs.map((e) => ELEMENT_CN[e] ?? e).join('') || '—';
+    const pillars = it.pillars.map((p) => `${p.position}:${p.ten_god}`).join(' ');
+    const rels = it.natal_branch_relations.map((r) => `${r.positions.join('-')}${r.kind}`).join(' ') || '无';
+    return [
+      'interpretive_evidence (bazi_ziping_v1, read-only):',
+      `  旺衰: ${it.strength.band}`,
+      `  用神: ${els(it.yong_shen.yong)}; 喜: ${els(it.yong_shen.xi)}; 忌: ${els(it.yong_shen.ji)}${it.yong_shen.tiaohou ? `; 调候: ${ELEMENT_CN[it.yong_shen.tiaohou] ?? it.yong_shen.tiaohou}` : ''}`,
+      `  十神: ${pillars}`,
+      `  natal 合冲刑害破: ${rels}`,
+    ].join('\n');
+  }
+  if (me.method_id === 'ziwei_sanhe_v1') {
+    const self = me.ziwei.self_subject;
+    const hua = self.palaces.flatMap((p) => p.major_stars.filter((s) => s.mutagen).map((s) => `${s.name}化${s.mutagen}@${p.name}`));
+    return [
+      'interpretive_evidence (ziwei_sanhe_v1, read-only):',
+      `  命宫: ${self.soul_palace_branch}; 命主: ${self.soul_star}; 身主: ${self.body_star}; 五行局: ${self.five_elements_class}`,
+      `  生年四化: ${hua.join(' ') || '无'}`,
+    ].join('\n');
+  }
+  return null;
 }
 
 function wordingTargetFor(
@@ -156,6 +190,10 @@ export function buildRuntimeAiPromptRequest(args: {
       args.mirror_context.active_concern_tags,
     ), null, 2)}`,
   ];
+  const interpretiveEvidence = interpretiveEvidenceProjection(args.feature_snapshot);
+  if (interpretiveEvidence) {
+    userPromptLines.push(interpretiveEvidence);
+  }
   if (args.question) {
     userPromptLines.push(`question: ${args.question}`);
   }

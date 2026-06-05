@@ -30,3 +30,15 @@ export function createUnavailableRuntimeAiClient(detail: string): RuntimeAiClien
     },
   };
 }
+
+// Deterministic, runtime-free client for the renderer dev preview (and headless
+// demos). It returns the already-validated deterministic structural output as the
+// final wording — no LLM — so generation completes end-to-end without an AI
+// binding. NEVER use in production: real wording requires the Runtime AI.
+export function createPassthroughRuntimeAiClient(): RuntimeAiClient {
+  return {
+    async generate(_mirror_kind, request): Promise<RuntimeAiResult> {
+      return { ok: true, output: request.deterministic_output };
+    },
+  };
+}

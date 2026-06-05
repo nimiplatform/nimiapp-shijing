@@ -13,6 +13,7 @@ import { MemoryEditor } from '../memories/memory-editor.tsx';
 import { PersonEditor } from '../persons/person-editor.tsx';
 import { SelfEditor } from '../self/self-editor.tsx';
 import { ResponsePreferencesEditor } from './response-preferences-editor.tsx';
+import { MethodProfileEditor } from './method-profile-editor.tsx';
 import { useShijingStore } from '../state/shijing-store.tsx';
 
 function PrivacyLocalDataSection() {
@@ -149,7 +150,12 @@ function SurfaceBody(props: { readonly surface: ShijingSettingsSurfaceId }) {
       // longer carries a separate, decontextualized plan-entry form.
       return <MemoryEditor />;
     case 'response_preferences':
-      return <ResponsePreferencesEditor />;
+      return (
+        <>
+          <MethodProfileEditor />
+          <ResponsePreferencesEditor />
+        </>
+      );
     case 'privacy_local_data':
       return <PrivacyLocalDataSection />;
     case 'diagnostics':

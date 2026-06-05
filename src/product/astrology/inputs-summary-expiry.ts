@@ -120,6 +120,7 @@ export function inputsSummaryStalenessForSpace(
     space,
     related_person_refs: reading.related_person_refs,
     active_concern_tags: tagsResult.tags,
+    method_profile_id: space.settings.method_profile_id,
   });
   if (!featureResult.ok) return { stale: true, reason: 'feature_snapshot_failed' };
 
@@ -157,15 +158,18 @@ function projectFeatureSnapshotToConcernRefs(
 ): AstrologyFeatureSnapshot {
   return {
     ...snapshot,
-    yuejing_tendency_drivers: snapshot.yuejing_tendency_drivers.filter((driver) =>
-      concernTagRefs.has(driver.concern_tag_ref),
-    ),
-    nianjing_phase_drivers: snapshot.nianjing_phase_drivers.filter((driver) =>
-      concernTagRefs.has(driver.concern_tag_ref),
-    ),
-    nianjing_inflection_drivers: snapshot.nianjing_inflection_drivers.filter((driver) =>
-      concernTagRefs.has(driver.concern_tag_ref),
-    ),
+    common: {
+      ...snapshot.common,
+      yuejing_tendency_drivers: snapshot.common.yuejing_tendency_drivers.filter((driver) =>
+        concernTagRefs.has(driver.concern_tag_ref),
+      ),
+      nianjing_phase_drivers: snapshot.common.nianjing_phase_drivers.filter((driver) =>
+        concernTagRefs.has(driver.concern_tag_ref),
+      ),
+      nianjing_inflection_drivers: snapshot.common.nianjing_inflection_drivers.filter((driver) =>
+        concernTagRefs.has(driver.concern_tag_ref),
+      ),
+    },
   };
 }
 
@@ -210,6 +214,7 @@ export function yuejingInputsSummaryStalenessForActiveSubset(
     space,
     related_person_refs: reading.related_person_refs,
     active_concern_tags: tagsResult.tags,
+    method_profile_id: space.settings.method_profile_id,
   });
   if (!featureResult.ok) return { stale: true, reason: 'feature_snapshot_failed' };
 

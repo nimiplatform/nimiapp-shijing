@@ -16,6 +16,7 @@ import { validateNatalInputs } from './natal-inputs-validator.ts';
 import { validatePlanItemCollection } from './plan-item-validator.ts';
 import { validateReading } from './reading-validator.ts';
 import { isAdmittedSurfaceName, REMOVED_SURFACE_NAMES } from './removed-surfaces.ts';
+import { validateSettings } from './settings-validator.ts';
 
 const ALLOWED_CONSENT_STATES = new Set(['owner_recorded', 'subject_consented', 'withheld']);
 
@@ -46,6 +47,7 @@ export type ShijingSpaceValidationError =
   | { code: 'space_conversation_turn_cited_plan_item_unresolvable'; conversation_id: string; turn_id: string; ref: string }
   | { code: 'space_self_subject_natal_inputs_invalid'; reason: string }
   | { code: 'space_person_natal_inputs_invalid'; person_id: string; reason: string }
+  | { code: 'space_settings_invalid'; reason: string }
   | { code: 'space_removed_field_present'; container: 'space' | 'settings'; field: string };
 
 export type ShijingSpaceValidationResult =
@@ -82,6 +84,12 @@ export function validateShiJingSpace(space: ShiJingSpace): ShijingSpaceValidatio
       ok: false,
       error: { code: 'space_removed_field_present', container: 'settings', field: removedSettingsKey },
     };
+  }
+  // SJG-DATA-09 / SJG-ALGO-01 — Settings content (method_profile_id admission +
+  // response-preference enums), not just removed-surface keys.
+  const settingsCheck = validateSettings(space.settings);
+  if (!settingsCheck.ok) {
+    return { ok: false, error: { code: 'space_settings_invalid', reason: settingsCheck.error.code } };
   }
   const selfNatalCheck = validateNatalInputs(space.self_subject.natal_inputs);
   if (!selfNatalCheck.ok) {

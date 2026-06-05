@@ -5,7 +5,7 @@ import type { MirrorScope } from '../domain/mirror-scope.ts';
 import type { MirrorOutput } from '../domain/mirror-output.ts';
 import type { Reading } from '../domain/reading.ts';
 import {
-  ASTROLOGY_METHOD_PROFILE_ID,
+  isAdmittedMethodProfileId,
   SJG_ALGO_CONTRACT_VERSION,
   SJG_ASTRO_CONTRACT_VERSION,
 } from '../domain/algorithm.ts';
@@ -16,6 +16,7 @@ import {
 } from './mirror-scope-validator.ts';
 import { validateMirrorOutput } from './mirror-output-validator.ts';
 import { READING_OWNER_SCOPED_REMOVED_FIELDS } from './removed-surfaces.ts';
+import { computeCanonicalHash } from '../product/astrology/canonical-hash.ts';
 
 const ISO_UTC_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/;
 
@@ -37,6 +38,7 @@ export type ReadingValidationError =
   | { code: 'reading_inputs_summary_method_profile_id_mismatch'; received: unknown }
   | { code: 'reading_inputs_summary_input_hash_invalid' }
   | { code: 'reading_inputs_summary_feature_snapshot_hash_invalid' }
+  | { code: 'reading_inputs_summary_feature_snapshot_hash_mismatch' }
   | { code: 'reading_inputs_summary_feature_snapshot_mirror_kind_mismatch' }
   | { code: 'reading_inputs_summary_feature_snapshot_canonical_window_mismatch' }
   | { code: 'reading_inputs_summary_mirror_context_mirror_kind_mismatch' }
@@ -219,7 +221,7 @@ export function validateReading(reading: Reading): ReadingValidationResult {
       },
     };
   }
-  if (summary.method_profile.id !== ASTROLOGY_METHOD_PROFILE_ID) {
+  if (!isAdmittedMethodProfileId(summary.method_profile.id)) {
     return {
       ok: false,
       error: {
@@ -241,6 +243,13 @@ export function validateReading(reading: Reading): ReadingValidationResult {
     summary.feature_snapshot_hash === 'unset'
   ) {
     return { ok: false, error: { code: 'reading_inputs_summary_feature_snapshot_hash_invalid' } };
+  }
+  // SJG-ALGO-11/12 — integrity: recompute the canonical hash from the persisted
+  // feature_snapshot and fail closed on drift. Catches tampering/corruption of a
+  // stored Reading where snapshot and recorded hash no longer agree. Runs at
+  // generation (consistent → passes) and on load (the real guard).
+  if (computeCanonicalHash(summary.feature_snapshot) !== summary.feature_snapshot_hash) {
+    return { ok: false, error: { code: 'reading_inputs_summary_feature_snapshot_hash_mismatch' } };
   }
   if (summary.feature_snapshot.mirror_kind !== reading.mirror_kind) {
     return {

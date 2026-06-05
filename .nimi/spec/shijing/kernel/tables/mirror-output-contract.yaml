@@ -19,7 +19,8 @@ citations:
     - method
     - reference
   allowed_method:
-    - bazi_ganzhi_jieqi_dayun_v1
+    - bazi_ziping_v1
+    - ziwei_sanhe_v1
 rijing:
   required_fields:
     - mirror_kind

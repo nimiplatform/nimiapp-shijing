@@ -1,5 +1,7 @@
 // SJG-DATA-09 — Settings, ResponsePreferences.
 
+import type { MethodProfileId } from './algorithm.ts';
+
 export type ResponseTone = 'neutral' | 'warm' | 'concise';
 
 export const RESPONSE_TONES: readonly ResponseTone[] = ['neutral', 'warm', 'concise'] as const;
@@ -29,4 +31,7 @@ export interface ResponsePreferences {
 
 export interface Settings {
   readonly response_preferences: ResponsePreferences;
+  // Active 命理 method profile for generation (SJG-ALGO-01/02). Absent ⇒ the
+  // default profile (bazi_ziping_v1). Not a wording preference.
+  readonly method_profile_id?: MethodProfileId;
 }

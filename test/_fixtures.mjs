@@ -3,6 +3,8 @@
 // EventMemory / PlanItem / MirrorScope / Reading / Conversation /
 // ShiJingSpace examples without re-duplicating the v1 envelope.
 
+import { computeCanonicalHash } from '../src/product/astrology/canonical-hash.ts';
+
 export function validRawBirthInput(overrides = {}) {
   return {
     calendar_system: 'gregorian',
@@ -16,7 +18,9 @@ export function validRawBirthInput(overrides = {}) {
 export function validNatalInputs(overrides = {}) {
   return {
     raw_birth_input: validRawBirthInput(),
-    birth_datetime_utc: '1990-04-12T08:30:00Z',
+    // Genuine UTC instant for 08:30 Asia/Shanghai (= local wall clock − 8h), as
+    // the real UI (buildSelfNatalInputs → localWallClockToUtcInstant) produces.
+    birth_datetime_utc: '1990-04-12T00:30:00Z',
     birth_precision: 'exact',
     calendar_system: 'gregorian',
     calculation_sex: 'unspecified',
@@ -32,9 +36,10 @@ export function validNatalInputs(overrides = {}) {
 
 export function validMethodProfile() {
   return {
-    id: 'bazi_ganzhi_jieqi_dayun_v1',
+    id: 'bazi_ziping_v1',
     contract_version: 'SJG-ALGO-v1',
-    feature_schema_version: 'SJG-FEATURE-v1',
+    feature_schema_version: 'SJG-FEATURE-v2',
+    ephemeris_version: 'tyme4ts-1.5.0',
   };
 }
 
@@ -162,32 +167,40 @@ export function canonicalWindowFor(scope) {
 }
 
 export function validFeatureSnapshot({ mirrorKind = 'rijing', scope = dailyMirrorScope() } = {}) {
+  const window = canonicalWindowFor(scope);
   return {
     method_profile: validMethodProfile(),
     mirror_kind: mirrorKind,
-    canonical_window: canonicalWindowFor(scope),
-    self_subject: {
-      subject_ref: 'self',
-      natal_chart: {
-        subject_ref: 'self',
-        canonicalization_hash: 'sha256:canon-self',
-        missing_pillars: [],
-      },
-      cycle_snapshot: {
-        window_start_utc: canonicalWindowFor(scope).start_utc,
-        window_end_utc: canonicalWindowFor(scope).end_utc,
-        monthly_pillars: [],
-        daily_pillars: [],
-        markers: [],
+    canonical_window: window,
+    common: {
+      stage_drivers: [],
+      key_windows: [],
+      yuejing_tendency_drivers: [],
+      nianjing_phase_drivers: [],
+      nianjing_inflection_drivers: [],
+      uncertainty_inputs: [],
+    },
+    method_evidence: {
+      method_id: 'bazi_ziping_v1',
+      bazi: {
+        self_subject: {
+          subject_ref: 'self',
+          natal_chart: {
+            subject_ref: 'self',
+            canonicalization_hash: 'sha256:canon-self',
+            missing_pillars: [],
+          },
+          cycle_snapshot: {
+            window_start_utc: window.start_utc,
+            window_end_utc: window.end_utc,
+            monthly_pillars: [],
+            daily_pillars: [],
+            markers: [],
+          },
+        },
+        related_persons: [],
       },
     },
-    related_persons: [],
-    stage_drivers: [],
-    key_windows: [],
-    yuejing_tendency_drivers: [],
-    nianjing_phase_drivers: [],
-    nianjing_inflection_drivers: [],
-    uncertainty_inputs: [],
   };
 }
 
@@ -212,6 +225,11 @@ export function validInputsSummary({
   scope = dailyMirrorScope(),
   concernTagSnapshots = [validConcernTagSnapshot('tag_love')],
 } = {}) {
+  // The feature_snapshot_hash must be the real canonical hash of the embedded
+  // snapshot — validateReading now recomputes and fails closed on drift
+  // (SJG-ALGO-11/12 integrity). A placeholder would make every fixture Reading
+  // structurally inconsistent.
+  const feature_snapshot = validFeatureSnapshot({ mirrorKind, scope });
   return {
     captured_at: '2026-05-25T00:00:00Z',
     contract_version: 'SJG-ASTRO-v1',
@@ -219,8 +237,8 @@ export function validInputsSummary({
     method_profile: validMethodProfile(),
     mirror_context_snapshot: validMirrorContextSnapshot({ mirrorKind, scope, concernTagSnapshots }),
     input_hash: 'sha256:input-hash',
-    feature_snapshot_hash: 'sha256:feature-hash',
-    feature_snapshot: validFeatureSnapshot({ mirrorKind, scope }),
+    feature_snapshot_hash: computeCanonicalHash(feature_snapshot),
+    feature_snapshot,
   };
 }
 
@@ -239,7 +257,7 @@ export function validRijingOutput(overrides = {}) {
     ],
     cited_event_memory_refs: [],
     cited_plan_item_refs: [],
-    citations: [{ method: 'bazi_ganzhi_jieqi_dayun_v1', reference: 'rijing-rule-01' }],
+    citations: [{ method: 'bazi_ziping_v1', reference: 'rijing-rule-01' }],
     ...overrides,
   };
 }
@@ -259,7 +277,7 @@ export function validYuejingOutput(scope = rolling30DayMirrorScope(), overrides 
     ],
     cited_event_memory_refs: [],
     cited_plan_item_refs: [],
-    citations: [{ method: 'bazi_ganzhi_jieqi_dayun_v1', reference: 'yuejing-rule-01' }],
+    citations: [{ method: 'bazi_ziping_v1', reference: 'yuejing-rule-01' }],
     ...overrides,
   };
 }
@@ -290,7 +308,7 @@ export function validNianjingOutput(scope = longHorizonMirrorScope(), overrides 
     ],
     cited_event_memory_refs: [],
     cited_plan_item_refs: [],
-    citations: [{ method: 'bazi_ganzhi_jieqi_dayun_v1', reference: 'nianjing-rule-01' }],
+    citations: [{ method: 'bazi_ziping_v1', reference: 'nianjing-rule-01' }],
     ...overrides,
   };
 }
@@ -303,7 +321,7 @@ export function validShijingOutput(sourceReadingIds = ['r_source_01'], overrides
     cited_reading_ids: [...sourceReadingIds],
     cited_event_memory_refs: [],
     cited_plan_item_refs: [],
-    citations: [{ method: 'bazi_ganzhi_jieqi_dayun_v1', reference: 'shijing-rule-01' }],
+    citations: [{ method: 'bazi_ziping_v1', reference: 'shijing-rule-01' }],
     ...overrides,
   };
 }

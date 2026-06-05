@@ -30,17 +30,14 @@ function labelForConcern(tag: ConcernTag | undefined, fallback: string): string 
 }
 
 function deterministicCellSummary(
-  driver: AstrologyFeatureSnapshot['yuejing_tendency_drivers'][number],
+  driver: AstrologyFeatureSnapshot['common']['yuejing_tendency_drivers'][number],
   tag: ConcernTag | undefined,
 ): string {
   const label = labelForConcern(tag, driver.concern_tag_ref);
-  const domainRef = driver.driver_refs.find((ref) => ref.startsWith('domain.')) ?? 'domain.general';
-  const relationRef =
-    driver.driver_refs.find((ref) => ref.startsWith('daily_relation.')) ??
-    driver.driver_refs.find((ref) => ref.startsWith('branch_relation.')) ??
-    driver.driver_refs[0] ??
-    'cycle_baseline';
-  return `${label}: ${TENDENCY_WORDING[driver.tendency_class]}, 依据 ${domainRef} / ${relationRef}`;
+  // driver_refs are opaque, method-namespaced evidence keys (SJG-ALGO-08); do
+  // not parse their semantics here — surface them verbatim for the AI layer.
+  const refs = driver.driver_refs.slice(0, 2).join(' / ') || 'cycle_baseline';
+  return `${label}: ${TENDENCY_WORDING[driver.tendency_class]}, 依据 ${refs}`;
 }
 
 export function generateYueJingOutput(
@@ -56,7 +53,7 @@ export function generateYueJingOutput(
       },
     };
   }
-  const drivers = input.feature_snapshot.yuejing_tendency_drivers;
+  const drivers = input.feature_snapshot.common.yuejing_tendency_drivers;
   if (drivers.length === 0) {
     return {
       ok: false,
@@ -95,7 +92,7 @@ export function generateYueJingOutput(
     cited_event_memory_refs: [...input.cited_event_memory_refs],
     cited_plan_item_refs: [...input.cited_plan_item_refs],
     citations: [
-      { method: 'bazi_ganzhi_jieqi_dayun_v1', reference: 'yuejing.daily_tendency_drivers' },
+      { method: input.feature_snapshot.method_profile.id, reference: 'yuejing.daily_tendency_drivers' },
     ],
   };
   return { ok: true, value: output };

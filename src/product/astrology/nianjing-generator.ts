@@ -41,8 +41,8 @@ export function generateNianJingOutput(
       },
     };
   }
-  const phaseDrivers = input.feature_snapshot.nianjing_phase_drivers;
-  const inflectionDrivers = input.feature_snapshot.nianjing_inflection_drivers;
+  const phaseDrivers = input.feature_snapshot.common.nianjing_phase_drivers;
+  const inflectionDrivers = input.feature_snapshot.common.nianjing_inflection_drivers;
   if (phaseDrivers.length === 0) {
     return {
       ok: false,
@@ -82,7 +82,7 @@ export function generateNianJingOutput(
     cited_event_memory_refs: [...input.cited_event_memory_refs],
     cited_plan_item_refs: [...input.cited_plan_item_refs],
     citations: [
-      { method: 'bazi_ganzhi_jieqi_dayun_v1', reference: 'nianjing.phase_inflection_derivation' },
+      { method: input.feature_snapshot.method_profile.id, reference: 'nianjing.phase_inflection_derivation' },
     ],
   };
   return { ok: true, value: output };

@@ -560,6 +560,36 @@
   font-weight: 500;
 }
 
+.shijing-citation-drawer__chips {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.shijing-citation-drawer__chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-subtle);
+  font-size: 12px;
+}
+
+.shijing-citation-drawer__chip-label {
+  color: var(--shijing-text-muted);
+  font-size: 11px;
+}
+
+.shijing-citation-drawer__chip-value {
+  color: var(--shijing-text-primary);
+  font-weight: 500;
+}
+
 .shijing-citation-drawer dl {
   margin: 10px 0 0;
   display: grid;

@@ -1,6 +1,8 @@
 // W06 — Reading citation drawer (shared across mirror tabs).
 
 import type { Reading } from '../../../domain/reading.ts';
+import { ZiweiAstrolabe } from './ziwei-astrolabe.tsx';
+import { deriveMethodEvidenceChips } from './method-evidence-chips.ts';
 
 export interface CitationDrawerProps {
   readonly reading: Reading;
@@ -8,9 +10,20 @@ export interface CitationDrawerProps {
 
 export function CitationDrawer(props: CitationDrawerProps) {
   const { reading } = props;
+  const evidenceChips = deriveMethodEvidenceChips(reading);
   return (
     <details className="shijing-citation-drawer" aria-label="生成依据">
       <summary>生成依据 / 引用</summary>
+      {evidenceChips.length > 0 ? (
+        <ul className="shijing-citation-drawer__chips">
+          {evidenceChips.map((chip, i) => (
+            <li key={`${i}-${chip.group}`} className="shijing-citation-drawer__chip">
+              <span className="shijing-citation-drawer__chip-label">{chip.group}</span>
+              <span className="shijing-citation-drawer__chip-value">{chip.value}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       <dl>
         <div>
           <dt>方法</dt>
@@ -36,6 +49,11 @@ export function CitationDrawer(props: CitationDrawerProps) {
           </dd>
         </div>
       </dl>
+      {reading.inputs_summary.feature_snapshot.method_evidence.method_id === 'ziwei_sanhe_v1' ? (
+        <div style={{ margin: '12px 0' }}>
+          <ZiweiAstrolabe chart={reading.inputs_summary.feature_snapshot.method_evidence.ziwei.self_subject} />
+        </div>
+      ) : null}
       {reading.output.citations.length > 0 ? (
         <ul>
           {reading.output.citations.map((c, i) => (

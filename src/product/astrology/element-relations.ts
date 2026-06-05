@@ -26,7 +26,8 @@ import type { HeavenlyStem } from '../../domain/algorithm.ts';
 
 type MarkerKind = 'resource' | 'output' | 'constraint' | 'wealth';
 
-export type FiveElement = 'wood' | 'fire' | 'earth' | 'metal' | 'water';
+export type { FiveElement } from '../../domain/algorithm.ts';
+import type { FiveElement } from '../../domain/algorithm.ts';
 
 export const FIVE_ELEMENTS: readonly FiveElement[] = ['wood', 'fire', 'earth', 'metal', 'water'] as const;
 
@@ -67,6 +68,33 @@ export function elementGenerates(a: FiveElement, b: FiveElement): boolean {
 
 export function elementControls(a: FiveElement, b: FiveElement): boolean {
   return CONTROLS[a] === b;
+}
+
+// Reverse lookups for 用神 category derivation.
+function elementThatGenerates(target: FiveElement): FiveElement {
+  return FIVE_ELEMENTS.find((e) => GENERATES[e] === target)!; // 生 target
+}
+function elementThatControls(target: FiveElement): FiveElement {
+  return FIVE_ELEMENTS.find((e) => CONTROLS[e] === target)!; // 克 target
+}
+
+// The five 十神-category elements relative to a day master (五行 level).
+export interface TenGodElements {
+  readonly bijie: FiveElement; // 比劫 — 同我
+  readonly yin: FiveElement; // 印 — 生我
+  readonly shishang: FiveElement; // 食伤 — 我生
+  readonly cai: FiveElement; // 财 — 我克
+  readonly guansha: FiveElement; // 官杀 — 克我
+}
+
+export function tenGodElements(dayMaster: FiveElement): TenGodElements {
+  return {
+    bijie: dayMaster,
+    yin: elementThatGenerates(dayMaster),
+    shishang: GENERATES[dayMaster],
+    cai: CONTROLS[dayMaster],
+    guansha: elementThatControls(dayMaster),
+  };
 }
 
 export type TransitElementRelation = 'same' | 'resource' | 'output' | 'constraint' | 'wealth';

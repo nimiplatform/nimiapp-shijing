@@ -13,10 +13,11 @@ This directory is the normative authority landing for ShiJing (时镜).
 - `astrology-contract.md` (`SJG-ASTRO-*`): mirror kinds/scopes, output
   structure, forbidden outputs, uncertainty surface, inputs snapshots, and
   Runtime boundary.
-- `algorithm-contract.md` (`SJG-ALGO-*`): v1 method stack
-  `bazi_ganzhi_jieqi_dayun_v1`, mirror-window canonicalization, DaYun
-  predicate, deterministic feature snapshots, memory policy boundary,
-  canonical hashing, and Runtime AI wording boundary.
+- `algorithm-contract.md` (`SJG-ALGO-*`): method profile registry
+  (`bazi_ziping_v1`; reserved `ziwei_sanhe_v1`), the MethodEngine port,
+  mirror-window canonicalization, DaYun predicate, the feature snapshot envelope
+  (`common` + `method_evidence`), memory policy boundary, canonical hashing, and
+  Runtime AI wording boundary.
 - `ia-contract.md` (`SJG-IA-*`): exactly four primary tabs: `日镜`, `月镜`,
   `年镜`, `时镜`, plus mandatory secondary Settings.
 - `removed-surfaces-contract.md` (`SJG-REMOVED-*`): hard removals including

@@ -12,15 +12,44 @@ import type { TendencyClass } from './mirror-output.ts';
 import type { NianJingInflectionKind } from './mirror-output.ts';
 
 export const SJG_ALGO_CONTRACT_VERSION = 'SJG-ALGO-v1' as const;
-export const SJG_ALGO_FEATURE_SCHEMA_VERSION = 'SJG-FEATURE-v1' as const;
+export const SJG_ALGO_FEATURE_SCHEMA_VERSION = 'SJG-FEATURE-v2' as const;
 export const SJG_ASTRO_CONTRACT_VERSION = 'SJG-ASTRO-v1' as const;
 
-export const ASTROLOGY_METHOD_PROFILE_ID = 'bazi_ganzhi_jieqi_dayun_v1' as const;
+// SJG-ALGO-01 — Method profile registry. Profiles are a closed set; user data
+// never defines or mutates one. Each id is realized by a MethodEngine
+// (src/domain/method-engine.ts).
+export const BAZI_ZIPING_V1 = 'bazi_ziping_v1' as const;
+export const ZIWEI_SANHE_V1 = 'ziwei_sanhe_v1' as const;
 
-export interface AstrologyMethodProfile {
-  readonly id: typeof ASTROLOGY_METHOD_PROFILE_ID;
+export type MethodProfileId = typeof BAZI_ZIPING_V1 | typeof ZIWEI_SANHE_V1;
+
+export const METHOD_PROFILE_IDS: readonly MethodProfileId[] = [
+  BAZI_ZIPING_V1,
+  ZIWEI_SANHE_V1,
+] as const;
+
+// Admitted (selectable) profiles. Keep this list in sync with the closed
+// SJG-ALGO-01 registry and the MethodEngine registry.
+export const ADMITTED_METHOD_PROFILE_IDS: readonly MethodProfileId[] = [
+  BAZI_ZIPING_V1,
+  ZIWEI_SANHE_V1,
+] as const;
+
+export const DEFAULT_METHOD_PROFILE_ID: MethodProfileId = BAZI_ZIPING_V1;
+
+export function isAdmittedMethodProfileId(value: string): value is MethodProfileId {
+  return (ADMITTED_METHOD_PROFILE_IDS as readonly string[]).includes(value);
+}
+
+export interface MethodProfile {
+  readonly id: MethodProfileId;
   readonly contract_version: typeof SJG_ALGO_CONTRACT_VERSION;
   readonly feature_schema_version: typeof SJG_ALGO_FEATURE_SCHEMA_VERSION;
+  // Calendar/source provenance, e.g. "tyme4ts-1.5.0". Replaces the per-pillar
+  // ephemeris_version the old approximate engine carried.
+  readonly ephemeris_version: string;
+  // Interpretive doctrine id, e.g. "fuyi_tiaohou_v1" (admitted at Wave 2).
+  readonly interpretive_profile?: string;
 }
 
 export type HeavenlyStem =
@@ -80,7 +109,6 @@ export const EARTHLY_BRANCHES: readonly EarthlyBranch[] = [
 export interface GanzhiPillar {
   readonly stem: HeavenlyStem;
   readonly branch: EarthlyBranch;
-  readonly ephemeris_version: string;
 }
 
 export type NatalCanonicalizationStatus = 'exact' | 'approximate' | 'insufficient';
@@ -177,6 +205,11 @@ export interface CycleMarker {
   readonly end_utc: string;
   readonly subject_refs: readonly SubjectRef[];
   readonly source: CycleMarkerSource;
+  // The 干支 of the period this marker opens (流年 for annual_transition, 大运 for
+  // dayun_boundary). Lets the projection derive period quality (用神 favourability)
+  // instead of labelling every NianJing phase a degenerate 转折. Absent for
+  // markers with no intrinsic pillar (e.g. natal-relation clash/combination).
+  readonly pillar?: GanzhiPillar;
 }
 
 export interface CycleSnapshot {
@@ -221,11 +254,106 @@ export interface KeyWindowFeature {
   readonly subject_refs: readonly SubjectRef[];
 }
 
-export interface SubjectFeatureSnapshot {
+// BaZi method evidence (method_evidence.bazi). Opaque to Layer-3 consumers
+// except the dedicated BaZi evidence view.
+// SJG-ALGO-15 — interpretive layer (fuyi_tiaohou_v1).
+export type FiveElement = 'wood' | 'fire' | 'earth' | 'metal' | 'water';
+
+export type StrengthBand = '极弱' | '偏弱' | '中和' | '偏强' | '极强';
+
+export const STRENGTH_BANDS: readonly StrengthBand[] = ['极弱', '偏弱', '中和', '偏强', '极强'] as const;
+
+export type HiddenStemWeightClass = 'primary' | 'middle' | 'residual';
+
+export interface HiddenStem {
+  readonly stem: HeavenlyStem;
+  readonly weight_class: HiddenStemWeightClass;
+}
+
+export type PillarPosition = 'year' | 'month' | 'day' | 'hour';
+
+export interface BaziPillarFeatures {
+  readonly position: PillarPosition;
+  readonly ten_god: string; // 十神 of the stem vs day master
+  readonly hidden_stems: readonly HiddenStem[];
+  readonly nayin: string;
+  readonly terrain: string; // 日主 十二长生 at this branch
+}
+
+export interface BaziStrength {
+  readonly band: StrengthBand;
+  readonly support_ratio: number; // bounded 0..1 ordinal evidence, NOT a luck score
+  readonly basis: readonly string[];
+}
+
+export interface YongShen {
+  readonly yong: readonly FiveElement[];
+  readonly xi: readonly FiveElement[];
+  readonly ji: readonly FiveElement[];
+  readonly tiaohou?: FiveElement;
+  readonly basis: readonly string[];
+}
+
+export type BaziBranchRelationKind = '六合' | '三合' | '相冲' | '相害' | '相刑' | '相破';
+
+export interface BaziBranchRelation {
+  readonly kind: BaziBranchRelationKind;
+  readonly positions: readonly PillarPosition[];
+}
+
+export interface BaziInterpretation {
+  readonly pillars: readonly BaziPillarFeatures[];
+  readonly strength: BaziStrength;
+  readonly yong_shen: YongShen;
+  readonly natal_branch_relations: readonly BaziBranchRelation[];
+}
+
+export interface BaziSubjectChart {
   readonly subject_ref: SubjectRef;
   readonly natal_chart: NatalChartSnapshot;
   readonly dayun?: DayunSnapshot;
   readonly cycle_snapshot: CycleSnapshot;
+  readonly interpretation?: BaziInterpretation;
+}
+
+export interface BaziEvidence {
+  readonly self_subject: BaziSubjectChart;
+  readonly related_persons: readonly BaziSubjectChart[];
+}
+
+// 紫微斗数 method evidence (method_evidence.ziwei). Opaque to Layer-3 consumers
+// except the dedicated 紫微 evidence view.
+export interface ZiweiStar {
+  readonly name: string;
+  readonly brightness: string;
+  readonly mutagen: '' | '禄' | '权' | '科' | '忌';
+}
+
+export interface ZiweiPalace {
+  readonly index: number;
+  readonly name: string;
+  readonly heavenly_stem: string;
+  readonly earthly_branch: string;
+  readonly is_soul: boolean;
+  readonly is_body: boolean;
+  readonly major_stars: readonly ZiweiStar[];
+  readonly minor_stars: readonly ZiweiStar[];
+  readonly decadal_start_age: number;
+  readonly decadal_end_age: number;
+}
+
+export interface ZiweiSubjectChart {
+  readonly subject_ref: SubjectRef;
+  readonly five_elements_class: string;
+  readonly soul_star: string;
+  readonly body_star: string;
+  readonly soul_palace_branch: string;
+  readonly palaces: readonly ZiweiPalace[];
+}
+
+export interface ZiweiEvidence {
+  readonly self_subject: ZiweiSubjectChart;
+  readonly related_persons: readonly ZiweiSubjectChart[];
 }
 
 export interface YueJingTendencyDriver {
@@ -313,18 +441,37 @@ export interface CanonicalMirrorWindow {
   readonly scope_kind: MirrorScopeKind;
 }
 
-export interface AstrologyFeatureSnapshot {
-  readonly method_profile: AstrologyMethodProfile;
-  readonly mirror_kind: MirrorKind;
-  readonly canonical_window: CanonicalMirrorWindow;
-  readonly self_subject: SubjectFeatureSnapshot;
-  readonly related_persons: readonly SubjectFeatureSnapshot[];
+// SJG-ALGO-08 — algorithm-agnostic common driver surface. Layer-3 (projection,
+// runtime AI, validators, persistence, non-evidence UI) binds to this only.
+export interface CommonDrivers {
   readonly stage_drivers: readonly StageDriver[];
   readonly key_windows: readonly KeyWindowFeature[];
   readonly yuejing_tendency_drivers: readonly YueJingTendencyDriver[];
   readonly nianjing_phase_drivers: readonly NianJingPhaseDriver[];
   readonly nianjing_inflection_drivers: readonly NianJingInflectionDriver[];
   readonly uncertainty_inputs: readonly UncertaintyInput[];
+}
+
+// Method-tagged, opaque evidence, discriminated by method_id. The 紫微 variant
+// (ZiweiMethodEvidence) is admitted with the 紫微 engine and added to this union.
+export interface BaziMethodEvidence {
+  readonly method_id: typeof BAZI_ZIPING_V1;
+  readonly bazi: BaziEvidence;
+}
+
+export interface ZiweiMethodEvidence {
+  readonly method_id: typeof ZIWEI_SANHE_V1;
+  readonly ziwei: ZiweiEvidence;
+}
+
+export type MethodEvidence = BaziMethodEvidence | ZiweiMethodEvidence;
+
+export interface AstrologyFeatureSnapshot {
+  readonly method_profile: MethodProfile;
+  readonly mirror_kind: MirrorKind;
+  readonly canonical_window: CanonicalMirrorWindow;
+  readonly common: CommonDrivers;
+  readonly method_evidence: MethodEvidence;
 }
 
 export const HASH_ALGORITHM = 'sha256' as const;

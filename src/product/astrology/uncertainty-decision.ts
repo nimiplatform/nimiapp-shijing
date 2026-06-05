@@ -1,17 +1,18 @@
 // SJG-ALGO-10 — Uncertainty decision table.
 //
-// Maps UncertaintyInput codes from the feature snapshot (plus runtime
-// inputs like ai_parse_failed) to a final UncertaintyAnnotation.
+// Maps the engine-emitted UncertaintyInput codes on the common surface (plus
+// runtime ai_parse_failed and a stale-ephemeris check) to a final
+// UncertaintyAnnotation. It binds to common + method_profile only — never to
+// method_evidence / pillars.
 
 import type {
   AstrologyFeatureSnapshot,
-  NatalCanonicalization,
   UncertaintyInput,
   UncertaintyInputCode,
 } from '../../domain/algorithm.ts';
 import type { ConfidenceLevel, UncertaintyAnnotation } from '../../domain/reading.ts';
 import { standardHoursForTimeZone } from './true-solar-time.ts';
-import { EPHEMERIS_VERSION } from './solar-terms.ts';
+import { currentEphemerisVersion } from './engines/registry.ts';
 
 const FORCE_LOW_CODES: ReadonlySet<UncertaintyInputCode> = new Set<UncertaintyInputCode>([
   'location_missing',
@@ -49,49 +50,15 @@ const CAVEAT_TEXT: Readonly<Record<UncertaintyInputCode, string>> = {
 
 export interface UncertaintyDecisionInput {
   readonly feature_snapshot: AstrologyFeatureSnapshot;
-  readonly canonicalizations: ReadonlyArray<NatalCanonicalization | undefined>;
   readonly ai_parse_failed?: boolean;
 }
 
-function detectLocationMissing(
-  snapshot: AstrologyFeatureSnapshot,
-  canonicalizations: ReadonlyArray<NatalCanonicalization | undefined>,
-): boolean {
-  for (const c of canonicalizations) {
-    if (!c) continue;
-    if (c.standard_meridian_longitude === undefined) return true;
-    if (c.longitude_correction_minutes === undefined) return true;
-  }
-  if (!snapshot.self_subject.natal_chart.day_pillar && !snapshot.self_subject.natal_chart.month_pillar) {
-    return true;
-  }
-  return false;
-}
-
+// Stale persisted reading: the snapshot's recorded ephemeris no longer matches
+// the engine's current ephemeris (or the method is no longer admitted).
 function detectEphemerisMissing(snapshot: AstrologyFeatureSnapshot): boolean {
-  const subjects = [snapshot.self_subject, ...snapshot.related_persons];
-  for (const subject of subjects) {
-    const pillars = [
-      subject.natal_chart.year_pillar,
-      subject.natal_chart.month_pillar,
-      subject.natal_chart.day_pillar,
-      subject.natal_chart.hour_pillar,
-    ];
-    for (const p of pillars) {
-      if (!p) continue;
-      if (p.ephemeris_version !== EPHEMERIS_VERSION) return true;
-    }
-  }
-  return false;
-}
-
-function detectTimezoneMissing(canonicalizations: ReadonlyArray<NatalCanonicalization | undefined>): boolean {
-  if (canonicalizations.length === 0) return true;
-  for (const c of canonicalizations) {
-    if (!c) return true;
-    if (c.standard_meridian_longitude === undefined) return true;
-  }
-  return false;
+  const current = currentEphemerisVersion(snapshot.method_profile.id);
+  if (current === null) return true;
+  return snapshot.method_profile.ephemeris_version !== current;
 }
 
 export function ianaTimeZoneSupported(iana: string): boolean {
@@ -100,17 +67,11 @@ export function ianaTimeZoneSupported(iana: string): boolean {
 
 export function deriveUncertainty(input: UncertaintyDecisionInput): UncertaintyAnnotation {
   const codes: UncertaintyInputCode[] = [];
-  for (const u of input.feature_snapshot.uncertainty_inputs) {
+  for (const u of input.feature_snapshot.common.uncertainty_inputs) {
     if (!codes.includes(u.code)) codes.push(u.code);
   }
-  if (detectLocationMissing(input.feature_snapshot, input.canonicalizations)) {
-    if (!codes.includes('location_missing')) codes.push('location_missing');
-  }
-  if (detectTimezoneMissing(input.canonicalizations)) {
-    if (!codes.includes('timezone_missing')) codes.push('timezone_missing');
-  }
-  if (detectEphemerisMissing(input.feature_snapshot)) {
-    if (!codes.includes('ephemeris_missing')) codes.push('ephemeris_missing');
+  if (detectEphemerisMissing(input.feature_snapshot) && !codes.includes('ephemeris_missing')) {
+    codes.push('ephemeris_missing');
   }
   if (input.ai_parse_failed && !codes.includes('ai_parse_failed')) {
     codes.push('ai_parse_failed');
@@ -132,6 +93,24 @@ export function deriveUncertainty(input: UncertaintyDecisionInput): UncertaintyA
 }
 
 export const UNCERTAINTY_CAVEAT_TEXT = CAVEAT_TEXT;
+
+export interface FailCloseDecision {
+  readonly failed: boolean;
+  readonly codes: readonly UncertaintyInputCode[];
+}
+
+// SJG-ALGO-10 — the fail-closed rows of the decision table. The producers (each
+// MethodEngine + the orchestrator) mark the context-dependent severity, since
+// whether e.g. rough_month fails closed depends on dayun_required and on the
+// engine's own capabilities (紫微 fails closed earlier for any non-exact time).
+// This consumer is method-agnostic: it only reads the severity the producer set.
+export function evaluateFailClose(snapshot: AstrologyFeatureSnapshot): FailCloseDecision {
+  const codes: UncertaintyInputCode[] = [];
+  for (const u of snapshot.common.uncertainty_inputs) {
+    if (u.severity === 'fail_close' && !codes.includes(u.code)) codes.push(u.code);
+  }
+  return { failed: codes.length > 0, codes };
+}
 
 export function appendUncertaintyInput(
   existing: readonly UncertaintyInput[],

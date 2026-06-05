@@ -41,7 +41,6 @@ import type { ReadingGenerationFailure, Reading } from '../../domain/reading.ts'
 import { generateReadingForStorage } from '../reading/generate-and-store.ts';
 import { inputsSummaryStaleForSpace } from '../astrology/inputs-summary-expiry.ts';
 import { newConcernTagId, newReadingId } from '../ids/index.ts';
-import { readingHasSyntheticNianjingBaseline } from '../reading/reading-selectors.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import {
   MIRROR_KIND_LABELS,
@@ -394,7 +393,7 @@ export function NianJingTab(props: NianJingTabProps) {
   const nianjingReadings = useMemo(
     () =>
       [...state.snapshot.readings]
-        .filter((r) => r.mirror_kind === 'nianjing' && !readingHasSyntheticNianjingBaseline(r))
+        .filter((r) => r.mirror_kind === 'nianjing')
         .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)),
     [state.snapshot.readings],
   );

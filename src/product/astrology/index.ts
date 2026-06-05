@@ -1,20 +1,17 @@
-// Barrel — W03 mirror reading pipeline + Runtime AI boundary.
+// Barrel — Mirror Architecture v1 reading pipeline + Runtime AI boundary.
 
 export * from './stage-result.ts';
-export * from './ganzhi.ts';
+export * from './ephemeris.ts';
 export * from './true-solar-time.ts';
-export * from './solar-terms.ts';
 export * from './canonical-hash.ts';
 export * from './canonicalize-natal-inputs.ts';
-export * from './build-natal-chart.ts';
-export * from './build-cycle-snapshot.ts';
-export * from './dayun.ts';
-export * from './stage-label.ts';
 export * from './branch-relations.ts';
 export * from './element-relations.ts';
 export * from './uncertainty-decision.ts';
 export * from './inputs-summary-expiry.ts';
 export * from './mirror-window.ts';
+export * from './method-engine.ts';
+export * from './engines/registry.ts';
 export * from './build-feature-snapshot.ts';
 export * from './rijing-generator.ts';
 export * from './yuejing-generator.ts';

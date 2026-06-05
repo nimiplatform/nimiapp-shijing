@@ -1,6 +1,7 @@
 // SJG-ASTRO-03..07 — MirrorOutput (discriminated by mirror_kind).
 
 import type { MirrorKind } from './mirror-scope.ts';
+import { ADMITTED_METHOD_PROFILE_IDS, type MethodProfileId } from './algorithm.ts';
 
 export type TendencyClass = 'supportive' | 'steady' | 'watch' | 'blocked' | 'turning';
 
@@ -12,12 +13,11 @@ export const TENDENCY_CLASSES: readonly TendencyClass[] = [
   'turning',
 ] as const;
 
-export const MIRROR_OUTPUT_ALLOWED_CITATION_METHODS: readonly string[] = [
-  'bazi_ganzhi_jieqi_dayun_v1',
-] as const;
+// Admitted citation methods track the admitted method-profile registry.
+export const MIRROR_OUTPUT_ALLOWED_CITATION_METHODS: readonly string[] = ADMITTED_METHOD_PROFILE_IDS;
 
 export interface MirrorCitation {
-  readonly method: 'bazi_ganzhi_jieqi_dayun_v1';
+  readonly method: MethodProfileId;
   readonly reference: string;
 }
 

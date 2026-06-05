@@ -5,10 +5,12 @@
 // reasons aligned with SJG-IA-05 readiness blocker codes.
 
 import { validateNatalInputs } from '../../contracts/natal-inputs-validator.ts';
+import { DEFAULT_METHOD_PROFILE_ID } from '../../domain/algorithm.ts';
 import type { NatalInputs } from '../../domain/person.ts';
 import type { MirrorKind, MirrorScope } from '../../domain/mirror-scope.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import { isPersonRef, isSelfRef, subjectRefKey, type SubjectRef } from '../../domain/subject-ref.ts';
+import { getMethodEngine } from '../astrology/engines/registry.ts';
 
 export type NatalReadinessReason =
   | 'subject_missing'
@@ -16,6 +18,7 @@ export type NatalReadinessReason =
   | 'scaffold_default_natal_inputs'
   | 'birth_precision_unknown'
   | 'birth_location_unresolved'
+  | 'birth_time_required_for_method'
   | 'birth_precision_rough_year_for_mirror'
   | 'birth_precision_rough_month_for_dayun'
   | 'calculation_sex_unspecified_for_dayun';
@@ -33,19 +36,11 @@ export interface SubjectMirrorReadinessInput {
 
 export const SCAFFOLD_BIRTH_DATETIME_UTC = '2000-01-01T00:00:00Z';
 
-function localDateDeltaDays(startDate: string, endDate: string): number {
-  const startMs = Date.parse(startDate + 'T00:00:00Z');
-  const endMs = Date.parse(endDate + 'T00:00:00Z');
-  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return 0;
-  return Math.round((endMs - startMs) / (24 * 60 * 60 * 1000));
-}
-
 export function deriveDayunRequired(mirrorKind: MirrorKind, scope: MirrorScope): boolean {
   if (mirrorKind === 'nianjing') return true;
   if (scope.kind === 'long_horizon') return true;
-  if (scope.kind === 'rolling_30_day') {
-    return localDateDeltaDays(scope.start_date, scope.end_date) > 90;
-  }
+  // Rolling/daily scopes never reach the >90-local-day SJG-ALGO-07 threshold
+  // (rolling_30_day is validated to exactly 30 days), so no DaYun is required.
   return false;
 }
 
@@ -124,6 +119,21 @@ export function subjectNatalReadiness(subject: SubjectRef, space: ShiJingSpace):
 export function subjectMirrorReadiness(input: SubjectMirrorReadinessInput): NatalReadiness {
   const base = subjectNatalReadiness(input.subject, input.space);
   if (!base.ok) return base;
+
+  // Readiness must mirror the engine's own SJG-ALGO-10 disposition, which is
+  // capability-shaped: a method that places its chart from the 时辰 (e.g. 紫微
+  // 命宫) cannot degrade — any non-exact precision is a hard blocker the engine
+  // would otherwise fail closed on, so we must not show it as "ready".
+  const methodId = input.space.settings.method_profile_id ?? DEFAULT_METHOD_PROFILE_ID;
+  const capabilities = getMethodEngine(methodId)?.capabilities;
+
+  if (capabilities?.requires_birth_time && base.inputs.birth_precision !== 'exact') {
+    return {
+      ok: false,
+      reason: 'birth_time_required_for_method',
+      detail: `birth_time_required_for_method:${methodId}`,
+    };
+  }
   if (base.inputs.birth_precision === 'rough_year') {
     return {
       ok: false,
@@ -139,7 +149,7 @@ export function subjectMirrorReadiness(input: SubjectMirrorReadinessInput): Nata
       detail: 'birth_precision_rough_month_for_dayun',
     };
   }
-  if (dayunRequired && base.inputs.calculation_sex === 'unspecified') {
+  if (dayunRequired && capabilities?.requires_calculation_sex !== false && base.inputs.calculation_sex === 'unspecified') {
     return {
       ok: false,
       reason: 'calculation_sex_unspecified_for_dayun',
@@ -156,6 +166,7 @@ export function natalReadinessSeverity(reason: NatalReadinessReason): NatalReadi
     case 'subject_missing':
     case 'natal_inputs_invalid':
     case 'scaffold_default_natal_inputs':
+    case 'birth_time_required_for_method':
       return 'blocker';
     case 'birth_precision_unknown':
     case 'birth_location_unresolved':
@@ -183,6 +194,8 @@ export function natalReadinessHeadline(readiness: Exclude<NatalReadiness, { ok: 
       return '当前出生时间精度为不详,不能生成解读。';
     case 'birth_location_unresolved':
       return '当前出生地点仍是默认值,请先补全地点和时区。';
+    case 'birth_time_required_for_method':
+      return '所选命理方法需要精确到时辰的出生时间,请先补全准确的出生时刻。';
     case 'birth_precision_rough_year_for_mirror':
       return '当前出生时间只到年份,不能生成镜面解读。';
     case 'birth_precision_rough_month_for_dayun':

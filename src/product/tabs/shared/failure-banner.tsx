@@ -11,6 +11,7 @@ const FAILURE_HEADLINES: Record<ReadingGenerationFailure['kind'], string> = {
   validation_failed: '生成失败:解读未通过格式校验。',
   stale_inputs: '生成失败:输入快照已过期,请重新生成。',
   hash_mismatch: '生成失败:哈希校验未通过,请重新生成。',
+  algorithm_fail_closed: '生成失败:当前资料精度不足以生成该镜面解读(SJG-ALGO-10 已按规则收口)。',
 };
 
 export interface FailureBannerProps {

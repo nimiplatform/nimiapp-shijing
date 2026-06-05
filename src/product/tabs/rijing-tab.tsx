@@ -108,6 +108,9 @@ export function RiJingTab(props: RiJingTabProps) {
     () =>
       computeCanonicalHash({
         mirror_scope: dailyScope,
+        // Switching the 命理 method must invalidate the auto-gen attempt so the
+        // mirror regenerates under the new engine (else stale BaZi data persists).
+        method_profile_id: state.snapshot.settings.method_profile_id ?? null,
         self_natal_inputs: state.snapshot.self_subject.natal_inputs,
         active_concern_tags: activeTags.map((tag) => ({
           id: tag.id,
@@ -122,6 +125,7 @@ export function RiJingTab(props: RiJingTabProps) {
       }),
     [
       dailyScope,
+      state.snapshot.settings.method_profile_id,
       state.snapshot.self_subject.natal_inputs,
       activeTags,
       state.snapshot.settings.response_preferences,

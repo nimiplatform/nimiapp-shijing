@@ -26,11 +26,16 @@ export interface TrueSolarTimeResult {
   readonly equation_of_time_minutes: number;
 }
 
-// Compute true solar time UTC instant from a given UTC birth instant +
-// the recorded IANA timezone offset (hours) + the birth longitude.
-// We can't query Intl for arbitrary historical TZ offsets reliably; the
-// caller supplies the standard offset (positive east of UTC, hours) so
-// pillar derivation stays deterministic.
+// Compute the true-solar wall clock from a genuine UTC birth instant + the
+// recorded IANA timezone standard offset (hours) + the birth longitude.
+//
+// `birth_datetime_utc` is a real UTC instant (the UI builds it via
+// localWallClockToUtcInstant). We first convert it to the zone's STANDARD civil
+// wall clock by adding the standard offset — because birthUtc was computed with
+// the actual (possibly DST) offset, adding the standard offset back removes any
+// DST hour — then apply the minute-scale true-solar correction (longitude +
+// equation of time). The returned `true_solar_time_utc_ms` is a "naive" instant
+// whose UTC fields ARE the local apparent-solar wall clock the engines read.
 export function trueSolarTimeFromInstant(
   birthUtc: Date,
   longitudeDegrees: number,
@@ -39,9 +44,10 @@ export function trueSolarTimeFromInstant(
   const standardMeridianLongitude = standardMeridianHours * 15;
   const longitudeCorrectionMinutes = (longitudeDegrees - standardMeridianLongitude) * 4;
   const eotMinutes = equationOfTimeMinutes(birthUtc);
+  const standardOffsetMs = standardMeridianHours * 60 * 60 * 1000;
   const totalCorrectionMs = (longitudeCorrectionMinutes + eotMinutes) * 60 * 1000;
   return {
-    true_solar_time_utc_ms: birthUtc.getTime() + totalCorrectionMs,
+    true_solar_time_utc_ms: birthUtc.getTime() + standardOffsetMs + totalCorrectionMs,
     standard_meridian_longitude: standardMeridianLongitude,
     longitude_correction_minutes: longitudeCorrectionMinutes,
     equation_of_time_minutes: eotMinutes,

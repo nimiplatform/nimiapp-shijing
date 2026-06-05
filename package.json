@@ -18,7 +18,7 @@
     "build": "pnpm run typecheck && pnpm run build:renderer && (cd src-tauri && cargo check)",
     "build:shell": "tauri build",
     "lint": "pnpm run typecheck && eslint . --max-warnings 0 && (cd src-tauri && cargo check)",
-    "test": "node --test test/*.test.mjs",
+    "test": "node --test test/*.test.mjs test/golden/*.test.mjs",
     "check": "pnpm run typecheck && pnpm run test && pnpm run lint",
     "nimicoding": "nimicoding",
     "nimicoding:doctor": "nimicoding doctor"
@@ -28,6 +28,7 @@
     "@nimiplatform/sdk": "link:../../nimi-realm/nimi/sdk",
     "@tauri-apps/api": "^2.9.1",
     "i18next": "^25.10.10",
+    "iztro": "^2.5.8",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-i18next": "^16.6.6",

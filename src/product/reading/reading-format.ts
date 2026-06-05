@@ -4,14 +4,15 @@
 // and the new `MirrorContextSnapshot` /
 // `AstrologyFeatureSnapshot.canonical_window`.
 
-import type { CanonicalMirrorWindow, KeyWindowLabel, MarkerStrength } from '../../domain/algorithm.ts';
+import type { CanonicalMirrorWindow, KeyWindowLabel, MarkerStrength, MethodProfileId } from '../../domain/algorithm.ts';
 import type { TendencyClass } from '../../domain/mirror-output.ts';
 import type { MirrorKind } from '../../domain/mirror-scope.ts';
 import type { ConfidenceLevel, Reading } from '../../domain/reading.ts';
 
-export const METHOD_LABELS = {
-  bazi_ganzhi_jieqi_dayun_v1: '八字干支节气大运法',
-} as const;
+export const METHOD_LABELS: Record<MethodProfileId, string> = {
+  bazi_ziping_v1: '八字子平法',
+  ziwei_sanhe_v1: '紫微斗数(三合派)',
+};
 
 const CONFIDENCE_LABELS: Record<ConfidenceLevel, string> = {
   high: '资料较完整',

@@ -16,6 +16,7 @@ import type {
 } from '../../../domain/mirror-output.ts';
 import type { EventMemory } from '../../../domain/event-memory.ts';
 import { TENDENCY_CLASS_LABELS } from '../../i18n/copy.ts';
+import { deriveMethodEvidenceChips, type MethodEvidenceChip } from '../shared/method-evidence-chips.ts';
 
 export interface RiJingHeroContent {
   readonly hasReading: boolean;
@@ -97,7 +98,7 @@ export function deriveRiJingHero(
   // We use the first driver's label as the dominant stage for the
   // headline; downstream copy (description) still carries the full
   // pipeline narrative.
-  const firstStage = reading.inputs_summary.feature_snapshot.stage_drivers[0]?.stage_label;
+  const firstStage = reading.inputs_summary.feature_snapshot.common.stage_drivers[0]?.stage_label;
   const headline = firstStage
     ? STAGE_HEADLINE[firstStage] ?? STAGE_HEADLINE_FALLBACK
     : STAGE_HEADLINE_FALLBACK;
@@ -289,43 +290,13 @@ export function deriveRecentMemories(
 
 // ----- evidence chips -----
 
-const STEM_LABELS: Record<string, string> = {
-  jia: '甲', yi: '乙', bing: '丙', ding: '丁', wu: '戊',
-  ji: '己', geng: '庚', xin: '辛', ren: '壬', gui: '癸',
-};
-const BRANCH_LABELS: Record<string, string> = {
-  zi: '子', chou: '丑', yin: '寅', mao: '卯', chen: '辰', si: '巳',
-  wu: '午', wei: '未', shen: '申', you: '酉', xu: '戌', hai: '亥',
-};
-
-function pillarLabel(pillar: { stem: string; branch: string } | undefined): string {
-  if (!pillar) return '待补';
-  const stem = STEM_LABELS[pillar.stem] ?? pillar.stem;
-  const branch = BRANCH_LABELS[pillar.branch] ?? pillar.branch;
-  return `${stem}${branch}`;
-}
-
-export interface RijingEvidenceChip {
-  readonly group: string;
-  readonly value: string;
-}
+export type RijingEvidenceChip = MethodEvidenceChip;
 
 export function deriveEvidenceChips(reading: Reading | undefined): readonly RijingEvidenceChip[] {
   if (!reading) {
     return [{ group: '数据完整度', value: '待生成' }];
   }
-  const fs = reading.inputs_summary.feature_snapshot;
-  const chart = fs.self_subject.natal_chart;
-  const chips: RijingEvidenceChip[] = [];
-  if (chart.day_pillar) chips.push({ group: '日柱', value: pillarLabel(chart.day_pillar) });
-  if (chart.month_pillar) chips.push({ group: '月令', value: pillarLabel(chart.month_pillar) });
-  const firstStage = fs.stage_drivers[0]?.stage_label;
-  if (firstStage) chips.push({ group: '阶段驱动', value: firstStage });
-  const totalPillars = 4;
-  const missing = chart.missing_pillars.length;
-  const filled = totalPillars - missing;
-  chips.push({ group: '数据完整度', value: `约 ${filled}/${totalPillars}` });
-  return chips;
+  return deriveMethodEvidenceChips(reading);
 }
 
 export type { RiJingConcernProjection };

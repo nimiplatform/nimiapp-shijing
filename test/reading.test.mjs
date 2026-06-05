@@ -12,7 +12,6 @@ import {
 import { validateReading } from '../src/contracts/reading-validator.ts';
 import {
   latestReadingByMirrorKind,
-  readingHasSyntheticNianjingBaseline,
   yuejingReadingStartsOn,
 } from '../src/product/reading/reading-selectors.ts';
 import {
@@ -45,6 +44,44 @@ test('rijing/daily reading is valid', () => {
 test('yuejing/rolling_30_day reading is valid', () => {
   const result = validateReading(validReading({ mirror_kind: 'yuejing' }));
   assert.equal(result.ok, true, JSON.stringify(result));
+});
+
+// Audit P1 (Codex) — a persisted Reading whose feature_snapshot and recorded
+// feature_snapshot_hash disagree (tampering/corruption) must fail closed.
+// Previously validateReading only checked the hash was a non-empty string.
+test('SJG-ALGO-11/12 (audit): tampered feature_snapshot fails closed (hash drift)', () => {
+  const summary = validInputsSummary({ mirrorKind: 'rijing' });
+  const ev = summary.feature_snapshot.method_evidence;
+  const tampered = {
+    ...summary,
+    feature_snapshot: {
+      ...summary.feature_snapshot,
+      method_evidence: {
+        ...ev,
+        bazi: {
+          ...ev.bazi,
+          self_subject: {
+            ...ev.bazi.self_subject,
+            natal_chart: { ...ev.bazi.self_subject.natal_chart, canonicalization_hash: 'sha256:TAMPERED' },
+          },
+        },
+      },
+    },
+  };
+  const result = validateReading(validReading({ mirror_kind: 'rijing', inputs_summary: tampered }));
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.error.code, 'reading_inputs_summary_feature_snapshot_hash_mismatch');
+});
+
+test('SJG-ALGO-11/12 (audit): tampered feature_snapshot_hash fails closed', () => {
+  const summary = validInputsSummary({ mirrorKind: 'rijing' });
+  const reading = validReading({
+    mirror_kind: 'rijing',
+    inputs_summary: { ...summary, feature_snapshot_hash: 'sha256:wrong-hash' },
+  });
+  const result = validateReading(reading);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.error.code, 'reading_inputs_summary_feature_snapshot_hash_mismatch');
 });
 
 test('yuejingReadingStartsOn keys regeneration to the rolling window start date', () => {
@@ -94,40 +131,16 @@ test('nianjing/long_horizon reading is valid', () => {
   assert.equal(result.ok, true, JSON.stringify(result));
 });
 
-test('selectors ignore synthetic baseline nianjing readings', () => {
-  const scope = longHorizonMirrorScope();
-  const synthetic = validReading({
-    id: 'r_nianjing_synthetic',
-    created_at: '2026-06-05T00:00:00Z',
-    mirror_kind: 'nianjing',
-    mirror_scope: scope,
-    output: validNianjingOutput(scope, {
-      phase_bands: [
-        {
-          concern_tag_ref: 'tag_love',
-          start_date: scope.start_date,
-          end_date: scope.end_date,
-          nature: 'steady',
-          driver_refs: ['cycle_baseline'],
-          summary: '平稳期',
-        },
-      ],
-    }),
-    inputs_summary: validInputsSummary({ mirrorKind: 'nianjing', scope }),
-  });
-  const real = validReading({
-    id: 'r_nianjing_real',
-    created_at: '2026-06-04T00:00:00Z',
-    mirror_kind: 'nianjing',
-  });
-
-  assert.equal(readingHasSyntheticNianjingBaseline(synthetic), true);
+test('latestReadingByMirrorKind returns the most recent reading for the kind', () => {
+  // The retired "synthetic baseline" filter (which parsed opaque driver_refs for
+  // a cycle_baseline marker — a Layer-3 boundary violation, and dead since the
+  // generator refuses empty phase bands) has been removed; selection is purely
+  // newest-first by created_at.
+  const older = validReading({ id: 'r_nianjing_old', created_at: '2026-06-04T00:00:00Z', mirror_kind: 'nianjing' });
+  const newer = validReading({ id: 'r_nianjing_new', created_at: '2026-06-05T00:00:00Z', mirror_kind: 'nianjing' });
   assert.equal(
-    latestReadingByMirrorKind({
-      readings: [real, synthetic],
-      mirror_kind: 'nianjing',
-    })?.id,
-    'r_nianjing_real',
+    latestReadingByMirrorKind({ readings: [older, newer], mirror_kind: 'nianjing' })?.id,
+    'r_nianjing_new',
   );
 });
 

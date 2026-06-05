@@ -5,7 +5,7 @@
 // used to derive `relation_features` on `AstrologyFeatureSnapshot` and
 // `clash` / `combination` cycle markers. The branches and groupings are
 // the standard ones used by mainstream 八字 / 子平 practice and are
-// admitted as part of the `bazi_ganzhi_jieqi_dayun_v1` method profile.
+// admitted as part of the `bazi_ziping_v1` method profile.
 //
 // All branches are stored as their pinyin form to align with
 // `EARTHLY_BRANCHES` in `src/domain/algorithm.ts`.
@@ -104,6 +104,28 @@ export function isClashPair(a: EarthlyBranch, b: EarthlyBranch): boolean {
 
 export function isHarmPair(a: EarthlyBranch, b: EarthlyBranch): boolean {
   return SIX_HARM_PAIRS.some((pair) => pairEquals(pair, a, b));
+}
+
+// 相刑 — pairwise 三刑 + 自刑.
+const XING_PAIRS: ReadonlyArray<readonly [EarthlyBranch, EarthlyBranch]> = [
+  ['yin', 'si'], ['si', 'shen'], ['shen', 'yin'],   // 寅巳申 无恩之刑
+  ['chou', 'xu'], ['xu', 'wei'], ['wei', 'chou'],   // 丑戌未 恃势之刑
+  ['zi', 'mao'],                                     // 子卯 无礼之刑
+] as const;
+const SELF_XING: ReadonlySet<EarthlyBranch> = new Set<EarthlyBranch>(['chen', 'wu', 'you', 'hai']); // 自刑
+
+export function isXingPair(a: EarthlyBranch, b: EarthlyBranch): boolean {
+  if (a === b) return SELF_XING.has(a);
+  return XING_PAIRS.some((pair) => pairEquals(pair, a, b));
+}
+
+// 相破 — 六破.
+const PO_PAIRS: ReadonlyArray<readonly [EarthlyBranch, EarthlyBranch]> = [
+  ['zi', 'you'], ['wu', 'mao'], ['chen', 'chou'], ['xu', 'wei'], ['yin', 'hai'], ['si', 'shen'],
+] as const;
+
+export function isPoPair(a: EarthlyBranch, b: EarthlyBranch): boolean {
+  return PO_PAIRS.some((pair) => pairEquals(pair, a, b));
 }
 
 export function classifyBranchPair(
