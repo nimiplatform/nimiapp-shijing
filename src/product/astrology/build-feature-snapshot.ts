@@ -316,14 +316,14 @@ function buildNianJingDrivers(
   const inflections: NianJingInflectionDriver[] = [];
   const self = snapshots[0];
   if (!self) return { phases, inflections };
+  const horizonEndMs = Date.parse(`${scope.end_date}T00:00:00Z`);
+  const majorMarkers = self.cycle_snapshot.markers
+    .filter((marker): marker is CycleMarker & { readonly kind: NianJingInflectionDriver['kind'] } =>
+      marker.kind === 'dayun_boundary' ||
+      marker.kind === 'annual_transition',
+    )
+    .sort((a, b) => Date.parse(a.start_utc) - Date.parse(b.start_utc));
   for (const tag of activeConcernTags) {
-    phases.push({
-      concern_tag_ref: tag.id,
-      start_date: scope.start_date,
-      end_date: scope.end_date,
-      nature: 'steady',
-      driver_refs: ['cycle_baseline'],
-    });
     // Long-horizon 年镜 inflections are scoped to DaYun + annual markers
     // only. Monthly (流月) transitions fire ~once per 节气 month — over a
     // ~10-year horizon that is 120+ markers per concern, which floods the
@@ -331,18 +331,35 @@ function buildNianJingDrivers(
     // 月镜; the 年镜 timeline legend itself lists only 大运边界 / 流年切换
     // / 多重节点 (never 流月). Dropping monthly here keeps the data shape
     // aligned with what the year view is designed to render.
-    for (const marker of self.cycle_snapshot.markers) {
-      if (
-        marker.kind === 'dayun_boundary' ||
-        marker.kind === 'annual_transition'
-      ) {
-        inflections.push({
+    for (let i = 0; i < majorMarkers.length; i += 1) {
+      const marker = majorMarkers[i]!;
+      const markerDate = marker.start_utc.slice(0, 10);
+      const markerStartMs = Date.parse(`${markerDate}T00:00:00Z`);
+      const nextMarker = majorMarkers[i + 1];
+      const nextMarkerStartMs = nextMarker
+        ? Date.parse(`${nextMarker.start_utc.slice(0, 10)}T00:00:00Z`)
+        : Number.POSITIVE_INFINITY;
+      const phaseEndMs = Math.min(
+        horizonEndMs,
+        markerStartMs + 89 * 24 * 60 * 60 * 1000,
+        nextMarkerStartMs - 24 * 60 * 60 * 1000,
+      );
+      const phaseEndDate = new Date(phaseEndMs).toISOString().slice(0, 10);
+      if (phaseEndDate >= markerDate) {
+        phases.push({
           concern_tag_ref: tag.id,
-          date: marker.start_utc.slice(0, 10),
-          kind: marker.kind,
+          start_date: markerDate,
+          end_date: phaseEndDate,
+          nature: 'turning',
           driver_refs: [`${marker.kind}@${marker.start_utc}`],
         });
       }
+      inflections.push({
+        concern_tag_ref: tag.id,
+        date: markerDate,
+        kind: marker.kind,
+        driver_refs: [`${marker.kind}@${marker.start_utc}`],
+      });
     }
   }
   return { phases, inflections };

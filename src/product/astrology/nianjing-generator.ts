@@ -60,7 +60,7 @@ export function generateNianJingOutput(
     nature: driver.nature,
     driver_refs: [...driver.driver_refs],
     // Human-facing stage name (e.g.「平稳期」「建设期」) so the 年镜
-    // hero rows + lane labels read in Chinese, matching the mock path.
+    // hero rows + lane labels read in Chinese.
     // Must NOT be the raw English `nature` enum.
     summary: `${TENDENCY_CLASS_LABELS[driver.nature]}期`,
   }));

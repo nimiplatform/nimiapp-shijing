@@ -8,7 +8,6 @@ import {
 } from '../src/product/astrology/runtime-ai-prompt.ts';
 import { parseRuntimeAiOutput } from '../src/product/astrology/runtime-ai-parse.ts';
 import { createSdkRuntimeAiClient } from '../src/product/astrology/runtime-ai-sdk-factory.ts';
-import { MockRuntimeAiClient } from '../src/product/astrology/mock-runtime-ai-client.ts';
 import {
   createShijingRuntimeAiClient,
   resolveShijingTextGenerateBinding,
@@ -25,6 +24,7 @@ import {
   validRijingOutput,
   validYuejingOutput,
 } from './_fixtures.mjs';
+import { MockRuntimeAiClient } from './_mock-runtime-ai-client.mjs';
 
 const TZ = 'Asia/Shanghai';
 

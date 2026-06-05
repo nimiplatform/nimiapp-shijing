@@ -10,7 +10,11 @@ import {
   MIRROR_SCOPE_KINDS,
 } from '../src/domain/mirror-scope.ts';
 import { validateReading } from '../src/contracts/reading-validator.ts';
-import { yuejingReadingStartsOn } from '../src/product/reading/reading-selectors.ts';
+import {
+  latestReadingByMirrorKind,
+  readingHasSyntheticNianjingBaseline,
+  yuejingReadingStartsOn,
+} from '../src/product/reading/reading-selectors.ts';
 import {
   consultationMirrorScope,
   dailyMirrorScope,
@@ -88,6 +92,43 @@ test('rejects yuejing cells outside the scope start date', () => {
 test('nianjing/long_horizon reading is valid', () => {
   const result = validateReading(validReading({ mirror_kind: 'nianjing' }));
   assert.equal(result.ok, true, JSON.stringify(result));
+});
+
+test('selectors ignore synthetic baseline nianjing readings', () => {
+  const scope = longHorizonMirrorScope();
+  const synthetic = validReading({
+    id: 'r_nianjing_synthetic',
+    created_at: '2026-06-05T00:00:00Z',
+    mirror_kind: 'nianjing',
+    mirror_scope: scope,
+    output: validNianjingOutput(scope, {
+      phase_bands: [
+        {
+          concern_tag_ref: 'tag_love',
+          start_date: scope.start_date,
+          end_date: scope.end_date,
+          nature: 'steady',
+          driver_refs: ['cycle_baseline'],
+          summary: '平稳期',
+        },
+      ],
+    }),
+    inputs_summary: validInputsSummary({ mirrorKind: 'nianjing', scope }),
+  });
+  const real = validReading({
+    id: 'r_nianjing_real',
+    created_at: '2026-06-04T00:00:00Z',
+    mirror_kind: 'nianjing',
+  });
+
+  assert.equal(readingHasSyntheticNianjingBaseline(synthetic), true);
+  assert.equal(
+    latestReadingByMirrorKind({
+      readings: [real, synthetic],
+      mirror_kind: 'nianjing',
+    })?.id,
+    'r_nianjing_real',
+  );
 });
 
 test('shijing/consultation reading is valid', () => {

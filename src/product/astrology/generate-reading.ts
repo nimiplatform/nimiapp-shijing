@@ -3,8 +3,8 @@
 //
 //   ShiJingSpace
 //     -> buildAstrologyFeatureSnapshot       (deterministic)
-//     -> per-kind generator                  (deterministic structural)
-//     -> Runtime AI wording                  (optional refinement)
+//     -> per-kind generator                  (deterministic prompt context)
+//     -> Runtime AI wording                  (required final wording)
 //     -> validateReading                     (W02 contract)
 //     -> persisted Reading
 //
@@ -162,11 +162,10 @@ function defaultResponsePreferencesHash(space: ShiJingSpace): string {
 }
 
 async function refineWithRuntimeAi(
-  client: RuntimeAiClient | undefined,
+  client: RuntimeAiClient,
   mirrorKind: MirrorKind,
   promptRequest: ReturnType<typeof buildRuntimeAiPromptRequest>,
-): Promise<RuntimeAiResult | null> {
-  if (!client) return null;
+): Promise<RuntimeAiResult> {
   return client.generate(mirrorKind, promptRequest);
 }
 
@@ -374,68 +373,76 @@ export async function generateReading(
     response_preferences_hash: responsePreferencesHash,
   };
 
-  // Optional runtime AI refinement (replaces structural output with
-  // refined output IF it parses and validates per mirror_kind contract).
-  let finalOutput: MirrorOutput = structuralOutput;
+  // Runtime AI wording is the required final output boundary. The
+  // deterministic structural output is only prompt context and must not
+  // be persisted as fallback user-facing content.
   const aiParseFailed = false;
-  if (deps.runtime_ai_client) {
-    const promptRequest = buildRuntimeAiPromptRequest({
-      mirror_kind: input.mirror_kind,
-      feature_snapshot: featureSnapshot,
-      mirror_context: mirrorContext,
-      deterministic_output: structuralOutput,
-      response_preferences: input.space.settings.response_preferences,
-      ...(input.question ? { question: input.question } : {}),
-    });
-    const aiResult = await refineWithRuntimeAi(
-      deps.runtime_ai_client,
-      input.mirror_kind,
-      promptRequest,
-    );
-    if (aiResult && !aiResult.ok) {
-      // SJG-PROD-11 - parse failure must surface typed runtime_ai_failed,
-      // not be silently replaced by structural output.
-      return {
-        ok: false,
-        failure: {
-          kind: 'runtime_ai_failed',
-          mirror_kind: input.mirror_kind,
-          mirror_scope: input.mirror_scope,
-          detail: runtimeAiFailureDetail(aiResult.failure),
-        },
-      };
-    }
-    if (aiResult && aiResult.ok) {
-      // Defence-in-depth: validate the AI-provided MirrorOutput shape
-      // BEFORE accepting it as final output. Forbidden fields,
-      // mirror_kind mismatch, or schema violations surface a typed
-      // `runtime_ai_failed` instead of silently producing a Reading.
-      const validation = validateMirrorOutput(aiResult.output);
-      if (!validation.ok) {
-        return {
-          ok: false,
-          failure: {
-            kind: 'runtime_ai_failed',
-            mirror_kind: input.mirror_kind,
-            mirror_scope: input.mirror_scope,
-            detail: `runtime_output_validation_failed:${validation.error.code}`,
-          },
-        };
-      }
-      if (aiResult.output.mirror_kind !== input.mirror_kind) {
-        return {
-          ok: false,
-          failure: {
-            kind: 'runtime_ai_failed',
-            mirror_kind: input.mirror_kind,
-            mirror_scope: input.mirror_scope,
-            detail: 'runtime_output_mirror_kind_mismatch',
-          },
-        };
-      }
-      finalOutput = aiResult.output;
-    }
+  if (!deps.runtime_ai_client) {
+    return {
+      ok: false,
+      failure: {
+        kind: 'runtime_ai_failed',
+        mirror_kind: input.mirror_kind,
+        mirror_scope: input.mirror_scope,
+        detail: 'runtime_unavailable:Runtime AI client is required',
+      },
+    };
   }
+  const promptRequest = buildRuntimeAiPromptRequest({
+    mirror_kind: input.mirror_kind,
+    feature_snapshot: featureSnapshot,
+    mirror_context: mirrorContext,
+    deterministic_output: structuralOutput,
+    response_preferences: input.space.settings.response_preferences,
+    ...(input.question ? { question: input.question } : {}),
+  });
+  const aiResult = await refineWithRuntimeAi(
+    deps.runtime_ai_client,
+    input.mirror_kind,
+    promptRequest,
+  );
+  if (!aiResult.ok) {
+    // SJG-PROD-11 - parse failure must surface typed runtime_ai_failed,
+    // not be silently replaced by structural output.
+    return {
+      ok: false,
+      failure: {
+        kind: 'runtime_ai_failed',
+        mirror_kind: input.mirror_kind,
+        mirror_scope: input.mirror_scope,
+        detail: runtimeAiFailureDetail(aiResult.failure),
+      },
+    };
+  }
+
+  // Defence-in-depth: validate the AI-provided MirrorOutput shape
+  // BEFORE accepting it as final output. Forbidden fields,
+  // mirror_kind mismatch, or schema violations surface a typed
+  // `runtime_ai_failed` instead of silently producing a Reading.
+  const runtimeOutputValidation = validateMirrorOutput(aiResult.output);
+  if (!runtimeOutputValidation.ok) {
+    return {
+      ok: false,
+      failure: {
+        kind: 'runtime_ai_failed',
+        mirror_kind: input.mirror_kind,
+        mirror_scope: input.mirror_scope,
+        detail: `runtime_output_validation_failed:${runtimeOutputValidation.error.code}`,
+      },
+    };
+  }
+  if (aiResult.output.mirror_kind !== input.mirror_kind) {
+    return {
+      ok: false,
+      failure: {
+        kind: 'runtime_ai_failed',
+        mirror_kind: input.mirror_kind,
+        mirror_scope: input.mirror_scope,
+        detail: 'runtime_output_mirror_kind_mismatch',
+      },
+    };
+  }
+  const finalOutput: MirrorOutput = aiResult.output;
 
   const inputHash = computeCanonicalHash({
     method_profile: featureSnapshot.method_profile,

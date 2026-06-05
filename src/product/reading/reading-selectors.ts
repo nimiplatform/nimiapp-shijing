@@ -2,7 +2,10 @@
 
 import type { Reading } from '../../domain/reading.ts';
 import type { MirrorKind } from '../../domain/mirror-scope.ts';
-import type { YueJingMirrorOutput } from '../../domain/mirror-output.ts';
+import type {
+  NianJingMirrorOutput,
+  YueJingMirrorOutput,
+} from '../../domain/mirror-output.ts';
 
 export interface LatestReadingByMirrorKindInput {
   readonly readings: readonly Reading[];
@@ -13,7 +16,10 @@ export function latestReadingByMirrorKind(
   input: LatestReadingByMirrorKindInput,
 ): Reading | undefined {
   return input.readings
-    .filter((reading) => reading.mirror_kind === input.mirror_kind)
+    .filter((reading) =>
+      reading.mirror_kind === input.mirror_kind &&
+      !readingHasSyntheticNianjingBaseline(reading),
+    )
     .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
 }
 
@@ -35,4 +41,18 @@ export function yuejingReadingStartsOn(reading: Reading | undefined, date: strin
   if (!reading || reading.mirror_kind !== 'yuejing') return false;
   if (reading.output.mirror_kind !== 'yuejing') return false;
   return (reading.output as YueJingMirrorOutput).range.start_date === date;
+}
+
+export function readingHasSyntheticNianjingBaseline(reading: Reading): boolean {
+  if (reading.mirror_kind !== 'nianjing') return false;
+  if (reading.output.mirror_kind !== 'nianjing') return false;
+  const output = reading.output as NianJingMirrorOutput;
+  return (
+    output.phase_bands.some((band) =>
+      band.driver_refs.some((ref) => ref.startsWith('cycle_baseline')),
+    ) ||
+    reading.inputs_summary.feature_snapshot.nianjing_phase_drivers.some((driver) =>
+      driver.driver_refs.some((ref) => ref.startsWith('cycle_baseline')),
+    )
+  );
 }

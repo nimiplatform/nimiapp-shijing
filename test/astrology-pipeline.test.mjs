@@ -7,18 +7,22 @@ import {
   buildAstrologyFeatureSnapshot,
 } from '../src/product/astrology/build-feature-snapshot.ts';
 import { generateReading } from '../src/product/astrology/generate-reading.ts';
+import {
+  inputsSummaryStaleForSpace,
+  yuejingInputsSummaryStaleForActiveSubset,
+} from '../src/product/astrology/inputs-summary-expiry.ts';
 import { resolveCanonicalMirrorWindow } from '../src/product/astrology/mirror-window.ts';
 import { generateRiJingOutput } from '../src/product/astrology/rijing-generator.ts';
 import { generateYueJingOutput } from '../src/product/astrology/yuejing-generator.ts';
 import { generateNianJingOutput } from '../src/product/astrology/nianjing-generator.ts';
 import { generateShiJingOutput } from '../src/product/astrology/shijing-generator.ts';
-import { MockRuntimeAiClient } from '../src/product/astrology/mock-runtime-ai-client.ts';
 import {
   consultationMirrorScope,
   dailyMirrorScope,
   longHorizonMirrorScope,
   rolling30DayMirrorScope,
   validConcernTag,
+  validNatalInputs,
   validNianjingOutput,
   validReading,
   validRijingOutput,
@@ -26,6 +30,7 @@ import {
   validShijingOutput,
   validYuejingOutput,
 } from './_fixtures.mjs';
+import { MockRuntimeAiClient } from './_mock-runtime-ai-client.mjs';
 
 const TZ = 'Asia/Shanghai';
 
@@ -208,7 +213,7 @@ test('generateShiJingOutput: refuses when cited reading is not in source set', (
   assert.equal(result.ok, false);
 });
 
-test('generateReading: rijing daily end-to-end with structural output', async () => {
+test('generateReading: fails closed when Runtime AI client is missing', async () => {
   const space = spaceWithActiveTag();
   const result = await generateReading({
     id: 'r_rijing_01',
@@ -225,12 +230,10 @@ test('generateReading: rijing daily end-to-end with structural output', async ()
     cited_plan_item_refs: [],
     space,
   });
-  assert.equal(result.ok, true, JSON.stringify(result));
-  if (result.ok) {
-    assert.equal(result.reading.mirror_kind, 'rijing');
-    assert.equal(result.reading.output.mirror_kind, 'rijing');
-    assert.ok(result.reading.inputs_summary.input_hash.length > 0);
-    assert.ok(result.reading.inputs_summary.feature_snapshot_hash.length > 0);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.failure.kind, 'runtime_ai_failed');
+    assert.equal(result.failure.detail, 'runtime_unavailable:Runtime AI client is required');
   }
 });
 
@@ -239,22 +242,29 @@ test('generateReading: yuejing rolling_30_day end-to-end', async () => {
   const today = new Date();
   const start = today.toISOString().slice(0, 10);
   const endDate = new Date(today.getTime() + 29 * 86_400_000);
-  const result = await generateReading({
-    id: 'r_yuejing_01',
-    created_at: today.toISOString().replace(/\.\d{3}Z$/, 'Z'),
-    mirror_kind: 'yuejing',
-    mirror_scope: rolling30DayMirrorScope({
+  const scope = rolling30DayMirrorScope({
       start_date: start,
       end_date: endDate.toISOString().slice(0, 10),
       basis_time_zone: TZ,
-    }),
-    related_person_refs: [],
-    concern_tag_refs: ['tag_love'],
-    cited_reading_ids: [],
-    cited_event_memory_refs: [],
-    cited_plan_item_refs: [],
-    space,
+    });
+  const ai = new MockRuntimeAiClient({
+    canned_output_by_kind: { yuejing: validYuejingOutput(scope) },
   });
+  const result = await generateReading(
+    {
+      id: 'r_yuejing_01',
+      created_at: today.toISOString().replace(/\.\d{3}Z$/, 'Z'),
+      mirror_kind: 'yuejing',
+      mirror_scope: scope,
+      related_person_refs: [],
+      concern_tag_refs: ['tag_love'],
+      cited_reading_ids: [],
+      cited_event_memory_refs: [],
+      cited_plan_item_refs: [],
+      space,
+    },
+    { runtime_ai_client: ai },
+  );
   assert.equal(result.ok, true, JSON.stringify(result));
 });
 
@@ -346,12 +356,151 @@ test('generateReading: stale_inputs failure when created_at is older than rijing
       cited_plan_item_refs: [],
       space,
     },
-    { now: today },
+    {
+      now: today,
+      runtime_ai_client: new MockRuntimeAiClient({
+        canned_output_by_kind: { rijing: validRijingOutput() },
+      }),
+    },
   );
   assert.equal(result.ok, false);
   if (!result.ok) {
     assert.equal(result.failure.kind, 'stale_inputs');
   }
+});
+
+test('inputsSummaryStaleForSpace: natal input changes stale a generated nianjing reading', async () => {
+  const scope = longHorizonMirrorScope();
+  const now = new Date('2026-05-25T00:00:00Z');
+  const space = validShiJingSpace({
+    self_subject: {
+      natal_inputs: validNatalInputs({
+        calculation_sex: 'male',
+      }),
+    },
+    concern_tags: [validConcernTag('tag_love')],
+  });
+  const result = await generateReading(
+    {
+      id: 'r_nian_freshness',
+      created_at: now.toISOString().replace(/\.\d{3}Z$/, 'Z'),
+      mirror_kind: 'nianjing',
+      mirror_scope: scope,
+      related_person_refs: [],
+      concern_tag_refs: ['tag_love'],
+      cited_reading_ids: [],
+      cited_event_memory_refs: [],
+      cited_plan_item_refs: [],
+      space,
+    },
+    {
+      now,
+      runtime_ai_client: new MockRuntimeAiClient({
+        canned_output_by_kind: { nianjing: validNianjingOutput(scope) },
+      }),
+    },
+  );
+  assert.equal(result.ok, true, JSON.stringify(result));
+  if (!result.ok) return;
+
+  assert.equal(
+    inputsSummaryStaleForSpace({
+      reading: result.reading,
+      space,
+      now,
+      expected_mirror_scope: scope,
+      expected_concern_tag_refs: ['tag_love'],
+    }),
+    false,
+  );
+
+  const changedSpace = {
+    ...space,
+    self_subject: {
+      ...space.self_subject,
+      natal_inputs: {
+        ...space.self_subject.natal_inputs,
+        birth_location: {
+          ...space.self_subject.natal_inputs.birth_location,
+          longitude: 118.72,
+        },
+      },
+    },
+  };
+  assert.equal(
+    inputsSummaryStaleForSpace({
+      reading: result.reading,
+      space: changedSpace,
+      now,
+      expected_mirror_scope: scope,
+      expected_concern_tag_refs: ['tag_love'],
+    }),
+    true,
+  );
+});
+
+test('yuejingInputsSummaryStaleForActiveSubset: archived concern does not stale remaining cells', async () => {
+  const scope = rolling30DayMirrorScope();
+  const now = new Date('2026-05-25T00:00:00Z');
+  const love = validConcernTag('tag_love', { label: '#姻缘', parsed_topics: ['love'] });
+  const career = validConcernTag('tag_career', {
+    label: '#事业',
+    parsed_topics: ['career'],
+    prompt_text: 'career and work reflection',
+    sort_order: 1,
+  });
+  const space = validShiJingSpace({
+    concern_tags: [love, career],
+  });
+  const result = await generateReading(
+    {
+      id: 'r_yue_subset_freshness',
+      created_at: now.toISOString().replace(/\.\d{3}Z$/, 'Z'),
+      mirror_kind: 'yuejing',
+      mirror_scope: scope,
+      related_person_refs: [],
+      concern_tag_refs: ['tag_love', 'tag_career'],
+      cited_reading_ids: [],
+      cited_event_memory_refs: [],
+      cited_plan_item_refs: [],
+      space,
+    },
+    {
+      now,
+      runtime_ai_client: new MockRuntimeAiClient({
+        canned_output_by_kind: { yuejing: validYuejingOutput(scope) },
+      }),
+    },
+  );
+  assert.equal(result.ok, true, JSON.stringify(result));
+  if (!result.ok) return;
+
+  const archivedLoveSpace = {
+    ...space,
+    concern_tags: [
+      { ...love, status: 'archived', updated_at: '2026-05-25T00:01:00Z' },
+      career,
+    ],
+  };
+
+  assert.equal(
+    inputsSummaryStaleForSpace({
+      reading: result.reading,
+      space: archivedLoveSpace,
+      now,
+      expected_concern_tag_refs: ['tag_career'],
+    }),
+    true,
+  );
+  assert.equal(
+    yuejingInputsSummaryStaleForActiveSubset({
+      reading: result.reading,
+      space: archivedLoveSpace,
+      now,
+      active_concern_tag_refs: ['tag_career'],
+    }),
+    false,
+  );
 });
 
 test('generateReading: shijing consultation with resolved source reading succeeds', async () => {
@@ -362,19 +511,26 @@ test('generateReading: shijing consultation with resolved source reading succeed
     readings: [sourceReading],
   });
   const today = new Date();
-  const result = await generateReading({
-    id: 'r_consult_01',
-    created_at: today.toISOString().replace(/\.\d{3}Z$/, 'Z'),
-    mirror_kind: 'shijing',
-    mirror_scope: consultationMirrorScope(['r_source_01']),
-    related_person_refs: [],
-    concern_tag_refs: ['tag_love'],
-    cited_reading_ids: ['r_source_01'],
-    cited_event_memory_refs: [],
-    cited_plan_item_refs: [],
-    question: 'will the day go well?',
-    space,
+  const sourceIds = ['r_source_01'];
+  const ai = new MockRuntimeAiClient({
+    canned_output_by_kind: { shijing: validShijingOutput(sourceIds) },
   });
+  const result = await generateReading(
+    {
+      id: 'r_consult_01',
+      created_at: today.toISOString().replace(/\.\d{3}Z$/, 'Z'),
+      mirror_kind: 'shijing',
+      mirror_scope: consultationMirrorScope(sourceIds),
+      related_person_refs: [],
+      concern_tag_refs: ['tag_love'],
+      cited_reading_ids: sourceIds,
+      cited_event_memory_refs: [],
+      cited_plan_item_refs: [],
+      question: 'will the day go well?',
+      space,
+    },
+    { runtime_ai_client: ai },
+  );
   assert.equal(result.ok, true, JSON.stringify(result));
   if (result.ok) {
     assert.equal(result.reading.mirror_kind, 'shijing');
@@ -445,6 +601,41 @@ test('generateNianJingOutput: refuses with empty phase drivers', () => {
     cited_plan_item_refs: [],
   });
   assert.equal(result.ok, false);
+});
+
+test('buildAstrologyFeatureSnapshot: nianjing does not synthesize baseline phase bands', () => {
+  const scope = longHorizonMirrorScope({ start_date: '2026-01-01', end_date: '2036-12-31' });
+  const tag = validConcernTag('tag_love');
+  const space = validShiJingSpace({
+    self_subject: {
+      natal_inputs: validNatalInputs({ calculation_sex: 'female' }),
+    },
+    concern_tags: [tag],
+  });
+  const result = buildAstrologyFeatureSnapshot({
+    mirror_kind: 'nianjing',
+    mirror_scope: scope,
+    space,
+    related_person_refs: [],
+    active_concern_tags: [tag],
+  });
+
+  assert.equal(result.ok, true, JSON.stringify(result));
+  if (!result.ok) return;
+  assert.equal(
+    result.value.nianjing_phase_drivers.some((driver) =>
+      driver.driver_refs.some((ref) => ref.startsWith('cycle_baseline')),
+    ),
+    false,
+  );
+  assert.equal(
+    result.value.nianjing_phase_drivers.some((driver) =>
+      driver.start_date === scope.start_date &&
+      driver.end_date === scope.end_date &&
+      driver.nature === 'steady',
+    ),
+    false,
+  );
 });
 
 test('generateYueJingOutput: produces cells for the scope start date only', () => {
