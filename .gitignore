@@ -18,6 +18,8 @@ src-tauri/gen/schemas/
 .env.local
 .env.*.local
 
+.claude/
+
 # nimicoding-managed local + cache + topic surfaces
 .nimi/local/
 .nimi/cache/
