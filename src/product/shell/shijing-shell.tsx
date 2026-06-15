@@ -6,21 +6,35 @@
 // ActionMenu) listing the settings sub-pages; selecting an entry opens a
 // full-surface detail page for that page.
 
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { ActionMenu, type NimiMenuItem } from '@nimiplatform/kit/ui';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { PrimaryTabBar } from '../navigation/tab-router.tsx';
-import { RiJingTab } from '../tabs/rijing-tab.tsx';
-import { YueJingTab } from '../tabs/yuejing-tab.tsx';
-import { NianJingTab } from '../tabs/nianjing-tab.tsx';
-import { ShiJingTab } from '../tabs/shijing-tab.tsx';
-import { SettingsPageView } from '../settings/settings-page-view.tsx';
+import type { ShijingSettingsFocusTarget } from '../settings/settings-page-view.tsx';
 import {
   SHIJING_SETTINGS_PAGES,
   type ShijingSettingsPageId,
 } from '../../contracts/ia-contract.ts';
 import { BRAND_NAME, SETTINGS_PAGE_LABELS } from '../i18n/copy.ts';
 import type { PersistenceError } from '../persistence/persistence-client.ts';
+
+const RiJingTab = lazy(() =>
+  import('../tabs/rijing-tab.tsx').then((module) => ({ default: module.RiJingTab })),
+);
+const YueJingTab = lazy(() =>
+  import('../tabs/yuejing-tab.tsx').then((module) => ({ default: module.YueJingTab })),
+);
+const NianJingTab = lazy(() =>
+  import('../tabs/nianjing-tab.tsx').then((module) => ({ default: module.NianJingTab })),
+);
+const ShiJingTab = lazy(() =>
+  import('../tabs/shijing-tab.tsx').then((module) => ({ default: module.ShiJingTab })),
+);
+const SettingsPageView = lazy(() =>
+  import('../settings/settings-page-view.tsx').then((module) => ({
+    default: module.SettingsPageView,
+  })),
+);
 
 // Derives the avatar fallback glyph from the account name — the first
 // character (works for both CJK and Latin names). Falls back to a neutral
@@ -49,10 +63,15 @@ export interface ShijingShellProps {
   readonly account?: ShijingShellAccount;
 }
 
+interface ActiveSettingsPageState {
+  readonly pageId: ShijingSettingsPageId;
+  readonly focusTarget?: ShijingSettingsFocusTarget | null;
+}
+
 export function ShijingShell(props: ShijingShellProps) {
   const { state, persistence_status } = useShijingStore();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activePage, setActivePage] = useState<ShijingSettingsPageId | null>(null);
+  const [activePage, setActivePage] = useState<ActiveSettingsPageState | null>(null);
   const accountRef = useRef<HTMLDivElement>(null);
   const accountName = props.account?.name?.trim() ?? '';
 
@@ -76,8 +95,11 @@ export function ShijingShell(props: ShijingShellProps) {
     };
   }, [menuOpen]);
 
-  function openPage(pageId: ShijingSettingsPageId) {
-    setActivePage(pageId);
+  function openPage(
+    pageId: ShijingSettingsPageId,
+    focusTarget?: ShijingSettingsFocusTarget | null,
+  ) {
+    setActivePage({ pageId, focusTarget: focusTarget ?? null });
     setMenuOpen(false);
   }
 
@@ -136,14 +158,31 @@ export function ShijingShell(props: ShijingShellProps) {
             本地数据读写失败: {persistenceErrorDetail(persistence_status.error)}
           </p>
         ) : null}
-        {renderActiveTab(state.active_tab, (page) => openPage(page ?? 'profile'))}
+        <Suspense
+          fallback={
+            <p className="shijing-shell__loading" role="status">
+              正在加载镜面…
+            </p>
+          }
+        >
+          {renderActiveTab(state.active_tab, (page, focusTarget) => openPage(page ?? 'profile', focusTarget))}
+        </Suspense>
       </main>
       {activePage ? (
-        <SettingsPageView
-          pageId={activePage}
-          onBack={() => setActivePage(null)}
-          onNavigate={setActivePage}
-        />
+        <Suspense
+          fallback={
+            <div className="shijing-settings-page shijing-settings-page--loading" role="status">
+              正在加载设置…
+            </div>
+          }
+        >
+          <SettingsPageView
+            pageId={activePage.pageId}
+            focusTarget={activePage.focusTarget}
+            onBack={() => setActivePage(null)}
+            onNavigate={(pageId) => setActivePage({ pageId, focusTarget: null })}
+          />
+        </Suspense>
       ) : null}
     </div>
   );
@@ -151,7 +190,10 @@ export function ShijingShell(props: ShijingShellProps) {
 
 function renderActiveTab(
   tab: string,
-  onRequestOpenSettings: (page?: ShijingSettingsPageId) => void,
+  onRequestOpenSettings: (
+    page?: ShijingSettingsPageId,
+    focusTarget?: ShijingSettingsFocusTarget | null,
+  ) => void,
 ) {
   switch (tab) {
     case 'rijing':

@@ -77,6 +77,30 @@ test('buildSelfNatalInputs rejects an unparseable local date', () => {
   if (!r.ok) assert.equal(r.error.code, 'birth_datetime_underivable');
 });
 
+test('buildSelfNatalInputs rejects missing birth location before coordinate validation', () => {
+  const r = buildSelfNatalInputs(gregorianDraft({
+    place_text: '',
+    place_name: '',
+    latitude: '',
+    longitude: '',
+    iana_time_zone: '',
+  }));
+  assert.equal(r.ok, false);
+  if (!r.ok) assert.equal(r.error.code, 'birth_location_required');
+});
+
+test('buildSelfNatalInputs rejects unresolved typed birth location as location mismatch', () => {
+  const r = buildSelfNatalInputs(gregorianDraft({
+    place_text: '广州',
+    place_name: '',
+    latitude: '',
+    longitude: '',
+    iana_time_zone: '',
+  }));
+  assert.equal(r.ok, false);
+  if (!r.ok) assert.equal(r.error.code, 'birth_location_unresolved');
+});
+
 test('buildSelfNatalInputs rejects non-numeric latitude', () => {
   const r = buildSelfNatalInputs(gregorianDraft({ latitude: 'whoops' }));
   assert.equal(r.ok, false);

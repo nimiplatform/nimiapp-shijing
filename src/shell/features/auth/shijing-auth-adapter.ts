@@ -1,13 +1,19 @@
-import type { AuthPlatformAdapter } from '@nimiplatform/kit/auth';
+import {
+  createRuntimeAccountBrowserBroker,
+  type AuthPlatformAdapter,
+} from '@nimiplatform/kit/auth';
 import { shijingTauriOAuthBridge } from '../../bridge/index.js';
 import {
   ensureShijingRuntimeClientReady,
-  loadShijingRuntimeAccountUser,
   logoutShijingRuntimeAccount,
-  shijingRuntimeAccountCaller,
   type ShijingAuthUser,
 } from '../../infra/shijing-bootstrap.js';
-import { getShijingNimiClient } from '../../infra/shijing-nimi-client.ts';
+import {
+  getShijingRuntimeSession,
+  loadShijingRuntimeAccountUser,
+  shijingRuntimeAccountCaller,
+} from '../../infra/shijing-runtime-session.ts';
+import { useAppStore } from '../../app-shell/app-store.ts';
 
 const SHIJING_EMBEDDED_AUTH_UNSUPPORTED =
   'Embedded auth flow is not supported in ShiJing desktop-browser mode.';
@@ -22,7 +28,17 @@ function unsupported<T>(): Promise<T> {
 
 export async function loadCurrentUser(): Promise<ShijingAuthUser | null> {
   await ensureShijingRuntimeClientReady();
-  return loadShijingRuntimeAccountUser(getShijingNimiClient().runtime);
+  return loadShijingRuntimeAccountUser(getShijingRuntimeSession().accountRuntime);
+}
+
+async function syncAuthSessionFromRuntime(): Promise<void> {
+  const user = await loadCurrentUser();
+  const store = useAppStore.getState();
+  if (user) {
+    store.setAuthSession(user);
+  } else {
+    store.clearAuthSession();
+  }
 }
 
 export function createShijingDesktopBrowserAuthAdapter(): AuthPlatformAdapter {
@@ -45,76 +61,27 @@ export function createShijingDesktopBrowserAuthAdapter(): AuthPlatformAdapter {
     },
     clearPersistedSession: async () => {
       await logoutShijingRuntimeAccount();
+      useAppStore.getState().clearAuthSession();
     },
     oauthBridge: shijingTauriOAuthBridge,
-    syncAfterLogin: async () => {},
+    syncAfterLogin: syncAuthSessionFromRuntime,
+    onLoginComplete: syncAuthSessionFromRuntime,
   };
 }
 
 export function createShijingRuntimeAccountBrowserBroker() {
-  return {
-    begin: async (input: { callbackUrl: string; baseUrl?: string; timeoutMs: number }) => {
-      await ensureShijingRuntimeClientReady();
-      const response = await getShijingNimiClient().runtime.account.beginLogin({
-        caller: shijingRuntimeAccountCaller,
-        redirectUri: input.callbackUrl,
-        callbackOrigin: new URL(input.callbackUrl).origin,
-        requestedScopes: [],
-        ttlSeconds: Math.max(10, Math.ceil(input.timeoutMs / 1000)),
-      });
-      if (
-        !response.accepted
-        || !response.loginAttemptId
-        || !response.oauthAuthorizationUrl
-        || !response.state
-        || !response.nonce
-      ) {
-        throw new Error(
-          `Runtime account login could not start: ${String(response.accountReasonCode || response.reasonCode || 'unknown')}`,
-        );
-      }
-      return {
-        loginAttemptId: response.loginAttemptId,
-        authorizationUrl: response.oauthAuthorizationUrl,
-        state: response.state,
-        nonce: response.nonce,
-      };
+  return createRuntimeAccountBrowserBroker({
+    caller: shijingRuntimeAccountCaller,
+    beforeRequest: ensureShijingRuntimeClientReady,
+    getClient: () => getShijingRuntimeSession().client,
+    projectUser: (projection) => {
+      const accountId = String(projection.accountId || '').trim();
+      return accountId
+        ? {
+            id: accountId,
+            displayName: String(projection.displayName || '').trim(),
+          }
+        : null;
     },
-    complete: async (input: {
-      loginAttemptId: string;
-      code: string;
-      state: string;
-      nonce: string;
-      callbackUrl: string;
-    }) => {
-      await ensureShijingRuntimeClientReady();
-      const response = await getShijingNimiClient().runtime.account.completeLogin({
-        caller: shijingRuntimeAccountCaller,
-        loginAttemptId: input.loginAttemptId,
-        code: input.code,
-        // R-OAUTH-008 / SJG-PROD-02: refreshToken MUST be empty here.
-        refreshToken: '',
-        state: input.state,
-        nonce: input.nonce,
-        redirectUri: input.callbackUrl,
-        callbackOrigin: new URL(input.callbackUrl).origin,
-        uxTraceId: '',
-        sealedCompletionTicket: '',
-      });
-      if (!response.accepted) {
-        throw new Error(
-          `Runtime account login could not complete: ${String(response.accountReasonCode || response.reasonCode || 'unknown')}`,
-        );
-      }
-      const accountId = String(response.accountProjection?.accountId || '').trim();
-      return {
-        user: accountId
-          ? {
-              id: accountId,
-              displayName: String(response.accountProjection?.displayName || '').trim(),
-            }
-          : null,
-      };
-    },
-  };
+  });
 }

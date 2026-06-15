@@ -14,8 +14,18 @@ import {
 import { SETTINGS_PAGE_LABELS } from '../i18n/copy.ts';
 import { SettingsSurfaceSection } from './settings-surfaces.tsx';
 
+export type ShijingSettingsFocusTarget =
+  | 'ai_model_config'
+  | 'privacy_local_data';
+
+const SETTINGS_FOCUS_TARGET_IDS: Record<ShijingSettingsFocusTarget, string> = {
+  ai_model_config: 'settings-ai-model-config',
+  privacy_local_data: 'settings-privacy-local-data',
+};
+
 export interface SettingsPageViewProps {
   readonly pageId: ShijingSettingsPageId;
+  readonly focusTarget?: ShijingSettingsFocusTarget | null;
   readonly onBack: () => void;
   // Switch to a sibling settings sub-page without returning to the avatar
   // menu (see the subnav below). Drives the same `activePage` state in the
@@ -23,7 +33,12 @@ export interface SettingsPageViewProps {
   readonly onNavigate: (pageId: ShijingSettingsPageId) => void;
 }
 
-export function SettingsPageView({ pageId, onBack, onNavigate }: SettingsPageViewProps) {
+export function SettingsPageView({
+  pageId,
+  focusTarget,
+  onBack,
+  onNavigate,
+}: SettingsPageViewProps) {
   const page =
     SHIJING_SETTINGS_PAGES.find((candidate) => candidate.id === pageId) ??
     SHIJING_SETTINGS_PAGES[0];
@@ -35,6 +50,18 @@ export function SettingsPageView({ pageId, onBack, onNavigate }: SettingsPageVie
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [onBack]);
+
+  useEffect(() => {
+    if (!focusTarget) return;
+    const id = SETTINGS_FOCUS_TARGET_IDS[focusTarget];
+    const timer = window.setTimeout(() => {
+      const target = document.getElementById(id);
+      if (!(target instanceof HTMLElement)) return;
+      target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      target.focus({ preventScroll: true });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [focusTarget, pageId]);
 
   // 档案 (profile), 关注 (concerns), 发生过的事 (memory), and 设置 (settings)
   // all share the polished personal-data card system (see styles-personal-data.css),

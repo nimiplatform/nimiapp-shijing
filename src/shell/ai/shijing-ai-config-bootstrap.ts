@@ -1,18 +1,21 @@
-import type { NimiClient } from '@nimiplatform/sdk';
 import {
-  getNimiRuntimeProductControlRecord,
-  projectNimiFirstRunExecutionEvidenceToAIConfigTargets,
-} from '@nimiplatform/sdk/runtime';
-import type { NimiAIConfig, NimiAIScopeRef } from '@nimiplatform/sdk/ai';
-import { getShijingNimiClient } from '../infra/shijing-nimi-client.ts';
+  ensureNimiAppFirstLaunchAIConfig,
+  type NimiAIConfig,
+  type NimiAIProfile,
+  type NimiAIScopeRef,
+  type NimiResolvedRecommendedAIProfile,
+} from '@nimiplatform/sdk/ai';
 import {
   createShijingReadingAIScopeRef,
   loadShijingAIConfig,
   saveShijingAIConfig,
 } from './shijing-ai-config.ts';
-import { SHIJING_TEXT_GENERATE_CAPABILITY_ID } from './shijing-runtime-ai-client.ts';
+import {
+  SHIJING_TEXT_GENERATE_CAPABILITY_ID,
+  createShijingModelRequirementDeclaration,
+} from './shijing-ai-requirements.ts';
 
-export type ShijingFirstRunAIConfigInitOutcome =
+export type ShijingFirstLaunchAIConfigInitOutcome =
   | {
       outcome: 'already-bound';
       config: NimiAIConfig;
@@ -20,26 +23,27 @@ export type ShijingFirstRunAIConfigInitOutcome =
   | {
       outcome: 'initialized';
       config: NimiAIConfig;
-      executionEvidenceRef: string;
-      runtimeBaselineRef: string;
+      profileId: string;
+      profileSource: 'recommended-profile' | 'account-default-profile';
     }
   | {
-      outcome: 'not-initialized';
+      outcome: 'setup-required';
       reason:
-        | 'first_run_record_unavailable'
-        | 'first_run_evidence_missing'
-        | 'first_run_evidence_not_ready'
-        | 'first_run_text_binding_missing'
-        | 'first_run_config_apply_failed';
+        | 'profile_unresolved'
+        | 'setup_required_no_live_config'
+        | 'first_launch_config_apply_failed';
       detail: string;
     };
 
-export type ShijingFirstRunAIConfigInitOptions = {
+export type ShijingFirstLaunchAIConfigInitOptions = {
   readonly scopeRef?: NimiAIScopeRef;
-  readonly client?: NimiClient;
-  readonly getClient?: () => NimiClient;
   readonly loadConfig?: (scopeRef: NimiAIScopeRef) => NimiAIConfig;
   readonly saveConfig?: (next: NimiAIConfig, scopeRef: NimiAIScopeRef) => NimiAIConfig;
+  readonly resolveRecommendedProfile?: (
+    scopeRef: NimiAIScopeRef,
+  ) => NimiResolvedRecommendedAIProfile | null | Promise<NimiResolvedRecommendedAIProfile | null>;
+  readonly resolveAccountDefaultProfile?: () => NimiAIProfile | null | Promise<NimiAIProfile | null>;
+  readonly now?: () => string;
 };
 
 function detailFromError(error: unknown): string {
@@ -62,9 +66,9 @@ function ensureAIConfigShape(config: NimiAIConfig, scopeRef: NimiAIScopeRef): Ni
   };
 }
 
-export async function ensureShijingReadingAIConfigFromFirstRunEvidence(
-  options: ShijingFirstRunAIConfigInitOptions = {},
-): Promise<ShijingFirstRunAIConfigInitOutcome> {
+export async function ensureShijingReadingAIConfigFromFirstLaunchProfile(
+  options: ShijingFirstLaunchAIConfigInitOptions = {},
+): Promise<ShijingFirstLaunchAIConfigInitOutcome> {
   const scopeRef = options.scopeRef ?? createShijingReadingAIScopeRef();
   const loadConfig = options.loadConfig ?? loadShijingAIConfig;
   const saveConfig = options.saveConfig ?? ((next, targetScopeRef) =>
@@ -75,99 +79,42 @@ export async function ensureShijingReadingAIConfigFromFirstRunEvidence(
     return { outcome: 'already-bound', config };
   }
 
-  const client = options.client
-    ?? (options.getClient ? options.getClient() : getShijingNimiClient());
-
-  let recordProjection;
   try {
-    recordProjection = await getNimiRuntimeProductControlRecord(client.runtime.generated);
-  } catch (error) {
-    return {
-      outcome: 'not-initialized',
-      reason: 'first_run_record_unavailable',
-      detail: detailFromError(error),
-    };
-  }
-
-  const firstRun = recordProjection.record?.firstRun ?? null;
-  const executionEvidenceRef = String(firstRun?.executionEvidenceRef || '').trim();
-  const runtimeBaselineRef = String(firstRun?.runtimeBaselineRef || '').trim();
-  const installLevel = String(firstRun?.installLevel || '').trim();
-  if (!executionEvidenceRef || !runtimeBaselineRef || !installLevel) {
-    return {
-      outcome: 'not-initialized',
-      reason: 'first_run_evidence_missing',
-      detail: 'Runtime product-control first-run evidence is incomplete.',
-    };
-  }
-
-  let resolvedEvidence;
-  try {
-    resolvedEvidence = await client.runtime.generated.resolveFirstRunExecutionEvidence({
-      executionEvidenceRef,
-      expectedRuntimeBaselineRef: runtimeBaselineRef,
-      expectedDataRootRef: '',
-      expectedInstallLevel: installLevel,
+    const result = await ensureNimiAppFirstLaunchAIConfig({
+      scopeRef,
+      getExistingAppAIConfig: () => null,
+      resolveRecommendedProfile: options.resolveRecommendedProfile ?? (() => null),
+      resolveAccountDefaultProfile: options.resolveAccountDefaultProfile ?? (() => null),
+      resolveRequirementDeclarations: ({ scopeRef: requirementScopeRef }) => [
+        createShijingModelRequirementDeclaration(requirementScopeRef),
+      ],
+      applyHostAIConfig: (targetScopeRef, next) => saveConfig(next, targetScopeRef),
+      now: options.now,
     });
-  } catch (error) {
+    if (result.outcome === 'initialized') {
+      return {
+        outcome: 'initialized',
+        config: result.config,
+        profileId: result.profileId,
+        profileSource: result.profileSource,
+      };
+    }
+    if (result.outcome === 'already-initialized') {
+      return { outcome: 'already-bound', config: result.config };
+    }
     return {
-      outcome: 'not-initialized',
-      reason: 'first_run_evidence_not_ready',
-      detail: detailFromError(error),
-    };
-  }
-
-  if (resolvedEvidence.state !== 'local_ai_ready' || !resolvedEvidence.ref) {
-    return {
-      outcome: 'not-initialized',
-      reason: 'first_run_evidence_not_ready',
-      detail: resolvedEvidence.detail || resolvedEvidence.reasonCode || resolvedEvidence.state,
-    };
-  }
-
-  let textTargetRef;
-  try {
-    textTargetRef = projectNimiFirstRunExecutionEvidenceToAIConfigTargets(resolvedEvidence.ref)
-      .find((item) => item.capability === SHIJING_TEXT_GENERATE_CAPABILITY_ID)?.targetRef ?? null;
-  } catch (error) {
-    return {
-      outcome: 'not-initialized',
-      reason: 'first_run_text_binding_missing',
-      detail: detailFromError(error),
-    };
-  }
-
-  if (!textTargetRef) {
-    return {
-      outcome: 'not-initialized',
-      reason: 'first_run_text_binding_missing',
-      detail: 'Verified Runtime first-run evidence did not contain text.generate.',
-    };
-  }
-
-  const next: NimiAIConfig = {
-    ...config,
-    capabilities: {
-      ...config.capabilities,
-      targetRefs: {
-        ...config.capabilities.targetRefs,
-        [SHIJING_TEXT_GENERATE_CAPABILITY_ID]: textTargetRef,
-      },
-    },
-  };
-
-  try {
-    const saved = saveConfig(next, scopeRef);
-    return {
-      outcome: 'initialized',
-      config: saved,
-      executionEvidenceRef,
-      runtimeBaselineRef,
+      outcome: 'setup-required',
+      reason: 'setup_required_no_live_config',
+      detail: result.setupRepairPlan.unmetRequirements
+        .map((item) => `${item.requirementId}: ${item.detail}`)
+        .join('; ') || `Profile ${result.profileId} cannot materialize text.generate.`,
     };
   } catch (error) {
     return {
-      outcome: 'not-initialized',
-      reason: 'first_run_config_apply_failed',
+      outcome: 'setup-required',
+      reason: detailFromError(error).includes('SDK_AI_CONFIG_INIT_APPLY_FAILED')
+        ? 'first_launch_config_apply_failed'
+        : 'profile_unresolved',
       detail: detailFromError(error),
     };
   }

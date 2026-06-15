@@ -1,9 +1,12 @@
 // Canonical ShiJing app identity.
 //
-// Tauri `identifier`, Nimi Runtime caller id, and app-scoped AIConfig owner id
-// must stay identical. Divergence splits runtime evidence from local app
-// configuration and makes model bindings non-authoritative.
+// The Nimi app id is single-source across manifest, Runtime/SDK, storage,
+// AIConfig, and Tauri bundle identity. The product-local mirror kind/slug
+// remains `shijing`, but it is not an app identity.
 
-export const SHIJING_APP_ID = 'ai.nimi.apps.shijing';
-export const SHIJING_APP_INSTANCE_ID = `${SHIJING_APP_ID}.local-first-party`;
-export const SHIJING_DEVICE_ID = 'local-first-party-device';
+export const SHIJING_APP_ID = 'nimi.shijing';
+export const SHIJING_PRODUCT_SLUG = 'shijing';
+export const SHIJING_TAURI_IDENTIFIER = SHIJING_APP_ID;
+export const SHIJING_RUNTIME_APP_ID = SHIJING_APP_ID;
+export const SHIJING_RUNTIME_APP_INSTANCE_ID = `${SHIJING_RUNTIME_APP_ID}.local-developer`;
+export const SHIJING_RUNTIME_DEVICE_ID = 'shijing-local-developer-device';

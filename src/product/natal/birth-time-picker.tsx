@@ -148,6 +148,7 @@ const BirthTimePickerPanel = forwardRef<HTMLDivElement, BirthTimePickerPanelProp
 
 /* ── public component ── */
 export interface BirthTimePickerProps {
+  readonly id?: string;
   readonly value: string;
   readonly onChange: (value: string) => void;
   readonly className?: string;
@@ -155,7 +156,7 @@ export interface BirthTimePickerProps {
   readonly placeholder?: string;
 }
 
-export function BirthTimePicker({ value, onChange, className = '', style, placeholder = '选择时间' }: BirthTimePickerProps) {
+export function BirthTimePicker({ id, value, onChange, className = '', style, placeholder = '选择时间' }: BirthTimePickerProps) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const parsed = parseHm(value);
@@ -213,6 +214,7 @@ export function BirthTimePicker({ value, onChange, className = '', style, placeh
     <div ref={wrapRef} className="relative">
       <div className="group/field relative flex items-center cursor-pointer" onClick={handleTriggerClick}>
         <input
+          id={id}
           type="text"
           readOnly
           value={parsed ? `${pad2(parsed.h)}:${pad2(parsed.m)}` : ''}

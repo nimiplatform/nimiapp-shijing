@@ -27,6 +27,10 @@ export interface RiJingHeroProps {
   // into this overview card (previously a standalone bottom module).
   readonly focusTags: readonly RiJingHeroFocusTag[];
   readonly onManageFocus: () => void;
+  readonly emptyAction?: {
+    readonly label: string;
+    readonly onClick: () => void;
+  };
 }
 
 export function RiJingHero(props: RiJingHeroProps) {
@@ -76,6 +80,16 @@ export function RiJingHero(props: RiJingHeroProps) {
         </button>
       </div>
       <p className="shijing-rijing__hero-body">{content.description}</p>
+      {!content.hasReading && props.emptyAction ? (
+        <button
+          type="button"
+          className="shijing-rijing__hero-empty-action"
+          onClick={props.emptyAction.onClick}
+        >
+          {props.emptyAction.label}
+          <span aria-hidden>→</span>
+        </button>
+      ) : null}
       <div className="shijing-rijing__hero-leanings" aria-label="今日倾向">
         {content.leanings.map((leaning, idx) => (
           <span key={`${idx}-${leaning}`} className="shijing-rijing__hero-leaning">

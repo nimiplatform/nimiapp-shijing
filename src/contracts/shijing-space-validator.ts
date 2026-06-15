@@ -21,6 +21,7 @@ import { validateSettings } from './settings-validator.ts';
 const ALLOWED_CONSENT_STATES = new Set(['owner_recorded', 'subject_consented', 'withheld']);
 
 export type ShijingSpaceValidationError =
+  | { code: 'space_shape_invalid'; field: string; expected: string }
   | { code: 'space_persons_duplicate_id'; id: string }
   | { code: 'space_person_id_empty' }
   | { code: 'space_person_kind_invalid'; received: unknown }
@@ -68,8 +69,27 @@ function findRemovedKey(record: Record<string, unknown>): string | null {
   return null;
 }
 
-export function validateShiJingSpace(space: ShiJingSpace): ShijingSpaceValidationResult {
-  const spaceRecord = space as unknown as Record<string, unknown>;
+export function validateShiJingSpace(input: unknown): ShijingSpaceValidationResult {
+  try {
+    return validateShiJingSpaceUnchecked(input);
+  } catch (error) {
+    return {
+      ok: false,
+      error: {
+        code: 'space_shape_invalid',
+        field: 'space',
+        expected: error instanceof Error ? error.message : String(error),
+      },
+    };
+  }
+}
+
+function validateShiJingSpaceUnchecked(input: unknown): ShijingSpaceValidationResult {
+  const spaceRecord = asRecord(input);
+  if (!spaceRecord) {
+    return invalidShape('space', 'object');
+  }
+  const space = input as ShiJingSpace;
   const removedRootKey = findRemovedKey(spaceRecord);
   if (removedRootKey) {
     return {
@@ -77,13 +97,31 @@ export function validateShiJingSpace(space: ShiJingSpace): ShijingSpaceValidatio
       error: { code: 'space_removed_field_present', container: 'space', field: removedRootKey },
     };
   }
-  const settingsRecord = space.settings as unknown as Record<string, unknown>;
+  const settingsRecord = asRecord(space.settings);
+  if (!settingsRecord) {
+    return invalidShape('settings', 'object');
+  }
   const removedSettingsKey = findRemovedKey(settingsRecord);
   if (removedSettingsKey) {
     return {
       ok: false,
       error: { code: 'space_removed_field_present', container: 'settings', field: removedSettingsKey },
     };
+  }
+  if (!asRecord(space.self_subject)) {
+    return invalidShape('self_subject', 'object');
+  }
+  for (const field of [
+    'persons',
+    'concern_tags',
+    'event_memories',
+    'plan_items',
+    'readings',
+    'conversations',
+  ] as const) {
+    if (!Array.isArray(space[field])) {
+      return invalidShape(field, 'array');
+    }
   }
   // SJG-DATA-09 / SJG-ALGO-01 — Settings content (method_profile_id admission +
   // response-preference enums), not just removed-surface keys.
@@ -353,4 +391,17 @@ export function validateShiJingSpace(space: ShiJingSpace): ShijingSpaceValidatio
     }
   }
   return { ok: true };
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function invalidShape(field: string, expected: string): ShijingSpaceValidationResult {
+  return {
+    ok: false,
+    error: { code: 'space_shape_invalid', field, expected },
+  };
 }

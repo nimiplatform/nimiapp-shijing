@@ -19,14 +19,14 @@ import type {
   RuntimeAiResult,
 } from '../../product/astrology/runtime-ai-client.ts';
 import type { RuntimeAiPromptRequest } from '../../product/astrology/runtime-ai-prompt.ts';
-import { SHIJING_APP_ID } from '../../contracts/app-identity.ts';
+import { SHIJING_RUNTIME_APP_ID } from '../../contracts/app-identity.ts';
 import {
   createShijingReadingAIScopeRef,
   loadShijingAIConfig,
 } from './shijing-ai-config.ts';
 import { getShijingNimiClient } from '../infra/shijing-nimi-client.ts';
-
-export const SHIJING_TEXT_GENERATE_CAPABILITY_ID = 'text.generate';
+import { requireShijingRuntimeSubjectUserId } from '../infra/shijing-runtime-session.ts';
+import { SHIJING_TEXT_GENERATE_CAPABILITY_ID } from './shijing-ai-requirements.ts';
 
 type RuntimeTextParams = {
   readonly temperature?: number;
@@ -53,6 +53,7 @@ export type ResolvedShijingTextGenerateBinding =
 export type ShijingRuntimeAiClientOptions = {
   readonly loadConfig?: () => NimiAIConfig;
   readonly getClient?: () => NimiClient;
+  readonly getSubjectUserId?: () => string | Promise<string>;
 };
 
 function targetRefModel(targetRef: NimiAIConfigTargetRef): string {
@@ -159,7 +160,7 @@ async function schedulingMetadata(
   if (!target) return {};
   try {
     const scheduling = createNimiRuntimeAISchedulingClient({
-      appId: SHIJING_APP_ID,
+      appId: SHIJING_RUNTIME_APP_ID,
       runtime: client.runtime,
       targets: [target],
     });
@@ -183,10 +184,12 @@ async function schedulingMetadata(
 class AIConfigBackedRuntimeAiClient implements RuntimeAiClient {
   private readonly loadConfig: () => NimiAIConfig;
   private readonly getClient: () => NimiClient;
+  private readonly getSubjectUserId: () => string | Promise<string>;
 
   constructor(options: ShijingRuntimeAiClientOptions = {}) {
     this.loadConfig = options.loadConfig ?? (() => loadShijingAIConfig(createShijingReadingAIScopeRef()));
     this.getClient = options.getClient ?? (() => getShijingNimiClient());
+    this.getSubjectUserId = options.getSubjectUserId ?? requireShijingRuntimeSubjectUserId;
   }
 
   async generate(
@@ -229,11 +232,28 @@ class AIConfigBackedRuntimeAiClient implements RuntimeAiClient {
       return { ok: false, failure: { kind: 'runtime_unavailable', detail: scheduling.failure } };
     }
 
+    let subjectUserId: string;
+    try {
+      subjectUserId = String(await this.getSubjectUserId()).trim();
+      if (!subjectUserId) {
+        throw new Error('ShiJing Runtime AI requires a non-empty subjectUserId.');
+      }
+    } catch (error) {
+      return {
+        ok: false,
+        failure: {
+          kind: 'runtime_unavailable',
+          detail: error instanceof Error ? error.message : String(error),
+        },
+      };
+    }
+
     const model = createNimiRuntimeAIModel({
       runtime: client.runtime,
-      appId: SHIJING_APP_ID,
+      appId: SHIJING_RUNTIME_APP_ID,
       routePolicy: resolved.route,
       connectorId: resolved.connectorId,
+      subjectUserId,
       timeoutMs: resolved.params.timeoutMs,
       model: {
         modelId: resolved.model,

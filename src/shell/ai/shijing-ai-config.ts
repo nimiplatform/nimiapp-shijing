@@ -19,7 +19,8 @@ import { resolveBrowserStorage } from '@nimiplatform/kit/core/storage-json';
 import { SHIJING_APP_ID } from '../../contracts/app-identity.ts';
 
 export const SHIJING_READING_AI_SURFACE_ID = 'shijing.reading';
-export const SHIJING_AI_CONFIG_STORAGE_KEY = 'nimiapp-shijing:reading-ai-config:v1';
+export const SHIJING_AI_CONFIG_STORAGE_PREFIX = 'nimiapp-shijing:reading-ai-config:v2';
+export const SHIJING_AI_CONFIG_INDEX_KEY = `${SHIJING_AI_CONFIG_STORAGE_PREFIX}:index`;
 export const SHIJING_AI_PROFILE_LIBRARY_STORAGE_KEY = 'nimiapp-shijing:reading-ai-profiles:v1';
 export const SHIJING_AI_PROFILE_LIBRARY_SCHEMA_VERSION = 1;
 
@@ -32,8 +33,16 @@ const configSubscriptions = createNimiAIConfigSubscriptionRegistry();
 
 const ephemeralProfiles: NimiAIProfile[] = [];
 
+function isStorageLike(value: unknown): value is Storage {
+  return Boolean(value)
+    && typeof (value as Storage).getItem === 'function'
+    && typeof (value as Storage).setItem === 'function'
+    && typeof (value as Storage).removeItem === 'function';
+}
+
 function getStorage(): Storage | null {
-  return resolveBrowserStorage('local');
+  const storage = resolveBrowserStorage('local');
+  return isStorageLike(storage) ? storage : null;
 }
 
 function useEphemeralStore(): boolean {
@@ -41,8 +50,9 @@ function useEphemeralStore(): boolean {
 }
 
 const aiConfigStore = createNimiAIConfigStore({
+  indexKey: SHIJING_AI_CONFIG_INDEX_KEY,
   storage: () => getStorage() as NimiAIHostStorage | null,
-  configKeyForScope: () => SHIJING_AI_CONFIG_STORAGE_KEY,
+  configKeyForScope: (scopeKey) => `${SHIJING_AI_CONFIG_STORAGE_PREFIX}:${scopeKey}`,
   enableEphemeralStore: useEphemeralStore(),
 });
 
@@ -154,7 +164,8 @@ export function createShijingAIConfigService(): SharedAIConfigService {
     },
     aiProfile: {
       list: async () => [...(await surface.aiProfile.list())],
-      previewApply: (scopeRef, profileId) => surface.aiProfile.previewApply(scopeRef, profileId),
+      previewApply: (scopeRef, profileId, options) =>
+        surface.aiProfile.previewApply(scopeRef, profileId, options),
       apply: (scopeRef, profileId, options) => surface.aiProfile.apply(scopeRef, profileId, options),
     },
   };

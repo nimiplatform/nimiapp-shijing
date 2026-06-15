@@ -16,13 +16,28 @@ const FAILURE_HEADLINES: Record<ReadingGenerationFailure['kind'], string> = {
 
 export interface FailureBannerProps {
   readonly failure: ReadingGenerationFailure;
+  readonly action?: {
+    readonly label: string;
+    readonly onClick: () => void;
+  };
 }
 
 export function FailureBanner(props: FailureBannerProps) {
   return (
-    <p role="alert" className="shijing-failure-banner" data-failure-kind={props.failure.kind}>
-      {FAILURE_HEADLINES[props.failure.kind]}
-      {props.failure.detail ? <code>{props.failure.detail}</code> : null}
-    </p>
+    <div role="alert" className="shijing-failure-banner" data-failure-kind={props.failure.kind}>
+      <div className="shijing-failure-banner__copy">
+        {FAILURE_HEADLINES[props.failure.kind]}
+        {props.failure.detail ? <code>{props.failure.detail}</code> : null}
+      </div>
+      {props.action ? (
+        <button
+          type="button"
+          className="shijing-failure-banner__action"
+          onClick={props.action.onClick}
+        >
+          {props.action.label}
+        </button>
+      ) : null}
+    </div>
   );
 }

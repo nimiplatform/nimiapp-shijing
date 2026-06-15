@@ -29,6 +29,18 @@ export interface RiJingHeroContent {
   readonly reminder: string;
 }
 
+export type RiJingEmptyStateKind =
+  | 'ready_to_generate'
+  | 'profile_incomplete'
+  | 'missing_focus'
+  | 'runtime_ai_failed'
+  | 'persistence_pending'
+  | 'persistence_failed';
+
+export interface RiJingHeroDeriveOptions {
+  readonly empty_state?: RiJingEmptyStateKind;
+}
+
 export interface RiJingDateLabel {
   readonly date: string;
   readonly weekday: string;
@@ -49,6 +61,42 @@ const STAGE_HEADLINE: Record<string, string> = {
 
 const STAGE_HEADLINE_FALLBACK = '如常推进';
 const HEADLINE_FALLBACK = '尚未生成今日日镜';
+
+const EMPTY_HERO_COPY: Record<
+  RiJingEmptyStateKind,
+  Pick<RiJingHeroContent, 'description' | 'confidence_note' | 'reminder'>
+> = {
+  ready_to_generate: {
+    description: '资料与关注已就绪，点击右上角刷新即可生成今日判断。',
+    confidence_note: '今日日镜尚未生成。',
+    reminder: '生成前请确认解读视角是否符合你今天真正关心的问题。',
+  },
+  profile_incomplete: {
+    description: '先完善本人生辰资料，日镜才能计算当下时空与命盘关系。',
+    confidence_note: '资料未就绪，今日判断尚未生成。',
+    reminder: '补全资料后，系统会按当前关注自动生成今日日镜。',
+  },
+  missing_focus: {
+    description: '先添加并激活一个关注，日镜会围绕你正在意的事生成。',
+    confidence_note: '缺少解读视角，今日判断尚未生成。',
+    reminder: '关注是日镜的镜片；没有关注时，系统不会生成泛化建议。',
+  },
+  runtime_ai_failed: {
+    description: 'Runtime AI wording 未完成，当前不会生成替代解读。',
+    confidence_note: 'AI 生成失败，日镜按 fail-close 规则停止。',
+    reminder: '请先确认 AI 模型配置，再重新生成今日日镜。',
+  },
+  persistence_pending: {
+    description: '正在加载本地数据，完成后才能生成今日日镜。',
+    confidence_note: '本地快照尚未就绪。',
+    reminder: '等待本地数据加载完成，可以避免覆盖尚未读取的快照。',
+  },
+  persistence_failed: {
+    description: '本地数据读写失败，日镜已停止生成以保护快照一致性。',
+    confidence_note: '本地持久化不可用。',
+    reminder: '请到设置检查隐私与本地数据，再重新生成今日日镜。',
+  },
+};
 
 const CONFIDENCE_LABEL: Record<'high' | 'medium' | 'low', string> = {
   high: '较高',
@@ -80,17 +128,19 @@ function condense(text: string, max: number): string {
 
 export function deriveRiJingHero(
   reading: Reading | undefined,
+  options: RiJingHeroDeriveOptions = {},
 ): RiJingHeroContent {
   if (!reading) {
+    const emptyCopy = EMPTY_HERO_COPY[options.empty_state ?? 'ready_to_generate'];
     return {
       hasReading: false,
       eyebrow: '今日总览',
       headline: HEADLINE_FALLBACK,
-      description: '点击右上角的"刷新"，会基于你的生辰资料与当下时空，生成今日的判断。',
+      description: emptyCopy.description,
       leanings: [],
       confidence_label: '—',
-      confidence_note: '今日日镜尚未生成。',
-      reminder: '生成前请先确认上方的关注标签是否符合你想要的视角。',
+      confidence_note: emptyCopy.confidence_note,
+      reminder: emptyCopy.reminder,
     };
   }
   const output = reading.output as RiJingMirrorOutput;

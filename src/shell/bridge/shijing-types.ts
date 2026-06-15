@@ -1,5 +1,3 @@
-import type { RuntimeDefaults as SharedRuntimeDefaults } from '@nimiplatform/kit/shell/renderer/bridge';
-
-export type ShijingRuntimeDefaults = SharedRuntimeDefaults & {
+export type ShijingRuntimeDefaults = {
   webBaseUrl: string;
 };

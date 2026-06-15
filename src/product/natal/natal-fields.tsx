@@ -92,11 +92,12 @@ export function NatalFields({ draft, onChange, idPrefix }: NatalFieldsProps) {
       </div>
 
       <div className="sjp-field">
-        <label className="sjp-label">出生日期</label>
+        <label className="sjp-label" htmlFor={id('date')}>出生日期</label>
         {draft.calendar_system === 'gregorian' ? (
           // 公历:nimi kit 日期面板的本仓库包装,年份轮从 1900 起。
           <div className="sjp-datepicker">
             <DatePicker
+              id={id('date')}
               value={draft.local_date_text}
               onChange={(next) => onChange('local_date_text', next)}
             />
@@ -144,6 +145,7 @@ export function NatalFields({ draft, onChange, idPrefix }: NatalFieldsProps) {
           aria-disabled={timeUnknown}
         >
           <BirthTimePicker
+            id={id('time')}
             value={timeUnknown ? '' : draft.local_time_text}
             onChange={(next) => {
               onChange('local_time_text', next);

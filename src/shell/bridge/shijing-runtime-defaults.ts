@@ -1,5 +1,4 @@
-import { getRuntimeDefaults } from '@nimiplatform/kit/shell/renderer/bridge';
-import type { ShijingRuntimeDefaults } from './shijing-types.js';
+import type { ShijingRuntimeDefaults } from './shijing-types.ts';
 
 function readEnv(name: string): string {
   const importMetaEnv = (import.meta as { env?: Record<string, string> }).env;
@@ -32,9 +31,7 @@ function resolveWebBaseUrl(): string {
 }
 
 export async function getShijingRuntimeDefaults(): Promise<ShijingRuntimeDefaults> {
-  const shared = await getRuntimeDefaults();
   return {
-    ...shared,
     webBaseUrl: resolveWebBaseUrl(),
   };
 }

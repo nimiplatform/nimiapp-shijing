@@ -7,7 +7,6 @@ import {
   buildAstrologyFeatureSnapshot,
 } from '../src/product/astrology/build-feature-snapshot.ts';
 import { generateReading } from '../src/product/astrology/generate-reading.ts';
-import { createPassthroughRuntimeAiClient } from '../src/product/astrology/runtime-ai-client.ts';
 import {
   inputsSummaryStaleForSpace,
   yuejingInputsSummaryStaleForActiveSubset,
@@ -749,15 +748,12 @@ test('canned valid runtime output drives the final mirror output', async () => {
   assert.equal(result.ok, true, JSON.stringify(result));
 });
 
-// Audit P2 — dev-preview lacked a runtime AI client, so generation fail-closed.
-// The passthrough client returns the (validated) deterministic output as wording,
-// letting the preview generate mirrors end-to-end with no AI binding.
-test('passthrough runtime client: generateReading succeeds end-to-end (dev-preview path)', async () => {
+test('dev-preview path fails closed without Runtime AI wording', async () => {
   const space = spaceWithActiveTag();
   const today = new Date();
   const result = await generateReading(
     {
-      id: 'r_passthrough',
+      id: 'r_dev_preview_no_runtime_ai',
       created_at: today.toISOString().replace(/\.\d{3}Z$/, 'Z'),
       mirror_kind: 'rijing',
       mirror_scope: dailyMirrorScope({ date: today.toISOString().slice(0, 10), basis_time_zone: TZ }),
@@ -768,12 +764,12 @@ test('passthrough runtime client: generateReading succeeds end-to-end (dev-previ
       cited_plan_item_refs: [],
       space,
     },
-    { runtime_ai_client: createPassthroughRuntimeAiClient() },
+    {},
   );
-  assert.equal(result.ok, true, JSON.stringify(result));
-  if (result.ok) {
-    assert.equal(result.reading.output.mirror_kind, 'rijing');
-    assert.ok(result.reading.output.summary.length > 0, 'deterministic wording present');
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.failure.kind, 'runtime_ai_failed');
+    assert.equal(result.failure.detail, 'runtime_unavailable:Runtime AI client is required');
   }
 });
 

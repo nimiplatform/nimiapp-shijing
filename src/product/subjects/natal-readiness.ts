@@ -11,6 +11,7 @@ import type { MirrorKind, MirrorScope } from '../../domain/mirror-scope.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import { isPersonRef, isSelfRef, subjectRefKey, type SubjectRef } from '../../domain/subject-ref.ts';
 import { getMethodEngine } from '../astrology/engines/registry.ts';
+import { isScaffoldNatalInputs } from './scaffold-natal-inputs.ts';
 
 export type NatalReadinessReason =
   | 'subject_missing'
@@ -34,8 +35,6 @@ export interface SubjectMirrorReadinessInput {
   readonly mirror_scope: MirrorScope;
 }
 
-export const SCAFFOLD_BIRTH_DATETIME_UTC = '2000-01-01T00:00:00Z';
-
 export function deriveDayunRequired(mirrorKind: MirrorKind, scope: MirrorScope): boolean {
   if (mirrorKind === 'nianjing') return true;
   if (scope.kind === 'long_horizon') return true;
@@ -50,25 +49,6 @@ export function natalInputsForSubject(subject: SubjectRef, space: ShiJingSpace):
     return space.persons.find((person) => person.id === subject.id)?.natal_inputs ?? null;
   }
   return null;
-}
-
-export function isScaffoldNatalInputs(inputs: NatalInputs): boolean {
-  const raw = inputs.raw_birth_input;
-  const location = inputs.birth_location;
-  return (
-    raw.calendar_system === 'gregorian' &&
-    raw.local_date_text === '2000-01-01' &&
-    raw.local_time_text === undefined &&
-    raw.place_text === undefined &&
-    inputs.birth_datetime_utc === SCAFFOLD_BIRTH_DATETIME_UTC &&
-    inputs.birth_precision === 'unknown' &&
-    inputs.calendar_system === 'gregorian' &&
-    inputs.calculation_sex === 'unspecified' &&
-    location.latitude === 0 &&
-    location.longitude === 0 &&
-    location.iana_time_zone === 'Etc/UTC' &&
-    location.place_name === undefined
-  );
 }
 
 function hasUnresolvedDefaultLocation(inputs: NatalInputs): boolean {

@@ -6,7 +6,9 @@
 
 - **App name (Chinese)**: 时镜
 - **App name (English)**: ShiJing
-- **App ID**: `ai.nimi.apps.shijing`
+- **Canonical Nimi app_id**: `nimi.shijing`
+- **Product slug**: `shijing`
+- **Tauri identifier**: `nimi.shijing`
 - **One-line**: A personal astrology reading companion grounded in classical
   bazi/ganzhi/jieqi/dayun, with a deterministic feature pipeline and a
   Runtime-AI wording boundary.

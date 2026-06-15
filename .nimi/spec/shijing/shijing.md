@@ -7,7 +7,8 @@
 
 - App name (Chinese): 时镜
 - App name (English): ShiJing
-- App ID: `ai.nimi.apps.shijing`
+- Canonical app_id: `shijing`
+- Tauri identifier: `nimi.shijing`
 - One-line: A personal astrology time-mirror companion grounded in
   deterministic BaZi / ganzhi / jieqi / DaYun features, with Runtime AI used
   only for wording and consultation.

@@ -154,6 +154,21 @@
   font-size: 13px;
 }
 
+.shijing-route-loading,
+.shijing-shell__loading,
+.shijing-settings-page--loading {
+  display: grid;
+  place-items: center;
+  min-height: 160px;
+  color: var(--shijing-text-muted);
+  font-size: 13px;
+}
+
+.shijing-route-loading {
+  flex: 1;
+  width: 100%;
+}
+
 /* ----- Primary tab bar (centered inside the top bar) -----
  * The active tab is signalled by a short green underline indicator,
  * not a pill background, so the topbar reads as a single horizontal
@@ -618,13 +633,22 @@
 }
 
 .shijing-failure-banner {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   background: color-mix(in srgb, var(--shijing-status-danger) 12%, transparent);
   color: var(--shijing-status-danger);
   padding: 10px 14px;
   border-radius: var(--shijing-radius-md);
   font-size: 13px;
   border-left: 3px solid var(--shijing-status-danger);
+}
+
+.shijing-failure-banner__copy {
+  min-width: 0;
+  line-height: 1.55;
 }
 
 .shijing-failure-banner code {
@@ -635,6 +659,24 @@
   background: rgba(0, 0, 0, 0.05);
   padding: 1px 5px;
   border-radius: 4px;
+}
+
+.shijing-failure-banner__action {
+  appearance: none;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--shijing-status-danger) 35%, transparent);
+  background: color-mix(in srgb, #ffffff 72%, transparent);
+  color: var(--shijing-status-danger);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.shijing-failure-banner__action:hover {
+  background: color-mix(in srgb, var(--shijing-status-danger) 10%, #ffffff);
 }
 
 .shijing-import-to-consultation {

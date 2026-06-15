@@ -4,7 +4,6 @@
 
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts';
-import { dropIncompatibleReadings } from './sanitize-loaded-space.ts';
 import type {
   ClearResult,
   LoadResult,
@@ -123,15 +122,14 @@ export class IndexedDBPersistenceAdapter implements PersistenceClient {
     }
     db.close();
     if (raw === undefined || raw === null) return { ok: true, snapshot: null };
-    const sanitized = dropIncompatibleReadings(raw as ShiJingSpace).space;
-    const validation = validateShiJingSpace(sanitized);
+    const validation = validateShiJingSpace(raw);
     if (!validation.ok) {
       return {
         ok: false,
         error: { kind: 'load_invalid_snapshot', adapter: 'indexeddb', validation_error: validation.error },
       };
     }
-    return { ok: true, snapshot: sanitized };
+    return { ok: true, snapshot: raw as ShiJingSpace };
   }
 
   async save(snapshot: ShiJingSpace): Promise<SaveResult> {

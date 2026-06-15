@@ -283,6 +283,29 @@
   font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
 }
 
+.shijing-tab .shijing-rijing__hero-empty-action {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 7px 16px;
+  border: 1px solid color-mix(in srgb, var(--rijing-accent) 28%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--rijing-accent) 13%, transparent);
+  color: var(--rijing-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+.shijing-tab .shijing-rijing__hero-empty-action:hover {
+  background: color-mix(in srgb, var(--rijing-accent) 18%, transparent);
+  transform: translateY(-1px);
+}
+
 .shijing-rijing__hero-leanings {
   display: inline-flex;
   gap: 8px;

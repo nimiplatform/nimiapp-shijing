@@ -1,4 +1,4 @@
-// Renderer dev preview — mounts the product UI directly with stub auth.
+// Renderer dev preview — mounts the product UI with a dev-only local account projection.
 // Loaded from `dev-preview.html` only. Production entry remains
 // `index.html` → `src/main.tsx`.
 
@@ -12,18 +12,14 @@ import { ShijingStoreProvider } from './product/state/shijing-store.tsx';
 import { ShijingShell } from './product/shell/shijing-shell.tsx';
 import { InMemoryPersistenceAdapter } from './product/persistence/in-memory-adapter.ts';
 import { buildEmptyShiJingSpace } from './product/dev/initial-space.ts';
-import { createPassthroughRuntimeAiClient } from './product/astrology/runtime-ai-client.ts';
 import { i18n } from './shell/i18n/index.js';
 import './styles.css';
 
 function DevPreviewProductArea() {
   const snapshot = React.useMemo(() => buildEmptyShiJingSpace('dev-preview-user'), []);
   const persistence = React.useMemo(() => new InMemoryPersistenceAdapter(), []);
-  // Deterministic, runtime-free wording so the preview can generate mirrors
-  // end-to-end without a configured Runtime AI binding.
-  const runtimeAi = React.useMemo(() => createPassthroughRuntimeAiClient(), []);
   return (
-    <ShijingStoreProvider snapshot={snapshot} persistenceClient={persistence} runtimeAiClient={runtimeAi}>
+    <ShijingStoreProvider snapshot={snapshot} persistenceClient={persistence}>
       <ShijingShell account={{ name: '演示用户' }} />
     </ShijingStoreProvider>
   );

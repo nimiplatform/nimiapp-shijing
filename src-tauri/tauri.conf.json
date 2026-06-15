@@ -1,7 +1,7 @@
 {
   "productName": "ShiJing",
   "version": "0.1.0",
-  "identifier": "ai.nimi.apps.shijing",
+  "identifier": "nimi.shijing",
   "build": {
     "beforeDevCommand": "pnpm run dev:renderer",
     "beforeBuildCommand": "pnpm run build",

@@ -8,7 +8,6 @@ import {
   type SharedAIConfigService,
 } from '@nimiplatform/kit/features/model-config';
 import type {
-  NimiAICapabilityRequirementDeclaration,
   NimiAIConfig,
   NimiAIConfigTargetRef,
   NimiAIScopeRef,
@@ -21,7 +20,8 @@ import {
 import { createShijingRuntimeModelPickerProviderCache } from './shijing-runtime-model-provider.ts';
 import {
   SHIJING_TEXT_GENERATE_CAPABILITY_ID,
-} from './shijing-runtime-ai-client.ts';
+  createShijingModelRequirementDeclaration,
+} from './shijing-ai-requirements.ts';
 import { translateShijingModelConfig } from './model-config-copy.ts';
 
 function bindingStatus(
@@ -76,22 +76,6 @@ function useLiveAIConfig(service: SharedAIConfigService, scopeRef: NimiAIScopeRe
   return config;
 }
 
-function createShijingModelRequirementDeclaration(
-  scopeRef: NimiAIScopeRef,
-): NimiAICapabilityRequirementDeclaration {
-  return {
-    requirementId: 'shijing.reading.text-generate',
-    scopeRef,
-    requiredSlices: [{
-      requirementSliceId: 'shijing.reading.text-generate.required',
-      capability: SHIJING_TEXT_GENERATE_CAPABILITY_ID,
-      profileSliceRef: 'shijing.reading.text-generate',
-      readinessPolicy: 'required',
-    }],
-    setupProjectionPolicy: 'sdk-ai-config-setup-projection',
-  };
-}
-
 export function ShijingAiModelConfigSection() {
   const bootstrapReady = useAppStore((state) => state.bootstrapReady);
   const bootstrapError = useAppStore((state) => state.bootstrapError);
@@ -99,18 +83,22 @@ export function ShijingAiModelConfigSection() {
   const scopeRef = useMemo(() => createShijingReadingAIScopeRef(), []);
   const config = useLiveAIConfig(service, scopeRef);
   const providerCache = useMemo(() => createShijingRuntimeModelPickerProviderCache(), []);
+  const requirementDeclaration = useMemo(
+    () => createShijingModelRequirementDeclaration(scopeRef),
+    [scopeRef],
+  );
 
   const surface = useMemo<AppModelConfigSurface>(() => ({
     scopeRef,
     aiConfigService: service,
-    requirementDeclaration: createShijingModelRequirementDeclaration(scopeRef),
+    requirementDeclaration,
     enabledCapabilities: [SHIJING_TEXT_GENERATE_CAPABILITY_ID],
     providerResolver: (capabilityId: string) => (bootstrapReady ? providerCache(capabilityId) : null),
     projectionResolver: () => bindingStatus(config, bootstrapReady, bootstrapError),
     runtimeReady: bootstrapReady,
     runtimeNotReadyLabel: bootstrapError || 'Runtime 未就绪',
     i18n: { t: translateShijingModelConfig },
-  }), [bootstrapError, bootstrapReady, config, providerCache, scopeRef, service]);
+  }), [bootstrapError, bootstrapReady, config, providerCache, requirementDeclaration, scopeRef, service]);
 
   const profileCopy = useMemo(
     () => defaultModelConfigProfileCopy(translateShijingModelConfig),
@@ -125,12 +113,17 @@ export function ShijingAiModelConfigSection() {
   const profile = useModelConfigProfileController({
     scopeRef,
     aiConfigService: service,
+    requirementDeclaration,
     copy: profileCopy,
     currentOrigin,
   });
 
   return (
-    <section className="sjp-card sjp-card--ai-model-config">
+    <section
+      id="settings-ai-model-config"
+      className="sjp-card sjp-card--ai-model-config"
+      tabIndex={-1}
+    >
       <div className="sjp-card-head">
         <span className="sjp-card-icon">
           <svg

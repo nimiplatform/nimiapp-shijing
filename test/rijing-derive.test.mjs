@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { deriveRiJingActions } from '../src/product/tabs/rijing/rijing-derive.ts';
+import {
+  deriveRiJingActions,
+  deriveRiJingHero,
+} from '../src/product/tabs/rijing/rijing-derive.ts';
 import { validReading } from './_fixtures.mjs';
 
 function avoidAction(items) {
@@ -42,4 +45,26 @@ test('deriveRiJingActions skips info-only caveats but keeps actionable caveats',
 
   assert.equal(avoid?.title, '出生地缺失,经度修正与真太阳…');
   assert.equal(avoid?.body, '出生地缺失,经度修正与真太阳时无法计算');
+});
+
+test('deriveRiJingHero names profile blockers instead of asking for refresh', () => {
+  const hero = deriveRiJingHero(undefined, { empty_state: 'profile_incomplete' });
+
+  assert.equal(hero.hasReading, false);
+  assert.match(hero.description, /完善本人生辰资料/);
+  assert.doesNotMatch(hero.description, /刷新/);
+});
+
+test('deriveRiJingHero names missing focus blockers', () => {
+  const hero = deriveRiJingHero(undefined, { empty_state: 'missing_focus' });
+
+  assert.match(hero.description, /激活一个关注/);
+  assert.match(hero.reminder, /不会生成泛化建议/);
+});
+
+test('deriveRiJingHero preserves runtime AI fail-close recovery copy', () => {
+  const hero = deriveRiJingHero(undefined, { empty_state: 'runtime_ai_failed' });
+
+  assert.match(hero.description, /Runtime AI wording 未完成/);
+  assert.match(hero.reminder, /AI 模型配置/);
 });

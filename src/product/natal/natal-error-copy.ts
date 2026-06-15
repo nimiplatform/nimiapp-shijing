@@ -7,9 +7,11 @@
 
 const MESSAGES: Record<string, string> = {
   // location — the common "left it blank" cases
-  latitude_invalid: '请填写出生地点的纬度（-90 ~ 90，例如广州约 23.13）。',
+  birth_location_required: '请选择出生地。系统会自动匹配经纬度和时区。',
+  birth_location_unresolved: '请从出生地建议中选择一个地点，或展开「地点与时区校准」手动填写经纬度和 IANA 时区。',
+  latitude_invalid: '出生地点纬度无效，请填 -90 ~ 90 之间的数值（例如广州约 23.13）。',
   birth_location_latitude_invalid: '出生地点纬度无效，请填 -90 ~ 90 之间的数值（例如广州约 23.13）。',
-  longitude_invalid: '请填写出生地点的经度（-180 ~ 180，例如广州约 113.26）。',
+  longitude_invalid: '出生地点经度无效，请填 -180 ~ 180 之间的数值（例如广州约 113.26）。',
   birth_location_longitude_invalid: '出生地点经度无效，请填 -180 ~ 180 之间的数值（例如广州约 113.26）。',
   timezone_conversion_failed: '请填写有效的 IANA 时区（例如 Asia/Shanghai）。',
   birth_location_iana_time_zone_invalid: '请填写有效的 IANA 时区（例如 Asia/Shanghai）。',

@@ -20,7 +20,7 @@ import {
   type NatalInputsValidationError,
 } from '../../contracts/natal-inputs-validator.ts';
 import { localWallClockToUtcInstant } from '../astrology/local-wall-clock.ts';
-import { isScaffoldNatalInputs } from '../subjects/natal-readiness.ts';
+import { isScaffoldNatalInputs } from '../subjects/scaffold-natal-inputs.ts';
 
 export interface SelfNatalDraft {
   readonly calendar_system: CalendarSystem;
@@ -100,6 +100,8 @@ export function selfDraftFromSpace(space: ShiJingSpace): SelfNatalDraft {
 
 export type SelfDraftBuildError =
   | { code: 'lunar_field_invalid'; field: 'lunar_year' | 'lunar_month' | 'lunar_day' }
+  | { code: 'birth_location_required' }
+  | { code: 'birth_location_unresolved' }
   | { code: 'latitude_invalid' }
   | { code: 'longitude_invalid' }
   | {
@@ -183,16 +185,36 @@ export function buildSelfNatalInputs(draft: SelfNatalDraft): SelfDraftBuildResul
     ...lunarFields,
   };
 
-  const lat = parseFloatStrict(draft.latitude);
-  if (lat === null) return { ok: false, error: { code: 'latitude_invalid' } };
-  const lon = parseFloatStrict(draft.longitude);
-  if (lon === null) return { ok: false, error: { code: 'longitude_invalid' } };
+  const placeText = draft.place_text.trim();
+  const placeName = draft.place_name.trim();
+  const latitudeText = draft.latitude.trim();
+  const longitudeText = draft.longitude.trim();
+  const timezoneText = draft.iana_time_zone.trim();
+  const hasAnyLocationCalibration = Boolean(latitudeText || longitudeText || timezoneText);
+  if (!placeText && !placeName && !hasAnyLocationCalibration) {
+    return { ok: false, error: { code: 'birth_location_required' } };
+  }
+
+  const lat = parseFloatStrict(latitudeText);
+  if (lat === null) {
+    return {
+      ok: false,
+      error: { code: latitudeText ? 'latitude_invalid' : 'birth_location_unresolved' },
+    };
+  }
+  const lon = parseFloatStrict(longitudeText);
+  if (lon === null) {
+    return {
+      ok: false,
+      error: { code: longitudeText ? 'longitude_invalid' : 'birth_location_unresolved' },
+    };
+  }
 
   const location: BirthLocation = {
     latitude: lat,
     longitude: lon,
-    iana_time_zone: draft.iana_time_zone,
-    ...(draft.place_name.length > 0 ? { place_name: draft.place_name } : {}),
+    iana_time_zone: timezoneText,
+    ...(placeName.length > 0 ? { place_name: placeName } : {}),
   };
 
   const derivedUtc = deriveBirthDatetimeUtc(draft);

@@ -1,5 +1,5 @@
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
-import { SCAFFOLD_BIRTH_DATETIME_UTC } from '../subjects/natal-readiness.ts';
+import { SCAFFOLD_BIRTH_DATETIME_UTC } from '../subjects/scaffold-natal-inputs.ts';
 
 export function buildEmptyShiJingSpace(userId: string): ShiJingSpace {
   return {

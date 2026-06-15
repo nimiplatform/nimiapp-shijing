@@ -37,7 +37,7 @@ function PrivacyLocalDataSection() {
   }
 
   return (
-    <section className="sjp-card">
+    <section id="settings-privacy-local-data" className="sjp-card" tabIndex={-1}>
       <div className="sjp-card-head">
         <span className="sjp-card-icon">
           <svg

@@ -4,6 +4,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  createEmptyNimiAIConfig,
+  createNimiAppAIScopeRef,
+  encodeNimiAIScopeRef,
+} from '@nimiplatform/sdk/ai';
+import {
   buildRuntimeAiPromptRequest,
 } from '../src/product/astrology/runtime-ai-prompt.ts';
 import { parseRuntimeAiOutput } from '../src/product/astrology/runtime-ai-parse.ts';
@@ -12,9 +17,15 @@ import {
   createShijingRuntimeAiClient,
   resolveShijingTextGenerateBinding,
 } from '../src/shell/ai/shijing-runtime-ai-client.ts';
-import { createShijingReadingAIScopeRef } from '../src/shell/ai/shijing-ai-config.ts';
 import {
-  ensureShijingReadingAIConfigFromFirstRunEvidence,
+  SHIJING_AI_CONFIG_INDEX_KEY,
+  SHIJING_AI_CONFIG_STORAGE_PREFIX,
+  createShijingReadingAIScopeRef,
+  loadShijingAIConfig,
+  saveShijingAIConfig,
+} from '../src/shell/ai/shijing-ai-config.ts';
+import {
+  ensureShijingReadingAIConfigFromFirstLaunchProfile,
 } from '../src/shell/ai/shijing-ai-config-bootstrap.ts';
 import {
   dailyMirrorScope,
@@ -152,114 +163,39 @@ function emptyAIConfig() {
   };
 }
 
-function firstRunProof({
-  capability,
-  scenarioType,
-  consumerId,
-  assetId,
-}) {
+function readyAIProfile() {
   return {
-    capability,
-    scenarioType,
-    boundConsumerId: consumerId,
-    boundAssetId: assetId,
-    localRouteTarget: 'local',
-    routePolicy: 1,
-    modelResolved: assetId,
-    terminalResult: 'local_executed',
-    reasonCode: 'FIRST_RUN_EXECUTION_EVIDENCE_READY',
-    traceId: `trace:${consumerId}`,
-    executedAt: '2026-06-03T00:00:00Z',
+    profileId: 'profile-shijing-ready',
+    title: 'ShiJing Ready Profile',
+    capabilities: {
+      'text.generate': {
+        targetRef: {
+          kind: 'local-runtime',
+          targetId: 'local',
+          profileId: 'runtime-baseline:ready',
+          readinessRef: 'execution_evidence_ready',
+        },
+        params: {
+          temperature: 0.2,
+          topP: 0.9,
+        },
+        runtimeDescriptor: {
+          executionMode: 'local',
+          execution: { backend: 'runtime' },
+          model: { family: 'shijing-test' },
+        },
+      },
+    },
   };
 }
 
-function verifiedFirstRunEvidenceRef() {
+function setupRequiredAIProfile() {
   return {
-    executionEvidenceRef: 'execution_evidence_ready',
-    selectedLocalFactoryAiProfileRef: 'factory:minimal',
-    installLevel: 'minimal',
-    runtimeBaselineRef: 'runtime-baseline:ready',
-    dataRootRef: 'data-root:ready',
-    localExecutionTargetEvidence: ['local'],
-    selectedBaselineCapabilityProof: [
-      firstRunProof({
-        capability: 'local_text_chat_execution',
-        scenarioType: 1,
-        consumerId: 'llama.cpp.cpu',
-        assetId: 'asset:text',
-      }),
-      firstRunProof({
-        capability: 'local_basic_stt_execution',
-        scenarioType: 6,
-        consumerId: 'speech.qwen3-asr.python',
-        assetId: 'asset:stt',
-      }),
-      firstRunProof({
-        capability: 'local_basic_tts_execution',
-        scenarioType: 5,
-        consumerId: 'speech.qwen3-tts.python',
-        assetId: 'asset:tts',
-      }),
-    ],
-    terminalResult: 'local_ai_ready',
-    observedAt: '2026-06-03T00:00:00Z',
-    runtimeAuditSequence: ['audit:ready'],
-    runtimeVerifierIdentity: 'runtime',
-  };
-}
-
-function firstRunReadyClient() {
-  return {
-    runtime: {
-      generated: {
-        getProductControlRecord: async () => ({
-          json: JSON.stringify({
-            path: 'D:\\nimi\\product-control.json',
-            exists: true,
-            state: 'ready_for_use',
-            error: null,
-            record: {
-              schemaVersion: 1,
-              installId: 'install-ready',
-              productVersion: '0.1.0',
-              state: 'ready_for_use',
-              dataRoot: {
-                path: 'D:\\nimi-data',
-                status: 'ready',
-                selectedAt: '2026-06-03T00:00:00Z',
-                verifiedAt: '2026-06-03T00:00:00Z',
-                selectedAtUnixMs: 1780425600000,
-                verifiedAtUnixMs: 1780425600000,
-              },
-              firstRun: {
-                installLevel: 'minimal',
-                aiProfileAlias: 'minimal-local',
-                completed: true,
-                completedAt: '2026-06-03T00:00:00Z',
-                initializationPlanId: 'plan-ready',
-                baselineProfileRef: 'profile-ready',
-                baselineCommitId: 'commit-ready',
-                accountDefaultProfileRef: 'account-default-ready',
-                builtInAiConfigRefs: [],
-                runtimeBaselineRef: 'runtime-baseline:ready',
-                executionEvidenceRef: 'execution_evidence_ready',
-              },
-              pointers: {},
-              repair: { required: false },
-            },
-          }),
-        }),
-        resolveFirstRunExecutionEvidence: async (request) => ({
-          ref: {
-            ...verifiedFirstRunEvidenceRef(),
-            executionEvidenceRef: request.executionEvidenceRef,
-            runtimeBaselineRef: request.expectedRuntimeBaselineRef,
-            installLevel: request.expectedInstallLevel,
-          },
-          state: 'local_ai_ready',
-          reasonCode: 'FIRST_RUN_EXECUTION_EVIDENCE_READY',
-          detail: '',
-        }),
+    profileId: 'profile-shijing-setup-required',
+    title: 'ShiJing Setup Required Profile',
+    capabilities: {
+      'text.generate': {
+        readinessPolicy: 'required',
       },
     },
   };
@@ -580,26 +516,47 @@ test('resolveShijingTextGenerateBinding fails closed when AIConfig has no text.g
   }
 });
 
-test('first-run evidence initializes ShiJing text.generate AIConfig targetRef', async () => {
+test('ShiJing AIConfig store keys persisted configs by scope', () => {
+  const readingScope = createShijingReadingAIScopeRef();
+  const otherScope = createNimiAppAIScopeRef('shijing', 'shijing.other');
+  assert.notEqual(encodeNimiAIScopeRef(readingScope), encodeNimiAIScopeRef(otherScope));
+  assert.match(SHIJING_AI_CONFIG_STORAGE_PREFIX, /v2$/);
+  assert.equal(SHIJING_AI_CONFIG_INDEX_KEY, `${SHIJING_AI_CONFIG_STORAGE_PREFIX}:index`);
+
+  saveShijingAIConfig(createEmptyNimiAIConfig(otherScope), otherScope);
+  const loaded = loadShijingAIConfig(readingScope);
+
+  assert.deepEqual(loaded, createEmptyNimiAIConfig(readingScope));
+});
+
+test('first-launch profile initializes ShiJing text.generate AIConfig targetRef', async () => {
   let savedConfig = null;
-  const result = await ensureShijingReadingAIConfigFromFirstRunEvidence({
-    client: firstRunReadyClient(),
+  const result = await ensureShijingReadingAIConfigFromFirstLaunchProfile({
     loadConfig: () => emptyAIConfig(),
     saveConfig: (next) => {
       savedConfig = next;
       return next;
     },
+    resolveRecommendedProfile: () => ({
+      profile: readyAIProfile(),
+      manifestSatisfied: true,
+    }),
+    now: () => '2026-06-04T00:00:00.000Z',
   });
 
   assert.equal(result.outcome, 'initialized');
+  assert.equal(result.profileId, 'profile-shijing-ready');
+  assert.equal(result.profileSource, 'recommended-profile');
   assert.equal(savedConfig.capabilities.targetRefs['text.generate'].kind, 'local-runtime');
   assert.equal(savedConfig.capabilities.targetRefs['text.generate'].targetId, 'local');
   assert.equal(savedConfig.capabilities.targetRefs['text.generate'].profileId, 'runtime-baseline:ready');
   assert.equal(savedConfig.capabilities.targetRefs['text.generate'].readinessRef, 'execution_evidence_ready');
+  assert.equal(savedConfig.capabilities.selectedParams['text.generate'].temperature, 0.2);
+  assert.equal(savedConfig.profileOrigin.profileId, 'profile-shijing-ready');
 });
 
-test('first-run evidence init does not overwrite an existing ShiJing text.generate targetRef', async () => {
-  let productControlRead = false;
+test('first-launch profile init does not overwrite an existing ShiJing text.generate targetRef', async () => {
+  let recommendedProfileRead = false;
   let saved = false;
   const existing = {
     ...emptyAIConfig(),
@@ -615,18 +572,12 @@ test('first-run evidence init does not overwrite an existing ShiJing text.genera
       selectedParams: {},
     },
   };
-  const result = await ensureShijingReadingAIConfigFromFirstRunEvidence({
-    client: {
-      runtime: {
-        generated: {
-          getProductControlRecord: async () => {
-            productControlRead = true;
-            throw new Error('should not read product control');
-          },
-        },
-      },
-    },
+  const result = await ensureShijingReadingAIConfigFromFirstLaunchProfile({
     loadConfig: () => existing,
+    resolveRecommendedProfile: () => {
+      recommendedProfileRead = true;
+      throw new Error('should not read profile');
+    },
     saveConfig: () => {
       saved = true;
       throw new Error('should not save');
@@ -634,9 +585,29 @@ test('first-run evidence init does not overwrite an existing ShiJing text.genera
   });
 
   assert.equal(result.outcome, 'already-bound');
-  assert.equal(productControlRead, false);
+  assert.equal(recommendedProfileRead, false);
   assert.equal(saved, false);
   assert.equal(result.config.capabilities.targetRefs['text.generate'].providerModelId, 'gpt-runtime');
+});
+
+test('first-launch profile init fails closed when no profile can materialize text.generate', async () => {
+  let saved = false;
+  const result = await ensureShijingReadingAIConfigFromFirstLaunchProfile({
+    loadConfig: () => emptyAIConfig(),
+    saveConfig: () => {
+      saved = true;
+      throw new Error('should not save');
+    },
+    resolveRecommendedProfile: () => ({
+      profile: setupRequiredAIProfile(),
+      manifestSatisfied: true,
+    }),
+  });
+
+  assert.equal(result.outcome, 'setup-required');
+  assert.equal(result.reason, 'setup_required_no_live_config');
+  assert.match(result.detail, /text\.generate/);
+  assert.equal(saved, false);
 });
 
 test('AIConfig-backed RuntimeAiClient routes text.generate through configured cloud targetRef', async () => {
@@ -688,9 +659,11 @@ test('AIConfig-backed RuntimeAiClient routes text.generate through configured cl
   const client = createShijingRuntimeAiClient({
     loadConfig: () => config,
     getClient: () => ({ runtime }),
+    getSubjectUserId: () => 'acct-runtime-1',
   });
   const result = await client.generate('rijing', minimalPromptRequest());
   assert.equal(result.ok, true);
+  assert.equal(capturedRequest.head.subjectUserId, 'acct-runtime-1');
   assert.equal(capturedRequest.head.modelId, 'gpt-runtime');
   assert.equal(capturedRequest.head.routePolicy, 2);
   assert.equal(capturedRequest.head.connectorId, 'connector-openai');
@@ -699,7 +672,7 @@ test('AIConfig-backed RuntimeAiClient routes text.generate through configured cl
   assert.equal(capturedRequest.spec.spec.textGenerate.temperature, 0.2);
   assert.equal(capturedRequest.spec.spec.textGenerate.topP, 0.9);
   assert.equal(capturedRequest.spec.spec.textGenerate.maxTokens, 1200);
-  assert.equal(capturedOptions.metadata.aiConfigScopeOwnerId, 'ai.nimi.apps.shijing');
+  assert.equal(capturedOptions.metadata.aiConfigScopeOwnerId, 'nimi.shijing');
   assert.equal(capturedOptions.metadata.aiConfigBindingSource, 'cloud');
   assert.match(capturedOptions.metadata.aiConfigHash, /^v1-/);
   assert.equal(capturedSchedulingRequest.targets[0].targetId, 'connector-openai');

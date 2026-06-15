@@ -2,9 +2,8 @@ import { create } from 'zustand';
 import type { ShijingRuntimeDefaults } from '../bridge/index.js';
 
 // SJG-PROD-02: Nimi platform owns identity. The renderer-side app store
-// keeps only the runtime-projected account identity. Short-lived access
-// tokens are pulled from runtime.account.getAccessToken at call time and
-// NEVER persisted in this store.
+// keeps only the runtime-projected account identity. Raw Realm access tokens
+// are never exposed to ShiJing.
 export type AuthUser = {
   id: string;
   displayName: string;
