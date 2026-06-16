@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { CONCERN_TAG_ACTIVE_LIMIT } from '../../domain/concern-tag.ts';
 import { ConcernTagControls } from '../concern-tags/concern-tag-controls.tsx';
+import { useProductCopy } from '../i18n/copy.ts';
 import { SelfEditor } from '../self/self-editor.tsx';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { subjectMirrorReadiness } from '../subjects/natal-readiness.ts';
 import { dailyMirrorScopeForToday } from '../tabs/mirror-scope-helpers.ts';
-import { useProductCopy } from '../i18n/copy.ts';
 
 export interface ShijingOnboardingProps {
   readonly onComplete: () => void;
@@ -34,6 +34,11 @@ export function ShijingOnboarding(props: ShijingOnboardingProps) {
   const concernReady = activeConcernCount > 0;
   const complete = selfReady && concernReady;
   const nextPanel: OnboardingPanel = selfReady ? 'concerns' : 'profile';
+  const progressText = complete
+    ? copy.onboarding.done
+    : selfReady
+      ? copy.onboarding.concernPending
+      : copy.onboarding.selfPending;
 
   useEffect(() => {
     if (!selfReady) {
@@ -51,8 +56,8 @@ export function ShijingOnboarding(props: ShijingOnboardingProps) {
       aria-label={copy.onboarding.ariaLabel}
       data-active-panel={activePanel}
     >
-      <div className="shijing-onboarding__modal">
-        <header className="shijing-onboarding__hero">
+      <div className="shijing-onboarding__surface">
+        <aside className="shijing-onboarding__intro" aria-label={copy.onboarding.ariaLabel}>
           <div className="shijing-onboarding__hero-copy">
             <p className="shijing-onboarding__eyebrow">{copy.onboarding.eyebrow}</p>
             <h1>{copy.onboarding.title}</h1>
@@ -60,45 +65,59 @@ export function ShijingOnboarding(props: ShijingOnboardingProps) {
               {copy.onboarding.lede}
             </p>
           </div>
-          <button
-            type="button"
-            className="shijing-onboarding__confirm"
-            disabled={!complete}
-            onClick={props.onComplete}
-          >
-            {copy.onboarding.enter}
-          </button>
-        </header>
-
-        <ol className="shijing-onboarding__steps" aria-label={copy.onboarding.readinessAria}>
-          <li
-            data-active={activePanel === 'profile' ? 'true' : 'false'}
-            data-complete={selfReady ? 'true' : 'false'}
-          >
-            <button type="button" onClick={() => setActivePanel('profile')}>
-              <span>01</span>
-              <strong>{copy.onboarding.selfTitle}</strong>
-              <small>{selfReady ? copy.onboarding.done : copy.onboarding.selfPending}</small>
+          <div className="shijing-onboarding__status" aria-live="polite">
+            <span className="shijing-onboarding__status-dot" data-complete={complete ? 'true' : 'false'} />
+            <span>{progressText}</span>
+          </div>
+          <ol className="shijing-onboarding__steps" aria-label={copy.onboarding.readinessAria}>
+            <li
+              data-active={activePanel === 'profile' ? 'true' : 'false'}
+              data-complete={selfReady ? 'true' : 'false'}
+            >
+              <button type="button" onClick={() => setActivePanel('profile')}>
+                <span>01</span>
+                <strong>{copy.onboarding.selfTitle}</strong>
+                <small>{selfReady ? copy.onboarding.done : copy.onboarding.selfPending}</small>
+              </button>
+            </li>
+            <li
+              data-active={activePanel === 'concerns' ? 'true' : 'false'}
+              data-complete={concernReady ? 'true' : 'false'}
+            >
+              <button type="button" onClick={() => setActivePanel('concerns')}>
+                <span>02</span>
+                <strong>{copy.onboarding.concernTitle}</strong>
+                <small>
+                  {concernReady
+                    ? copy.onboarding.activeCount(activeConcernCount, CONCERN_TAG_ACTIVE_LIMIT)
+                    : copy.onboarding.concernPending}
+                </small>
+              </button>
+            </li>
+          </ol>
+          <div className="shijing-onboarding__actions">
+            {!complete ? (
+              <button
+                type="button"
+                className="shijing-onboarding__next"
+                onClick={() => setActivePanel(nextPanel)}
+              >
+                {selfReady ? copy.onboarding.continueConcerns : copy.onboarding.continueProfile}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="shijing-onboarding__confirm"
+              disabled={!complete}
+              onClick={props.onComplete}
+            >
+              {copy.onboarding.enter}
             </button>
-          </li>
-          <li
-            data-active={activePanel === 'concerns' ? 'true' : 'false'}
-            data-complete={concernReady ? 'true' : 'false'}
-          >
-            <button type="button" onClick={() => setActivePanel('concerns')}>
-              <span>02</span>
-              <strong>{copy.onboarding.concernTitle}</strong>
-              <small>
-                {concernReady
-                  ? copy.onboarding.activeCount(activeConcernCount, CONCERN_TAG_ACTIVE_LIMIT)
-                  : copy.onboarding.concernPending}
-              </small>
-            </button>
-          </li>
-        </ol>
+          </div>
+        </aside>
 
-        <div className="shijing-onboarding__stage shijing-settings-page--styled">
-          <div className="shijing-onboarding__stage-head">
+        <section className="shijing-onboarding__workbench" aria-label={copy.onboarding.readinessAria}>
+          <header className="shijing-onboarding__stage-head">
             <p>
               {activePanel === 'profile'
                 ? copy.onboarding.profileStageEyebrow
@@ -109,32 +128,32 @@ export function ShijingOnboarding(props: ShijingOnboardingProps) {
                 ? copy.onboarding.profileStageTitle
                 : copy.onboarding.concernStageTitle}
             </h2>
+          </header>
+          <div className="shijing-onboarding__stage shijing-settings-page--styled">
+            <div
+              className="shijing-onboarding__panel"
+              hidden={activePanel !== 'profile'}
+              aria-hidden={activePanel !== 'profile'}
+            >
+              <SelfEditor mode="inline-editor" />
+            </div>
+            <div
+              className="shijing-onboarding__panel"
+              hidden={activePanel !== 'concerns'}
+              aria-hidden={activePanel !== 'concerns'}
+            >
+              <ConcernTagControls />
+            </div>
           </div>
-          <div
-            className="shijing-onboarding__panel"
-            hidden={activePanel !== 'profile'}
-            aria-hidden={activePanel !== 'profile'}
-          >
-            <SelfEditor />
-          </div>
-          <div
-            className="shijing-onboarding__panel"
-            hidden={activePanel !== 'concerns'}
-            aria-hidden={activePanel !== 'concerns'}
-          >
-            <ConcernTagControls />
-          </div>
-        </div>
-
-        {!complete ? (
           <button
             type="button"
-            className="shijing-onboarding__next"
-            onClick={() => setActivePanel(nextPanel)}
+            className="shijing-onboarding__mobile-confirm"
+            disabled={!complete}
+            onClick={props.onComplete}
           >
-            {selfReady ? copy.onboarding.continueConcerns : copy.onboarding.continueProfile}
+            {copy.onboarding.enter}
           </button>
-        ) : null}
+        </section>
       </div>
     </section>
   );

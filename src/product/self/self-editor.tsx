@@ -22,12 +22,14 @@ import { useProductCopy, type ProductCopy } from '../i18n/copy.ts';
 
 export interface SelfEditorProps {
   readonly autoOpenEditor?: boolean;
+  readonly mode?: 'summary' | 'inline-editor';
 }
 
-export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
+export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEditorProps) {
   const { state, replace_snapshot } = useShijingStore();
   const copy = useProductCopy();
   const summary = summarizeSelfSubject(state.snapshot, copy);
+  const inlineEditor = mode === 'inline-editor';
   const [draft, setDraft] = useState<SelfNatalDraft>(() => selfDraftFromSpace(state.snapshot));
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -36,6 +38,7 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
 
   // Close the editor drawer on Escape.
   useEffect(() => {
+    if (inlineEditor) return;
     if (!editing) return;
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
@@ -47,7 +50,7 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
     }
     document.addEventListener('keydown', onKeyDown, true);
     return () => document.removeEventListener('keydown', onKeyDown, true);
-  }, [editing, saving]);
+  }, [editing, inlineEditor, saving]);
 
   function update<K extends keyof SelfNatalDraft>(key: K, value: SelfNatalDraft[K]) {
     setDraft((prev) => ({ ...prev, [key]: value }));
@@ -70,6 +73,11 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
 
   function closeEdit() {
     if (saving) return;
+    if (inlineEditor) {
+      setDraft(selfDraftFromSpace(state.snapshot));
+      setErrorCode(null);
+      return;
+    }
     setEditing(false);
     setErrorCode(null);
   }
@@ -84,7 +92,9 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
         const persistence = await replace_snapshot(outcome.next_space);
         if (persistence.kind === 'saved' || persistence.kind === 'idle') {
           setSaving(false);
-          closeEdit();
+          if (!inlineEditor) {
+            closeEdit();
+          }
           return;
         }
         if (persistence.kind === 'error') {
@@ -107,6 +117,79 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
             : err.code;
       setErrorCode(describeNatalError(code, copy));
     }
+  }
+
+  function renderEditorFormFields(idPrefix: string) {
+    return (
+      <>
+        <NatalFields draft={draft} onChange={update} idPrefix={idPrefix} />
+
+        <div className="sjp-field sjp-field--full">
+          <label className="sjp-label" htmlFor={`${idPrefix}-notes`}>{copy.self.notes}</label>
+          <textarea
+            id={`${idPrefix}-notes`}
+            className="sjp-textarea"
+            placeholder={copy.self.notesPlaceholder}
+            value={draft.notes}
+            onChange={(e) => update('notes', e.currentTarget.value)}
+          />
+        </div>
+
+        {errorCode ? (
+          <p className="sjp-alert" role="alert">
+            {errorCode}
+          </p>
+        ) : null}
+
+        <div className="sjp-actions sjp-actions--drawer">
+          <Button
+            type="submit"
+            tone="primary"
+            loading={saving}
+            disabled={saving}
+            leadingIcon={
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            }
+          >
+            {saving ? copy.common.saving : copy.common.save}
+          </Button>
+          <Button type="button" tone="ghost" onClick={closeEdit} disabled={saving}>
+            {copy.common.cancel}
+          </Button>
+        </div>
+      </>
+    );
+  }
+
+  if (inlineEditor) {
+    return (
+      <section className="sjp-card sjp-card--inline-self-editor" aria-label={copy.self.editDialog}>
+        <header className="sjp-inline-self-editor__head">
+          <h2>{copy.self.editDialog}</h2>
+        </header>
+        <form
+          className="sjp-drawer__body sjp-grid sjp-inline-self-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void save();
+          }}
+        >
+          {renderEditorFormFields('self-inline')}
+        </form>
+      </section>
+    );
   }
 
   return (
@@ -273,53 +356,7 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
                     void save();
                   }}
                 >
-                  <NatalFields draft={draft} onChange={update} idPrefix="self" />
-
-                  <div className="sjp-field sjp-field--full">
-                    <label className="sjp-label" htmlFor="self-notes">{copy.self.notes}</label>
-                    <textarea
-                      id="self-notes"
-                      className="sjp-textarea"
-                      placeholder={copy.self.notesPlaceholder}
-                      value={draft.notes}
-                      onChange={(e) => update('notes', e.currentTarget.value)}
-                    />
-                  </div>
-
-                  {errorCode ? (
-                    <p className="sjp-alert" role="alert">
-                      {errorCode}
-                    </p>
-                  ) : null}
-
-                  <div className="sjp-actions sjp-actions--drawer">
-                    <Button
-                      type="submit"
-                      tone="primary"
-                      loading={saving}
-                      disabled={saving}
-                      leadingIcon={
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.7"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden="true"
-                        >
-                          <path d="M20 6L9 17l-5-5" />
-                        </svg>
-                      }
-                    >
-                      {saving ? copy.common.saving : copy.common.save}
-                    </Button>
-                    <Button type="button" tone="ghost" onClick={closeEdit} disabled={saving}>
-                      {copy.common.cancel}
-                    </Button>
-                  </div>
+                  {renderEditorFormFields('self')}
                 </form>
               </div>
             </div>,
