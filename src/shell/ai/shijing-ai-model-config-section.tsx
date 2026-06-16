@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ModelConfigAiModelHub,
   defaultModelConfigProfileCopy,
@@ -22,20 +23,26 @@ import {
   SHIJING_TEXT_GENERATE_CAPABILITY_ID,
   createShijingModelRequirementDeclaration,
 } from './shijing-ai-requirements.ts';
-import { translateShijingModelConfig } from './model-config-copy.ts';
+import { createShijingModelConfigTranslator } from './model-config-copy.ts';
+import {
+  uiLanguageFromI18nLanguage,
+  useProductCopy,
+  type ProductCopy,
+} from '../../product/i18n/copy.ts';
 
 function bindingStatus(
   config: NimiAIConfig,
   runtimeReady: boolean,
   runtimeDetail: string | null,
+  copy: ProductCopy,
 ): ModelConfigProjectionStatus {
   if (!runtimeReady) {
     return {
       supported: false,
       tone: 'attention',
-      badgeLabel: 'Runtime 未就绪',
-      title: 'Runtime 不可用',
-      detail: runtimeDetail || 'Runtime bootstrap 尚未完成。',
+      badgeLabel: copy.aiConfig.runtimeNotReady,
+      title: copy.aiConfig.runtimeUnavailable,
+      detail: runtimeDetail || copy.aiConfig.runtimeBootstrapPending,
     };
   }
   const targetRef = config.capabilities.targetRefs[SHIJING_TEXT_GENERATE_CAPABILITY_ID] || null;
@@ -43,16 +50,16 @@ function bindingStatus(
     return {
       supported: false,
       tone: 'attention',
-      badgeLabel: '需要目标',
-      title: '缺少模型目标',
-      detail: '四镜生成会在缺少 text.generate targetRef 时 fail-close。',
+      badgeLabel: copy.aiConfig.needsTarget,
+      title: copy.aiConfig.missingTarget,
+      detail: copy.aiConfig.missingTargetDetail,
     };
   }
   return {
     supported: true,
     tone: 'ready',
-    badgeLabel: '已配置',
-    title: '模型已配置',
+    badgeLabel: copy.aiConfig.configured,
+    title: copy.aiConfig.modelConfigured,
     detail: targetRefLabel(targetRef),
   };
 }
@@ -77,6 +84,12 @@ function useLiveAIConfig(service: SharedAIConfigService, scopeRef: NimiAIScopeRe
 }
 
 export function ShijingAiModelConfigSection() {
+  const copy = useProductCopy();
+  const { i18n } = useTranslation();
+  const modelConfigTranslate = useMemo(
+    () => createShijingModelConfigTranslator(uiLanguageFromI18nLanguage(i18n.resolvedLanguage ?? i18n.language)),
+    [i18n.language, i18n.resolvedLanguage],
+  );
   const bootstrapReady = useAppStore((state) => state.bootstrapReady);
   const bootstrapError = useAppStore((state) => state.bootstrapError);
   const service = useMemo(() => createShijingAIConfigService(), []);
@@ -94,15 +107,15 @@ export function ShijingAiModelConfigSection() {
     requirementDeclaration,
     enabledCapabilities: [SHIJING_TEXT_GENERATE_CAPABILITY_ID],
     providerResolver: (capabilityId: string) => (bootstrapReady ? providerCache(capabilityId) : null),
-    projectionResolver: () => bindingStatus(config, bootstrapReady, bootstrapError),
+    projectionResolver: () => bindingStatus(config, bootstrapReady, bootstrapError, copy),
     runtimeReady: bootstrapReady,
-    runtimeNotReadyLabel: bootstrapError || 'Runtime 未就绪',
-    i18n: { t: translateShijingModelConfig },
-  }), [bootstrapError, bootstrapReady, config, providerCache, requirementDeclaration, scopeRef, service]);
+    runtimeNotReadyLabel: bootstrapError || copy.aiConfig.runtimeNotReady,
+    i18n: { t: modelConfigTranslate },
+  }), [bootstrapError, bootstrapReady, config, copy, modelConfigTranslate, providerCache, requirementDeclaration, scopeRef, service]);
 
   const profileCopy = useMemo(
-    () => defaultModelConfigProfileCopy(translateShijingModelConfig),
-    [],
+    () => defaultModelConfigProfileCopy(modelConfigTranslate),
+    [modelConfigTranslate],
   );
   const currentOrigin = useMemo(
     () => (config.profileOrigin
@@ -141,8 +154,8 @@ export function ShijingAiModelConfigSection() {
           </svg>
         </span>
         <div>
-          <h2 className="sjp-card-title">AI 模型配置</h2>
-          <p className="sjp-card-desc">绑定 Runtime text.generate 模型，供四镜解读的 Runtime AI wording 使用</p>
+          <h2 className="sjp-card-title">{copy.aiConfig.title}</h2>
+          <p className="sjp-card-desc">{copy.aiConfig.description}</p>
         </div>
       </div>
       <div className="shijing-ai-model-config">

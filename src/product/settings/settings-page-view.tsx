@@ -11,7 +11,7 @@ import {
   SHIJING_SETTINGS_PAGES,
   type ShijingSettingsPageId,
 } from '../../contracts/ia-contract.ts';
-import { SETTINGS_PAGE_LABELS } from '../i18n/copy.ts';
+import { useProductCopy } from '../i18n/copy.ts';
 import { SettingsSurfaceSection } from './settings-surfaces.tsx';
 
 export type ShijingSettingsFocusTarget =
@@ -40,6 +40,7 @@ export function SettingsPageView({
   onBack,
   onNavigate,
 }: SettingsPageViewProps) {
+  const copy = useProductCopy();
   const page =
     SHIJING_SETTINGS_PAGES.find((candidate) => candidate.id === pageId) ??
     SHIJING_SETTINGS_PAGES[0];
@@ -77,22 +78,22 @@ export function SettingsPageView({
   // the lifelong archive whose day-to-day entry lives on the time mirrors.
   const intro =
     page.id === 'profile'
-      ? '管理用于排盘与解读的基础资料和关系人物。'
+      ? copy.settings.profileIntro
       : page.id === 'concerns'
-        ? '记下你最近在意的事，它们是时镜看你近况的「镜片」。激活的关注会进入日 / 月 / 年镜的推算。内容只保存在本地。'
+        ? copy.settings.concernsIntro
         : page.id === 'memory'
-          ? '记下你经历过的大事，解读时会结合它们，更懂你的处境。内容只保存在本地。'
-          : '调整时镜如何回应你，并管理只保存在本设备上的数据。';
+          ? copy.settings.memoryIntro
+          : copy.settings.settingsIntro;
 
   return (
     <div
       className={pageClassName}
       role="dialog"
       aria-modal="true"
-      aria-label={SETTINGS_PAGE_LABELS[page.id]}
+      aria-label={copy.settingsPageLabels[page.id]}
     >
       <PageDetailLayout
-        title={SETTINGS_PAGE_LABELS[page.id]}
+        title={copy.settingsPageLabels[page.id]}
         width="md"
         back={
           <>
@@ -111,9 +112,9 @@ export function SettingsPageView({
               >
                 <path d="M15 18l-6-6 6-6" />
               </svg>
-              返回
+              {copy.settings.back}
             </button>
-            <nav className="shijing-settings-page__subnav" aria-label="设置分区">
+            <nav className="shijing-settings-page__subnav" aria-label={copy.settings.subnavAriaLabel}>
               {SHIJING_SETTINGS_PAGES.map((entry) => {
                 const active = entry.id === page.id;
                 return (
@@ -124,7 +125,7 @@ export function SettingsPageView({
                     aria-current={active ? 'page' : undefined}
                     onClick={active ? undefined : () => onNavigate(entry.id)}
                   >
-                    {SETTINGS_PAGE_LABELS[entry.id]}
+                    {copy.settingsPageLabels[entry.id]}
                   </button>
                 );
               })}
@@ -151,7 +152,7 @@ export function SettingsPageView({
                     <rect x="5" y="11" width="14" height="10" rx="2" />
                     <path d="M8 11V7a4 4 0 018 0v4" />
                   </svg>
-                  本地保存 · 不会公开
+                  {copy.settings.localOnlyTag}
                 </span>
               ) : null}
             </div>

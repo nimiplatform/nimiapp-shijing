@@ -7,33 +7,35 @@
 
 import { useState } from 'react';
 import type { ShijingSettingsSurfaceId } from '../../contracts/ia-contract.ts';
-import { SETTINGS_SURFACE_LABELS } from '../i18n/copy.ts';
+import { SETTINGS_SURFACE_LABELS, useProductCopy } from '../i18n/copy.ts';
 import { ConcernTagControls } from '../concern-tags/concern-tag-controls.tsx';
 import { MemoryEditor } from '../memories/memory-editor.tsx';
 import { PersonEditor } from '../persons/person-editor.tsx';
 import { SelfEditor } from '../self/self-editor.tsx';
 import { ResponsePreferencesEditor } from './response-preferences-editor.tsx';
 import { MethodProfileEditor } from './method-profile-editor.tsx';
+import { UiLanguageSwitch } from './ui-language-switch.tsx';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import type { ShijingSettingsFocusTarget } from './settings-page-view.tsx';
 
 function PrivacyLocalDataSection() {
   const { persistence_status, persistence_client } = useShijingStore();
+  const copy = useProductCopy();
   const [recoveryStatus, setRecoveryStatus] = useState<string | null>(null);
   const persistenceErrorKind =
     persistence_status.kind === 'error' ? persistence_status.error.kind : null;
 
   async function handleClearLocal() {
     if (!persistence_client) {
-      setRecoveryStatus('清理失败:当前没有可用的本地持久化适配器');
+      setRecoveryStatus(copy.privacy.clearNoAdapter);
       return;
     }
-    setRecoveryStatus('清理中…');
+    setRecoveryStatus(copy.privacy.clearing);
     const result = await persistence_client.clear();
     if (result.ok) {
-      setRecoveryStatus('已清理。请刷新页面以重新加载。');
+      setRecoveryStatus(copy.privacy.cleared);
     } else {
-      setRecoveryStatus(`清理失败: ${result.error.kind}`);
+      setRecoveryStatus(copy.privacy.clearFailed(result.error.kind));
     }
   }
 
@@ -55,19 +57,18 @@ function PrivacyLocalDataSection() {
           </svg>
         </span>
         <div>
-          <h2 className="sjp-card-title">隐私与本地数据</h2>
-          <p className="sjp-card-desc">你的资料只保存在本设备 · 可在此查看本地存储状态并在需要时清理</p>
+          <h2 className="sjp-card-title">{copy.privacy.title}</h2>
+          <p className="sjp-card-desc">{copy.privacy.description}</p>
         </div>
       </div>
 
       <div className="sjp-grid">
         <p className="sjp-note">
-          本地持久化状态:<code>{persistence_status.kind}</code>
+          {copy.privacy.status}:<code>{persistence_status.kind}</code>
         </p>
         {persistenceErrorKind ? (
           <p className="sjp-note sjp-note--warn">
-            <strong>本地持久化错误:</strong> <code>{persistenceErrorKind}</code>。
-            可能原因:本地保存了旧版本架构的快照,新校验拒绝其加载。
+            {copy.privacy.error(persistenceErrorKind)}
           </p>
         ) : null}
         <div className="sjp-actions">
@@ -84,7 +85,7 @@ function PrivacyLocalDataSection() {
             >
               <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6" />
             </svg>
-            清理本地持久化数据
+            {copy.privacy.clearButton}
           </button>
         </div>
         {recoveryStatus ? (
@@ -99,6 +100,7 @@ function PrivacyLocalDataSection() {
 
 function DiagnosticsSection() {
   const { state } = useShijingStore();
+  const copy = useProductCopy();
   return (
     <section className="sjp-card">
       <div className="sjp-card-head">
@@ -117,18 +119,18 @@ function DiagnosticsSection() {
           </svg>
         </span>
         <div>
-          <h2 className="sjp-card-title">诊断</h2>
-          <p className="sjp-card-desc">查看当前数据快照的校验状态,便于排查问题</p>
+          <h2 className="sjp-card-title">{copy.diagnostics.title}</h2>
+          <p className="sjp-card-desc">{copy.diagnostics.description}</p>
         </div>
       </div>
 
       <div className="sjp-grid">
         <p className="sjp-note">
-          当前快照校验:<code>{state.snapshot_status.kind}</code>
+          {copy.diagnostics.snapshotStatus}:<code>{state.snapshot_status.kind}</code>
         </p>
         {state.snapshot_status.kind === 'invalid' ? (
           <p className="sjp-note sjp-note--warn">
-            校验错误码: <code>{state.snapshot_status.error.code}</code>
+            {copy.diagnostics.validationCode}: <code>{state.snapshot_status.error.code}</code>
           </p>
         ) : null}
       </div>
@@ -156,6 +158,7 @@ function SurfaceBody(props: {
     case 'response_preferences':
       return (
         <>
+          <UiLanguageSwitch variant="card" />
           <MethodProfileEditor />
           <ResponsePreferencesEditor />
         </>

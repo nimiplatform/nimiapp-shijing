@@ -12,6 +12,7 @@ function spaceWith(methodProfileId, natalOverrides) {
   return validShiJingSpace({
     self_subject: { natal_inputs: validNatalInputs(natalOverrides) },
     settings: {
+      ui_language: 'zh',
       response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' },
       ...(methodProfileId ? { method_profile_id: methodProfileId } : {}),
     },

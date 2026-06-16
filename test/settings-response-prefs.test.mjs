@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { commitResponsePreferences } from '../src/product/settings/response-preferences-state.ts';
+import { commitUiLanguage } from '../src/product/settings/ui-language-state.ts';
+import { validateShiJingSpace } from '../src/contracts/shijing-space-validator.ts';
 import { validShiJingSpace } from './_fixtures.mjs';
 
 test('commitResponsePreferences accepts a valid draft', () => {
@@ -60,4 +62,32 @@ test('commitResponsePreferences carries extra_instructions when present', () => 
   if (r.ok) {
     assert.equal(r.next_space.settings.response_preferences.extra_instructions, 'be brief');
   }
+});
+
+test('commitUiLanguage changes only renderer UI language', () => {
+  const space = validShiJingSpace();
+  const r = commitUiLanguage(space, 'en');
+  assert.equal(r.ok, true);
+  if (r.ok) {
+    assert.equal(r.next_space.settings.ui_language, 'en');
+    assert.deepEqual(r.next_space.settings.response_preferences, space.settings.response_preferences);
+  }
+});
+
+test('commitUiLanguage rejects unsupported language', () => {
+  const r = commitUiLanguage(validShiJingSpace(), 'fr');
+  assert.equal(r.ok, false);
+  if (!r.ok) assert.equal(r.error.code, 'ui_language_invalid');
+});
+
+test('validateShiJingSpace rejects invalid settings ui_language', () => {
+  const space = validShiJingSpace({
+    settings: {
+      ui_language: 'fr',
+      response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' },
+    },
+  });
+  const r = validateShiJingSpace(space);
+  assert.equal(r.ok, false);
+  if (!r.ok) assert.equal(r.error.code, 'space_settings_invalid');
 });

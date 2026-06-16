@@ -15,7 +15,7 @@ import type {
   TendencyClass,
 } from '../../../domain/mirror-output.ts';
 import type { ConcernTag } from '../../../domain/concern-tag.ts';
-import { TENDENCY_CLASS_LABELS } from '../../i18n/copy.ts';
+import { useProductCopy } from '../../i18n/copy.ts';
 
 export interface RiJingProjectionsProps {
   readonly projections: readonly RiJingConcernProjection[];
@@ -35,11 +35,12 @@ const TENDENCY_TONE: Record<TendencyClass, string> = {
 };
 
 export function RiJingProjections(props: RiJingProjectionsProps) {
+  const copy = useProductCopy();
   if (props.projections.length === 0) return null;
   return (
-    <section className="shijing-rijing__projections" aria-label="今日关注分镜">
+    <section className="shijing-rijing__projections" aria-label={copy.rijing.projections.ariaLabel}>
       <header className="shijing-rijing__projections-head">
-        <h3 className="shijing-rijing__projections-title">今日关注分镜</h3>
+        <h3 className="shijing-rijing__projections-title">{copy.rijing.projections.title}</h3>
       </header>
       <ul className="shijing-rijing__projections-grid">
         {props.projections.map((proj) => {
@@ -56,7 +57,7 @@ export function RiJingProjections(props: RiJingProjectionsProps) {
                 <span
                   className={`shijing-rijing__projection-tendency shijing-rijing__projection-tendency--${tone}`}
                 >
-                  {TENDENCY_CLASS_LABELS[proj.tendency_class]}
+                  {copy.tendencyClassLabels[proj.tendency_class]}
                 </span>
               </header>
               <p className="shijing-rijing__projection-summary">{proj.summary}</p>

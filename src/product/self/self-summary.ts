@@ -8,12 +8,9 @@
 
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import {
-  BIRTH_PRECISION_LABELS,
-  CALCULATION_SEX_LABELS,
-  CALENDAR_SYSTEM_LABELS,
+  getProductCopy,
+  type ProductCopy,
 } from '../i18n/copy.ts';
-
-const MISSING = '未填写';
 
 // One labelled cell in the core birth-info grid (性别 / 出生日期 / 出生时间).
 export interface SelfProfileField {
@@ -66,7 +63,10 @@ function hasCalibration(lat: number, lng: number, tz: string): boolean {
   return Number.isFinite(lat) && Number.isFinite(lng);
 }
 
-export function summarizeSelfSubject(space: ShiJingSpace): SelfProfileSummary {
+export function summarizeSelfSubject(
+  space: ShiJingSpace,
+  copy: ProductCopy = getProductCopy('zh'),
+): SelfProfileSummary {
   const inputs = space.self_subject.natal_inputs;
   const raw = inputs.raw_birth_input;
   const loc = inputs.birth_location;
@@ -82,27 +82,27 @@ export function summarizeSelfSubject(space: ShiJingSpace): SelfProfileSummary {
   // muted「未填写」placeholder so the grid keeps a steady shape.
   const coreFields: SelfProfileField[] = [
     {
-      label: '性别',
-      value: sexMissing ? MISSING : CALCULATION_SEX_LABELS[sex],
+      label: copy.self.coreLabels.sex,
+      value: sexMissing ? copy.self.missing : copy.calculationSexLabels[sex],
       missing: sexMissing,
     },
     {
-      label: '出生日期',
-      value: dateText ? formatDate(dateText) : MISSING,
+      label: copy.self.coreLabels.birthDate,
+      value: dateText ? formatDate(dateText) : copy.self.missing,
       missing: !dateText,
     },
     {
-      label: '出生时间',
-      value: timeText || MISSING,
+      label: copy.self.coreLabels.birthTime,
+      value: timeText || copy.self.missing,
       missing: !timeText,
     },
   ];
 
   // 历法 · 城市 · 时间准确度 — the wide meta cell. The precision label only
   // joins in when a birth time is actually recorded.
-  const metaParts: string[] = [CALENDAR_SYSTEM_LABELS[inputs.calendar_system]];
+  const metaParts: string[] = [copy.calendarSystemLabels[inputs.calendar_system]];
   if (place) metaParts.push(place);
-  if (hasData && timeText) metaParts.push(BIRTH_PRECISION_LABELS[inputs.birth_precision]);
+  if (hasData && timeText) metaParts.push(copy.birthPrecisionLabels[inputs.birth_precision]);
   const metaText = metaParts.join(' · ');
   // Muted unless the user has supplied something beyond the default 历法.
   const metaMissing = !place && !(hasData && timeText);
@@ -116,10 +116,10 @@ export function summarizeSelfSubject(space: ShiJingSpace): SelfProfileSummary {
   const calibrationText = calibrationParts.length > 0 ? calibrationParts.join(' · ') : null;
 
   const reminders: string[] = [];
-  if (!dateText) reminders.push('出生日期未填写，暂时无法生成完整排盘。');
-  if (!timeText) reminders.push('出生时间未填写，时柱与大运只能粗略推算。');
-  if (!place) reminders.push('出生地点未填写，可能影响时区与节气换算。');
-  if (sex === 'unspecified') reminders.push('性别未填写，大运方向暂时无法确定。');
+  if (!dateText) reminders.push(copy.self.reminders.missingBirthDate);
+  if (!timeText) reminders.push(copy.self.reminders.missingBirthTime);
+  if (!place) reminders.push(copy.self.reminders.missingPlace);
+  if (sex === 'unspecified') reminders.push(copy.self.reminders.missingSex);
 
   return {
     coreFields,

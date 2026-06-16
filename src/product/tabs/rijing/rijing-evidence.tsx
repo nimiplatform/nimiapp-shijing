@@ -9,6 +9,7 @@
 import { useState, type ReactNode } from 'react';
 
 import { ChevronDownIcon, ShieldIcon } from './rijing-icons.tsx';
+import { useProductCopy } from '../../i18n/copy.ts';
 
 export interface RijingEvidenceChip {
   readonly group: string;
@@ -22,6 +23,7 @@ export interface RijingEvidenceRowProps {
 }
 
 export function RiJingEvidenceRow(props: RijingEvidenceRowProps) {
+  const copy = useProductCopy();
   const [open, setOpen] = useState(false);
   const expandable = !props.disabled && Boolean(props.children);
   return (
@@ -36,7 +38,7 @@ export function RiJingEvidenceRow(props: RijingEvidenceRowProps) {
         <span className="shijing-rijing__evidence-icon" aria-hidden>
           <ShieldIcon />
         </span>
-        <span className="shijing-rijing__evidence-title">推演依据与数据说明</span>
+        <span className="shijing-rijing__evidence-title">{copy.rijing.evidence.title}</span>
         <span className="shijing-rijing__evidence-chips">
           {props.chips.map((chip, idx) => (
             <span key={`${idx}-${chip.group}`} className="shijing-rijing__evidence-chip">

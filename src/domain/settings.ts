@@ -2,6 +2,14 @@
 
 import type { MethodProfileId } from './algorithm.ts';
 
+export type UiLanguage = 'zh' | 'en';
+
+export const UI_LANGUAGES: readonly UiLanguage[] = ['zh', 'en'] as const;
+
+export function isUiLanguage(value: unknown): value is UiLanguage {
+  return (UI_LANGUAGES as readonly unknown[]).includes(value);
+}
+
 export type ResponseTone = 'neutral' | 'warm' | 'concise';
 
 export const RESPONSE_TONES: readonly ResponseTone[] = ['neutral', 'warm', 'concise'] as const;
@@ -30,6 +38,7 @@ export interface ResponsePreferences {
 }
 
 export interface Settings {
+  readonly ui_language: UiLanguage;
   readonly response_preferences: ResponsePreferences;
   // Active 命理 method profile for generation (SJG-ALGO-01/02). Absent ⇒ the
   // default profile (bazi_ziping_v1). Not a wording preference.

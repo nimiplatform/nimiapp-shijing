@@ -5,12 +5,14 @@
 // `pending_shijing_source_reading_ids` from the store.
 
 import { useShijingStore } from '../../state/shijing-store.tsx';
+import { useProductCopy } from '../../i18n/copy.ts';
 
 export interface ImportToShiJingButtonProps {
   readonly readingId: string;
 }
 
 export function ImportToShiJingButton(props: ImportToShiJingButtonProps) {
+  const copy = useProductCopy();
   const { state, dispatch } = useShijingStore();
   const isPending = state.pending_shijing_source_reading_ids.includes(props.readingId);
   return (
@@ -20,9 +22,9 @@ export function ImportToShiJingButton(props: ImportToShiJingButtonProps) {
       onClick={() => dispatch({ type: 'shijing/import-source-reading', reading_id: props.readingId })}
       disabled={isPending}
       aria-pressed={isPending}
-      aria-label="导入到时镜咨询"
+      aria-label={copy.importToShijing.ariaLabel}
     >
-      {isPending ? '已加入时镜咨询' : '导入到时镜咨询'}
+      {isPending ? copy.importToShijing.pendingLabel : copy.importToShijing.label}
     </button>
   );
 }

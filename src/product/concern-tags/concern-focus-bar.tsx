@@ -12,6 +12,7 @@
 import { useMemo } from 'react';
 import { CONCERN_TAG_ACTIVE_LIMIT } from '../../domain/concern-tag.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
+import { useProductCopy } from '../i18n/copy.ts';
 
 function nowIso(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -24,6 +25,7 @@ export interface ConcernFocusBarProps {
 
 export function ConcernFocusBar({ onManage }: ConcernFocusBarProps) {
   const { state, dispatch } = useShijingStore();
+  const copy = useProductCopy();
   const tags = state.snapshot.concern_tags;
   const activeCount = useMemo(
     () => tags.filter((t) => t.status === 'active').length,
@@ -48,14 +50,17 @@ export function ConcernFocusBar({ onManage }: ConcernFocusBarProps) {
   }
 
   return (
-    <section className="shijing-concern-bar" aria-label="关注标签">
-      <span className="shijing-concern-bar__label">关注</span>
-      <span className="shijing-concern-bar__count" aria-label={`已激活 ${activeCount} / ${CONCERN_TAG_ACTIVE_LIMIT}`}>
+    <section className="shijing-concern-bar" aria-label={copy.concerns.focusAria}>
+      <span className="shijing-concern-bar__label">{copy.concerns.focusLabel}</span>
+      <span
+        className="shijing-concern-bar__count"
+        aria-label={copy.concerns.activeCountAria(activeCount, CONCERN_TAG_ACTIVE_LIMIT)}
+      >
         {activeCount}/{CONCERN_TAG_ACTIVE_LIMIT}
       </span>
 
       {tags.length === 0 ? (
-        <span className="shijing-concern-bar__empty">还没有关注标签</span>
+        <span className="shijing-concern-bar__empty">{copy.concerns.focusEmpty}</span>
       ) : (
         <ul className="shijing-concern-bar__pills">
           {tags.map((tag) => {
@@ -68,7 +73,13 @@ export function ConcernFocusBar({ onManage }: ConcernFocusBarProps) {
                   data-status={tag.status}
                   aria-pressed={active}
                   disabled={!active && atLimit}
-                  title={active ? '点按：本次不关注' : atLimit ? `已达激活上限 ${CONCERN_TAG_ACTIVE_LIMIT}` : '点按：加入关注'}
+                  title={
+                    active
+                      ? copy.concerns.toggleOffTitle
+                      : atLimit
+                        ? copy.concerns.addLimitTitle(CONCERN_TAG_ACTIVE_LIMIT)
+                        : copy.concerns.toggleOnTitle
+                  }
                   onClick={() => toggle(tag.id, tag.status)}
                 >
                   {tag.label}
@@ -84,7 +95,7 @@ export function ConcernFocusBar({ onManage }: ConcernFocusBarProps) {
         className="shijing-concern-bar__manage"
         onClick={() => onManage?.()}
       >
-        管理
+        {copy.concerns.manage}
       </button>
     </section>
   );

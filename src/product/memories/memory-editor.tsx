@@ -9,7 +9,7 @@ import { createPortal } from 'react-dom';
 import { Button, ConfirmDialog } from '@nimiplatform/kit/ui';
 import type { EventMemory } from '../../domain/event-memory.ts';
 import { EVENT_MEMORY_ADMISSIBLE_USES, EVENT_MEMORY_SOURCES } from '../../domain/event-memory.ts';
-import { MEMORY_USE_LABELS, RECORD_SOURCE_LABELS } from '../i18n/copy.ts';
+import { useProductCopy } from '../i18n/copy.ts';
 import {
   formatIsoForDisplay,
   isoToLocalInput,
@@ -47,6 +47,7 @@ function emptyDraft(): MemoryDraft {
 
 export function MemoryEditor() {
   const { state, dispatch } = useShijingStore();
+  const copy = useProductCopy();
   const [draft, setDraft] = useState<MemoryDraft>(emptyDraft);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -107,10 +108,12 @@ export function MemoryEditor() {
   function deleteMemoryMessage(memory: EventMemory): string {
     const cascade = cascadeOnEntityRemoval(state.snapshot, { event_memory_id: memory.id });
     const parts: string[] = [];
-    if (cascade.dropped_readings > 0) parts.push(`${cascade.dropped_readings} 条引用它的解读`);
-    if (cascade.dropped_conversations > 0) parts.push(`${cascade.dropped_conversations} 条相关对话`);
-    const extra = parts.length > 0 ? `同时会移除${parts.join('、')}。` : '';
-    return `「${memory.body}」将被永久删除，解读时不再引用。${extra}此操作不可撤销。`;
+    if (cascade.dropped_readings > 0) parts.push(copy.memory.cascadeReadings(cascade.dropped_readings));
+    if (cascade.dropped_conversations > 0) {
+      parts.push(copy.memory.cascadeConversations(cascade.dropped_conversations));
+    }
+    const extra = parts.length > 0 ? `${parts.join(', ')}. ` : '';
+    return copy.memory.deleteMessage(memory.body, extra);
   }
 
   function confirmDelete() {
@@ -140,7 +143,7 @@ export function MemoryEditor() {
   const concernTags = state.snapshot.concern_tags;
 
   return (
-    <section className="sjp-card" aria-label="重要经历">
+    <section className="sjp-card" aria-label={copy.memory.title}>
       <div className="sjp-card-head">
         <span className="sjp-card-icon">
           <svg
@@ -158,8 +161,8 @@ export function MemoryEditor() {
           </svg>
         </span>
         <div className="sjp-card-headtext">
-          <h2 className="sjp-card-title">重要经历</h2>
-          <p className="sjp-card-desc">记下经历过的大事，解读时会作为参考</p>
+          <h2 className="sjp-card-title">{copy.memory.title}</h2>
+          <p className="sjp-card-desc">{copy.memory.description}</p>
         </div>
         <button type="button" className="sjp-btn sjp-card-action" onClick={openDrawer}>
           <svg
@@ -174,7 +177,7 @@ export function MemoryEditor() {
           >
             <path d="M12 5v14M5 12h14" />
           </svg>
-          添加
+          {copy.common.add}
         </button>
       </div>
 
@@ -190,37 +193,36 @@ export function MemoryEditor() {
                 type="button"
                 className="sjp-btn sjp-btn--ghost"
                 onClick={() => setConfirmingDelete(m)}
-                aria-label="删除这条记录"
+                aria-label={copy.memory.deleteRecordAria}
               >
-                删除
+                {copy.common.delete}
               </button>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="sjp-empty">还没有记录。记下经历过的大事，解读时会作为参考。</p>
+        <p className="sjp-empty">{copy.memory.empty}</p>
       )}
 
       {/* List-level error (e.g. delete blocked). The drawer shows its own. */}
       {!drawerOpen && errorCode ? (
         <p className="sjp-alert" role="alert">
-          没能保存，请检查内容后再试一次。
-          <code title={errorCode}> （错误代码 {errorCode}）</code>
+          {copy.memory.saveFailed(errorCode)}
         </p>
       ) : null}
 
       {drawerOpen
         ? createPortal(
-            <div className="sjp-drawer" role="dialog" aria-modal="true" aria-label="记一件重要经历">
+            <div className="sjp-drawer" role="dialog" aria-modal="true" aria-label={copy.memory.addDialog}>
               <div className="sjp-drawer__scrim" onClick={closeDrawer} />
               <div className="sjp-drawer__panel">
                 <header className="sjp-drawer__head">
-                  <h3 className="sjp-drawer__title">记一件重要经历</h3>
+                  <h3 className="sjp-drawer__title">{copy.memory.addDialog}</h3>
                   <button
                     type="button"
                     className="sjp-drawer__close"
                     onClick={closeDrawer}
-                    aria-label="关闭"
+                    aria-label={copy.common.close}
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -246,7 +248,7 @@ export function MemoryEditor() {
                   }}
                 >
                   <div className="sjp-field">
-                    <label className="sjp-label" htmlFor="memory-occurred">发生时间</label>
+                    <label className="sjp-label" htmlFor="memory-occurred">{copy.memory.occurredAt}</label>
                     <input
                       id="memory-occurred"
                       type="datetime-local"
@@ -259,28 +261,28 @@ export function MemoryEditor() {
                   </div>
 
                   <div className="sjp-field">
-                    <label className="sjp-label" htmlFor="memory-source">记录来源</label>
+                    <label className="sjp-label" htmlFor="memory-source">{copy.memory.source}</label>
                     <SjpSelect
                       id="memory-source"
                       value={draft.source}
                       onValueChange={(v) => setDraft({ ...draft, source: v as MemoryDraft['source'] })}
-                      options={EVENT_MEMORY_SOURCES.map((s) => ({ value: s, label: RECORD_SOURCE_LABELS[s] }))}
+                      options={EVENT_MEMORY_SOURCES.map((s) => ({ value: s, label: copy.recordSourceLabels[s] }))}
                     />
                   </div>
 
                   <div className="sjp-field sjp-field--full">
-                    <label className="sjp-label" htmlFor="memory-body">发生了什么</label>
+                    <label className="sjp-label" htmlFor="memory-body">{copy.memory.body}</label>
                     <textarea
                       id="memory-body"
                       className="sjp-textarea"
-                      placeholder="例如：换了新工作 / 和家人聊开了 / 一段关系结束了"
+                      placeholder={copy.memory.bodyPlaceholder}
                       value={draft.body}
                       onChange={(e) => setDraft({ ...draft, body: e.currentTarget.value })}
                     />
                   </div>
 
                   <div className="sjp-field sjp-field--full">
-                    <label className="sjp-label">关联到哪些关注</label>
+                    <label className="sjp-label">{copy.memory.concernRefs}</label>
                     {concernTags.length > 0 ? (
                       <div className="sjp-checks">
                         {concernTags.map((t) => (
@@ -295,24 +297,23 @@ export function MemoryEditor() {
                         ))}
                       </div>
                     ) : (
-                      <p className="sjp-note">还没有关注标签，可以先在上方添加。</p>
+                      <p className="sjp-note">{copy.memory.noConcernTags}</p>
                     )}
                   </div>
 
                   <div className="sjp-field sjp-field--full">
-                    <label className="sjp-label" htmlFor="memory-use">要不要用于解读</label>
+                    <label className="sjp-label" htmlFor="memory-use">{copy.memory.useForReading}</label>
                     <SjpSelect
                       id="memory-use"
                       value={draft.admissible_use}
                       onValueChange={(v) => setDraft({ ...draft, admissible_use: v as MemoryDraft['admissible_use'] })}
-                      options={EVENT_MEMORY_ADMISSIBLE_USES.map((u) => ({ value: u, label: MEMORY_USE_LABELS[u] }))}
+                      options={EVENT_MEMORY_ADMISSIBLE_USES.map((u) => ({ value: u, label: copy.memoryUseLabels[u] }))}
                     />
                   </div>
 
                   {errorCode ? (
                     <p className="sjp-alert" role="alert">
-                      没能保存，请检查内容后再试一次。
-                      <code title={errorCode}> （错误代码 {errorCode}）</code>
+                      {copy.memory.saveFailed(errorCode)}
                     </p>
                   ) : null}
 
@@ -337,10 +338,10 @@ export function MemoryEditor() {
                         </svg>
                       }
                     >
-                      保存这条记录
+                      {copy.memory.saveRecord}
                     </Button>
                     <Button type="button" tone="ghost" onClick={closeDrawer}>
-                      取消
+                      {copy.common.cancel}
                     </Button>
                   </div>
                 </form>
@@ -352,10 +353,10 @@ export function MemoryEditor() {
 
       <ConfirmDialog
         open={confirmingDelete !== null}
-        title="删除这条记录？"
+        title={copy.memory.deleteTitle}
         message={confirmingDelete ? deleteMemoryMessage(confirmingDelete) : ''}
-        confirmLabel="删除"
-        cancelLabel="取消"
+        confirmLabel={copy.common.delete}
+        cancelLabel={copy.common.cancel}
         confirmTone="danger"
         onConfirm={confirmDelete}
         onClose={() => setConfirmingDelete(null)}

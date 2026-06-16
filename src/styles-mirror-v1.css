@@ -89,6 +89,21 @@
   position: relative;
 }
 
+.shijing-ui-language-switch {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.shijing-ui-language-switch + .shijing-topbar__account {
+  margin-left: 0;
+}
+
+.shijing-ui-language-switch__control {
+  box-shadow: none;
+}
+
 .shijing-topbar__account-name {
   font-size: 13px;
   color: var(--shijing-text-secondary);
@@ -990,6 +1005,13 @@
     width: 100%;
     margin: 0;
     overflow-x: auto;
+  }
+  .shijing-ui-language-switch {
+    order: 2;
+    margin-left: auto;
+  }
+  .shijing-topbar__account {
+    order: 2;
   }
   .shijing-shell__settings {
     border-left: 0;

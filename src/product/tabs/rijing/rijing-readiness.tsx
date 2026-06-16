@@ -12,59 +12,8 @@
 // with the SJG-IA-05 readiness blocker codes.
 
 import { InfoIcon } from './rijing-icons.tsx';
-import type { NatalReadiness, NatalReadinessReason } from '../../subjects/natal-readiness.ts';
-
-interface ReadinessCopy {
-  readonly title: string;
-  readonly body: string;
-}
-
-function readinessCopy(reason: NatalReadinessReason): ReadinessCopy {
-  switch (reason) {
-    case 'subject_missing':
-    case 'natal_inputs_invalid':
-    case 'scaffold_default_natal_inputs':
-      return {
-        title: '资料完整度：本人生辰待建立',
-        body: '补充后即可生成今日日镜。',
-      };
-    case 'birth_precision_unknown':
-      return {
-        title: '资料完整度：出生时间精度待补充',
-        body: '补充后可细化时柱、大运与分镜建议。',
-      };
-    case 'birth_location_unresolved':
-      return {
-        title: '资料完整度：出生地点待补充',
-        body: '补充后真太阳时与时区会更准确。',
-      };
-    case 'birth_precision_rough_year_for_mirror':
-      return {
-        title: '资料完整度：出生时间需补到月或日',
-        body: '当前仅约到年，非本命解读会受限。',
-      };
-    case 'birth_precision_rough_month_for_dayun':
-      return {
-        title: '资料完整度：出生时间建议补到日',
-        body: '当前仅约到月，需要大运的判断会偏移。',
-      };
-    case 'calculation_sex_unspecified_for_dayun':
-      return {
-        title: '资料完整度：性别待补充',
-        body: '补充后可推算大运起运方向。',
-      };
-    case 'birth_time_required_for_method':
-      return {
-        title: '资料完整度：所选方法需精确时辰',
-        body: '紫微斗数需精确到时辰才能安命宫，请先补全准确的出生时刻。',
-      };
-    default: {
-      const exhaustive: never = reason;
-      void exhaustive;
-      return { title: '资料完整度：待补充', body: '补充后判断会更精细。' };
-    }
-  }
-}
+import type { NatalReadiness } from '../../subjects/natal-readiness.ts';
+import { useProductCopy } from '../../i18n/copy.ts';
 
 export interface RiJingReadinessNoticeProps {
   readonly readiness: NatalReadiness;
@@ -72,13 +21,14 @@ export interface RiJingReadinessNoticeProps {
 }
 
 export function RiJingReadinessNotice(props: RiJingReadinessNoticeProps) {
+  const productCopy = useProductCopy();
   if (props.readiness.ok) return null;
-  const copy = readinessCopy(props.readiness.reason);
+  const copy = productCopy.rijing.readiness.reasons[props.readiness.reason] ?? productCopy.rijing.readiness.fallback;
   return (
     <aside
       className="shijing-rijing__readiness"
       role="status"
-      aria-label="资料完整度提示"
+      aria-label={productCopy.rijing.readiness.ariaLabel}
     >
       <span className="shijing-rijing__readiness-icon" aria-hidden>
         <InfoIcon />
@@ -92,7 +42,7 @@ export function RiJingReadinessNotice(props: RiJingReadinessNoticeProps) {
         className="shijing-rijing__readiness-link"
         onClick={props.onRequestOpenSettings}
       >
-        完善资料
+        {productCopy.rijing.readiness.button}
         <span className="shijing-rijing__readiness-link-arrow" aria-hidden>→</span>
       </button>
     </aside>

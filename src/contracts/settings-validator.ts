@@ -10,11 +10,13 @@ import { isAdmittedMethodProfileId } from '../domain/algorithm.ts';
 import {
   RESPONSE_LENGTHS,
   RESPONSE_TONES,
+  isUiLanguage,
   isResponseLanguage,
   type Settings,
 } from '../domain/settings.ts';
 
 export type SettingsValidationError =
+  | { code: 'settings_ui_language_invalid'; received: unknown }
   | { code: 'settings_response_preferences_missing' }
   | { code: 'settings_response_tone_invalid'; received: unknown }
   | { code: 'settings_response_length_invalid'; received: unknown }
@@ -27,6 +29,9 @@ export type SettingsValidationResult =
   | { ok: false; error: SettingsValidationError };
 
 export function validateSettings(settings: Settings): SettingsValidationResult {
+  if (!isUiLanguage(settings.ui_language)) {
+    return { ok: false, error: { code: 'settings_ui_language_invalid', received: settings.ui_language } };
+  }
   const prefs = settings.response_preferences;
   if (typeof prefs !== 'object' || prefs === null) {
     return { ok: false, error: { code: 'settings_response_preferences_missing' } };

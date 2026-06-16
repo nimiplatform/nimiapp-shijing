@@ -1,4 +1,6 @@
-export const SHIJING_MODEL_CONFIG_COPY: Readonly<Record<string, string>> = {
+type ModelConfigLanguage = 'zh' | 'en';
+
+export const SHIJING_MODEL_CONFIG_COPY_ZH: Readonly<Record<string, string>> = {
   'ModelConfig.profile.sectionTitle': 'AI 配置档案',
   'ModelConfig.profile.summaryLabel': 'AI Profile',
   'ModelConfig.profile.emptySummaryLabel': '未应用 Profile',
@@ -58,15 +60,92 @@ export const SHIJING_MODEL_CONFIG_COPY: Readonly<Record<string, string>> = {
   'ModelConfig.hub.detailStatusNeutral': '未配置',
 };
 
-export function translateShijingModelConfig(
+export const SHIJING_MODEL_CONFIG_COPY_EN: Readonly<Record<string, string>> = {
+  'ModelConfig.profile.sectionTitle': 'AI configuration profile',
+  'ModelConfig.profile.summaryLabel': 'AI Profile',
+  'ModelConfig.profile.emptySummaryLabel': 'No profile applied',
+  'ModelConfig.profile.applyButtonLabel': 'Apply profile',
+  'ModelConfig.profile.changeButtonLabel': 'Change',
+  'ModelConfig.profile.manageButtonTitle': 'Manage AI profile',
+  'ModelConfig.profile.modalTitle': 'Apply AI profile',
+  'ModelConfig.profile.modalHint': 'Applying a profile will overwrite current capability bindings. Confirm before writing.',
+  'ModelConfig.profile.loadingLabel': 'Loading profiles...',
+  'ModelConfig.profile.emptyLabel': 'No available profiles.',
+  'ModelConfig.profile.currentBadgeLabel': 'Current',
+  'ModelConfig.profile.cancelLabel': 'Cancel',
+  'ModelConfig.profile.confirmLabel': 'Apply',
+  'ModelConfig.profile.applyingLabel': 'Applying...',
+  'ModelConfig.profile.reloadLabel': 'Reload',
+  'ModelConfig.profile.importLabel': 'Import AI profile',
+  'ModelConfig.profile.previewTitle': 'Confirm configuration change',
+  'ModelConfig.profile.previewHint': 'This shows the full AIConfig diff before writing. Nothing is saved until confirmation.',
+  'ModelConfig.profile.previewingLabel': 'Calculating preview...',
+  'ModelConfig.profile.previewFirstApplyLabel': 'This scope has no AIConfig yet; applying will create one.',
+  'ModelConfig.profile.previewNoChangeLabel': 'This profile matches the current configuration.',
+  'ModelConfig.profile.previewBeforeLabel': 'Current',
+  'ModelConfig.profile.previewAfterLabel': 'After apply',
+  'ModelConfig.profile.previewWarningsLabel': 'Warnings',
+  'ModelConfig.profile.previewConfirmLabel': 'Confirm write',
+  'ModelConfig.profile.previewBackLabel': 'Back',
+  'ModelConfig.section.chat.title': 'Text generation',
+  'ModelConfig.capability.textGenerate.title': 'ShiJing reading model',
+  'ModelConfig.capability.textGenerate.subtitle': 'Runtime AI wording',
+  'ModelConfig.capability.textGenerate.detail': 'Bind a Runtime text.generate model for four-mirror readings. Generation fails closed without a binding.',
+  'ModelConfig.editor.common.timeoutLabel': 'Timeout',
+  'ModelConfig.editor.common.defaultPlaceholder': 'Default',
+  'ModelConfig.editor.common.previewBadgeLabel': 'Preview',
+  'ModelConfig.editor.textGenerate.parametersLabel': 'Parameters',
+  'ModelConfig.editor.textGenerate.generationDefaultsLabel': 'Generation defaults',
+  'ModelConfig.editor.textGenerate.responseControlsLabel': 'Response controls',
+  'ModelConfig.editor.textGenerate.advancedLabel': 'Advanced settings',
+  'ModelConfig.editor.textGenerate.temperatureLabel': 'Temperature',
+  'ModelConfig.editor.textGenerate.topPLabel': 'Top P',
+  'ModelConfig.editor.textGenerate.topKLabel': 'Top K',
+  'ModelConfig.editor.textGenerate.maxTokensLabel': 'Max Tokens',
+  'ModelConfig.editor.textGenerate.stopSequencesLabel': 'Stop sequences',
+  'ModelConfig.editor.textGenerate.stopSequencesHint': 'Up to {{max}}, one per line.',
+  'ModelConfig.editor.textGenerate.stopSequencesPlaceholder': 'Press Enter after typing',
+  'ModelConfig.editor.textGenerate.presencePenaltyLabel': 'Presence penalty',
+  'ModelConfig.editor.textGenerate.frequencyPenaltyLabel': 'Frequency penalty',
+  'ModelConfig.hub.title': 'AI models',
+  'ModelConfig.hub.backLabel': 'Back',
+  'ModelConfig.hub.aggregateReady': '{{count}} ready',
+  'ModelConfig.hub.aggregateAttention': '{{count}} need configuration',
+  'ModelConfig.hub.aggregateNeutral': '{{count}} not configured',
+  'ModelConfig.hub.aggregateEmpty': 'No capability configuration',
+  'ModelConfig.hub.detailTitleFormat': '{{section}} configuration',
+  'ModelConfig.hub.activeModelLabel': 'Current model',
+  'ModelConfig.hub.detailStatusReady': 'Runtime ready',
+  'ModelConfig.hub.detailStatusAttention': 'Needs configuration',
+  'ModelConfig.hub.detailStatusNeutral': 'Not configured',
+};
+
+export const SHIJING_MODEL_CONFIG_COPY = SHIJING_MODEL_CONFIG_COPY_ZH;
+
+function translateFrom(
+  dictionary: Readonly<Record<string, string>>,
   key: string,
   vars?: Readonly<Record<string, string | number>>,
 ): string {
   const fallback = typeof vars?.defaultValue === 'string' ? vars.defaultValue : key;
-  const template = SHIJING_MODEL_CONFIG_COPY[key] || fallback;
+  const template = dictionary[key] || fallback;
   if (!vars) return template;
   return Object.entries(vars).reduce(
     (current, [name, value]) => current.replaceAll(`{{${name}}}`, String(value)),
     template,
   );
+}
+
+export function translateShijingModelConfig(
+  key: string,
+  vars?: Readonly<Record<string, string | number>>,
+): string {
+  return translateFrom(SHIJING_MODEL_CONFIG_COPY_ZH, key, vars);
+}
+
+export function createShijingModelConfigTranslator(language: ModelConfigLanguage) {
+  const dictionary =
+    language === 'en' ? SHIJING_MODEL_CONFIG_COPY_EN : SHIJING_MODEL_CONFIG_COPY_ZH;
+  return (key: string, vars?: Readonly<Record<string, string | number>>) =>
+    translateFrom(dictionary, key, vars);
 }

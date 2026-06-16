@@ -10,9 +10,7 @@ import {
   type ResponseTone,
 } from '../../domain/settings.ts';
 import {
-  RESPONSE_LANGUAGE_LABELS,
-  RESPONSE_LENGTH_LABELS,
-  RESPONSE_TONE_LABELS,
+  useProductCopy,
 } from '../i18n/copy.ts';
 import { SjpSelect } from '../components/sjp-select.tsx';
 import { useShijingStore } from '../state/shijing-store.tsx';
@@ -21,6 +19,7 @@ import { ShijingAiModelConfigSection } from '../../shell/ai/shijing-ai-model-con
 
 export function ResponsePreferencesEditor() {
   const { state, dispatch } = useShijingStore();
+  const copy = useProductCopy();
   const initial = state.snapshot.settings.response_preferences;
   const [draft, setDraft] = useState<ResponsePreferences>(initial);
   const [errorCode, setErrorCode] = useState<string | null>(null);
@@ -57,8 +56,8 @@ export function ResponsePreferencesEditor() {
             </svg>
           </span>
           <div>
-            <h2 className="sjp-card-title">回应偏好</h2>
-            <p className="sjp-card-desc">调整时镜回应你的语气、长度与语言</p>
+            <h2 className="sjp-card-title">{copy.responsePreferences.title}</h2>
+            <p className="sjp-card-desc">{copy.responsePreferences.description}</p>
           </div>
         </div>
 
@@ -70,45 +69,47 @@ export function ResponsePreferencesEditor() {
           }}
         >
           <div className="sjp-field">
-            <label className="sjp-label" htmlFor="resp-tone">语气</label>
+            <label className="sjp-label" htmlFor="resp-tone">{copy.responsePreferences.tone}</label>
             <SjpSelect
               id="resp-tone"
               value={draft.tone}
               onValueChange={(v) => setDraft({ ...draft, tone: v as ResponseTone })}
-              options={RESPONSE_TONES.map((t) => ({ value: t, label: RESPONSE_TONE_LABELS[t] }))}
+              options={RESPONSE_TONES.map((t) => ({ value: t, label: copy.responseToneLabels[t] }))}
             />
           </div>
 
           <div className="sjp-field">
-            <label className="sjp-label" htmlFor="resp-length">长度</label>
+            <label className="sjp-label" htmlFor="resp-length">{copy.responsePreferences.length}</label>
             <SjpSelect
               id="resp-length"
               value={draft.length}
               onValueChange={(v) => setDraft({ ...draft, length: v as ResponseLength })}
-              options={RESPONSE_LENGTHS.map((l) => ({ value: l, label: RESPONSE_LENGTH_LABELS[l] }))}
+              options={RESPONSE_LENGTHS.map((l) => ({ value: l, label: copy.responseLengthLabels[l] }))}
             />
           </div>
 
           <div className="sjp-field sjp-field--full">
-            <label className="sjp-label" htmlFor="resp-language">语言</label>
+            <label className="sjp-label" htmlFor="resp-language">{copy.responsePreferences.aiLanguage}</label>
             <SjpSelect
               id="resp-language"
               value={draft.language}
               onValueChange={(v) => setDraft({ ...draft, language: v })}
               options={RESPONSE_LANGUAGES.map((l) => ({
                 value: l,
-                label: RESPONSE_LANGUAGE_LABELS[l],
+                label: copy.responseLanguageLabels[l],
               }))}
             />
           </div>
 
           <div className="sjp-field sjp-field--full">
             <label className="sjp-label" htmlFor="resp-extra">
-              额外指示 <span className="sjp-opt">(可选)</span>
+              {copy.responsePreferences.extraInstructions}{' '}
+              <span className="sjp-opt">({copy.common.optional})</span>
             </label>
             <textarea
               id="resp-extra"
               className="sjp-textarea"
+              placeholder={copy.responsePreferences.extraPlaceholder}
               value={draft.extra_instructions ?? ''}
               onChange={(e) => setDraft({ ...draft, extra_instructions: e.currentTarget.value })}
             />
@@ -128,18 +129,18 @@ export function ResponsePreferencesEditor() {
               >
                 <path d="M20 6L9 17l-5-5" />
               </svg>
-              保存回应偏好
+              {copy.responsePreferences.saveButton}
             </button>
           </div>
 
           {errorCode ? (
             <p className="sjp-alert" role="alert">
-              保存失败: <code>{errorCode}</code>
+              {copy.responsePreferences.saveFailed(errorCode)}
             </p>
           ) : null}
           {savedAt ? (
             <p className="sjp-status" role="status">
-              已保存 ({savedAt})
+              {copy.responsePreferences.savedAt(savedAt)}
             </p>
           ) : null}
         </form>

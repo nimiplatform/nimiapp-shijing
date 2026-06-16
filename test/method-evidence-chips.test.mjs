@@ -19,7 +19,7 @@ function readingWith(method) {
   };
   const space = {
     user_id: 'u', self_subject: { natal_inputs: natal }, persons: [], concern_tags: [], event_memories: [], plan_items: [], readings: [], conversations: [],
-    settings: { response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' }, ...(method ? { method_profile_id: method } : {}) },
+    settings: { ui_language: 'zh', response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' }, ...(method ? { method_profile_id: method } : {}) },
   };
   const fs = buildAstrologyFeatureSnapshot({
     mirror_kind: 'rijing', mirror_scope: { kind: 'daily', date: '2026-06-05', basis_time_zone: TZ },

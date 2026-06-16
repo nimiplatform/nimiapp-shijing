@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { OfflineCoordinator, type OfflineTier } from '@nimiplatform/kit/core/offline-coordinator';
 import {
   AmbientBackground,
@@ -61,6 +62,7 @@ function resolveAuthGateState(input: {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const authStatus = useAppStore((s) => s.auth.status);
   const bootstrapReady = useAppStore((s) => s.bootstrapReady);
   const bootstrapError = useAppStore((s) => s.bootstrapError);
@@ -89,11 +91,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return (
       <AuthGateScreen
         badge={<StatusBadge tone="danger" shape="dot">Runtime blocked · {gateState.offlineTier}</StatusBadge>}
-        title="Runtime 不可用"
-        detail="时镜需要 Runtime 完成账号、AI 和本地存储边界初始化。"
+        title={t('Shell.runtimeUnavailable')}
+        detail={t('Shell.runtimeUnavailableDetail')}
       >
         <InlineAlert tone="danger">{gateState.message}</InlineAlert>
-        <Button tone="primary" onClick={retry} loading={retrying}>重试</Button>
+        <Button tone="primary" onClick={retry} loading={retrying}>{t('Shell.retry')}</Button>
       </AuthGateScreen>
     );
   }
@@ -101,16 +103,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   if (gateState.kind === 'checking') {
     return (
       <AuthGateScreen
-        badge={<StatusBadge tone="neutral" shape="dot">Runtime check</StatusBadge>}
-        title="正在连接 Runtime"
-        detail="正在建立 Runtime account session、app session 和 AIConfig 边界。"
+        badge={<StatusBadge tone="neutral" shape="dot">{t('Shell.runtimeCheck')}</StatusBadge>}
+        title={t('Shell.connectingRuntime')}
+        detail={t('Shell.connectingRuntimeDetail')}
       >
         <div className="flex items-center gap-3 text-sm text-[var(--nimi-text-secondary)]" role="status">
           <span
             aria-hidden="true"
             className="inline-block h-4 w-4 rounded-full border-2 border-[var(--nimi-border-strong)] border-r-transparent animate-spin"
           />
-          <span>启动中</span>
+          <span>{t('Shell.booting')}</span>
         </div>
       </AuthGateScreen>
     );
@@ -121,16 +123,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       <Suspense
         fallback={
           <AuthGateScreen
-            badge={<StatusBadge tone="neutral" shape="dot">Login</StatusBadge>}
-            title="正在加载登录"
-            detail="正在准备 Runtime account 登录入口。"
+            badge={<StatusBadge tone="neutral" shape="dot">{t('Shell.login')}</StatusBadge>}
+            title={t('Shell.loadingLogin')}
+            detail={t('Shell.loadingLoginDetail')}
           >
             <div className="flex items-center gap-3 text-sm text-[var(--nimi-text-secondary)]" role="status">
               <span
                 aria-hidden="true"
                 className="inline-block h-4 w-4 rounded-full border-2 border-[var(--nimi-border-strong)] border-r-transparent animate-spin"
               />
-              <span>加载中</span>
+              <span>{t('Shell.loading')}</span>
             </div>
           </AuthGateScreen>
         }

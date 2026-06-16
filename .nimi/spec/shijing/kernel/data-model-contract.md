@@ -339,6 +339,7 @@ Invariants:
 
 ```text
 Settings {
+  ui_language: "zh" | "en"
   response_preferences: ResponsePreferences
 }
 
@@ -352,6 +353,9 @@ ResponsePreferences {
 
 Invariants:
 
+- `ui_language` controls renderer UI copy only. It must not enter
+  deterministic astrology calculation, Runtime AI prompt construction,
+  canonical hashing, or `Reading.inputs_summary`.
 - Settings has no `global_instructions`, `project_memory`, catalog snapshot,
   workflow, task, report, trend chart, or luck-score fields.
 - Settings UI may expose Self, People, Concern Tags, Memory & Plans, Response

@@ -17,7 +17,8 @@ import {
   selfDraftFromSpace,
   type SelfNatalDraft,
 } from './self-editor-state.ts';
-import { summarizeSelfSubject, SELF_PROFILE_TAGS } from './self-summary.ts';
+import { summarizeSelfSubject } from './self-summary.ts';
+import { useProductCopy, type ProductCopy } from '../i18n/copy.ts';
 
 export interface SelfEditorProps {
   readonly autoOpenEditor?: boolean;
@@ -25,7 +26,8 @@ export interface SelfEditorProps {
 
 export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
   const { state, replace_snapshot } = useShijingStore();
-  const summary = summarizeSelfSubject(state.snapshot);
+  const copy = useProductCopy();
+  const summary = summarizeSelfSubject(state.snapshot, copy);
   const [draft, setDraft] = useState<SelfNatalDraft>(() => selfDraftFromSpace(state.snapshot));
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -86,12 +88,12 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
           return;
         }
         if (persistence.kind === 'error') {
-          setErrorCode(describePersistenceSaveError(persistence.error));
+          setErrorCode(describePersistenceSaveError(persistence.error, copy));
           return;
         }
-        setErrorCode(`保存未完成（${persistence.kind}），请稍后重试。`);
+        setErrorCode(copy.self.saveIncomplete(persistence.kind));
       } catch (error) {
-        setErrorCode(`保存失败：${error instanceof Error ? error.message : String(error)}`);
+        setErrorCode(copy.self.saveFailed(error instanceof Error ? error.message : String(error)));
       } finally {
         setSaving(false);
       }
@@ -103,7 +105,7 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
           : err.code === 'birth_datetime_underivable'
             ? err.reason
             : err.code;
-      setErrorCode(describeNatalError(code));
+      setErrorCode(describeNatalError(code, copy));
     }
   }
 
@@ -126,8 +128,8 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
           </svg>
         </span>
         <div className="sjp-card-headtext">
-          <h2 className="sjp-card-title">本人资料</h2>
-          <p className="sjp-card-desc">本命盘与时镜推算所依据的出生信息。</p>
+          <h2 className="sjp-card-title">{copy.self.title}</h2>
+          <p className="sjp-card-desc">{copy.self.description}</p>
         </div>
         <button type="button" className="sjp-btn sjp-card-action" onClick={openEdit}>
           <svg
@@ -143,7 +145,7 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
             <path d="M12 20h9" />
             <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z" />
           </svg>
-          编辑
+          {copy.common.edit}
         </button>
       </div>
 
@@ -160,7 +162,7 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
             </div>
           ))}
           <div className={`sjp-stat sjp-stat--wide${summary.metaMissing ? ' sjp-stat--muted' : ''}`}>
-            <span className="sjp-stat__label">历法 · 地区 · 准确度</span>
+            <span className="sjp-stat__label">{copy.self.metaLabel}</span>
             <span className="sjp-stat__value">{summary.metaText}</span>
           </div>
         </div>
@@ -180,7 +182,7 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
               <circle cx="12" cy="10" r="3" />
             </svg>
-            <span className="sjp-profile__location-label">地点与时区</span>
+            <span className="sjp-profile__location-label">{copy.self.locationLabel}</span>
             <code>{summary.calibrationText}</code>
           </p>
         ) : null}
@@ -210,7 +212,7 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
         {/* 快捷入口区 + 右下角轻量状态. */}
         <div className="sjp-profile__foot">
           <div className="sjp-chips">
-            {SELF_PROFILE_TAGS.map((tag) => (
+            {copy.self.tags.map((tag) => (
               <span className="sjp-chip" key={tag}>
                 {tag}
               </span>
@@ -229,7 +231,7 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
               >
                 <path d="M20 6L9 17l-5-5" />
               </svg>
-              资料完整
+              {copy.self.complete}
             </span>
           ) : null}
         </div>
@@ -237,16 +239,16 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
 
       {editing
         ? createPortal(
-            <div className="sjp-drawer" role="dialog" aria-modal="true" aria-label="编辑本人资料">
+            <div className="sjp-drawer" role="dialog" aria-modal="true" aria-label={copy.self.editDialog}>
               <div className="sjp-drawer__scrim" onClick={closeEdit} />
               <div className="sjp-drawer__panel">
                 <header className="sjp-drawer__head">
-                  <h3 className="sjp-drawer__title">编辑本人资料</h3>
+                  <h3 className="sjp-drawer__title">{copy.self.editDialog}</h3>
                   <button
                     type="button"
                     className="sjp-drawer__close"
                     onClick={closeEdit}
-                    aria-label="关闭"
+                    aria-label={copy.common.close}
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -274,11 +276,11 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
                   <NatalFields draft={draft} onChange={update} idPrefix="self" />
 
                   <div className="sjp-field sjp-field--full">
-                    <label className="sjp-label" htmlFor="self-notes">备注</label>
+                    <label className="sjp-label" htmlFor="self-notes">{copy.self.notes}</label>
                     <textarea
                       id="self-notes"
                       className="sjp-textarea"
-                      placeholder="补充说明，例如生辰来源、出生证明备注…"
+                      placeholder={copy.self.notesPlaceholder}
                       value={draft.notes}
                       onChange={(e) => update('notes', e.currentTarget.value)}
                     />
@@ -312,10 +314,10 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
                         </svg>
                       }
                     >
-                      {saving ? '保存中' : '保存'}
+                      {saving ? copy.common.saving : copy.common.save}
                     </Button>
                     <Button type="button" tone="ghost" onClick={closeEdit} disabled={saving}>
-                      取消
+                      {copy.common.cancel}
                     </Button>
                   </div>
                 </form>
@@ -328,11 +330,11 @@ export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
   );
 }
 
-function describePersistenceSaveError(error: PersistenceError): string {
+function describePersistenceSaveError(error: PersistenceError, copy: ProductCopy): string {
   if (error.kind === 'save_validation_failed' && error.validation_error) {
-    return `保存失败：当前资料快照未通过校验（${error.validation_error.code}）。`;
+    return copy.self.validationFailed(error.validation_error.code);
   }
-  if ('cause' in error) return `保存失败：${error.cause}`;
-  if ('reason' in error) return `保存失败：${error.reason}`;
-  return `保存失败：${error.kind}`;
+  if ('cause' in error) return copy.self.saveFailed(error.cause);
+  if ('reason' in error) return copy.self.saveFailed(error.reason);
+  return copy.self.saveFailed(error.kind);
 }

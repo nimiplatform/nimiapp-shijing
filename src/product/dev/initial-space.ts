@@ -21,6 +21,7 @@ export function buildEmptyShiJingSpace(userId: string): ShiJingSpace {
     readings: [],
     conversations: [],
     settings: {
+      ui_language: 'zh',
       response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' },
     },
   };

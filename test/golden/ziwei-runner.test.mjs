@@ -40,7 +40,7 @@ function buildZiwei(c, mirror = { kind: 'daily', date: '2026-06-05', basis_time_
   const space = {
     user_id: 'u_golden', self_subject: { natal_inputs: natal },
     persons: [], concern_tags: [], event_memories: [], plan_items: [], readings: [], conversations: [],
-    settings: { response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' }, method_profile_id: 'ziwei_sanhe_v1' },
+    settings: { ui_language: 'zh', response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' }, method_profile_id: 'ziwei_sanhe_v1' },
   };
   return buildAstrologyFeatureSnapshot({ mirror_kind: mirrorKind, mirror_scope: mirror, space, related_person_refs: [], active_concern_tags: [validConcernTag('tag_career', { parsed_topics: ['career'], prompt_text: 'career' })] });
 }
@@ -78,7 +78,7 @@ test('cross-engine: same birth generates 八字 and 紫微 envelopes on the shar
   };
   const baseSpace = {
     user_id: 'u', self_subject: { natal_inputs: natal }, persons: [], concern_tags: [], event_memories: [], plan_items: [], readings: [], conversations: [],
-    settings: { response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' } },
+    settings: { ui_language: 'zh', response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' } },
   };
   const scope = { kind: 'long_horizon', start_date: '2026-01-01', end_date: '2035-12-31', basis_time_zone: TZ };
   const tag = validConcernTag('tag_career', { parsed_topics: ['career'], prompt_text: 'career' });

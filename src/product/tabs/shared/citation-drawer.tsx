@@ -3,17 +3,19 @@
 import type { Reading } from '../../../domain/reading.ts';
 import { ZiweiAstrolabe } from './ziwei-astrolabe.tsx';
 import { deriveMethodEvidenceChips } from './method-evidence-chips.ts';
+import { useProductCopy } from '../../i18n/copy.ts';
 
 export interface CitationDrawerProps {
   readonly reading: Reading;
 }
 
 export function CitationDrawer(props: CitationDrawerProps) {
+  const copy = useProductCopy();
   const { reading } = props;
   const evidenceChips = deriveMethodEvidenceChips(reading);
   return (
-    <details className="shijing-citation-drawer" aria-label="生成依据">
-      <summary>生成依据 / 引用</summary>
+    <details className="shijing-citation-drawer" aria-label={copy.citationDrawer.ariaLabel}>
+      <summary>{copy.citationDrawer.summary}</summary>
       {evidenceChips.length > 0 ? (
         <ul className="shijing-citation-drawer__chips">
           {evidenceChips.map((chip, i) => (
@@ -26,7 +28,7 @@ export function CitationDrawer(props: CitationDrawerProps) {
       ) : null}
       <dl>
         <div>
-          <dt>方法</dt>
+          <dt>{copy.citationDrawer.method}</dt>
           <dd>{reading.inputs_summary.method_profile.id}</dd>
         </div>
         <div>
@@ -64,10 +66,10 @@ export function CitationDrawer(props: CitationDrawerProps) {
         </ul>
       ) : null}
       {reading.cited_event_memory_refs.length > 0 ? (
-        <p>引用记忆: {reading.cited_event_memory_refs.join(', ')}</p>
+        <p>{copy.citationDrawer.citedMemories}: {reading.cited_event_memory_refs.join(', ')}</p>
       ) : null}
       {reading.cited_plan_item_refs.length > 0 ? (
-        <p>引用计划: {reading.cited_plan_item_refs.join(', ')}</p>
+        <p>{copy.citationDrawer.citedPlans}: {reading.cited_plan_item_refs.join(', ')}</p>
       ) : null}
     </details>
   );

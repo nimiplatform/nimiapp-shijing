@@ -26,7 +26,7 @@ import { inputsSummaryStaleForSpace } from '../astrology/inputs-summary-expiry.t
 import { newReadingId } from '../ids/index.ts';
 import { latestReadingByMirrorKind } from '../reading/reading-selectors.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
-import { MIRROR_KIND_LABELS } from '../i18n/copy.ts';
+import { useProductCopy, type ProductCopy } from '../i18n/copy.ts';
 import { classifyMirrorTabState } from './mirror-state.ts';
 import { persistenceReadyForAutoGeneration } from './auto-generation-readiness.ts';
 import { dailyMirrorScopeForToday } from './mirror-scope-helpers.ts';
@@ -79,6 +79,7 @@ function emptyActionForState(
   state: RiJingEmptyStateKind,
   onRequestOpenSettings: RiJingTabProps['onRequestOpenSettings'],
   onGenerate: () => void,
+  copy: ProductCopy,
 ):
   | {
       readonly label: string;
@@ -88,27 +89,27 @@ function emptyActionForState(
   switch (state) {
     case 'profile_incomplete':
       return {
-        label: '完善资料',
+        label: copy.rijing.emptyActions.profile_incomplete,
         onClick: () => onRequestOpenSettings?.('profile', 'self_profile_editor'),
       };
     case 'missing_focus':
       return {
-        label: '管理关注',
+        label: copy.rijing.emptyActions.missing_focus,
         onClick: () => onRequestOpenSettings?.('concerns'),
       };
     case 'runtime_ai_failed':
       return {
-        label: '配置 AI 模型',
+        label: copy.rijing.emptyActions.runtime_ai_failed,
         onClick: () => onRequestOpenSettings?.('settings', 'ai_model_config'),
       };
     case 'persistence_failed':
       return {
-        label: '管理本地数据',
+        label: copy.rijing.emptyActions.persistence_failed,
         onClick: () => onRequestOpenSettings?.('settings', 'privacy_local_data'),
       };
     case 'ready_to_generate':
       return {
-        label: '生成今日日镜',
+        label: copy.rijing.emptyActions.ready_to_generate,
         onClick: onGenerate,
       };
     case 'persistence_pending':
@@ -119,6 +120,7 @@ function emptyActionForState(
 function failureActionFor(
   failure: ReadingGenerationFailure,
   onRequestOpenSettings: RiJingTabProps['onRequestOpenSettings'],
+  copy: ProductCopy,
 ):
   | {
       readonly label: string;
@@ -127,7 +129,7 @@ function failureActionFor(
   | undefined {
   if (failure.kind !== 'runtime_ai_failed') return undefined;
   return {
-    label: '配置 AI 模型',
+    label: copy.rijing.failureActions.runtimeAi,
     onClick: () => onRequestOpenSettings?.('settings', 'ai_model_config'),
   };
 }
@@ -140,6 +142,7 @@ export interface RiJingTabProps {
 }
 
 export function RiJingTab(props: RiJingTabProps) {
+  const copy = useProductCopy();
   const { state, dispatch, persistence_status, persistence_client, runtime_ai_client } = useShijingStore();
   const [loading, setLoading] = useState(false);
   const [failure, setFailure] = useState<ReadingGenerationFailure | null>(null);
@@ -261,31 +264,33 @@ export function RiJingTab(props: RiJingTabProps) {
     readiness,
     activeTagCount: activeTagIds.length,
   });
-  const hero = deriveRiJingHero(currentReading, { empty_state: emptyState });
+  const hero = deriveRiJingHero(currentReading, { empty_state: emptyState, copy });
   const heroEmptyAction =
-    currentReading || loading ? undefined : emptyActionForState(emptyState, props.onRequestOpenSettings, handleGenerate);
-  const actions = deriveRiJingActions(currentReading);
-  const evidenceChips = deriveEvidenceChips(currentReading);
-  const dateLabel = rijingDateLabel(dailyScope.basis_time_zone);
+    currentReading || loading
+      ? undefined
+      : emptyActionForState(emptyState, props.onRequestOpenSettings, handleGenerate, copy);
+  const actions = deriveRiJingActions(currentReading, copy);
+  const evidenceChips = deriveEvidenceChips(currentReading, copy);
+  const dateLabel = rijingDateLabel(dailyScope.basis_time_zone, copy);
   const runtimeFailureAction =
     tabState.kind === 'failure'
-      ? failureActionFor(tabState.failure, props.onRequestOpenSettings)
+      ? failureActionFor(tabState.failure, props.onRequestOpenSettings, copy)
       : undefined;
 
   const refreshDisabled = loading || !persistenceReady || activeTagIds.length === 0 || !readiness.ok;
   const refreshAriaLabel = loading
-    ? '生成中…'
+    ? copy.rijing.refreshAria.loading
     : !persistenceReady
       ? persistence_status.kind === 'error'
-        ? '本地数据读写失败,请先在设置中处理'
-        : '本地数据加载中,暂不能生成今日'
+        ? copy.rijing.refreshAria.persistenceFailed
+        : copy.rijing.refreshAria.persistencePending
       : !readiness.ok
-        ? '资料还不足以生成今日'
+        ? copy.rijing.refreshAria.profileIncomplete
         : activeTagIds.length === 0
-          ? '请先在「设置 → 关注标签」中激活至少一个关注'
+          ? copy.rijing.refreshAria.missingFocus
           : tabState.kind === 'failure'
-            ? '重新生成今日'
-            : '刷新今日';
+            ? copy.rijing.refreshAria.regenerate
+            : copy.rijing.refreshAria.refresh;
 
   const projections =
     tabState.kind === 'ready' && tabState.reading.output.mirror_kind === 'rijing'
@@ -296,11 +301,11 @@ export function RiJingTab(props: RiJingTabProps) {
     <section
       className="shijing-tab shijing-rijing"
       data-mirror-kind="rijing"
-      aria-label={MIRROR_KIND_LABELS.rijing}
+      aria-label={copy.mirrorKindLabels.rijing}
     >
       <header className="shijing-rijing__header">
         <div className="shijing-rijing__title">
-          <h1 id="shijing-rijing-heading">{MIRROR_KIND_LABELS.rijing}</h1>
+          <h1 id="shijing-rijing-heading">{copy.mirrorKindLabels.rijing}</h1>
           <span className="shijing-rijing__date" aria-hidden>
             <span className="shijing-rijing__date-main">{dateLabel.date}</span>
             <span className="shijing-rijing__date-sep" aria-hidden>·</span>
@@ -311,12 +316,12 @@ export function RiJingTab(props: RiJingTabProps) {
 
       {activeTagIds.length === 0 ? (
         <p className="shijing-rijing__empty-tags" role="status">
-          请先在「设置 → 关注标签」中激活至少一个关注，今日才能围绕你正在意的事生成。
+          {copy.rijing.emptyTagsStatus}
         </p>
       ) : null}
 
       {tabState.kind === 'loading' ? (
-        <p role="status">正在生成今日日镜…</p>
+        <p role="status">{copy.rijing.loadingStatus}</p>
       ) : null}
       {tabState.kind === 'failure' ? (
         <FailureBanner failure={tabState.failure} action={runtimeFailureAction} />

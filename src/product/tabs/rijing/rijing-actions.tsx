@@ -8,6 +8,7 @@
 
 import { ChatIcon, DoubleChevronIcon, ProhibitIcon } from './rijing-icons.tsx';
 import type { RiJingActionItem, RiJingActionSlot } from './rijing-derive.ts';
+import { useProductCopy } from '../../i18n/copy.ts';
 
 export interface RiJingActionsProps {
   readonly items: readonly RiJingActionItem[];
@@ -25,12 +26,13 @@ function IconForSlot({ slot }: { slot: RiJingActionSlot }) {
 }
 
 export function RiJingActions(props: RiJingActionsProps) {
+  const copy = useProductCopy();
   if (props.items.length === 0) return null;
 
   return (
-    <section className="shijing-rijing__actions" aria-label="今日行动">
+    <section className="shijing-rijing__actions" aria-label={copy.rijing.actions.ariaLabel}>
       <header className="shijing-rijing__actions-head">
-        <h3 className="shijing-rijing__actions-title">今日行动</h3>
+        <h3 className="shijing-rijing__actions-title">{copy.rijing.actions.title}</h3>
       </header>
       <ul className="shijing-rijing__actions-grid">
         {props.items.map((item) => (

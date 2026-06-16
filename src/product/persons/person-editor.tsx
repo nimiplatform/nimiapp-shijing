@@ -9,7 +9,7 @@ import { createPortal } from 'react-dom';
 import { Button, ConfirmDialog } from '@nimiplatform/kit/ui';
 import type { Person } from '../../domain/person.ts';
 import { CONSENT_STATES, PERSON_RELATION_MAX_LENGTH } from '../../domain/person.ts';
-import { CONSENT_STATE_LABELS, CONSENT_STATE_ORDER } from '../i18n/copy.ts';
+import { CONSENT_STATE_ORDER, useProductCopy } from '../i18n/copy.ts';
 import { SjpSelect } from '../components/sjp-select.tsx';
 import { newUlid } from '../ids/index.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
@@ -43,20 +43,19 @@ function emptyMeta(): PersonMetaDraft {
   };
 }
 
-// 资料来源 options ordered per product copy (本人提供 first).
-const CONSENT_OPTIONS = CONSENT_STATE_ORDER.filter((c) => CONSENT_STATES.includes(c)).map((c) => ({
-  value: c,
-  label: CONSENT_STATE_LABELS[c],
-}));
-
 export function PersonEditor() {
   const { state, dispatch } = useShijingStore();
+  const copy = useProductCopy();
   const [meta, setMeta] = useState<PersonMetaDraft>(emptyMeta);
   const [natal, setNatal] = useState<SelfNatalDraft>(emptyNatalDraft);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState<Person | null>(null);
   const persons = state.snapshot.persons;
+  const consentOptions = CONSENT_STATE_ORDER.filter((c) => CONSENT_STATES.includes(c)).map((c) => ({
+    value: c,
+    label: copy.consentStateLabels[c],
+  }));
 
   // Close drawer on Escape. Inlining the state setters here (rather than
   // calling closeDrawer) keeps the effect's dependency list honest.
@@ -96,7 +95,7 @@ export function PersonEditor() {
     if (!built.ok) {
       const code =
         built.error.code === 'birth_datetime_underivable' ? built.error.reason : built.error.code;
-      setErrorCode(describeNatalError(code));
+      setErrorCode(describeNatalError(code, copy));
       return;
     }
     const relation = meta.relation.trim();
@@ -115,7 +114,7 @@ export function PersonEditor() {
         outcome.error.code === 'person_natal_inputs_invalid'
           ? outcome.error.reason
           : outcome.error.code;
-      setErrorCode(describeNatalError(code));
+      setErrorCode(describeNatalError(code, copy));
       return;
     }
     dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
@@ -129,8 +128,8 @@ export function PersonEditor() {
     if (!outcome.ok) {
       const detail =
         outcome.error.code === 'person_has_dangling_references'
-          ? '无法删除：仍有关注标签等内容引用了该人物，请先解除引用再删除。'
-          : describeNatalError(outcome.error.code);
+          ? copy.people.deleteBlocked
+          : describeNatalError(outcome.error.code, copy);
       setErrorCode(detail);
       setConfirmingDelete(null);
       return;
@@ -160,8 +159,8 @@ export function PersonEditor() {
           </svg>
         </span>
         <div className="sjp-card-headtext">
-          <h2 className="sjp-card-title">关系人物</h2>
-          <p className="sjp-card-desc">添加家人、伴侣或重要的人，用于关系合盘和事件解读。</p>
+          <h2 className="sjp-card-title">{copy.people.title}</h2>
+          <p className="sjp-card-desc">{copy.people.description}</p>
         </div>
         <button type="button" className="sjp-btn sjp-card-action" onClick={openDrawer}>
           <svg
@@ -176,7 +175,7 @@ export function PersonEditor() {
           >
             <path d="M12 5v14M5 12h14" />
           </svg>
-          添加
+          {copy.common.add}
         </button>
       </div>
 
@@ -188,22 +187,22 @@ export function PersonEditor() {
                 <strong>{p.display_name}</strong>
                 <span className="sjp-people__meta">
                   {p.relation ? `${p.relation} · ` : ''}
-                  {CONSENT_STATE_LABELS[p.consent_state]}
+                  {copy.consentStateLabels[p.consent_state]}
                 </span>
               </span>
               <button
                 type="button"
                 className="sjp-btn sjp-btn--ghost"
                 onClick={() => setConfirmingDelete(p)}
-                aria-label={`删除 ${p.display_name}`}
+                aria-label={copy.people.deletePersonAria(p.display_name)}
               >
-                删除
+                {copy.common.delete}
               </button>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="sjp-quiet-empty">暂无关系人物</p>
+        <p className="sjp-quiet-empty">{copy.people.empty}</p>
       )}
 
       {/* List-level error (e.g. delete blocked). The drawer shows its own. */}
@@ -215,16 +214,16 @@ export function PersonEditor() {
 
       {drawerOpen
         ? createPortal(
-            <div className="sjp-drawer" role="dialog" aria-modal="true" aria-label="添加关系人物">
+            <div className="sjp-drawer" role="dialog" aria-modal="true" aria-label={copy.people.addDialog}>
               <div className="sjp-drawer__scrim" onClick={closeDrawer} />
               <div className="sjp-drawer__panel">
                 <header className="sjp-drawer__head">
-                  <h3 className="sjp-drawer__title">添加关系人物</h3>
+                  <h3 className="sjp-drawer__title">{copy.people.addDialog}</h3>
                   <button
                     type="button"
                     className="sjp-drawer__close"
                     onClick={closeDrawer}
-                    aria-label="关闭"
+                    aria-label={copy.common.close}
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -250,24 +249,24 @@ export function PersonEditor() {
                   }}
                 >
                   <div className="sjp-field">
-                    <label className="sjp-label" htmlFor="person-alias">称呼</label>
+                    <label className="sjp-label" htmlFor="person-alias">{copy.people.displayName}</label>
                     <input
                       id="person-alias"
                       type="text"
                       className="sjp-input"
-                      placeholder="例如：阿楠、老张"
+                      placeholder={copy.people.displayNamePlaceholder}
                       value={meta.display_name}
                       onChange={(e) => setMeta({ ...meta, display_name: e.currentTarget.value })}
                     />
                   </div>
 
                   <div className="sjp-field">
-                    <label className="sjp-label" htmlFor="person-relation">关系</label>
+                    <label className="sjp-label" htmlFor="person-relation">{copy.people.relation}</label>
                     <input
                       id="person-relation"
                       type="text"
                       className="sjp-input"
-                      placeholder="例如：母亲、合伙人"
+                      placeholder={copy.people.relationPlaceholder}
                       maxLength={PERSON_RELATION_MAX_LENGTH}
                       value={meta.relation}
                       onChange={(e) => setMeta({ ...meta, relation: e.currentTarget.value })}
@@ -275,25 +274,25 @@ export function PersonEditor() {
                   </div>
 
                   <div className="sjp-field sjp-field--full">
-                    <label className="sjp-label" htmlFor="person-consent">资料来源</label>
+                    <label className="sjp-label" htmlFor="person-consent">{copy.people.consentSource}</label>
                     <SjpSelect
                       id="person-consent"
                       value={meta.consent_state}
                       onValueChange={(v) =>
                         setMeta({ ...meta, consent_state: v as Person['consent_state'] })
                       }
-                      options={CONSENT_OPTIONS}
+                      options={consentOptions}
                     />
                   </div>
 
                   <NatalFields draft={natal} onChange={updateNatal} idPrefix="person" />
 
                   <div className="sjp-field sjp-field--full">
-                    <label className="sjp-label" htmlFor="person-notes">备注</label>
+                    <label className="sjp-label" htmlFor="person-notes">{copy.people.notes}</label>
                     <textarea
                       id="person-notes"
                       className="sjp-textarea"
-                      placeholder="关于这个人的补充说明…"
+                      placeholder={copy.people.notesPlaceholder}
                       value={meta.notes}
                       onChange={(e) => setMeta({ ...meta, notes: e.currentTarget.value })}
                     />
@@ -326,10 +325,10 @@ export function PersonEditor() {
                         </svg>
                       }
                     >
-                      添加人物
+                      {copy.people.addPerson}
                     </Button>
                     <Button type="button" tone="ghost" onClick={closeDrawer}>
-                      取消
+                      {copy.common.cancel}
                     </Button>
                   </div>
                 </form>
@@ -341,14 +340,14 @@ export function PersonEditor() {
 
       <ConfirmDialog
         open={confirmingDelete !== null}
-        title="删除这个人物？"
+        title={copy.people.deleteTitle}
         message={
           confirmingDelete
-            ? `「${confirmingDelete.display_name}」及其排盘资料将被永久删除。此操作不可撤销。`
+            ? copy.people.deleteMessage(confirmingDelete.display_name)
             : ''
         }
-        confirmLabel="删除"
-        cancelLabel="取消"
+        confirmLabel={copy.common.delete}
+        cancelLabel={copy.common.cancel}
         confirmTone="danger"
         onConfirm={confirmDelete}
         onClose={() => setConfirmingDelete(null)}

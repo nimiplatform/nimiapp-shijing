@@ -10,10 +10,12 @@ import {
 import { METHOD_LABELS } from '../reading/reading-format.ts';
 import { SjpSelect } from '../components/sjp-select.tsx';
 import { useShijingStore } from '../state/shijing-store.tsx';
+import { useProductCopy } from '../i18n/copy.ts';
 import { commitMethodProfile } from './method-profile-state.ts';
 
 export function MethodProfileEditor() {
   const { state, dispatch } = useShijingStore();
+  const copy = useProductCopy();
   const current = state.snapshot.settings.method_profile_id ?? DEFAULT_METHOD_PROFILE_ID;
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
@@ -43,14 +45,14 @@ export function MethodProfileEditor() {
           </svg>
         </span>
         <div>
-          <h2 className="sjp-card-title">推演方法</h2>
-          <p className="sjp-card-desc">选择命理算法引擎,新生成的日/月/年镜与时镜将采用此方法</p>
+          <h2 className="sjp-card-title">{copy.methodProfile.title}</h2>
+          <p className="sjp-card-desc">{copy.methodProfile.description}</p>
         </div>
       </div>
 
       <div className="sjp-grid">
         <div className="sjp-field sjp-field--full">
-          <label className="sjp-label" htmlFor="method-profile">命理算法</label>
+          <label className="sjp-label" htmlFor="method-profile">{copy.methodProfile.algorithm}</label>
           <SjpSelect
             id="method-profile"
             value={current}
@@ -58,10 +60,10 @@ export function MethodProfileEditor() {
             options={ADMITTED_METHOD_PROFILE_IDS.map((id) => ({ value: id, label: METHOD_LABELS[id] }))}
           />
         </div>
-        <p className="sjp-note">切换后立即生效;已生成的解读保留各自方法,可并排对照。</p>
+        <p className="sjp-note">{copy.methodProfile.note}</p>
         {savedAt ? (
           <p className="sjp-status" role="status">
-            已切换 ({savedAt})
+            {copy.methodProfile.switchedAt(savedAt)}
           </p>
         ) : null}
       </div>

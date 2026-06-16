@@ -416,6 +416,7 @@ export function validShiJingSpace(overrides = {}) {
     readings: [],
     conversations: [],
     settings: {
+      ui_language: 'zh',
       response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' },
     },
     ...overrides,

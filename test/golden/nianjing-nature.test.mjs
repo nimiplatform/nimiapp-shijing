@@ -22,6 +22,7 @@ function nianjingCommon(methodProfileId) {
   const space = {
     user_id: 'u', self_subject: { natal_inputs: natal }, persons: [], concern_tags: [], event_memories: [], plan_items: [], readings: [], conversations: [],
     settings: {
+      ui_language: 'zh',
       response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' },
       ...(methodProfileId ? { method_profile_id: methodProfileId } : {}),
     },

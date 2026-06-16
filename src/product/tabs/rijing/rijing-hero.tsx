@@ -12,6 +12,7 @@
 import { HeartIcon, RefreshIcon } from './rijing-icons.tsx';
 import { RiJingHeroMemories } from './rijing-hero-memories.tsx';
 import type { RiJingHeroContent } from './rijing-derive.ts';
+import { useProductCopy } from '../../i18n/copy.ts';
 
 export interface RiJingHeroFocusTag {
   readonly id: string;
@@ -34,6 +35,7 @@ export interface RiJingHeroProps {
 }
 
 export function RiJingHero(props: RiJingHeroProps) {
+  const copy = useProductCopy();
   const { content } = props;
   return (
     <article
@@ -58,11 +60,11 @@ export function RiJingHero(props: RiJingHeroProps) {
       <h3 id="shijing-rijing__hero-headline" className="shijing-rijing__hero-headline">
         {content.headline}
       </h3>
-      <div className="shijing-rijing__hero-focus" aria-label="解读视角">
-        <span className="shijing-rijing__hero-focus-label">解读视角</span>
+      <div className="shijing-rijing__hero-focus" aria-label={copy.rijing.hero.focusAria}>
+        <span className="shijing-rijing__hero-focus-label">{copy.rijing.hero.focusLabel}</span>
         <span className="shijing-rijing__hero-focus-tags">
           {props.focusTags.length === 0 ? (
-            <span className="shijing-rijing__hero-focus-empty">尚未选择关注</span>
+            <span className="shijing-rijing__hero-focus-empty">{copy.rijing.hero.focusEmpty}</span>
           ) : (
             props.focusTags.map((tag) => (
               <span key={tag.id} className="shijing-rijing__hero-focus-tag">
@@ -76,7 +78,7 @@ export function RiJingHero(props: RiJingHeroProps) {
           className="shijing-rijing__hero-focus-manage"
           onClick={props.onManageFocus}
         >
-          管理
+          {copy.rijing.hero.manageFocus}
         </button>
       </div>
       <p className="shijing-rijing__hero-body">{content.description}</p>
@@ -90,7 +92,7 @@ export function RiJingHero(props: RiJingHeroProps) {
           <span aria-hidden>→</span>
         </button>
       ) : null}
-      <div className="shijing-rijing__hero-leanings" aria-label="今日倾向">
+      <div className="shijing-rijing__hero-leanings" aria-label={copy.rijing.hero.leaningsAria}>
         {content.leanings.map((leaning, idx) => (
           <span key={`${idx}-${leaning}`} className="shijing-rijing__hero-leaning">
             {leaning}
@@ -98,7 +100,7 @@ export function RiJingHero(props: RiJingHeroProps) {
         ))}
       </div>
       <div className="shijing-rijing__hero-confidence">
-        <span className="shijing-rijing__hero-confidence-label">可信度</span>
+        <span className="shijing-rijing__hero-confidence-label">{copy.rijing.hero.confidenceLabel}</span>
         <span className="shijing-rijing__hero-confidence-value">{content.confidence_label}</span>
         <span className="shijing-rijing__hero-confidence-note">{content.confidence_note}</span>
       </div>

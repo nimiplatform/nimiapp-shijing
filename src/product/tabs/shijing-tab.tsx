@@ -25,7 +25,7 @@ import {
 } from '../ids/index.ts';
 import { latestReadingByMirrorKind } from '../reading/reading-selectors.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
-import { MIRROR_KIND_LABELS } from '../i18n/copy.ts';
+import { useProductCopy, type ProductCopy } from '../i18n/copy.ts';
 import { consultationMirrorScopeFor } from './mirror-scope-helpers.ts';
 import { CitationDrawer } from './shared/citation-drawer.tsx';
 import { FailureBanner } from './shared/failure-banner.tsx';
@@ -36,33 +36,19 @@ function nowIso(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
-// Faded example questions shown inside the empty composer.
-const COMPOSER_PLACEHOLDER = [
-  '接下来一个月，我该不该换工作?',
-  '这段关系现在最需要注意什么?',
-  '最近反复焦虑，是阶段变化还是方向不清?',
-].join('\n');
-
-// "可以这样问" prompt chips — clicking one drops it into the composer.
-const SUGGESTED_QUESTIONS: readonly string[] = [
-  '接下来30天，我最需要注意什么?',
-  '现在这个决定，适合推进还是等待?',
-  '这段关系真正的卡点是什么?',
-];
-
-function firstUserQuestion(conv: Conversation): string {
+function firstUserQuestion(conv: Conversation, copy: ProductCopy): string {
   const turn = conv.turns.find((t) => t.role === 'user');
-  return turn?.body ?? '(未记录问题)';
+  return turn?.body ?? copy.shijing.unrecordedQuestion;
 }
 
 // History entry timestamp: today → `HH:mm`, otherwise → `M月D日`.
-function sessionTimeLabel(iso: string): string {
+function sessionTimeLabel(iso: string, copy: ProductCopy): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(iso);
   if (!m) return iso;
   const todayIso = new Date().toISOString().slice(0, 10);
   const dateIso = `${m[1]}-${m[2]}-${m[3]}`;
   if (dateIso === todayIso) return `${m[4]}:${m[5]}`;
-  return `${Number(m[2])}月${Number(m[3])}日`;
+  return copy.shijing.sessionDateLabel(Number(m[2]), Number(m[3]));
 }
 
 interface SessionGroup {
@@ -72,7 +58,10 @@ interface SessionGroup {
 
 // Pure presentation grouping of the history rail into 今天 / 本周 / 更早.
 // No data is mutated; ordering relies on the desc-sorted input.
-function groupConversations(convs: readonly Conversation[]): readonly SessionGroup[] {
+function groupConversations(
+  convs: readonly Conversation[],
+  copy: ProductCopy,
+): readonly SessionGroup[] {
   const now = new Date();
   const todayIso = now.toISOString().slice(0, 10);
   const weekAgoMs = now.getTime() - 7 * 24 * 60 * 60 * 1000;
@@ -86,9 +75,9 @@ function groupConversations(convs: readonly Conversation[]): readonly SessionGro
     else earlier.push(c);
   }
   return [
-    { label: '今天', items: today },
-    { label: '本周', items: week },
-    { label: '更早', items: earlier },
+    { label: copy.shijing.sessionGroups.today, items: today },
+    { label: copy.shijing.sessionGroups.week, items: week },
+    { label: copy.shijing.sessionGroups.earlier, items: earlier },
   ].filter((g) => g.items.length > 0);
 }
 
@@ -107,6 +96,7 @@ export interface ShiJingTabProps {
 }
 
 export function ShiJingTab(props: ShiJingTabProps) {
+  const copy = useProductCopy();
   const { state, dispatch, runtime_ai_client } = useShijingStore();
   const [loading, setLoading] = useState(false);
   const [failure, setFailure] = useState<ReadingGenerationFailure | null>(null);
@@ -151,8 +141,8 @@ export function ShiJingTab(props: ShiJingTabProps) {
   const filteredConversations = useMemo(() => {
     const q = search.trim();
     if (q.length === 0) return conversations;
-    return conversations.filter((c) => firstUserQuestion(c).includes(q));
-  }, [conversations, search]);
+    return conversations.filter((c) => firstUserQuestion(c, copy).includes(q));
+  }, [conversations, search, copy]);
 
   const newestConversation = conversations[0] ?? null;
   const resultConversation =
@@ -236,29 +226,29 @@ export function ShiJingTab(props: ShiJingTabProps) {
     dispatch({ type: 'shijing/clear-seed-plan' });
   }
 
-  const sessionGroups = groupConversations(filteredConversations);
+  const sessionGroups = groupConversations(filteredConversations, copy);
   const askReason = loading
     ? ''
     : question.trim().length === 0
       ? ''
       : sourceReadingIds.length === 0
-        ? '尚无可引用的解读'
+        ? copy.shijing.sourceMissing
         : '';
 
   return (
     <section
       className="shijing-tab shijing-shijing shijing-ask"
       data-mirror-kind="shijing"
-      aria-label={MIRROR_KIND_LABELS.shijing}
+      aria-label={copy.mirrorKindLabels.shijing}
     >
       <header className="shijing-ask__hero">
         <h1 className="shijing-ask__title">
-          问时镜<span className="shijing-ask__title-dot" aria-hidden>°</span>
+          {copy.shijing.title}<span className="shijing-ask__title-dot" aria-hidden>°</span>
         </h1>
       </header>
 
       <div className="shijing-ask__layout">
-        <aside className="shijing-ask__rail" aria-label="提问记录">
+        <aside className="shijing-ask__rail" aria-label={copy.shijing.railAria}>
           <div className="shijing-ask__rail-head">
             <div className="shijing-ask__search">
               <span className="shijing-ask__search-icon" aria-hidden>
@@ -268,8 +258,8 @@ export function ShiJingTab(props: ShiJingTabProps) {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.currentTarget.value)}
-                placeholder="搜索提问"
-                aria-label="搜索提问"
+                placeholder={copy.shijing.searchPlaceholder}
+                aria-label={copy.shijing.searchAria}
               />
             </div>
           </div>
@@ -280,9 +270,9 @@ export function ShiJingTab(props: ShiJingTabProps) {
                 ✦
               </span>
               <p className="shijing-ask__rail-empty-title">
-                {conversations.length === 0 ? '还没有提问记录' : '没有匹配的提问'}
+                {conversations.length === 0 ? copy.shijing.emptyHistory : copy.shijing.emptySearch}
               </p>
-              <p className="shijing-ask__rail-empty-desc">提问后会在这里形成你的时间脉络。</p>
+              <p className="shijing-ask__rail-empty-desc">{copy.shijing.emptyHistoryDescription}</p>
             </div>
           ) : (
             <div className="shijing-ask__sessions">
@@ -298,9 +288,9 @@ export function ShiJingTab(props: ShiJingTabProps) {
                           aria-current={conv === resultConversation ? 'true' : undefined}
                           onClick={() => setSelectedConversationId(conv.id)}
                         >
-                          <span className="shijing-ask__session-q">{firstUserQuestion(conv)}</span>
+                          <span className="shijing-ask__session-q">{firstUserQuestion(conv, copy)}</span>
                           <span className="shijing-ask__session-time">
-                            {sessionTimeLabel(conv.created_at)}
+                            {sessionTimeLabel(conv.created_at, copy)}
                           </span>
                         </button>
                       </li>
@@ -313,24 +303,24 @@ export function ShiJingTab(props: ShiJingTabProps) {
         </aside>
 
         <div className="shijing-ask__main">
-          <form className="shijing-ask__composer" onSubmit={handleAsk} aria-label="提问">
-            <h2 className="shijing-ask__composer-title">你现在最想问什么？</h2>
+          <form className="shijing-ask__composer" onSubmit={handleAsk} aria-label={copy.shijing.composerAria}>
+            <h2 className="shijing-ask__composer-title">{copy.shijing.composerTitle}</h2>
 
             {seedItems.length > 0 ? (
-              <div className="shijing-ask__seed" aria-label="本次提问基于的记录">
-                <span className="shijing-ask__seed-label">基于这条记录提问</span>
+              <div className="shijing-ask__seed" aria-label={copy.shijing.seedAria}>
+                <span className="shijing-ask__seed-label">{copy.shijing.seedLabel}</span>
                 <ul className="shijing-ask__seed-list">
                   {seedItems.map((item) => (
                     <li key={`${item.kind}-${item.id}`} className="shijing-ask__seed-chip" data-kind={item.kind}>
                       <span className="shijing-ask__seed-tag">
-                        {item.kind === 'plan' ? '计划' : '事件'}
+                        {item.kind === 'plan' ? copy.shijing.seedKindPlan : copy.shijing.seedKindMemory}
                       </span>
                       <span className="shijing-ask__seed-date">{item.date}</span>
                       <span className="shijing-ask__seed-body">{item.body}</span>
                       <button
                         type="button"
                         className="shijing-ask__seed-remove"
-                        aria-label="移除这条记录"
+                        aria-label={copy.shijing.seedRemoveAria}
                         onClick={() =>
                           dispatch(
                             item.kind === 'plan'
@@ -352,8 +342,8 @@ export function ShiJingTab(props: ShiJingTabProps) {
               className="shijing-ask__textarea"
               value={question}
               onChange={(e) => setQuestion(e.currentTarget.value)}
-              placeholder={COMPOSER_PLACEHOLDER}
-              aria-label="你的问题"
+              placeholder={copy.shijing.composerPlaceholder}
+              aria-label={copy.shijing.questionAria}
             />
 
             <div className="shijing-ask__toolbar">
@@ -366,9 +356,9 @@ export function ShiJingTab(props: ShiJingTabProps) {
                     type="submit"
                     className="shijing-ask__submit"
                     disabled={!canAsk}
-                    title={askReason || '生成解读'}
+                    title={askReason || copy.shijing.generateTitle}
                   >
-                    {loading ? '生成中…' : '✦ 生成解读'}
+                    {loading ? copy.shijing.generating : copy.shijing.generate}
                   </button>
                 </div>
               </div>
@@ -383,9 +373,9 @@ export function ShiJingTab(props: ShiJingTabProps) {
           />
 
           <div className="shijing-ask__suggest">
-            <span className="shijing-ask__suggest-label">可以这样问</span>
+            <span className="shijing-ask__suggest-label">{copy.shijing.suggestLabel}</span>
             <div className="shijing-ask__chips">
-              {SUGGESTED_QUESTIONS.map((s) => (
+              {copy.shijing.suggestedQuestions.map((s) => (
                 <button
                   key={s}
                   type="button"
@@ -399,7 +389,7 @@ export function ShiJingTab(props: ShiJingTabProps) {
           </div>
 
           {resultConversation ? (
-            <article className="shijing-ask__result" aria-label="解读结果">
+            <article className="shijing-ask__result" aria-label={copy.shijing.resultAria}>
               <ConversationThread conversation={resultConversation} />
               {resultIsLatest && latestConsultation ? (
                 <CitationDrawer reading={latestConsultation} />
@@ -420,21 +410,22 @@ function ContextFocusBar(props: {
   readonly tags: readonly ConcernTag[];
   readonly onManage?: () => void;
 }) {
+  const copy = useProductCopy();
   const active = props.tags.filter((t) => t.status === 'active');
   return (
-    <section className="shijing-ctx" aria-label="上下文焦点">
+    <section className="shijing-ctx" aria-label={copy.shijing.context.aria}>
       <div className="shijing-ctx__lead">
         <span className="shijing-ctx__icon" aria-hidden>
           ✦
         </span>
         <div className="shijing-ctx__text">
-          <p className="shijing-ctx__title">上下文焦点</p>
-          <p className="shijing-ctx__desc">当前激活的关注会自动影响本次问时镜解读。</p>
+          <p className="shijing-ctx__title">{copy.shijing.context.title}</p>
+          <p className="shijing-ctx__desc">{copy.shijing.context.description}</p>
         </div>
       </div>
       <ul className="shijing-ctx__chips">
         {active.length === 0 ? (
-          <li className="shijing-ctx__empty">未设置关注</li>
+          <li className="shijing-ctx__empty">{copy.shijing.context.empty}</li>
         ) : (
           active.map((t) => (
             <li key={t.id} className="shijing-ctx__chip">
@@ -444,22 +435,23 @@ function ContextFocusBar(props: {
         )}
       </ul>
       <button type="button" className="shijing-ctx__manage" onClick={() => props.onManage?.()}>
-        去设置管理 ›
+        {copy.shijing.context.manage}
       </button>
     </section>
   );
 }
 
 function ConversationThread(props: { readonly conversation: Conversation }) {
+  const copy = useProductCopy();
   return (
     <ol className="shijing-ask__thread">
       {props.conversation.turns.map((turn) => (
         <li key={turn.id} className="shijing-ask__turn" data-role={turn.role}>
-          <span className="shijing-ask__turn-role">{turn.role === 'user' ? '我' : '时镜'}</span>
+          <span className="shijing-ask__turn-role">{copy.conversationRoleLabels[turn.role]}</span>
           <p className="shijing-ask__turn-body">{turn.body}</p>
           {turn.cited_reading_ids.length > 0 ? (
             <small className="shijing-ask__turn-cite">
-              引用解读 {turn.cited_reading_ids.length} 份
+              {copy.shijing.citedReadings(turn.cited_reading_ids.length)}
             </small>
           ) : null}
         </li>

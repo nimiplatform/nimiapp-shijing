@@ -37,6 +37,17 @@
   "Shell": {
     "loading": "加载中...",
     "logout": "退出登录",
-    "accountMenu": "账户菜单"
+    "accountMenu": "账户菜单",
+    "loadingShijing": "正在加载时镜…",
+    "runtimeUnavailable": "Runtime 不可用",
+    "runtimeUnavailableDetail": "时镜需要 Runtime 完成账号、AI 和本地存储边界初始化。",
+    "retry": "重试",
+    "runtimeCheck": "Runtime 检查",
+    "connectingRuntime": "正在连接 Runtime",
+    "connectingRuntimeDetail": "正在建立 Runtime account session、app session 和 AIConfig 边界。",
+    "booting": "启动中",
+    "login": "登录",
+    "loadingLogin": "正在加载登录",
+    "loadingLoginDetail": "正在准备 Runtime account 登录入口。"
   }
 }

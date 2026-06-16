@@ -4,7 +4,9 @@ import test from 'node:test';
 import {
   deriveRiJingActions,
   deriveRiJingHero,
+  rijingDateLabel,
 } from '../src/product/tabs/rijing/rijing-derive.ts';
+import { getProductCopy } from '../src/product/i18n/copy.ts';
 import { validReading } from './_fixtures.mjs';
 
 function avoidAction(items) {
@@ -67,4 +69,26 @@ test('deriveRiJingHero preserves runtime AI fail-close recovery copy', () => {
 
   assert.match(hero.description, /Runtime AI wording 未完成/);
   assert.match(hero.reminder, /AI 模型配置/);
+});
+
+test('deriveRiJing helpers use English product copy when provided', () => {
+  const copy = getProductCopy('en');
+  const hero = deriveRiJingHero(undefined, { empty_state: 'missing_focus', copy });
+  const actions = deriveRiJingActions(
+    validReading({
+      uncertainty: {
+        confidence: 'low',
+        caveats: ['出生地缺失,经度修正与真太阳时无法计算'],
+        data_gaps: ['location_missing'],
+      },
+    }),
+    copy,
+  );
+  const date = rijingDateLabel('Asia/Shanghai', copy, new Date('2026-06-17T00:00:00Z'));
+
+  assert.equal(hero.headline, 'Daily Mirror has not been generated');
+  assert.match(hero.description, /Add and activate one concern/);
+  assert.equal(avoidAction(actions)?.eyebrow, 'Avoid one thing today');
+  assert.equal(date.weekday, 'Wednesday');
+  assert.equal(date.zone, 'Beijing time');
 });

@@ -18,7 +18,11 @@ import {
   SHIJING_SETTINGS_PAGES,
   type ShijingSettingsPageId,
 } from '../../contracts/ia-contract.ts';
-import { BRAND_NAME, SETTINGS_PAGE_LABELS } from '../i18n/copy.ts';
+import { useProductCopy } from '../i18n/copy.ts';
+import {
+  UiLanguageSwitch,
+  usePersistedUiLanguageSync,
+} from '../settings/ui-language-switch.tsx';
 import type { PersistenceError } from '../persistence/persistence-client.ts';
 
 const RiJingTab = lazy(() =>
@@ -73,6 +77,8 @@ interface ActiveSettingsPageState {
 
 export function ShijingShell(props: ShijingShellProps) {
   const { state, persistence_status } = useShijingStore();
+  usePersistedUiLanguageSync();
+  const copy = useProductCopy();
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePage, setActivePage] = useState<ActiveSettingsPageState | null>(null);
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
@@ -129,7 +135,7 @@ export function ShijingShell(props: ShijingShellProps) {
 
   const menuItems: NimiMenuItem[] = SHIJING_SETTINGS_PAGES.map((page) => ({
     id: page.id,
-    label: SETTINGS_PAGE_LABELS[page.id],
+    label: copy.settingsPageLabels[page.id],
     onSelect: () => openPage(page.id),
   }));
 
@@ -137,19 +143,22 @@ export function ShijingShell(props: ShijingShellProps) {
     <div className="shijing-shell" data-active-tab={state.active_tab}>
       <header className="shijing-topbar">
         <div className="shijing-topbar__brand">
-          <span className="shijing-topbar__wordmark">{BRAND_NAME}</span>
+          <span className="shijing-topbar__wordmark">{copy.brandName}</span>
           <span className="shijing-topbar__tagline" aria-hidden>
             SHIJING · OS
           </span>
         </div>
         <PrimaryTabBar />
+        <UiLanguageSwitch />
         <div className="shijing-topbar__account" ref={accountRef}>
           <button
             type="button"
             className="shijing-topbar__avatar-button"
             aria-expanded={menuOpen}
             aria-haspopup="menu"
-            aria-label={accountName ? `账户菜单 — ${accountName}` : '账户菜单'}
+            aria-label={
+              accountName ? `${copy.shell.accountMenu} - ${accountName}` : copy.shell.accountMenu
+            }
             onClick={() => setMenuOpen((v) => !v)}
           >
             <span className="shijing-topbar__avatar" aria-hidden>
@@ -165,7 +174,7 @@ export function ShijingShell(props: ShijingShellProps) {
           </button>
           {menuOpen ? (
             <div className="shijing-account-menu">
-              <ActionMenu ariaLabel="设置" items={menuItems} />
+              <ActionMenu ariaLabel={copy.shell.settingsMenu} items={menuItems} />
             </div>
           ) : null}
         </div>
@@ -173,19 +182,18 @@ export function ShijingShell(props: ShijingShellProps) {
       <main className="shijing-shell__main" role="main">
         {state.snapshot_status.kind === 'invalid' ? (
           <p className="shijing-shell__error" role="alert">
-            数据快照校验未通过: {state.snapshot_status.error.code}
-            。请点击右上角头像打开"设置 → 隐私与本地数据"清理已存数据后再试。
+            {copy.shell.snapshotInvalid(state.snapshot_status.error.code)}
           </p>
         ) : null}
         {persistence_status.kind === 'error' ? (
           <p className="shijing-shell__error" role="alert">
-            本地数据读写失败: {persistenceErrorDetail(persistence_status.error)}
+            {copy.shell.persistenceFailed(persistenceErrorDetail(persistence_status.error))}
           </p>
         ) : null}
         <Suspense
           fallback={
             <p className="shijing-shell__loading" role="status">
-              正在加载镜面…
+              {copy.shell.loadingMirror}
             </p>
           }
         >
@@ -205,7 +213,7 @@ export function ShijingShell(props: ShijingShellProps) {
         <Suspense
           fallback={
             <div className="shijing-settings-page shijing-settings-page--loading" role="status">
-              正在加载设置…
+              {copy.shell.loadingSettings}
             </div>
           }
         >

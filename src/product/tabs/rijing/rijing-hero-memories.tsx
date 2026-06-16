@@ -22,6 +22,7 @@ import { useShijingStore } from '../../state/shijing-store.tsx';
 import { upsertEventMemory, deleteEventMemory } from '../../memories/memory-editor-state.ts';
 import type { EventMemory } from '../../../domain/event-memory.ts';
 import { PencilIcon, TrashIcon } from './rijing-icons.tsx';
+import { useProductCopy } from '../../i18n/copy.ts';
 
 const PREVIEW_COUNT = 3;
 
@@ -39,6 +40,7 @@ function dateLabel(occurredAt: string): string {
 }
 
 export function RiJingHeroMemories() {
+  const copy = useProductCopy();
   const { state, dispatch } = useShijingStore();
   const preview = useMemo(
     () =>
@@ -82,7 +84,7 @@ export function RiJingHeroMemories() {
     if (!rowState || rowState.mode !== 'editing') return;
     const body = rowState.draft.trim();
     if (body.length === 0) {
-      setRow(memory.id, { mode: 'editing', draft: rowState.draft, error: '描述不能为空。' });
+      setRow(memory.id, { mode: 'editing', draft: rowState.draft, error: copy.rijing.heroMemories.emptyBody });
       return;
     }
     const next: EventMemory = { ...memory, body, updated_at: nowIso() };
@@ -118,7 +120,7 @@ export function RiJingHeroMemories() {
     if (!outcome.ok) {
       setRow(memory.id, {
         mode: 'delete_refused',
-        reason: '删除失败，请稍后再试。',
+        reason: copy.rijing.heroMemories.deleteFailed,
       });
       setConfirmingDelete(null);
       return;
@@ -129,11 +131,11 @@ export function RiJingHeroMemories() {
   }
 
   return (
-    <section className="shijing-rijing__hero-memories" aria-label="今日参考的事件">
+    <section className="shijing-rijing__hero-memories" aria-label={copy.rijing.heroMemories.ariaLabel}>
       <header className="shijing-rijing__hero-memories-head">
-        <h4 className="shijing-rijing__hero-memories-title">今日参考的事件</h4>
+        <h4 className="shijing-rijing__hero-memories-title">{copy.rijing.heroMemories.title}</h4>
         <p className="shijing-rijing__hero-memories-intro">
-          结论已结合下面这些事件来看。
+          {copy.rijing.heroMemories.intro}
         </p>
       </header>
       <ul className="shijing-rijing__hero-memories-list">
@@ -151,7 +153,7 @@ export function RiJingHeroMemories() {
                     className="shijing-rijing__hero-memories-textarea"
                     value={rowState.draft}
                     rows={2}
-                    aria-label="编辑事件描述"
+                    aria-label={copy.rijing.heroMemories.editBodyAria}
                     onChange={(e) => updateDraft(memory.id, e.target.value)}
                     autoFocus
                   />
@@ -161,14 +163,14 @@ export function RiJingHeroMemories() {
                       className="shijing-rijing__hero-memories-edit-save"
                       onClick={() => saveEdit(memory)}
                     >
-                      保存
+                      {copy.common.save}
                     </button>
                     <button
                       type="button"
                       className="shijing-rijing__hero-memories-edit-cancel"
                       onClick={() => cancelEdit(memory)}
                     >
-                      取消
+                      {copy.common.cancel}
                     </button>
                   </div>
                   {rowState.error ? (
@@ -184,13 +186,13 @@ export function RiJingHeroMemories() {
             <li key={memory.id} className="shijing-rijing__hero-memories-item">
               <span className="shijing-rijing__hero-memories-date">{dateLabel(memory.occurred_at)}</span>
               <span className="shijing-rijing__hero-memories-text">{memory.body}</span>
-              <div className="shijing-rijing__hero-memories-actions" aria-label="操作">
+              <div className="shijing-rijing__hero-memories-actions" aria-label={copy.rijing.heroMemories.actionsAria}>
                 <button
                   type="button"
                   className="shijing-rijing__hero-memories-action"
                   onClick={() => startEdit(memory)}
-                  aria-label="编辑"
-                  title="编辑"
+                  aria-label={copy.rijing.heroMemories.editAction}
+                  title={copy.rijing.heroMemories.editAction}
                 >
                   <PencilIcon />
                 </button>
@@ -198,8 +200,8 @@ export function RiJingHeroMemories() {
                   type="button"
                   className="shijing-rijing__hero-memories-action"
                   onClick={() => requestDelete(memory)}
-                  aria-label="删除"
-                  title="删除"
+                  aria-label={copy.rijing.heroMemories.deleteAction}
+                  title={copy.rijing.heroMemories.deleteAction}
                 >
                   <TrashIcon />
                 </button>
@@ -215,14 +217,14 @@ export function RiJingHeroMemories() {
       </ul>
       <ConfirmDialog
         open={confirmingDelete !== null}
-        title="删除这条事件？"
+        title={copy.rijing.heroMemories.deleteTitle}
         message={
           confirmingDelete
-            ? `「${confirmingDelete.body}」将不再作为今日推演的参考。此操作不可撤销。`
+            ? copy.rijing.heroMemories.deleteMessage(confirmingDelete.body)
             : ''
         }
-        confirmLabel="删除"
-        cancelLabel="取消"
+        confirmLabel={copy.common.delete}
+        cancelLabel={copy.common.cancel}
         confirmTone="danger"
         onConfirm={confirmDelete}
         onClose={cancelDelete}

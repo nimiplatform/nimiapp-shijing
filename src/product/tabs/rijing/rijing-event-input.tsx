@@ -17,16 +17,14 @@ import { useShijingStore } from '../../state/shijing-store.tsx';
 import { upsertEventMemory } from '../../memories/memory-editor-state.ts';
 import { newEventMemoryId } from '../../ids/index.ts';
 import type { EventMemory } from '../../../domain/event-memory.ts';
-
-const PLACEHOLDER = '例如：下午要谈一个重要合作，心里有点不确定……';
-const EMPTY_HINT = '可以先写一句今天发生的事情。';
-const SUCCESS_HINT = '已加入今日参照，今日判断会优先结合这件事来看。';
+import { useProductCopy } from '../../i18n/copy.ts';
 
 function nowIso(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
 export function RiJingEventInput() {
+  const copy = useProductCopy();
   const { state, dispatch } = useShijingStore();
   const [draft, setDraft] = useState('');
   const [submission, setSubmission] = useState<
@@ -81,21 +79,21 @@ export function RiJingEventInput() {
     if (submission.kind === 'empty') {
       return (
         <span className="shijing-rijing__event-input-hint shijing-rijing__event-input-hint--warn">
-          {EMPTY_HINT}
+          {copy.rijing.eventInput.emptyHint}
         </span>
       );
     }
     if (submission.kind === 'invalid') {
       return (
         <span className="shijing-rijing__event-input-hint shijing-rijing__event-input-hint--warn">
-          这条事件没有加入（{submission.reason}）。请稍后再试或调整描述。
+          {copy.rijing.eventInput.invalidHint(submission.reason)}
         </span>
       );
     }
     if (submission.kind === 'saved') {
       return (
         <span className="shijing-rijing__event-input-hint shijing-rijing__event-input-hint--ok">
-          {SUCCESS_HINT}
+          {copy.rijing.eventInput.successHint}
         </span>
       );
     }
@@ -103,19 +101,19 @@ export function RiJingEventInput() {
   })();
 
   return (
-    <aside className="shijing-rijing__event-input" aria-label="今日参照">
+    <aside className="shijing-rijing__event-input" aria-label={copy.rijing.eventInput.ariaLabel}>
       <header className="shijing-rijing__event-input-head">
-        <h3 className="shijing-rijing__event-input-title">今日参照</h3>
+        <h3 className="shijing-rijing__event-input-title">{copy.rijing.eventInput.title}</h3>
         <p className="shijing-rijing__event-input-intro">
-          补充一件今天正在发生的事，系统会结合这件事与当前关注视角整理今日判断。
+          {copy.rijing.eventInput.intro}
         </p>
       </header>
       <textarea
         className="shijing-rijing__event-input-textarea"
         value={draft}
         rows={3}
-        placeholder={PLACEHOLDER}
-        aria-label="今日参照"
+        placeholder={copy.rijing.eventInput.placeholder}
+        aria-label={copy.rijing.eventInput.ariaLabel}
         onChange={(e) => {
           setDraft(e.target.value);
           if (submission.kind !== 'idle' && submission.kind !== 'saved') {
@@ -142,7 +140,7 @@ export function RiJingEventInput() {
           onClick={onAdd}
           disabled={disabled}
         >
-          <span>加入今日参照</span>
+          <span>{copy.rijing.eventInput.submit}</span>
         </button>
       </div>
     </aside>

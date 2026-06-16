@@ -68,7 +68,7 @@ function buildCaseSnapshot(c) {
     user_id: 'u_golden',
     self_subject: { natal_inputs: natal },
     persons: [], concern_tags: [], event_memories: [], plan_items: [], readings: [], conversations: [],
-    settings: { response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' } },
+    settings: { ui_language: 'zh', response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' } },
   };
   return buildAstrologyFeatureSnapshot({
     mirror_kind: 'rijing',

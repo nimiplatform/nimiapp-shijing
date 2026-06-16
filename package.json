@@ -17,9 +17,11 @@
     "typecheck": "tsc --noEmit",
     "build": "pnpm run typecheck && pnpm run build:renderer && (cd src-tauri && cargo check)",
     "build:shell": "tauri build",
-    "lint": "pnpm run typecheck && eslint . --max-warnings 0 && (cd src-tauri && cargo check)",
+    "lint": "pnpm run i18n:check && pnpm run i18n:audit && pnpm run typecheck && eslint . --max-warnings 0 && (cd src-tauri && cargo check)",
     "test": "node --test test/*.test.mjs test/golden/*.test.mjs",
     "check": "pnpm run typecheck && pnpm run test && pnpm run lint",
+    "i18n:check": "node scripts/i18n-check.mjs",
+    "i18n:audit": "node scripts/i18n-audit.mjs",
     "nimicoding": "nimicoding",
     "nimicoding:doctor": "nimicoding doctor"
   },

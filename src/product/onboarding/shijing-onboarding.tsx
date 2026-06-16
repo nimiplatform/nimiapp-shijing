@@ -6,6 +6,7 @@ import { SelfEditor } from '../self/self-editor.tsx';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { subjectMirrorReadiness } from '../subjects/natal-readiness.ts';
 import { dailyMirrorScopeForToday } from '../tabs/mirror-scope-helpers.ts';
+import { useProductCopy } from '../i18n/copy.ts';
 
 export interface ShijingOnboardingProps {
   readonly onComplete: () => void;
@@ -15,6 +16,7 @@ type OnboardingPanel = 'profile' | 'concerns';
 
 export function ShijingOnboarding(props: ShijingOnboardingProps) {
   const { state } = useShijingStore();
+  const copy = useProductCopy();
   const [activePanel, setActivePanel] = useState<OnboardingPanel>('profile');
   const dailyScope = useMemo(() => dailyMirrorScopeForToday(), []);
   const selfReadiness = useMemo(
@@ -46,16 +48,16 @@ export function ShijingOnboarding(props: ShijingOnboardingProps) {
   return (
     <section
       className="shijing-onboarding"
-      aria-label="启动准备"
+      aria-label={copy.onboarding.ariaLabel}
       data-active-panel={activePanel}
     >
       <div className="shijing-onboarding__modal">
         <header className="shijing-onboarding__hero">
           <div className="shijing-onboarding__hero-copy">
-            <p className="shijing-onboarding__eyebrow">启动准备</p>
-            <h1>让日镜先认识你。</h1>
+            <p className="shijing-onboarding__eyebrow">{copy.onboarding.eyebrow}</p>
+            <h1>{copy.onboarding.title}</h1>
             <p className="shijing-onboarding__lede">
-              完成本人资料和关注，日镜会据此生成今日判断。
+              {copy.onboarding.lede}
             </p>
           </div>
           <button
@@ -64,19 +66,19 @@ export function ShijingOnboarding(props: ShijingOnboardingProps) {
             disabled={!complete}
             onClick={props.onComplete}
           >
-            进入日镜
+            {copy.onboarding.enter}
           </button>
         </header>
 
-        <ol className="shijing-onboarding__steps" aria-label="准备状态">
+        <ol className="shijing-onboarding__steps" aria-label={copy.onboarding.readinessAria}>
           <li
             data-active={activePanel === 'profile' ? 'true' : 'false'}
             data-complete={selfReady ? 'true' : 'false'}
           >
             <button type="button" onClick={() => setActivePanel('profile')}>
               <span>01</span>
-              <strong>本人资料</strong>
-              <small>{selfReady ? '已完成' : '建立本命输入'}</small>
+              <strong>{copy.onboarding.selfTitle}</strong>
+              <small>{selfReady ? copy.onboarding.done : copy.onboarding.selfPending}</small>
             </button>
           </li>
           <li
@@ -85,11 +87,11 @@ export function ShijingOnboarding(props: ShijingOnboardingProps) {
           >
             <button type="button" onClick={() => setActivePanel('concerns')}>
               <span>02</span>
-              <strong>关注</strong>
+              <strong>{copy.onboarding.concernTitle}</strong>
               <small>
                 {concernReady
-                  ? `${activeConcernCount}/${CONCERN_TAG_ACTIVE_LIMIT} 已激活`
-                  : '至少激活 1 项'}
+                  ? copy.onboarding.activeCount(activeConcernCount, CONCERN_TAG_ACTIVE_LIMIT)
+                  : copy.onboarding.concernPending}
               </small>
             </button>
           </li>
@@ -97,8 +99,16 @@ export function ShijingOnboarding(props: ShijingOnboardingProps) {
 
         <div className="shijing-onboarding__stage shijing-settings-page--styled">
           <div className="shijing-onboarding__stage-head">
-            <p>{activePanel === 'profile' ? '出生信息' : '关注镜片'}</p>
-            <h2>{activePanel === 'profile' ? '先确定推算依据。' : '再告诉日镜该看向哪里。'}</h2>
+            <p>
+              {activePanel === 'profile'
+                ? copy.onboarding.profileStageEyebrow
+                : copy.onboarding.concernStageEyebrow}
+            </p>
+            <h2>
+              {activePanel === 'profile'
+                ? copy.onboarding.profileStageTitle
+                : copy.onboarding.concernStageTitle}
+            </h2>
           </div>
           <div
             className="shijing-onboarding__panel"
@@ -122,7 +132,7 @@ export function ShijingOnboarding(props: ShijingOnboardingProps) {
             className="shijing-onboarding__next"
             onClick={() => setActivePanel(nextPanel)}
           >
-            {selfReady ? '继续选择关注' : '继续完善资料'}
+            {selfReady ? copy.onboarding.continueConcerns : copy.onboarding.continueProfile}
           </button>
         ) : null}
       </div>

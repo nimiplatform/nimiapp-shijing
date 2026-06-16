@@ -23,6 +23,7 @@ import {
   concernSubtitleFor,
   trimmedConcernLabel,
 } from './concern-presets.ts';
+import { useProductCopy } from '../i18n/copy.ts';
 
 // Compared against `trimmedConcernLabel` (which drops the leading `#`), so the
 // preset labels are trimmed to match — otherwise every concern reads as custom.
@@ -54,6 +55,7 @@ type Suggestion =
 
 export function ConcernTagControls(props: ConcernTagControlsProps) {
   const { state, dispatch } = useShijingStore();
+  const copy = useProductCopy();
   const [draftInput, setDraftInput] = useState('');
   const [confirmingDelete, setConfirmingDelete] = useState<{
     readonly id: string;
@@ -183,7 +185,7 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
   }
 
   return (
-    <section className="sjp-card" aria-label="关注的事">
+    <section className="sjp-card" aria-label={copy.concerns.title}>
       <div className="sjp-card-head">
         <span className="sjp-card-icon">
           <svg
@@ -200,18 +202,16 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
           </svg>
         </span>
         <div>
-          <h2 className="sjp-card-title">关注的事</h2>
+          <h2 className="sjp-card-title">{copy.concerns.title}</h2>
           <p className="sjp-card-desc">
-            写下你这阵子最在意的事，解读时会围绕它们来展开 · 最多同时关注{' '}
-            {CONCERN_TAG_ACTIVE_LIMIT} 项，正在关注 {activeCount} 项
-            {atLimit ? '（已满，先收起一项再添加新的）' : ''}
+            {copy.concerns.description(CONCERN_TAG_ACTIVE_LIMIT, activeCount, atLimit)}
           </p>
         </div>
       </div>
 
       {active.length > 0 ? (
         <div className="sjp-concern-group">
-          <h3 className="sjp-concern-group__title">已激活</h3>
+          <h3 className="sjp-concern-group__title">{copy.concerns.activeGroup}</h3>
           <ul className="sjp-concern-list">
             {active.map((tag) => (
               <li className="sjp-concern-row" key={tag.id} data-status="active">
@@ -220,11 +220,13 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
                   <small>{concernSubtitleFor(tag)}</small>
                   {tag.mention_refs.length > 0 ? (
                     <small className="sjp-concern-row__mentions">
-                      关系到{' '}
+                      {copy.concerns.relatedTo}{' '}
                       {tag.mention_refs.map((m, i) => (
                         <span key={i} data-resolved={m.resolved_subject_ref ? 'true' : 'false'}>
                           {m.token}
-                          {m.resolved_subject_ref ? '（已匹配）' : '（待匹配）'}{' '}
+                          {m.resolved_subject_ref
+                            ? ` (${copy.concerns.resolved}) `
+                            : ` (${copy.concerns.pending}) `}
                         </span>
                       ))}
                     </small>
@@ -236,7 +238,7 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
                     className="sjp-concern-row__action sjp-concern-row__action--remove"
                     onClick={() => archiveTag(tag.id)}
                   >
-                    移除
+                    {copy.concerns.remove}
                   </button>
                   {isCustomTag(tag) ? (
                     <button
@@ -245,9 +247,9 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
                       onClick={() =>
                         setConfirmingDelete({ id: tag.id, label: trimmedConcernLabel(tag) })
                       }
-                      aria-label={`彻底删除 ${trimmedConcernLabel(tag)}`}
+                      aria-label={copy.concerns.deleteAria(trimmedConcernLabel(tag))}
                     >
-                      删除
+                      {copy.common.delete}
                     </button>
                   ) : null}
                 </div>
@@ -256,12 +258,12 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
           </ul>
         </div>
       ) : (
-        <p className="sjp-empty">还没有关注的事。从下面挑一个，或写下你这阵子最在意的。</p>
+        <p className="sjp-empty">{copy.concerns.noActive}</p>
       )}
 
       {suggestions.length > 0 ? (
         <div className="sjp-concern-group">
-          <h3 className="sjp-concern-group__title">可添加</h3>
+          <h3 className="sjp-concern-group__title">{copy.concerns.addableGroup}</h3>
           <ul className="sjp-concern-list">
             {suggestions.map((s) => {
               const label = s.kind === 'archived' ? s.label : s.preset.label;
@@ -278,7 +280,11 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
                       type="button"
                       className="sjp-concern-row__action sjp-concern-row__action--add"
                       disabled={atLimit}
-                      title={atLimit ? `已达激活上限 ${CONCERN_TAG_ACTIVE_LIMIT}` : '加入关注'}
+                      title={
+                        atLimit
+                          ? copy.concerns.addLimitTitle(CONCERN_TAG_ACTIVE_LIMIT)
+                          : copy.concerns.addTitle
+                      }
                       onClick={() => {
                         if (s.kind === 'archived') {
                           activateExisting(s.id);
@@ -287,7 +293,7 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
                         }
                       }}
                     >
-                      添加
+                      {copy.common.add}
                     </button>
                     {s.kind === 'archived' && s.isCustom ? (
                       <button
@@ -296,9 +302,9 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
                         onClick={() =>
                           setConfirmingDelete({ id: s.id, label: label.replace(/^#/, '') })
                         }
-                        aria-label={`彻底删除 ${label.replace(/^#/, '')}`}
+                        aria-label={copy.concerns.deleteAria(label.replace(/^#/, ''))}
                       >
-                        删除
+                        {copy.common.delete}
                       </button>
                     ) : null}
                   </div>
@@ -310,7 +316,7 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
       ) : null}
 
       <div className="sjp-field sjp-field--full">
-        <label className="sjp-label" htmlFor="concern-add">自定义关注</label>
+        <label className="sjp-label" htmlFor="concern-add">{copy.concerns.customLabel}</label>
         <div className="sjp-inline-add">
           <input
             id="concern-add"
@@ -318,7 +324,7 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
             type="text"
             value={draftInput}
             onChange={(e) => setDraftInput(e.currentTarget.value)}
-            placeholder="想关注什么？如「创业」「考研」，可 @某人，也可直接写一句话"
+            placeholder={copy.concerns.customPlaceholder}
             disabled={atLimit}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !atLimit && draftInput.trim().length > 0) {
@@ -345,21 +351,21 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
             >
               <path d="M12 5v14M5 12h14" />
             </svg>
-            添加
+            {copy.common.add}
           </button>
         </div>
       </div>
 
       <ConfirmDialog
         open={confirmingDelete !== null}
-        title="彻底删除这个关注？"
+        title={copy.concerns.deleteTitle}
         message={
           confirmingDelete
-            ? `「${confirmingDelete.label}」将被永久删除，并从引用它的记录中移除。此操作不可撤销。`
+            ? copy.concerns.deleteMessage(confirmingDelete.label)
             : ''
         }
-        confirmLabel="删除"
-        cancelLabel="取消"
+        confirmLabel={copy.common.delete}
+        cancelLabel={copy.common.cancel}
         confirmTone="danger"
         onConfirm={confirmDelete}
         onClose={() => setConfirmingDelete(null)}

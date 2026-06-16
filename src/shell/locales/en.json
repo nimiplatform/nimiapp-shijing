@@ -37,6 +37,17 @@
   "Shell": {
     "loading": "Loading...",
     "logout": "Sign out",
-    "accountMenu": "Account menu"
+    "accountMenu": "Account menu",
+    "loadingShijing": "Loading ShiJing...",
+    "runtimeUnavailable": "Runtime unavailable",
+    "runtimeUnavailableDetail": "ShiJing needs Runtime to initialize account, AI, and local storage boundaries.",
+    "retry": "Retry",
+    "runtimeCheck": "Runtime check",
+    "connectingRuntime": "Connecting Runtime",
+    "connectingRuntimeDetail": "Establishing Runtime account session, app session, and AIConfig boundary.",
+    "booting": "Booting",
+    "login": "Login",
+    "loadingLogin": "Loading sign-in",
+    "loadingLoginDetail": "Preparing the Runtime account sign-in entry."
   }
 }
