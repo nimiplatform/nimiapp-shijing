@@ -21,6 +21,7 @@ import {
 } from '../../contracts/natal-inputs-validator.ts';
 import { localWallClockToUtcInstant } from '../astrology/local-wall-clock.ts';
 import { isScaffoldNatalInputs } from '../subjects/scaffold-natal-inputs.ts';
+import { fullPlaceName, searchGazetteer } from '../natal/gazetteer.ts';
 
 export interface SelfNatalDraft {
   readonly calendar_system: CalendarSystem;
@@ -118,6 +119,7 @@ const LOCAL_TIME_PATTERN = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/;
 // timezone), so deriving it here removes a redundant, error-prone manual entry.
 function deriveBirthDatetimeUtc(
   draft: SelfNatalDraft,
+  ianaTimeZone: string,
 ): { ok: true; value: string } | { ok: false; error: SelfDraftBuildError } {
   const dateText = draft.local_date_text.trim();
   if (!LOCAL_DATE_PATTERN.test(dateText)) {
@@ -136,7 +138,7 @@ function deriveBirthDatetimeUtc(
     mm = match[2];
     ss = match[3] ?? '00';
   }
-  const instant = localWallClockToUtcInstant(`${dateText}T${hh}:${mm}:${ss}`, draft.iana_time_zone);
+  const instant = localWallClockToUtcInstant(`${dateText}T${hh}:${mm}:${ss}`, ianaTimeZone);
   if (!instant) {
     return { ok: false, error: { code: 'birth_datetime_underivable', reason: 'timezone_conversion_failed' } };
   }
@@ -159,6 +161,45 @@ function parseFloatStrict(value: string): number | null {
   const n = Number(value);
   if (!Number.isFinite(n)) return null;
   return n;
+}
+
+interface ResolvedBirthLocationDraft {
+  readonly latitude_text: string;
+  readonly longitude_text: string;
+  readonly timezone_text: string;
+  readonly place_name: string;
+}
+
+function resolveBirthLocationDraft(draft: SelfNatalDraft): ResolvedBirthLocationDraft {
+  const latitudeText = draft.latitude.trim();
+  const longitudeText = draft.longitude.trim();
+  const timezoneText = draft.iana_time_zone.trim();
+  if (latitudeText || longitudeText || timezoneText) {
+    return {
+      latitude_text: latitudeText,
+      longitude_text: longitudeText,
+      timezone_text: timezoneText,
+      place_name: draft.place_name.trim(),
+    };
+  }
+
+  const query = draft.place_name.trim() || draft.place_text.trim();
+  const match = query ? searchGazetteer(query, 1)[0] : undefined;
+  if (match && match.score >= 100) {
+    return {
+      latitude_text: String(match.entry.lat),
+      longitude_text: String(match.entry.lng),
+      timezone_text: match.entry.tz,
+      place_name: fullPlaceName(match.entry),
+    };
+  }
+
+  return {
+    latitude_text: latitudeText,
+    longitude_text: longitudeText,
+    timezone_text: timezoneText,
+    place_name: draft.place_name.trim(),
+  };
 }
 
 export function buildSelfNatalInputs(draft: SelfNatalDraft): SelfDraftBuildResult {
@@ -186,10 +227,11 @@ export function buildSelfNatalInputs(draft: SelfNatalDraft): SelfDraftBuildResul
   };
 
   const placeText = draft.place_text.trim();
-  const placeName = draft.place_name.trim();
-  const latitudeText = draft.latitude.trim();
-  const longitudeText = draft.longitude.trim();
-  const timezoneText = draft.iana_time_zone.trim();
+  const resolvedLocation = resolveBirthLocationDraft(draft);
+  const placeName = resolvedLocation.place_name;
+  const latitudeText = resolvedLocation.latitude_text;
+  const longitudeText = resolvedLocation.longitude_text;
+  const timezoneText = resolvedLocation.timezone_text;
   const hasAnyLocationCalibration = Boolean(latitudeText || longitudeText || timezoneText);
   if (!placeText && !placeName && !hasAnyLocationCalibration) {
     return { ok: false, error: { code: 'birth_location_required' } };
@@ -217,8 +259,8 @@ export function buildSelfNatalInputs(draft: SelfNatalDraft): SelfDraftBuildResul
     ...(placeName.length > 0 ? { place_name: placeName } : {}),
   };
 
-  const derivedUtc = deriveBirthDatetimeUtc(draft);
-  if (!derivedUtc.ok) return derivedUtc;
+  const derivedUtc = deriveBirthDatetimeUtc(draft, timezoneText);
+  if (derivedUtc.ok === false) return { ok: false, error: derivedUtc.error };
 
   const inputs: NatalInputs = {
     raw_birth_input: raw,
@@ -239,9 +281,9 @@ export type SelfCommitOutcome =
 
 export function commitSelfDraft(space: ShiJingSpace, draft: SelfNatalDraft): SelfCommitOutcome {
   const built = buildSelfNatalInputs(draft);
-  if (!built.ok) return { ok: false, error: built.error };
+  if (built.ok === false) return { ok: false, error: built.error };
   const check = validateNatalInputs(built.inputs);
-  if (!check.ok) {
+  if (check.ok === false) {
     return { ok: false, error: { code: 'natal_inputs_invalid', detail: check.error } };
   }
   const next_space: ShiJingSpace = {

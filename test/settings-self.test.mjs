@@ -89,9 +89,25 @@ test('buildSelfNatalInputs rejects missing birth location before coordinate vali
   if (!r.ok) assert.equal(r.error.code, 'birth_location_required');
 });
 
-test('buildSelfNatalInputs rejects unresolved typed birth location as location mismatch', () => {
+test('buildSelfNatalInputs resolves a known typed birth location without explicit candidate click', () => {
   const r = buildSelfNatalInputs(gregorianDraft({
     place_text: '广州',
+    place_name: '',
+    latitude: '',
+    longitude: '',
+    iana_time_zone: '',
+  }));
+  assert.equal(r.ok, true);
+  if (r.ok) {
+    assert.equal(r.inputs.birth_location.iana_time_zone, 'Asia/Shanghai');
+    assert.ok(Math.abs(r.inputs.birth_location.latitude - 23.13) < 0.5);
+    assert.ok(Math.abs(r.inputs.birth_location.longitude - 113.26) < 0.5);
+  }
+});
+
+test('buildSelfNatalInputs rejects an unknown typed birth location as unresolved', () => {
+  const r = buildSelfNatalInputs(gregorianDraft({
+    place_text: 'zzzznowhere',
     place_name: '',
     latitude: '',
     longitude: '',
