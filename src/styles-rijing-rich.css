@@ -107,6 +107,267 @@
   border: 1px solid color-mix(in srgb, var(--rijing-accent) 18%, transparent);
 }
 
+/* ----- Startup onboarding ---------------------------------------- */
+
+.shijing-onboarding {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100dvh - 148px);
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 0 28px;
+  color: var(--rijing-ink-strong);
+  background: transparent;
+}
+
+.shijing-onboarding__modal {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 14px;
+  width: min(980px, calc(100% - 48px));
+  max-height: calc(100dvh - 150px);
+  min-height: min(560px, calc(100dvh - 150px));
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: 0 28px 78px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  overflow: hidden;
+}
+
+.shijing-onboarding__hero {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.shijing-onboarding__hero-copy {
+  max-width: 650px;
+}
+
+.shijing-onboarding__eyebrow {
+  margin: 0 0 10px;
+  color: var(--shijing-text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.shijing-onboarding__hero h1 {
+  margin: 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: clamp(34px, 4vw, 50px);
+  font-weight: 700;
+  line-height: 1.08;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0;
+}
+
+.shijing-onboarding__lede {
+  max-width: 560px;
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-onboarding__confirm,
+.shijing-onboarding__next {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.shijing-onboarding__confirm {
+  min-height: 38px;
+  padding: 0 18px;
+  background: #111827;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.shijing-onboarding__confirm:hover:not(:disabled) {
+  background: #020617;
+  transform: translateY(-1px);
+}
+
+.shijing-onboarding__confirm:disabled {
+  background: color-mix(in srgb, #111827 12%, #fff);
+  color: color-mix(in srgb, var(--shijing-text-secondary) 70%, #fff);
+  cursor: not-allowed;
+}
+
+.shijing-onboarding__steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shijing-onboarding__steps li,
+.shijing-onboarding__steps button {
+  min-width: 0;
+}
+
+.shijing-onboarding__steps li {
+  display: block;
+}
+
+.shijing-onboarding__steps button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 54px;
+  padding: 0 18px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--shijing-text-primary);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    background 160ms ease;
+}
+
+.shijing-onboarding__steps button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 22px 54px rgba(15, 23, 42, 0.08);
+}
+
+.shijing-onboarding__steps li[data-active="true"] button {
+  border-color: rgba(15, 23, 42, 0.18);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.shijing-onboarding__steps span {
+  color: color-mix(in srgb, var(--shijing-text-primary) 28%, #fff);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.shijing-onboarding__steps li[data-complete="true"] span {
+  color: var(--rijing-accent);
+}
+
+.shijing-onboarding__steps strong {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--shijing-text-primary);
+  text-align: left;
+}
+
+.shijing-onboarding__steps small {
+  justify-self: end;
+  color: var(--shijing-text-secondary);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.shijing-onboarding .shijing-onboarding__stage {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.66);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.56);
+  box-shadow: 0 16px 44px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(26px) saturate(150%);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  isolation: auto;
+  overflow: auto;
+}
+
+.shijing-onboarding__stage-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 0 2px;
+}
+
+.shijing-onboarding__stage-head p {
+  margin: 0;
+  color: var(--rijing-accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.shijing-onboarding__stage-head h2 {
+  margin: 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: clamp(22px, 2.6vw, 30px);
+  line-height: 1.16;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0;
+}
+
+.shijing-onboarding__panel[hidden] {
+  display: none;
+}
+
+.shijing-onboarding .shijing-settings-page--styled .sjp-card {
+  margin: 0;
+  padding: 24px 26px;
+  border-radius: 18px;
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.shijing-onboarding .shijing-settings-page--styled .sjp-card-icon {
+  width: 34px;
+  height: 34px;
+}
+
+.shijing-onboarding .shijing-settings-page--styled .sjp-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.shijing-onboarding .shijing-settings-page--styled .sjp-card-head {
+  margin-bottom: 18px;
+}
+
+.shijing-onboarding__next {
+  align-self: center;
+  min-height: 34px;
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--rijing-accent) 35%, transparent);
+  background: color-mix(in srgb, var(--rijing-accent) 12%, #fff);
+  color: var(--rijing-accent-hover);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.shijing-onboarding__next:hover {
+  background: color-mix(in srgb, var(--rijing-accent) 18%, #fff);
+  transform: translateY(-1px);
+}
+
 /* ----- Hero conclusion card -----
  *
  * Direct-child article elements of `.shijing-tab` get a baseline
@@ -622,7 +883,13 @@
 }
 
 .shijing-tab .shijing-rijing__readiness-link:hover {
+  background: transparent;
+  color: var(--rijing-accent-hover);
   filter: brightness(0.85);
+}
+
+.shijing-tab .shijing-rijing__readiness-link:active {
+  background: transparent;
 }
 
 .shijing-rijing__readiness-link-arrow {
@@ -1090,12 +1357,87 @@
 /* ----- Responsive ----- */
 
 @media (max-width: 880px) {
+  .shijing-onboarding {
+    min-height: calc(100dvh - 130px);
+    padding: 16px 0 24px;
+  }
+
+  .shijing-onboarding__modal {
+    width: min(720px, calc(100% - 32px));
+    max-height: calc(100dvh - 132px);
+    min-height: min(540px, calc(100dvh - 132px));
+  }
+
+  .shijing-onboarding__hero {
+    align-items: start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .shijing-onboarding__confirm {
+    align-self: flex-start;
+  }
+
   .shijing-rijing__projections-grid {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 640px) {
+  .shijing-onboarding {
+    min-height: calc(100dvh - 112px);
+    padding: 12px 0 18px;
+  }
+
+  .shijing-onboarding__modal {
+    width: calc(100% - 20px);
+    max-height: calc(100dvh - 114px);
+    min-height: min(520px, calc(100dvh - 114px));
+    gap: 12px;
+    padding: 16px;
+    border-radius: 24px;
+  }
+
+  .shijing-onboarding__hero h1 {
+    font-size: 34px;
+  }
+
+  .shijing-onboarding__lede {
+    margin-top: 8px;
+    font-size: 13.5px;
+  }
+
+  .shijing-onboarding__steps {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-onboarding__steps button {
+    grid-template-columns: auto 1fr;
+    min-height: 50px;
+    padding: 0 14px;
+  }
+
+  .shijing-onboarding__steps small {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .shijing-onboarding .shijing-onboarding__stage {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .shijing-onboarding__stage-head {
+    align-items: start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .shijing-onboarding__confirm,
+  .shijing-onboarding__next {
+    width: 100%;
+  }
+
   .shijing-rijing .shijing-rijing__actions-grid {
     grid-template-columns: 1fr;
   }

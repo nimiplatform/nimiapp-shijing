@@ -11,6 +11,9 @@ import { ActionMenu, type NimiMenuItem } from '@nimiplatform/kit/ui';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { PrimaryTabBar } from '../navigation/tab-router.tsx';
 import type { ShijingSettingsFocusTarget } from '../settings/settings-page-view.tsx';
+import { ShijingOnboarding } from '../onboarding/shijing-onboarding.tsx';
+import { subjectMirrorReadiness } from '../subjects/natal-readiness.ts';
+import { dailyMirrorScopeForToday } from '../tabs/mirror-scope-helpers.ts';
 import {
   SHIJING_SETTINGS_PAGES,
   type ShijingSettingsPageId,
@@ -72,8 +75,29 @@ export function ShijingShell(props: ShijingShellProps) {
   const { state, persistence_status } = useShijingStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePage, setActivePage] = useState<ActiveSettingsPageState | null>(null);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
+  const [onboardingStarted, setOnboardingStarted] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
   const accountName = props.account?.name?.trim() ?? '';
+  const dailyScope = dailyMirrorScopeForToday();
+  const selfReady = subjectMirrorReadiness({
+    subject: 'self',
+    space: state.snapshot,
+    mirror_kind: 'rijing',
+    mirror_scope: dailyScope,
+  }).ok;
+  const hasActiveConcern = state.snapshot.concern_tags.some((tag) => tag.status === 'active');
+  const needsOnboarding = !selfReady || !hasActiveConcern;
+  const showOnboarding =
+    state.active_tab === 'rijing' &&
+    !onboardingDismissed &&
+    (needsOnboarding || onboardingStarted);
+
+  useEffect(() => {
+    if (state.active_tab === 'rijing' && needsOnboarding && !onboardingDismissed) {
+      setOnboardingStarted(true);
+    }
+  }, [state.active_tab, needsOnboarding, onboardingDismissed]);
 
   // Dropdown affordances: dismiss the avatar menu on Escape or on a click
   // outside the account cluster.
@@ -165,7 +189,16 @@ export function ShijingShell(props: ShijingShellProps) {
             </p>
           }
         >
-          {renderActiveTab(state.active_tab, (page, focusTarget) => openPage(page ?? 'profile', focusTarget))}
+          {showOnboarding ? (
+            <ShijingOnboarding
+              onComplete={() => {
+                setOnboardingStarted(false);
+                setOnboardingDismissed(true);
+              }}
+            />
+          ) : (
+            renderActiveTab(state.active_tab, (page, focusTarget) => openPage(page ?? 'profile', focusTarget))
+          )}
         </Suspense>
       </main>
       {activePage ? (

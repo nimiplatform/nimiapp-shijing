@@ -15,6 +15,7 @@ import { SelfEditor } from '../self/self-editor.tsx';
 import { ResponsePreferencesEditor } from './response-preferences-editor.tsx';
 import { MethodProfileEditor } from './method-profile-editor.tsx';
 import { useShijingStore } from '../state/shijing-store.tsx';
+import type { ShijingSettingsFocusTarget } from './settings-page-view.tsx';
 
 function PrivacyLocalDataSection() {
   const { persistence_status, persistence_client } = useShijingStore();
@@ -135,10 +136,13 @@ function DiagnosticsSection() {
   );
 }
 
-function SurfaceBody(props: { readonly surface: ShijingSettingsSurfaceId }) {
+function SurfaceBody(props: {
+  readonly surface: ShijingSettingsSurfaceId;
+  readonly focusTarget?: ShijingSettingsFocusTarget | null;
+}) {
   switch (props.surface) {
     case 'self':
-      return <SelfEditor />;
+      return <SelfEditor autoOpenEditor={props.focusTarget === 'self_profile_editor'} />;
     case 'people':
       return <PersonEditor />;
     case 'concern_tags':
@@ -167,6 +171,7 @@ function SurfaceBody(props: { readonly surface: ShijingSettingsSurfaceId }) {
 
 export interface SettingsSurfaceSectionProps {
   readonly surface: ShijingSettingsSurfaceId;
+  readonly focusTarget?: ShijingSettingsFocusTarget | null;
 }
 
 // Every settings surface renders its own self-contained `.sjp-card` with an
@@ -188,12 +193,12 @@ const SELF_CONTAINED_SURFACES: ReadonlySet<ShijingSettingsSurfaceId> = new Set([
 export function SettingsSurfaceSection(props: SettingsSurfaceSectionProps) {
   const { surface } = props;
   if (SELF_CONTAINED_SURFACES.has(surface)) {
-    return <SurfaceBody surface={surface} />;
+    return <SurfaceBody surface={surface} focusTarget={props.focusTarget} />;
   }
   return (
     <section id={`settings-${surface}`} aria-label={SETTINGS_SURFACE_LABELS[surface]}>
       <h3>{SETTINGS_SURFACE_LABELS[surface]}</h3>
-      <SurfaceBody surface={surface} />
+      <SurfaceBody surface={surface} focusTarget={props.focusTarget} />
     </section>
   );
 }

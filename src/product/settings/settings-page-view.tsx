@@ -15,10 +15,11 @@ import { SETTINGS_PAGE_LABELS } from '../i18n/copy.ts';
 import { SettingsSurfaceSection } from './settings-surfaces.tsx';
 
 export type ShijingSettingsFocusTarget =
+  | 'self_profile_editor'
   | 'ai_model_config'
   | 'privacy_local_data';
 
-const SETTINGS_FOCUS_TARGET_IDS: Record<ShijingSettingsFocusTarget, string> = {
+const SETTINGS_FOCUS_TARGET_IDS: Partial<Record<ShijingSettingsFocusTarget, string>> = {
   ai_model_config: 'settings-ai-model-config',
   privacy_local_data: 'settings-privacy-local-data',
 };
@@ -54,6 +55,7 @@ export function SettingsPageView({
   useEffect(() => {
     if (!focusTarget) return;
     const id = SETTINGS_FOCUS_TARGET_IDS[focusTarget];
+    if (!id) return;
     const timer = window.setTimeout(() => {
       const target = document.getElementById(id);
       if (!(target instanceof HTMLElement)) return;
@@ -158,7 +160,7 @@ export function SettingsPageView({
       >
         <div className="shijing-settings">
           {page.surfaces.map((surface) => (
-            <SettingsSurfaceSection key={surface} surface={surface} />
+            <SettingsSurfaceSection key={surface} surface={surface} focusTarget={focusTarget} />
           ))}
         </div>
       </PageDetailLayout>

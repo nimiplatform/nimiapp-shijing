@@ -5,10 +5,11 @@
 // uncertain (see self-summary.ts). The full natal form lives behind the
 // 「编辑」button in a centered drawer, mirroring 关系人物.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@nimiplatform/kit/ui';
 import { useShijingStore } from '../state/shijing-store.tsx';
+import type { PersistenceError } from '../persistence/persistence-client.ts';
 import { NatalFields } from '../natal/natal-fields.tsx';
 import { describeNatalError } from '../natal/natal-error-copy.ts';
 import {
@@ -18,12 +19,18 @@ import {
 } from './self-editor-state.ts';
 import { summarizeSelfSubject, SELF_PROFILE_TAGS } from './self-summary.ts';
 
-export function SelfEditor() {
-  const { state, dispatch } = useShijingStore();
+export interface SelfEditorProps {
+  readonly autoOpenEditor?: boolean;
+}
+
+export function SelfEditor({ autoOpenEditor = false }: SelfEditorProps) {
+  const { state, replace_snapshot } = useShijingStore();
   const summary = summarizeSelfSubject(state.snapshot);
   const [draft, setDraft] = useState<SelfNatalDraft>(() => selfDraftFromSpace(state.snapshot));
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const autoOpenedRef = useRef(false);
 
   // Close the editor drawer on Escape.
   useEffect(() => {
@@ -31,13 +38,14 @@ export function SelfEditor() {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         event.stopPropagation();
+        if (saving) return;
         setEditing(false);
         setErrorCode(null);
       }
     }
     document.addEventListener('keydown', onKeyDown, true);
     return () => document.removeEventListener('keydown', onKeyDown, true);
-  }, [editing]);
+  }, [editing, saving]);
 
   function update<K extends keyof SelfNatalDraft>(key: K, value: SelfNatalDraft[K]) {
     setDraft((prev) => ({ ...prev, [key]: value }));
@@ -50,17 +58,44 @@ export function SelfEditor() {
     setEditing(true);
   }
 
+  useEffect(() => {
+    if (!autoOpenEditor || autoOpenedRef.current) return;
+    autoOpenedRef.current = true;
+    setDraft(selfDraftFromSpace(state.snapshot));
+    setErrorCode(null);
+    setEditing(true);
+  }, [autoOpenEditor, state.snapshot]);
+
   function closeEdit() {
+    if (saving) return;
     setEditing(false);
     setErrorCode(null);
   }
 
-  function save() {
+  async function save() {
+    if (saving) return;
     const outcome = commitSelfDraft(state.snapshot, draft);
     if (outcome.ok) {
-      dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
-      closeEdit();
-    } else {
+      setSaving(true);
+      setErrorCode(null);
+      try {
+        const persistence = await replace_snapshot(outcome.next_space);
+        if (persistence.kind === 'saved' || persistence.kind === 'idle') {
+          setSaving(false);
+          closeEdit();
+          return;
+        }
+        if (persistence.kind === 'error') {
+          setErrorCode(describePersistenceSaveError(persistence.error));
+          return;
+        }
+        setErrorCode(`保存未完成（${persistence.kind}），请稍后重试。`);
+      } catch (error) {
+        setErrorCode(`保存失败：${error instanceof Error ? error.message : String(error)}`);
+      } finally {
+        setSaving(false);
+      }
+    } else if (outcome.ok === false) {
       const err = outcome.error;
       const code =
         err.code === 'natal_inputs_invalid'
@@ -233,7 +268,7 @@ export function SelfEditor() {
                   className="sjp-drawer__body sjp-grid"
                   onSubmit={(e) => {
                     e.preventDefault();
-                    save();
+                    void save();
                   }}
                 >
                   <NatalFields draft={draft} onChange={update} idPrefix="self" />
@@ -259,6 +294,8 @@ export function SelfEditor() {
                     <Button
                       type="submit"
                       tone="primary"
+                      loading={saving}
+                      disabled={saving}
                       leadingIcon={
                         <svg
                           width="18"
@@ -275,9 +312,9 @@ export function SelfEditor() {
                         </svg>
                       }
                     >
-                      保存
+                      {saving ? '保存中' : '保存'}
                     </Button>
-                    <Button type="button" tone="ghost" onClick={closeEdit}>
+                    <Button type="button" tone="ghost" onClick={closeEdit} disabled={saving}>
                       取消
                     </Button>
                   </div>
@@ -289,4 +326,13 @@ export function SelfEditor() {
         : null}
     </section>
   );
+}
+
+function describePersistenceSaveError(error: PersistenceError): string {
+  if (error.kind === 'save_validation_failed' && error.validation_error) {
+    return `保存失败：当前资料快照未通过校验（${error.validation_error.code}）。`;
+  }
+  if ('cause' in error) return `保存失败：${error.cause}`;
+  if ('reason' in error) return `保存失败：${error.reason}`;
+  return `保存失败：${error.kind}`;
 }

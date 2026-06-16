@@ -89,7 +89,7 @@ function emptyActionForState(
     case 'profile_incomplete':
       return {
         label: '完善资料',
-        onClick: () => onRequestOpenSettings?.('profile'),
+        onClick: () => onRequestOpenSettings?.('profile', 'self_profile_editor'),
       };
     case 'missing_focus':
       return {
@@ -333,7 +333,7 @@ export function RiJingTab(props: RiJingTabProps) {
 
       <RiJingReadinessNotice
         readiness={readiness}
-        onRequestOpenSettings={() => props.onRequestOpenSettings?.()}
+        onRequestOpenSettings={() => props.onRequestOpenSettings?.('profile', 'self_profile_editor')}
       />
 
       <RiJingEventInput />
