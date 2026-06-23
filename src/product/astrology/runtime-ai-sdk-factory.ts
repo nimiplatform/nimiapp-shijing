@@ -24,6 +24,7 @@ import type {
   RuntimeAiClient,
   RuntimeAiResult,
 } from './runtime-ai-client.ts';
+import { runtimeAiWordingPatchAppliedSource } from './runtime-ai-client.ts';
 import type { RuntimeAiPromptRequest } from './runtime-ai-prompt.ts';
 
 interface NimiRuntimeLike {
@@ -244,6 +245,7 @@ class SdkRuntimeAiClient implements RuntimeAiClient {
           request.deterministic_output,
           parsed.value,
         ),
+        output_source: runtimeAiWordingPatchAppliedSource(),
       };
     } catch (error) {
       if (error instanceof RuntimeAiOutputValidationError) {

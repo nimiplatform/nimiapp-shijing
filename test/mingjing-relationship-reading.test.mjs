@@ -185,6 +185,32 @@ test('generateReading succeeds for MingJing relationship_natal when Runtime AI r
   );
 });
 
+test('generateReading rejects relationship_natal runtime success without wording patch provenance', async () => {
+  const runtimeClient = {
+    async generate(_mirrorKind, request) {
+      return { ok: true, output: request.deterministic_output };
+    },
+  };
+  const result = await generateReading(
+    {
+      id: 'rdg_rel_seed_returned',
+      created_at: '2026-06-22T00:00:00Z',
+      mirror_kind: 'mingjing',
+      mirror_scope: SCOPE,
+      related_person_refs: [ALICE_REF],
+      concern_tag_refs: [],
+      cited_reading_ids: [],
+      cited_event_memory_refs: [],
+      cited_plan_item_refs: [],
+      space: relationshipSpace(),
+    },
+    { runtime_ai_client: runtimeClient, now: NOW },
+  );
+  assert.equal(result.ok, false);
+  assert.equal(result.failure.kind, 'runtime_ai_failed');
+  assert.match(result.failure.detail, /runtime_output_missing_wording_patch_provenance/u);
+});
+
 test('generateReading fails closed for non-MingJing relationship_natal scope without throwing', async () => {
   const runtimeClient = {
     async generate() {

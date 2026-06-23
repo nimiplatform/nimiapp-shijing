@@ -59,6 +59,7 @@ import type {
   RuntimeAiFailure,
   RuntimeAiResult,
 } from './runtime-ai-client.ts';
+import { isRuntimeAiWordingPatchAppliedSource } from './runtime-ai-client.ts';
 import type { StageFailure } from './stage-result.ts';
 import { deriveUncertainty, evaluateFailClose } from './uncertainty-decision.ts';
 import { inputsSummaryExpired } from './inputs-summary-expiry.ts';
@@ -529,6 +530,21 @@ export async function generateReading(
         mirror_kind: input.mirror_kind,
         mirror_scope: input.mirror_scope,
         detail: runtimeAiFailureDetail(aiResult.failure),
+      },
+    };
+  }
+  if (
+    input.mirror_kind === 'mingjing' &&
+    input.mirror_scope.kind === 'relationship_natal' &&
+    !isRuntimeAiWordingPatchAppliedSource(aiResult.output_source)
+  ) {
+    return {
+      ok: false,
+      failure: {
+        kind: 'runtime_ai_failed',
+        mirror_kind: input.mirror_kind,
+        mirror_scope: input.mirror_scope,
+        detail: 'runtime_output_missing_wording_patch_provenance',
       },
     };
   }

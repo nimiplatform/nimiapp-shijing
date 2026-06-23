@@ -1,4 +1,7 @@
 import {
+  runtimeAiWordingPatchAppliedSource,
+} from '../src/product/astrology/runtime-ai-client.ts';
+import {
   RuntimeAiWordingPatchValidationError,
   applyRuntimeAiWordingPatch,
   validateRuntimeAiWordingPatchValue,
@@ -23,6 +26,7 @@ export class MockRuntimeAiClient {
         return {
           ok: true,
           output: applyRuntimeAiWordingPatch(request.deterministic_output, patch),
+          output_source: runtimeAiWordingPatchAppliedSource(),
         };
       } catch (error) {
         if (error instanceof RuntimeAiOutputValidationError) {
