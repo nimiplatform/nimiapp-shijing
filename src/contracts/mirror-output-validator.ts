@@ -123,6 +123,13 @@ function isStringArray(value: unknown): value is readonly string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string');
 }
 
+function findUnexpectedKey(record: Record<string, unknown>, allowed: ReadonlySet<string>): string | null {
+  for (const key of Object.keys(record)) {
+    if (!allowed.has(key)) return key;
+  }
+  return null;
+}
+
 function isAllowedCitationMethod(
   value: unknown,
 ): value is MirrorCitation['method'] {
@@ -485,6 +492,44 @@ const MINGJING_RELATIONSHIP_PRACTICE_FIELDS: readonly string[] = [
   'repair',
 ];
 
+const MINGJING_RELATIONSHIP_ROOT_KEYS = new Set<string>([
+  'mirror_kind',
+  'output_kind',
+  'relationship_subject',
+  'summary',
+  'structure',
+  'timing_windows',
+  'practice',
+  'cited_event_memory_refs',
+  'cited_plan_item_refs',
+  'citations',
+]);
+
+const MINGJING_RELATIONSHIP_SUBJECT_KEYS = new Set<string>([
+  'primary_subject_ref',
+  'related_person_ref',
+  'anchor_year',
+  'basis_time_zone',
+]);
+
+const MINGJING_RELATIONSHIP_PERSON_REF_KEYS = new Set<string>(['kind', 'id']);
+
+const MINGJING_RELATIONSHIP_STRUCTURE_KEYS = new Set<string>(
+  MINGJING_RELATIONSHIP_STRUCTURE_FIELDS,
+);
+
+const MINGJING_RELATIONSHIP_TIMING_WINDOW_KEYS = new Set<string>([
+  'start_date',
+  'end_date',
+  'nature',
+  'driver_refs',
+  'summary',
+]);
+
+const MINGJING_RELATIONSHIP_PRACTICE_KEYS = new Set<string>(
+  MINGJING_RELATIONSHIP_PRACTICE_FIELDS,
+);
+
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0;
 }
@@ -501,11 +546,32 @@ function isValidRelationshipPersonRef(value: unknown): value is { kind: 'person'
 function validateMingjingRelationship(
   output: MingJingRelationshipMirrorOutput,
 ): MirrorOutputValidationResult {
+  const rootExtra = findUnexpectedKey(
+    output as unknown as Record<string, unknown>,
+    MINGJING_RELATIONSHIP_ROOT_KEYS,
+  );
+  if (rootExtra) {
+    return {
+      ok: false,
+      error: { code: 'mirror_output_forbidden_field_present', field: rootExtra },
+    };
+  }
+
   const subject = output.relationship_subject as unknown;
   if (!isRecord(subject)) {
     return {
       ok: false,
       error: { code: 'mirror_output_mingjing_relationship_subject_invalid', reason: 'not_object' },
+    };
+  }
+  const subjectExtra = findUnexpectedKey(subject, MINGJING_RELATIONSHIP_SUBJECT_KEYS);
+  if (subjectExtra) {
+    return {
+      ok: false,
+      error: {
+        code: 'mirror_output_mingjing_relationship_subject_invalid',
+        reason: `unexpected_field:${subjectExtra}`,
+      },
     };
   }
   if (subject.primary_subject_ref !== 'self') {
@@ -516,6 +582,21 @@ function validateMingjingRelationship(
         reason: 'primary_subject_ref_must_be_self',
       },
     };
+  }
+  if (isRecord(subject.related_person_ref)) {
+    const relatedExtra = findUnexpectedKey(
+      subject.related_person_ref,
+      MINGJING_RELATIONSHIP_PERSON_REF_KEYS,
+    );
+    if (relatedExtra) {
+      return {
+        ok: false,
+        error: {
+          code: 'mirror_output_mingjing_relationship_subject_invalid',
+          reason: `related_person_ref_unexpected_field:${relatedExtra}`,
+        },
+      };
+    }
   }
   if (!isValidRelationshipPersonRef(subject.related_person_ref)) {
     return {
@@ -558,6 +639,16 @@ function validateMingjingRelationship(
       error: { code: 'mirror_output_mingjing_relationship_structure_invalid', field: 'structure' },
     };
   }
+  const structureExtra = findUnexpectedKey(structure, MINGJING_RELATIONSHIP_STRUCTURE_KEYS);
+  if (structureExtra) {
+    return {
+      ok: false,
+      error: {
+        code: 'mirror_output_mingjing_relationship_structure_invalid',
+        field: structureExtra,
+      },
+    };
+  }
   for (const field of MINGJING_RELATIONSHIP_STRUCTURE_FIELDS) {
     if (!isNonEmptyString(structure[field])) {
       return {
@@ -579,6 +670,17 @@ function validateMingjingRelationship(
           code: 'mirror_output_mingjing_relationship_timing_window_invalid',
           index: i,
           reason: 'not_object',
+        },
+      };
+    }
+    const windowExtra = findUnexpectedKey(window, MINGJING_RELATIONSHIP_TIMING_WINDOW_KEYS);
+    if (windowExtra) {
+      return {
+        ok: false,
+        error: {
+          code: 'mirror_output_mingjing_relationship_timing_window_invalid',
+          index: i,
+          reason: `unexpected_field:${windowExtra}`,
         },
       };
     }
@@ -633,6 +735,13 @@ function validateMingjingRelationship(
     return {
       ok: false,
       error: { code: 'mirror_output_mingjing_relationship_practice_invalid', field: 'practice' },
+    };
+  }
+  const practiceExtra = findUnexpectedKey(practice, MINGJING_RELATIONSHIP_PRACTICE_KEYS);
+  if (practiceExtra) {
+    return {
+      ok: false,
+      error: { code: 'mirror_output_mingjing_relationship_practice_invalid', field: practiceExtra },
     };
   }
   for (const field of MINGJING_RELATIONSHIP_PRACTICE_FIELDS) {

@@ -69,6 +69,14 @@ test('mingjing relationship hepan rejects forbidden trend_curve field', () => {
   }
 });
 
+test('mingjing relationship hepan rejects unadmitted root field', () => {
+  const result = validateMirrorOutput(validMingjingRelationshipOutput({ unadmitted_payload: {} }));
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'mirror_output_forbidden_field_present');
+  }
+});
+
 test('mingjing relationship hepan rejects bad relationship subject ref', () => {
   const output = validMingjingRelationshipOutput();
   const result = validateMirrorOutput({
@@ -81,6 +89,75 @@ test('mingjing relationship hepan rejects bad relationship subject ref', () => {
   assert.equal(result.ok, false);
   if (!result.ok) {
     assert.equal(result.error.code, 'mirror_output_mingjing_relationship_subject_invalid');
+  }
+});
+
+test('mingjing relationship hepan rejects extra relationship subject field', () => {
+  const output = validMingjingRelationshipOutput();
+  const result = validateMirrorOutput({
+    ...output,
+    relationship_subject: {
+      ...output.relationship_subject,
+      unadmitted: 'x',
+    },
+  });
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'mirror_output_mingjing_relationship_subject_invalid');
+  }
+});
+
+test('mingjing relationship hepan rejects extra related person ref field', () => {
+  const output = validMingjingRelationshipOutput();
+  const result = validateMirrorOutput({
+    ...output,
+    relationship_subject: {
+      ...output.relationship_subject,
+      related_person_ref: {
+        ...output.relationship_subject.related_person_ref,
+        unadmitted: 'x',
+      },
+    },
+  });
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'mirror_output_mingjing_relationship_subject_invalid');
+  }
+});
+
+test('mingjing relationship hepan rejects extra structure field', () => {
+  const output = validMingjingRelationshipOutput();
+  const result = validateMirrorOutput({
+    ...output,
+    structure: { ...output.structure, unadmitted: 'x' },
+  });
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'mirror_output_mingjing_relationship_structure_invalid');
+  }
+});
+
+test('mingjing relationship hepan rejects extra timing window field', () => {
+  const output = validMingjingRelationshipOutput();
+  const result = validateMirrorOutput({
+    ...output,
+    timing_windows: [{ ...output.timing_windows[0], unadmitted: 'x' }],
+  });
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'mirror_output_mingjing_relationship_timing_window_invalid');
+  }
+});
+
+test('mingjing relationship hepan rejects extra practice field', () => {
+  const output = validMingjingRelationshipOutput();
+  const result = validateMirrorOutput({
+    ...output,
+    practice: { ...output.practice, unadmitted: 'x' },
+  });
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'mirror_output_mingjing_relationship_practice_invalid');
   }
 });
 
