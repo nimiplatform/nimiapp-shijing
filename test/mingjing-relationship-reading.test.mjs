@@ -142,3 +142,34 @@ test('generateReading fails closed for non-MingJing relationship_natal scope wit
   assert.equal(result.failure.stage, 'orchestrator');
   assert.match(result.failure.detail ?? '', /mirror_kind_scope_forbidden:shijing:relationship_natal/u);
 });
+
+test('generateReading fails closed when selected method cannot produce relationship evidence', async () => {
+  const runtimeClient = {
+    async generate() {
+      throw new Error('runtime client should not be reached for unsupported relationship method');
+    },
+  };
+  const space = relationshipSpace();
+  const result = await generateReading(
+    {
+      id: 'rdg_rel_ziwei_unsupported',
+      created_at: '2026-06-22T00:00:00Z',
+      mirror_kind: 'mingjing',
+      mirror_scope: SCOPE,
+      related_person_refs: [ALICE_REF],
+      concern_tag_refs: [],
+      cited_reading_ids: [],
+      cited_event_memory_refs: [],
+      cited_plan_item_refs: [],
+      space: {
+        ...space,
+        settings: { ...space.settings, method_profile_id: 'ziwei_sanhe_v1' },
+      },
+    },
+    { runtime_ai_client: runtimeClient, now: NOW },
+  );
+  assert.equal(result.ok, false);
+  assert.equal(result.failure.kind, 'pipeline_stage_failed');
+  assert.equal(result.failure.stage, 'build_feature_snapshot');
+  assert.match(result.failure.detail ?? '', /relationship_hepan.*method.*not_supported|unsupported_method/u);
+});

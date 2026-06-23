@@ -85,6 +85,13 @@ test('relationship_natal feature snapshot is MingJing-owned', () => {
   assert.match(result.error.detail ?? '', /mirror_kind_scope_forbidden:rijing:relationship_natal/u);
 });
 
+test('relationship_natal fails closed when method cannot produce relationship evidence', () => {
+  const result = relationshipSnapshot({ method_profile_id: 'ziwei_sanhe_v1' });
+  assert.equal(result.ok, false);
+  assert.equal(result.error.kind, 'stage_invalid_input');
+  assert.match(result.error.detail ?? '', /relationship_hepan.*method.*not_supported|unsupported_method/u);
+});
+
 test('relationship_natal timing windows include both subjects period evidence or explicit fallback', () => {
   const result = relationshipSnapshot();
   assert.equal(result.ok, true, JSON.stringify(result));

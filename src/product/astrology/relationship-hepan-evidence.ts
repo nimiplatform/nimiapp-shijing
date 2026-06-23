@@ -257,26 +257,6 @@ function deriveBaziRelationshipHePan(input: {
   };
 }
 
-function deriveUnknownMethodRelationshipHePan(input: {
-  readonly method_evidence: MethodEvidence;
-  readonly related_person_ref: Extract<SubjectRef, { kind: 'person' }>;
-  readonly display_name_snapshot: string;
-  readonly anchor_year: number;
-}): RelationshipHePanEvidence {
-  const methodRef = `${input.method_evidence.method_id}:relationship_hepan.unsupported_method`;
-  return {
-    related_person_ref: input.related_person_ref,
-    display_name_snapshot: input.display_name_snapshot,
-    branch_interactions: [],
-    day_master_relation: { label: 'unknown', driver_ref: `${methodRef}.day_master` },
-    ten_god_relation: { label: 'unknown', driver_ref: `${methodRef}.ten_god` },
-    yong_shen_relation: { label: 'unknown', driver_ref: `${methodRef}.yong_shen` },
-    timing_windows: [
-      annualWindow(input.anchor_year, [`${methodRef}.anchor_year.${input.anchor_year}`], 'steady'),
-    ],
-  };
-}
-
 export function deriveRelationshipHePanEvidence(input: {
   readonly method_evidence: MethodEvidence;
   readonly related_person_ref: Extract<SubjectRef, { kind: 'person' }>;
@@ -292,7 +272,12 @@ export function deriveRelationshipHePanEvidence(input: {
     });
   }
   return {
-    ok: true,
-    value: deriveUnknownMethodRelationshipHePan(input),
+    ok: false,
+    error: {
+      stage: 'build_feature_snapshot',
+      kind: 'stage_invalid_input',
+      subject_ref: input.related_person_ref,
+      detail: `relationship_hepan method not_supported:${input.method_evidence.method_id}`,
+    },
   };
 }
