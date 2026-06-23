@@ -10,6 +10,7 @@ import type {
 } from '../../domain/algorithm.ts';
 import type { RelationshipNatalMirrorScope } from '../../domain/mirror-scope.ts';
 import type { MingJingRelationshipMirrorOutput } from '../../domain/mirror-output.ts';
+import { subjectRefEquals } from '../../domain/subject-ref.ts';
 import type { StageResult } from './stage-result.ts';
 
 function directionText(label: RelationshipHePanEvidence['day_master_relation']['label']): string {
@@ -57,6 +58,17 @@ export function generateMingJingRelationshipOutput(input: {
         stage: 'mingjing_projection',
         kind: 'stage_missing_input',
         detail: 'feature_snapshot.common.relationship_hepan is required',
+      },
+    };
+  }
+  if (!subjectRefEquals(evidence.related_person_ref, input.mirror_scope.related_person_ref)) {
+    return {
+      ok: false,
+      error: {
+        stage: 'mingjing_projection',
+        kind: 'stage_invalid_input',
+        subject_ref: input.mirror_scope.related_person_ref,
+        detail: 'relationship_hepan related_person_ref mismatch',
       },
     };
   }

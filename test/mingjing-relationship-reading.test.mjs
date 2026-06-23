@@ -90,6 +90,23 @@ test('generateMingJingRelationshipOutput fails closed without relationship_hepan
   assert.equal(result.error.kind, 'stage_missing_input');
 });
 
+test('generateMingJingRelationshipOutput fails closed when evidence person differs from scope', () => {
+  const bobScope = relationshipNatalMirrorScope({
+    anchor_year: 2026,
+    related_person_ref: { kind: 'person', id: 'p_bob' },
+  });
+  const result = generateMingJingRelationshipOutput({
+    feature_snapshot: featureSnapshot(),
+    mirror_scope: bobScope,
+    method_profile_id: 'bazi_ziping_v1',
+    cited_event_memory_refs: [],
+    cited_plan_item_refs: [],
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.error.kind, 'stage_invalid_input');
+  assert.match(result.error.detail ?? '', /relationship_hepan related_person_ref mismatch/u);
+});
+
 test('generateReading routes relationship_natal to deterministic output then fails closed at unsupported Runtime AI wording', async () => {
   const runtimeClient = {
     async generate() {
