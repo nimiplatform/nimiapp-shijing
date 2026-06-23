@@ -19,6 +19,7 @@
 - `rolling_30_day`
 - `long_horizon`
 - `natal` (命镜 only; whole-life, anchored by `anchor_year`, not a transit window)
+- `relationship_natal`
 - `consultation`
 
 Valid kind/scope pairings are listed in
@@ -150,6 +151,11 @@ Invariants:
   change.
 - MingJing expires after 180 days or when cited events / natal inputs / response
   preferences change (the natal chart itself is fixed).
+- MingJing Relationship HePan expires after 180 days or when the related
+  Person's natal inputs, related Person consent posture, `anchor_year`, scope
+  payload, self-plus-person deterministic relationship evidence, or response
+  preferences change. Stale relationship evidence must fail closed before any
+  Runtime AI wording is generated.
 - ShiJing consultation expires after 7 days for new AI turns.
 
 Expired snapshots are retained on historical readings but must not be reused to

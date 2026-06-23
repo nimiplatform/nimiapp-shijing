@@ -159,12 +159,20 @@ mingjing_relationship_hepan:
     - relationship_subject
     - summary
     - structure
-    - timing
+    - timing_windows
     - practice
     - cited_event_memory_refs
     - cited_plan_item_refs
     - citations
   output_kind: relationship_hepan
+  relationship_subject:
+    required_fields:
+      - primary_subject_ref
+      - related_person_ref
+      - anchor_year
+      - basis_time_zone
+    primary_subject_ref: self
+    related_person_ref_kind: person
   structure:
     required_fields:
       - baseline_pattern
@@ -172,13 +180,23 @@ mingjing_relationship_hepan:
       - friction_and_misread
       - communication_rhythm
       - boundary_advice
-  timing_window:
+  timing_windows:
+    min_items: 1
+    item:
+      required_fields:
+        - start_date
+        - end_date
+        - nature
+        - driver_refs
+        - summary
+      driver_refs: deterministic_only
+  practice:
     required_fields:
-      - start_date
-      - end_date
-      - nature
-      - driver_refs
-      - summary
+      - communication
+      - boundary
+      - repair
+    ai_worded: true
+    deterministic_evidence_required: true
   rules:
     - exactly_one_related_person
     - timing_driver_refs_are_deterministic
