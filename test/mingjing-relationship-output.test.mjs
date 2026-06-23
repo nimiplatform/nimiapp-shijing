@@ -31,8 +31,38 @@ test('mingjing relationship hepan rejects timing window without drivers', () => 
   }
 });
 
+test('mingjing relationship hepan rejects empty timing window driver ref', () => {
+  const output = validMingjingRelationshipOutput();
+  const result = validateMirrorOutput({
+    ...output,
+    timing_windows: [{ ...output.timing_windows[0], driver_refs: [''] }],
+  });
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'mirror_output_mingjing_relationship_timing_window_invalid');
+  }
+});
+
 test('mingjing relationship hepan rejects forbidden match_score field', () => {
   const result = validateMirrorOutput(validMingjingRelationshipOutput({ match_score: 88 }));
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'mirror_output_forbidden_field_present');
+  }
+});
+
+test('mingjing relationship hepan rejects stale timing field', () => {
+  const result = validateMirrorOutput(
+    validMingjingRelationshipOutput({ timing: { anchor_year: 2026, windows: [] } }),
+  );
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'mirror_output_forbidden_field_present');
+  }
+});
+
+test('mingjing relationship hepan rejects forbidden trend_curve field', () => {
+  const result = validateMirrorOutput(validMingjingRelationshipOutput({ trend_curve: [] }));
   assert.equal(result.ok, false);
   if (!result.ok) {
     assert.equal(result.error.code, 'mirror_output_forbidden_field_present');

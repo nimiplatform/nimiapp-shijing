@@ -26,6 +26,8 @@ const COMMON_FORBIDDEN_OUTPUT_FIELDS: readonly string[] = [
   'luck_rank',
   'percentile',
   'trend_chart',
+  'trend_curve',
+  'trend_curves',
   'k_line',
   'k_line_bar',
   'kline',
@@ -43,10 +45,14 @@ const COMMON_FORBIDDEN_OUTPUT_FIELDS: readonly string[] = [
   'priority',
   'match_score',
   'match_percentage',
+  'compatibility',
   'compatibility_score',
   'compatibility_percentage',
+  'compatibility_graph',
   'relation_graph',
+  'relationship_graph',
   'contact_payload',
+  'timing',
 ];
 
 const LOCAL_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -596,7 +602,11 @@ function validateMingjingRelationship(
         },
       };
     }
-    if (!isStringArray(window.driver_refs) || window.driver_refs.length === 0) {
+    if (
+      !isStringArray(window.driver_refs) ||
+      window.driver_refs.length === 0 ||
+      window.driver_refs.some((ref) => ref.length === 0)
+    ) {
       return {
         ok: false,
         error: {
