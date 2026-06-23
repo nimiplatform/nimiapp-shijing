@@ -33,9 +33,11 @@ import {
 import {
   dailyMirrorScope,
   rolling30DayMirrorScope,
+  relationshipNatalMirrorScope,
   validConcernTagSnapshot,
   validEventMemory,
   validInputsSummary,
+  validMingjingRelationshipOutput,
   validReading,
   validRijingOutput,
   validYuejingOutput,
@@ -137,6 +139,45 @@ function yuejingPromptRequest() {
         },
       ],
     }),
+  };
+}
+
+function mingjingRelationshipPatch(overrides = {}) {
+  return {
+    patch_kind: 'shijing.runtime_ai_wording_patch.v1',
+    mirror_kind: 'mingjing',
+    output_kind: 'relationship_hepan',
+    summary: 'Runtime refined relationship structure.',
+    structure: {
+      baseline_pattern: 'Runtime baseline wording.',
+      attraction_and_support: 'Runtime support wording.',
+      friction_and_misread: 'Runtime friction wording.',
+      communication_rhythm: 'Runtime rhythm wording.',
+      boundary_advice: 'Runtime boundary wording.',
+    },
+    timing_windows: [
+      {
+        start_date: '2026-03-01',
+        end_date: '2026-04-15',
+        summary: 'Runtime timing wording.',
+      },
+    ],
+    practice: {
+      communication: 'Runtime communication practice.',
+      boundary: 'Runtime boundary practice.',
+      repair: 'Runtime repair practice.',
+    },
+    ...overrides,
+  };
+}
+
+function mingjingRelationshipPromptRequest(output = validMingjingRelationshipOutput()) {
+  return {
+    mirror_kind: 'mingjing',
+    system_prompt: 'system contract',
+    user_prompt: 'user contract',
+    schema_name: 'shijing.runtime_ai_wording_patch.mingjing.v1',
+    deterministic_output: output,
   };
 }
 
@@ -383,6 +424,44 @@ test('buildRuntimeAiPromptRequest limits yuejing wording target to the window st
   assert.ok(request.user_prompt.includes('"focus_date": "2026-05-25"'));
   assert.ok(request.user_prompt.includes('Start date wording.'));
   assert.equal(request.user_prompt.includes('Second date wording.'), false);
+});
+
+test('buildRuntimeAiPromptRequest admits MingJing relationship HePan wording targets as read-only context', () => {
+  const scope = relationshipNatalMirrorScope({ anchor_year: 2026 });
+  const summary = validInputsSummary({ mirrorKind: 'mingjing', scope, concernTagSnapshots: [] });
+  const output = validMingjingRelationshipOutput({
+    relationship_subject: {
+      primary_subject_ref: 'self',
+      related_person_ref: scope.related_person_ref,
+      anchor_year: scope.anchor_year,
+      basis_time_zone: scope.basis_time_zone,
+    },
+  });
+
+  const request = buildRuntimeAiPromptRequest({
+    mirror_kind: 'mingjing',
+    feature_snapshot: summary.feature_snapshot,
+    mirror_context: {
+      mirror_kind: 'mingjing',
+      mirror_scope: scope,
+      active_concern_tags: [],
+      resolved_person_refs: [scope.related_person_ref],
+      cited_event_memory_refs: [],
+      cited_plan_item_refs: [],
+      response_preferences_hash: 'sha256:prefs',
+    },
+    deterministic_output: output,
+    response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' },
+  });
+
+  assert.equal(request.schema_name, 'shijing.runtime_ai_wording_patch.mingjing.v1');
+  assert.ok(request.user_prompt.includes('output_kind: relationship_hepan'));
+  assert.ok(request.user_prompt.includes('relationship_subject'));
+  assert.ok(request.user_prompt.includes('"related_person_ref": {'));
+  assert.ok(request.user_prompt.includes('"driver_refs": ['));
+  assert.ok(request.user_prompt.includes('bazi:relationship.window.2026-03'));
+  assert.ok(request.user_prompt.includes('relationship prose fields only'));
+  assert.ok(request.user_prompt.includes('Do NOT output relationship_subject, citations, cited_event_memory_refs, cited_plan_item_refs, nature, driver_refs'));
 });
 
 test('buildRuntimeAiPromptRequest includes YueJing concern labels and deterministic classes', () => {
@@ -656,6 +735,113 @@ test('SdkRuntimeAiClient fails closed when YueJing wording duplicates same-date 
     assert.equal(result.failure.kind, 'parse_failure');
     assert.equal(result.failure.failure.kind, 'validation_failed');
     assert.equal(result.failure.failure.detail, 'yuejing_cell_summary_duplicate_for_date');
+  }
+});
+
+test('SdkRuntimeAiClient applies MingJing relationship wording patch while preserving deterministic fields', async () => {
+  const base = validMingjingRelationshipOutput({
+    cited_event_memory_refs: ['mem_relationship'],
+    cited_plan_item_refs: ['plan_relationship'],
+  });
+  const runtime = createTextRuntime({
+    generateText: async () => runtimeTextOutput(JSON.stringify(mingjingRelationshipPatch())),
+  });
+  const client = createSdkRuntimeAiClient({ runtime });
+  const result = await client.generate('mingjing', mingjingRelationshipPromptRequest(base));
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.output.summary, 'Runtime refined relationship structure.');
+  assert.equal(result.output.structure.baseline_pattern, 'Runtime baseline wording.');
+  assert.equal(result.output.structure.attraction_and_support, 'Runtime support wording.');
+  assert.equal(result.output.structure.friction_and_misread, 'Runtime friction wording.');
+  assert.equal(result.output.structure.communication_rhythm, 'Runtime rhythm wording.');
+  assert.equal(result.output.structure.boundary_advice, 'Runtime boundary wording.');
+  assert.equal(result.output.timing_windows[0].summary, 'Runtime timing wording.');
+  assert.equal(result.output.practice.communication, 'Runtime communication practice.');
+  assert.equal(result.output.practice.boundary, 'Runtime boundary practice.');
+  assert.equal(result.output.practice.repair, 'Runtime repair practice.');
+  assert.deepEqual(result.output.relationship_subject, base.relationship_subject);
+  assert.equal(result.output.timing_windows[0].nature, base.timing_windows[0].nature);
+  assert.deepEqual(result.output.timing_windows[0].driver_refs, base.timing_windows[0].driver_refs);
+  assert.deepEqual(result.output.citations, base.citations);
+  assert.deepEqual(result.output.cited_event_memory_refs, ['mem_relationship']);
+  assert.deepEqual(result.output.cited_plan_item_refs, ['plan_relationship']);
+});
+
+test('SdkRuntimeAiClient rejects MingJing relationship patches that include deterministic fields', async () => {
+  const cases = [
+    {
+      name: 'relationship_subject',
+      patch: mingjingRelationshipPatch({
+        relationship_subject: {
+          primary_subject_ref: 'self',
+          related_person_ref: { kind: 'person', id: 'p_alice' },
+          anchor_year: 2026,
+          basis_time_zone: TZ,
+        },
+      }),
+      detail: 'mingjing_relationship_patch_forbidden_key:relationship_subject',
+    },
+    {
+      name: 'citations',
+      patch: mingjingRelationshipPatch({
+        citations: [{ method: 'bazi_ziping_v1', reference: 'forbidden' }],
+      }),
+      detail: 'mingjing_relationship_patch_forbidden_key:citations',
+    },
+    {
+      name: 'timing driver_refs',
+      patch: mingjingRelationshipPatch({
+        timing_windows: [
+          {
+            start_date: '2026-03-01',
+            end_date: '2026-04-15',
+            driver_refs: ['runtime:forbidden'],
+            summary: 'Runtime timing wording.',
+          },
+        ],
+      }),
+      detail: 'mingjing_relationship_timing_window_forbidden_key:driver_refs',
+    },
+  ];
+
+  for (const item of cases) {
+    const runtime = createTextRuntime({
+      generateText: async () => runtimeTextOutput(JSON.stringify(item.patch)),
+    });
+    const client = createSdkRuntimeAiClient({ runtime });
+    const result = await client.generate('mingjing', mingjingRelationshipPromptRequest());
+
+    assert.equal(result.ok, false, item.name);
+    if (result.ok) continue;
+    assert.equal(result.failure.kind, 'parse_failure');
+    assert.equal(result.failure.failure.kind, 'validation_failed');
+    assert.equal(result.failure.failure.detail, item.detail);
+  }
+});
+
+test('SdkRuntimeAiClient rejects MingJing relationship patch with unknown timing window target', async () => {
+  const patch = mingjingRelationshipPatch({
+    timing_windows: [
+      {
+        start_date: '2026-05-01',
+        end_date: '2026-05-31',
+        summary: 'Runtime timing wording for an unknown window.',
+      },
+    ],
+  });
+  const runtime = createTextRuntime({
+    generateText: async () => runtimeTextOutput(JSON.stringify(patch)),
+  });
+  const client = createSdkRuntimeAiClient({ runtime });
+  const result = await client.generate('mingjing', mingjingRelationshipPromptRequest());
+
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.failure.kind, 'parse_failure');
+    assert.equal(result.failure.failure.kind, 'validation_failed');
+    assert.equal(result.failure.failure.detail, 'mingjing_relationship_timing_window_target_unknown');
   }
 });
 

@@ -4,10 +4,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { validateMirrorOutput } from '../src/contracts/mirror-output-validator.ts';
+import { validateReading } from '../src/contracts/reading-validator.ts';
 import { buildAstrologyFeatureSnapshot } from '../src/product/astrology/build-feature-snapshot.ts';
 import { generateReading } from '../src/product/astrology/generate-reading.ts';
 import { generateMingJingRelationshipOutput } from '../src/product/astrology/mingjing-relationship-generator.ts';
 import { localWallClockToUtcInstant } from '../src/product/astrology/local-wall-clock.ts';
+import { MockRuntimeAiClient } from './_mock-runtime-ai-client.mjs';
 import {
   relationshipNatalMirrorScope,
   validFeatureSnapshot,
@@ -60,6 +62,34 @@ function featureSnapshot() {
   return result.value;
 }
 
+function relationshipWordingPatch() {
+  return {
+    patch_kind: 'shijing.runtime_ai_wording_patch.v1',
+    mirror_kind: 'mingjing',
+    output_kind: 'relationship_hepan',
+    summary: 'Runtime AI describes the relationship as a steady structure with clear repair rituals.',
+    structure: {
+      baseline_pattern: 'Runtime baseline wording for the shared rhythm.',
+      attraction_and_support: 'Runtime support wording for mutual steadiness.',
+      friction_and_misread: 'Runtime friction wording for rushed assumptions.',
+      communication_rhythm: 'Runtime rhythm wording for short explicit check-ins.',
+      boundary_advice: 'Runtime boundary wording for keeping recovery space visible.',
+    },
+    timing_windows: [
+      {
+        start_date: '2026-01-01',
+        end_date: '2026-12-31',
+        summary: 'Runtime timing wording for the first admitted relationship window.',
+      },
+    ],
+    practice: {
+      communication: 'Runtime communication practice.',
+      boundary: 'Runtime boundary practice.',
+      repair: 'Runtime repair practice.',
+    },
+  };
+}
+
 test('generateMingJingRelationshipOutput emits exact-schema relationship output', () => {
   const result = generateMingJingRelationshipOutput({
     feature_snapshot: featureSnapshot(),
@@ -107,12 +137,14 @@ test('generateMingJingRelationshipOutput fails closed when evidence person diffe
   assert.match(result.error.detail ?? '', /relationship_hepan related_person_ref mismatch/u);
 });
 
-test('generateReading routes relationship_natal to deterministic output then fails closed at unsupported Runtime AI wording', async () => {
-  const runtimeClient = {
-    async generate() {
-      throw new Error('runtime client should not be reached before Wave 4 prompt support');
+test('generateReading succeeds for MingJing relationship_natal when Runtime AI returns a relationship wording patch', async () => {
+  let deterministicOutput = null;
+  const runtimeClient = new MockRuntimeAiClient({
+    canned_patch_by_kind: { mingjing: relationshipWordingPatch() },
+    capture: (_kind, request) => {
+      deterministicOutput = request.deterministic_output;
     },
-  };
+  });
   const result = await generateReading(
     {
       id: 'rdg_rel_1',
@@ -128,9 +160,29 @@ test('generateReading routes relationship_natal to deterministic output then fai
     },
     { runtime_ai_client: runtimeClient, now: NOW },
   );
-  assert.equal(result.ok, false);
-  assert.equal(result.failure.kind, 'runtime_ai_failed');
-  assert.match(result.failure.detail ?? '', /relationship.*runtime.*not.*supported|relationship_hepan_runtime_ai_prompt_not_supported/u);
+  assert.equal(result.ok, true, JSON.stringify(result));
+  if (!result.ok) return;
+  assert.equal(validateReading(result.reading).ok, true, JSON.stringify(validateReading(result.reading)));
+  assert.equal(result.reading.output.output_kind, 'relationship_hepan');
+  assert.equal(
+    result.reading.output.summary,
+    'Runtime AI describes the relationship as a steady structure with clear repair rituals.',
+  );
+  assert.equal(
+    result.reading.output.structure.communication_rhythm,
+    'Runtime rhythm wording for short explicit check-ins.',
+  );
+  assert.equal(result.reading.output.practice.repair, 'Runtime repair practice.');
+  assert.ok(deterministicOutput);
+  assert.deepEqual(result.reading.output.relationship_subject, deterministicOutput.relationship_subject);
+  assert.deepEqual(
+    result.reading.output.timing_windows.map((window) => window.driver_refs),
+    deterministicOutput.timing_windows.map((window) => window.driver_refs),
+  );
+  assert.deepEqual(
+    result.reading.output.timing_windows.map((window) => window.nature),
+    deterministicOutput.timing_windows.map((window) => window.nature),
+  );
 });
 
 test('generateReading fails closed for non-MingJing relationship_natal scope without throwing', async () => {

@@ -5,7 +5,11 @@ import type { ConcernTagSnapshot } from '../../domain/concern-tag.ts';
 import type { EventMemory } from '../../domain/event-memory.ts';
 import type { MirrorContextSnapshot, Reading } from '../../domain/reading.ts';
 import type { MirrorKind } from '../../domain/mirror-scope.ts';
-import type { MingJingMirrorOutput, MirrorOutput } from '../../domain/mirror-output.ts';
+import type {
+  MingJingMirrorOutput,
+  MingJingRelationshipMirrorOutput,
+  MirrorOutput,
+} from '../../domain/mirror-output.ts';
 import type { ResponsePreferences } from '../../domain/settings.ts';
 
 export interface RuntimeAiPromptRequest {
@@ -61,7 +65,14 @@ function summarizeEventMemories(memories: readonly EventMemory[] | undefined): s
     .join('\n');
 }
 
-function schemaShapeForKind(kind: MirrorKind): string {
+function isMingjingRelationshipOutput(
+  output: MirrorOutput,
+): output is MingJingRelationshipMirrorOutput {
+  return output.mirror_kind === 'mingjing' &&
+    (output as { output_kind?: unknown }).output_kind === 'relationship_hepan';
+}
+
+function schemaShapeForKind(kind: MirrorKind, output?: MirrorOutput): string {
   switch (kind) {
     case 'rijing':
       return [
@@ -85,6 +96,17 @@ function schemaShapeForKind(kind: MirrorKind): string {
         'patch_fields: patch_kind, mirror_kind, summary?, answer?',
       ].join('\n');
     case 'mingjing':
+      if (output && isMingjingRelationshipOutput(output)) {
+        return [
+          'output_kind: relationship_hepan',
+          'patch_fields: patch_kind, mirror_kind, output_kind, summary?, structure?, timing_windows?, practice?',
+          'AI may patch relationship prose fields only.',
+          'structure object fields: baseline_pattern, attraction_and_support, friction_and_misread, communication_rhythm, boundary_advice',
+          'timing_windows items: start_date, end_date, summary? only. start_date + end_date MUST exactly match one provided timing window.',
+          'practice object fields: communication, boundary, repair',
+          'Do NOT output relationship_subject, citations, cited_event_memory_refs, cited_plan_item_refs, nature, driver_refs, deterministic ids/refs, compatibility scores, trends, or graphs.',
+        ].join('\n');
+      }
       return [
         'patch_fields: patch_kind, mirror_kind, summary?, core?, life_stage_strategies?',
         'core object fields: personality, strengths, long_term_themes, relationship_pattern, career_inclination — fill ALL five for a complete reading.',
@@ -197,8 +219,27 @@ function wordingTargetFor(
         answer: output.answer,
       };
     case 'mingjing': {
-      if ((output as { output_kind?: unknown }).output_kind === 'relationship_hepan') {
-        throw new Error('mingjing_relationship_hepan_runtime_ai_prompt_not_supported');
+      if (isMingjingRelationshipOutput(output)) {
+        return {
+          mirror_kind: output.mirror_kind,
+          output_kind: output.output_kind,
+          relationship_subject: output.relationship_subject,
+          summary: output.summary,
+          structure: output.structure,
+          timing_windows: output.timing_windows.map((window) => ({
+            start_date: window.start_date,
+            end_date: window.end_date,
+            nature: window.nature,
+            driver_refs: window.driver_refs,
+            summary: window.summary,
+          })),
+          practice: output.practice,
+          // Read-only deterministic refs and citations: useful grounding context,
+          // but explicitly forbidden as returned patch fields.
+          cited_event_memory_refs: output.cited_event_memory_refs,
+          cited_plan_item_refs: output.cited_plan_item_refs,
+          citations: output.citations,
+        };
       }
       const natalOutput = output as MingJingMirrorOutput;
       return {
@@ -238,7 +279,7 @@ export function buildRuntimeAiPromptRequest(args: {
     `schema_name: shijing.runtime_ai_wording_patch.${args.mirror_kind}.v1`,
     'required_patch_kind: shijing.runtime_ai_wording_patch.v1',
     `required_top_level_mirror_kind: ${args.mirror_kind}`,
-    `patch_schema:\n${schemaShapeForKind(args.mirror_kind)}`,
+    `patch_schema:\n${schemaShapeForKind(args.mirror_kind, args.deterministic_output)}`,
     `tone: ${args.response_preferences.tone}; length: ${args.response_preferences.length}; language: ${args.response_preferences.language}`,
     `active_concern_tags:\n${summarizeConcernTags(args.mirror_context.active_concern_tags)}`,
     `canonical_window: ${args.feature_snapshot.canonical_window.start_utc} → ${args.feature_snapshot.canonical_window.end_utc} (${args.feature_snapshot.canonical_window.basis_time_zone})`,
@@ -277,7 +318,18 @@ export function buildRuntimeAiPromptRequest(args: {
       'Do not use absolute prediction language; keep the tone warm, restrained, and credible.',
     ].join('\n'));
   }
-  if (args.mirror_kind === 'mingjing') {
+  if (args.mirror_kind === 'mingjing' && isMingjingRelationshipOutput(args.deterministic_output)) {
+    userPromptLines.push([
+      'MingJing Relationship HePan writing requirements:',
+      'Role: word the admitted relationship prose over deterministic self-plus-person HePan evidence.',
+      'AI may word relationship prose fields only: summary; structure.baseline_pattern, attraction_and_support, friction_and_misread, communication_rhythm, boundary_advice; timing_windows[].summary targeted by exact start_date + end_date; practice.communication, practice.boundary, practice.repair.',
+      'Return output_kind: relationship_hepan in the patch so the SDK applies the relationship patch path.',
+      'Treat relationship_subject, timing_windows[].nature, timing_windows[].driver_refs, citations, cited_event_memory_refs, and cited_plan_item_refs as read-only grounding context.',
+      'Do NOT output relationship_subject, citations, cited_event_memory_refs, cited_plan_item_refs, nature, driver_refs, deterministic ids/refs, compatibility scores, trends, or graphs.',
+      'Do not compute compatibility, fate certainty, match percentages, relation graphs, or contact-management advice.',
+      'Write relationship guidance as concrete communication, boundary, and repair language, never as fixed destiny.',
+    ].join('\n'));
+  } else if (args.mirror_kind === 'mingjing') {
     userPromptLines.push([
       '命镜 本命盘解读 writing requirements:',
       'Role: 你是一位精通子平八字、又有现代积极心理学视角的人生顾问，语气温和、有洞察、像一位懂命理的朋友。',

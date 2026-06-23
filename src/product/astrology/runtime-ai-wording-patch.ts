@@ -1,6 +1,7 @@
 // SJG-ALGO-13 — Runtime AI wording patch.
 
 import type {
+  MingJingRelationshipMirrorOutput,
   MingJingMirrorOutput,
   MirrorOutput,
   NianJingMirrorOutput,
@@ -90,11 +91,40 @@ export type MingJingWordingPatch = WordingPatchBase & {
   readonly life_stage_strategies?: readonly MingJingWordingStrategyPatch[];
 };
 
+export type MingJingRelationshipStructurePatch = {
+  readonly baseline_pattern?: string;
+  readonly attraction_and_support?: string;
+  readonly friction_and_misread?: string;
+  readonly communication_rhythm?: string;
+  readonly boundary_advice?: string;
+};
+
+export type MingJingRelationshipTimingWindowPatch = {
+  readonly start_date: string;
+  readonly end_date: string;
+  readonly summary?: string;
+};
+
+export type MingJingRelationshipPracticePatch = {
+  readonly communication?: string;
+  readonly boundary?: string;
+  readonly repair?: string;
+};
+
+export type MingJingRelationshipWordingPatch = WordingPatchBase & {
+  readonly mirror_kind: 'mingjing';
+  readonly output_kind: 'relationship_hepan';
+  readonly structure?: MingJingRelationshipStructurePatch;
+  readonly timing_windows?: readonly MingJingRelationshipTimingWindowPatch[];
+  readonly practice?: MingJingRelationshipPracticePatch;
+};
+
 export type RuntimeAiWordingPatch =
   | RiJingWordingPatch
   | YueJingWordingPatch
   | NianJingWordingPatch
   | MingJingWordingPatch
+  | MingJingRelationshipWordingPatch
   | ShiJingWordingPatch;
 
 export class RuntimeAiWordingPatchValidationError extends Error {
@@ -157,6 +187,18 @@ function requireText(record: Record<string, unknown>, key: string): string {
     throw new RuntimeAiWordingPatchValidationError(`${key}_empty`);
   }
   return value;
+}
+
+function assertOnlyAllowedKeys(
+  record: Record<string, unknown>,
+  allowedKeys: readonly string[],
+  detailPrefix: string,
+): void {
+  for (const key of Object.keys(record)) {
+    if (!allowedKeys.includes(key)) {
+      throw new RuntimeAiWordingPatchValidationError(`${detailPrefix}:${key}`);
+    }
+  }
 }
 
 function validateRijingPatch(record: Record<string, unknown>): RiJingWordingPatch {
@@ -230,6 +272,36 @@ const MINGJING_CORE_PATCH_KEYS = [
   'career_inclination',
 ] as const;
 
+const MINGJING_RELATIONSHIP_TOP_LEVEL_PATCH_KEYS = [
+  'patch_kind',
+  'mirror_kind',
+  'output_kind',
+  'summary',
+  'structure',
+  'timing_windows',
+  'practice',
+] as const;
+
+const MINGJING_RELATIONSHIP_STRUCTURE_PATCH_KEYS = [
+  'baseline_pattern',
+  'attraction_and_support',
+  'friction_and_misread',
+  'communication_rhythm',
+  'boundary_advice',
+] as const;
+
+const MINGJING_RELATIONSHIP_TIMING_WINDOW_PATCH_KEYS = [
+  'start_date',
+  'end_date',
+  'summary',
+] as const;
+
+const MINGJING_RELATIONSHIP_PRACTICE_PATCH_KEYS = [
+  'communication',
+  'boundary',
+  'repair',
+] as const;
+
 function validateMingjingCorePatch(value: unknown): MingJingWordingCorePatch | undefined {
   if (value === undefined) return undefined;
   if (!isRecord(value)) {
@@ -243,7 +315,7 @@ function validateMingjingCorePatch(value: unknown): MingJingWordingCorePatch | u
   return core;
 }
 
-function validateMingjingPatch(record: Record<string, unknown>): MingJingWordingPatch {
+function validateMingjingNatalPatch(record: Record<string, unknown>): MingJingWordingPatch {
   const core = Object.prototype.hasOwnProperty.call(record, 'core')
     ? validateMingjingCorePatch(record.core)
     : undefined;
@@ -259,6 +331,92 @@ function validateMingjingPatch(record: Record<string, unknown>): MingJingWording
     ...(core ? { core } : {}),
     ...(strategies ? { life_stage_strategies: strategies } : {}),
   };
+}
+
+function validateMingjingRelationshipStructurePatch(
+  value: unknown,
+): MingJingRelationshipStructurePatch | undefined {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) {
+    throw new RuntimeAiWordingPatchValidationError('structure_invalid');
+  }
+  assertOnlyAllowedKeys(
+    value,
+    MINGJING_RELATIONSHIP_STRUCTURE_PATCH_KEYS,
+    'mingjing_relationship_structure_forbidden_key',
+  );
+  const structure: Record<string, string> = {};
+  for (const key of MINGJING_RELATIONSHIP_STRUCTURE_PATCH_KEYS) {
+    const text = optionalText(value, key);
+    if (text) structure[key] = text;
+  }
+  return structure;
+}
+
+function validateMingjingRelationshipPracticePatch(
+  value: unknown,
+): MingJingRelationshipPracticePatch | undefined {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) {
+    throw new RuntimeAiWordingPatchValidationError('practice_invalid');
+  }
+  assertOnlyAllowedKeys(
+    value,
+    MINGJING_RELATIONSHIP_PRACTICE_PATCH_KEYS,
+    'mingjing_relationship_practice_forbidden_key',
+  );
+  const practice: Record<string, string> = {};
+  for (const key of MINGJING_RELATIONSHIP_PRACTICE_PATCH_KEYS) {
+    const text = optionalText(value, key);
+    if (text) practice[key] = text;
+  }
+  return practice;
+}
+
+function validateMingjingRelationshipPatch(
+  record: Record<string, unknown>,
+): MingJingRelationshipWordingPatch {
+  assertOnlyAllowedKeys(
+    record,
+    MINGJING_RELATIONSHIP_TOP_LEVEL_PATCH_KEYS,
+    'mingjing_relationship_patch_forbidden_key',
+  );
+  const structure = Object.prototype.hasOwnProperty.call(record, 'structure')
+    ? validateMingjingRelationshipStructurePatch(record.structure)
+    : undefined;
+  const timingWindows = optionalRecordArray(record, 'timing_windows')?.map((item) => {
+    assertOnlyAllowedKeys(
+      item,
+      MINGJING_RELATIONSHIP_TIMING_WINDOW_PATCH_KEYS,
+      'mingjing_relationship_timing_window_forbidden_key',
+    );
+    return {
+      start_date: requireText(item, 'start_date'),
+      end_date: requireText(item, 'end_date'),
+      ...(optionalText(item, 'summary') ? { summary: optionalText(item, 'summary')! } : {}),
+    };
+  });
+  const practice = Object.prototype.hasOwnProperty.call(record, 'practice')
+    ? validateMingjingRelationshipPracticePatch(record.practice)
+    : undefined;
+  return {
+    patch_kind: RUNTIME_AI_WORDING_PATCH_KIND,
+    mirror_kind: 'mingjing',
+    output_kind: 'relationship_hepan',
+    ...(optionalText(record, 'summary') ? { summary: optionalText(record, 'summary')! } : {}),
+    ...(structure ? { structure } : {}),
+    ...(timingWindows ? { timing_windows: timingWindows } : {}),
+    ...(practice ? { practice } : {}),
+  };
+}
+
+function validateMingjingPatch(
+  record: Record<string, unknown>,
+): MingJingWordingPatch | MingJingRelationshipWordingPatch {
+  if (record.output_kind === 'relationship_hepan') {
+    return validateMingjingRelationshipPatch(record);
+  }
+  return validateMingjingNatalPatch(record);
 }
 
 export function validateRuntimeAiWordingPatchValue(
@@ -465,6 +623,61 @@ function assertAllMingjingPatchTargetsResolve(
   }
 }
 
+function isMingjingRelationshipPatch(
+  patch: RuntimeAiWordingPatch,
+): patch is MingJingRelationshipWordingPatch {
+  return patch.mirror_kind === 'mingjing' &&
+    (patch as { output_kind?: unknown }).output_kind === 'relationship_hepan';
+}
+
+function isMingjingRelationshipOutput(
+  output: MirrorOutput,
+): output is MingJingRelationshipMirrorOutput {
+  return output.mirror_kind === 'mingjing' &&
+    (output as { output_kind?: unknown }).output_kind === 'relationship_hepan';
+}
+
+function applyMingjingRelationshipPatch(
+  base: MingJingRelationshipMirrorOutput,
+  patch: MingJingRelationshipWordingPatch,
+): MingJingRelationshipMirrorOutput {
+  const timingPatches = patch.timing_windows ?? [];
+  return {
+    ...withSummary(base, patch),
+    ...(patch.structure ? { structure: { ...base.structure, ...patch.structure } } : {}),
+    timing_windows: base.timing_windows.map((window) => {
+      const item = timingPatches.find((candidate) =>
+        candidate.start_date === window.start_date && candidate.end_date === window.end_date
+      );
+      return item?.summary ? { ...window, summary: item.summary } : window;
+    }),
+    ...(patch.practice ? { practice: { ...base.practice, ...patch.practice } } : {}),
+  };
+}
+
+function assertAllMingjingRelationshipPatchTargetsResolve(
+  base: MingJingRelationshipMirrorOutput,
+  patch: MingJingRelationshipWordingPatch,
+): void {
+  const seenTargets = new Set<string>();
+  for (const item of patch.timing_windows ?? []) {
+    const key = `${item.start_date}\u0000${item.end_date}`;
+    if (seenTargets.has(key)) {
+      throw new RuntimeAiWordingPatchValidationError(
+        'mingjing_relationship_timing_window_target_duplicate',
+      );
+    }
+    seenTargets.add(key);
+    if (!base.timing_windows.some((window) =>
+      window.start_date === item.start_date && window.end_date === item.end_date
+    )) {
+      throw new RuntimeAiWordingPatchValidationError(
+        'mingjing_relationship_timing_window_target_unknown',
+      );
+    }
+  }
+}
+
 export function applyRuntimeAiWordingPatch(
   base: MirrorOutput,
   patch: RuntimeAiWordingPatch,
@@ -491,9 +704,19 @@ export function applyRuntimeAiWordingPatch(
       output = applyNianjingPatch(base, patch as NianJingWordingPatch);
       break;
     case 'mingjing': {
-      if ((base as { output_kind?: unknown }).output_kind === 'relationship_hepan') {
+      if (isMingjingRelationshipOutput(base)) {
+        if (!isMingjingRelationshipPatch(patch)) {
+          throw new RuntimeAiWordingPatchValidationError(
+            'mingjing_relationship_patch_kind_required',
+          );
+        }
+        assertAllMingjingRelationshipPatchTargetsResolve(base, patch);
+        output = applyMingjingRelationshipPatch(base, patch);
+        break;
+      }
+      if (isMingjingRelationshipPatch(patch)) {
         throw new RuntimeAiWordingPatchValidationError(
-          'mingjing_relationship_hepan_runtime_ai_patch_not_supported',
+          'mingjing_natal_rejects_relationship_patch',
         );
       }
       const natalBase = base as MingJingMirrorOutput;
