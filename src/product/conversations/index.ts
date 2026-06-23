@@ -2,3 +2,4 @@
 
 export * from './conversation-id.ts';
 export * from './conversation-chat-bridge.ts';
+export * from './conversation-follow-up.ts';

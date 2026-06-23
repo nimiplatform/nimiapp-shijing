@@ -18,6 +18,9 @@ import {
   resolveShijingTextGenerateBinding,
 } from '../src/shell/ai/shijing-runtime-ai-client.ts';
 import {
+  createShijingConversationChatBridge,
+} from '../src/shell/ai/shijing-conversation-chat-bridge.ts';
+import {
   SHIJING_AI_CONFIG_INDEX_KEY,
   SHIJING_AI_CONFIG_STORAGE_PREFIX,
   createShijingReadingAIScopeRef,
@@ -31,7 +34,9 @@ import {
   dailyMirrorScope,
   rolling30DayMirrorScope,
   validConcernTagSnapshot,
+  validEventMemory,
   validInputsSummary,
+  validReading,
   validRijingOutput,
   validYuejingOutput,
 } from './_fixtures.mjs';
@@ -260,6 +265,83 @@ test('buildRuntimeAiPromptRequest includes mirror_kind in schema_name', () => {
   assert.ok(request.user_prompt.includes('wording_patch_target_json:'));
 });
 
+test('buildRuntimeAiPromptRequest gives RiJing a positive non-fatalist rich-banner brief', () => {
+  const scope = dailyMirrorScope({ basis_time_zone: TZ });
+  const summary = validInputsSummary({ mirrorKind: 'rijing', scope });
+  const request = buildRuntimeAiPromptRequest({
+    mirror_kind: 'rijing',
+    feature_snapshot: summary.feature_snapshot,
+    mirror_context: {
+      mirror_kind: 'rijing',
+      mirror_scope: scope,
+      active_concern_tags: [
+        validConcernTagSnapshot('tag_career', {
+          label: '#事业',
+          parsed_topics: ['career'],
+        }),
+      ],
+      resolved_person_refs: [],
+      cited_event_memory_refs: ['mem_today'],
+      cited_plan_item_refs: [],
+      response_preferences_hash: 'sha256:prefs',
+    },
+    deterministic_output: validRijingOutput({
+      cited_event_memory_refs: ['mem_today'],
+    }),
+    cited_event_memories: [
+      validEventMemory('mem_today', {
+        occurred_at: '2026-05-25T06:00:00Z',
+        body: '下午要谈一个重要合作，心里有点不确定。',
+      }),
+    ],
+    response_preferences: { tone: 'warm', length: 'long', language: 'zh-Hans' },
+  });
+
+  assert.ok(request.system_prompt.includes('绝对正向'));
+  assert.ok(request.system_prompt.includes('命由天定，运由己造'));
+  assert.ok(request.system_prompt.includes('Do not output Markdown headings'));
+  assert.ok(request.user_prompt.includes('今日参照事件'));
+  assert.ok(request.user_prompt.includes('cited_event_memory_summaries:'));
+  assert.ok(request.user_prompt.includes('下午要谈一个重要合作'));
+  assert.ok(request.user_prompt.includes('daily_overview should read like 今日基调'));
+  assert.ok(request.user_prompt.includes('concern projection summary should read like 专属视角解读'));
+  assert.ok(request.user_prompt.includes('绝对禁止使用类似'));
+  assert.ok(request.user_prompt.includes('不要在正文中重复输出'));
+  assert.ok(request.user_prompt.includes('至少80字'));
+  assert.ok(request.user_prompt.includes('会议发言'));
+  assert.ok(request.user_prompt.includes('一顿晚餐'));
+});
+
+test('buildRuntimeAiPromptRequest tells RiJing how to handle missing reference events', () => {
+  const scope = dailyMirrorScope({ basis_time_zone: TZ });
+  const summary = validInputsSummary({ mirrorKind: 'rijing', scope });
+  const request = buildRuntimeAiPromptRequest({
+    mirror_kind: 'rijing',
+    feature_snapshot: summary.feature_snapshot,
+    mirror_context: {
+      mirror_kind: 'rijing',
+      mirror_scope: scope,
+      active_concern_tags: [
+        validConcernTagSnapshot('tag_career', {
+          label: '#事业',
+          parsed_topics: ['career'],
+        }),
+      ],
+      resolved_person_refs: [],
+      cited_event_memory_refs: [],
+      cited_plan_item_refs: [],
+      response_preferences_hash: 'sha256:prefs',
+    },
+    deterministic_output: validRijingOutput(),
+    response_preferences: { tone: 'warm', length: 'long', language: 'zh-Hans' },
+  });
+
+  assert.ok(request.user_prompt.includes('用户今日未提供具体事件'));
+  assert.ok(request.user_prompt.includes('整体能量和生活哲理'));
+  assert.ok(request.user_prompt.includes('今日事件解析'));
+  assert.ok(request.user_prompt.includes('不要 invent uncited events'));
+});
+
 test('buildRuntimeAiPromptRequest limits yuejing wording target to the window start date', () => {
   const scope = rolling30DayMirrorScope({
     start_date: '2026-05-25',
@@ -357,6 +439,62 @@ test('buildRuntimeAiPromptRequest includes YueJing concern labels and determinis
   assert.ok(request.user_prompt.includes('"tendency_class": "watch"'));
 });
 
+test('buildRuntimeAiPromptRequest gives YueJing an actionable non-fatalist writing brief', () => {
+  const scope = rolling30DayMirrorScope({
+    start_date: '2026-06-03',
+    end_date: '2026-07-02',
+    basis_time_zone: TZ,
+  });
+  const summary = validInputsSummary({ mirrorKind: 'yuejing', scope });
+  const request = buildRuntimeAiPromptRequest({
+    mirror_kind: 'yuejing',
+    feature_snapshot: summary.feature_snapshot,
+    mirror_context: {
+      mirror_kind: 'yuejing',
+      mirror_scope: scope,
+      active_concern_tags: [
+        validConcernTagSnapshot('tag_love', {
+          label: '#姻缘',
+          parsed_topics: ['love'],
+        }),
+      ],
+      resolved_person_refs: [],
+      cited_event_memory_refs: ['mem_recent'],
+      cited_plan_item_refs: ['plan_next'],
+      response_preferences_hash: 'sha256:prefs',
+    },
+    deterministic_output: validYuejingOutput(scope, {
+      cited_event_memory_refs: ['mem_recent'],
+      cited_plan_item_refs: ['plan_next'],
+      cells: [
+        {
+          date: '2026-06-03',
+          concern_tag_ref: 'tag_love',
+          tendency_class: 'watch',
+          summary: '#姻缘: 留意沟通节奏。',
+        },
+      ],
+    }),
+    cited_event_memories: [
+      validEventMemory('mem_recent', {
+        occurred_at: '2026-05-29T06:00:00Z',
+        body: '上周和伴侣因为日程安排有过一次沟通卡顿。',
+      }),
+    ],
+    response_preferences: { tone: 'warm', length: 'long', language: 'zh-Hans' },
+  });
+
+  assert.ok(request.system_prompt.includes('不要使用绝对化预言'));
+  assert.ok(request.system_prompt.includes('必然'));
+  assert.ok(request.system_prompt.includes('注定'));
+  assert.ok(request.user_prompt.includes('30 日节奏建议'));
+  assert.ok(request.user_prompt.includes('每条建议必须绑定具体日期或时间段'));
+  assert.ok(request.user_prompt.includes('适合做什么、不适合做什么'));
+  assert.ok(request.user_prompt.includes('用户已有事件记忆和未来计划'));
+  assert.ok(request.user_prompt.includes('不要输出底层技术字段'));
+  assert.ok(request.user_prompt.includes('上周和伴侣因为日程安排'));
+});
+
 test('MockRuntimeAiClient returns canned output when configured', async () => {
   const client = new MockRuntimeAiClient({
     canned_output_by_kind: { rijing: validRijingOutput() },
@@ -429,6 +567,20 @@ test('SdkRuntimeAiClient uses SDK structured output extraction for fenced JSON',
   const fenced = `\`\`\`json\n${JSON.stringify(rijingPatch())}\n\`\`\``;
   const runtime = createTextRuntime({
     generateText: async () => runtimeTextOutput(fenced),
+  });
+  const client = createSdkRuntimeAiClient({ runtime });
+  const result = await client.generate('rijing', minimalPromptRequest());
+  assert.equal(result.ok, true);
+  if (result.ok) {
+    assert.equal(result.output.mirror_kind, 'rijing');
+    assert.equal(result.output.summary, 'Runtime refined day.');
+  }
+});
+
+test('SdkRuntimeAiClient accepts the first complete wording patch when Runtime appends trailing JSON', async () => {
+  const raw = `${JSON.stringify(rijingPatch())}\n{"diagnostic":"provider appended metadata"}`;
+  const runtime = createTextRuntime({
+    generateText: async () => runtimeTextOutput(raw),
   });
   const client = createSdkRuntimeAiClient({ runtime });
   const result = await client.generate('rijing', minimalPromptRequest());
@@ -675,6 +827,84 @@ test('AIConfig-backed RuntimeAiClient routes text.generate through configured cl
   assert.equal(capturedOptions.metadata.aiConfigScopeOwnerId, 'nimi.shijing');
   assert.equal(capturedOptions.metadata.aiConfigBindingSource, 'cloud');
   assert.match(capturedOptions.metadata.aiConfigHash, /^v1-/);
+  assert.equal(capturedSchedulingRequest.targets[0].targetId, 'connector-openai');
+  assert.equal(capturedSchedulingRequest.targets[0].profileId, 'gpt-runtime');
+});
+
+test('AIConfig-backed conversation bridge routes follow-up text.generate through configured cloud targetRef', async () => {
+  let capturedRequest = null;
+  let capturedOptions = null;
+  let capturedSchedulingRequest = null;
+  const config = {
+    ...emptyAIConfig(),
+    capabilities: {
+      targetRefs: {
+        'text.generate': {
+          kind: 'cloud-connector',
+          connectorId: 'connector-openai',
+          providerModelId: 'gpt-runtime',
+          provider: 'openai',
+        },
+      },
+      selectedParams: {
+        'text.generate': {
+          temperature: 0.15,
+          topP: 0.8,
+          maxTokens: 700,
+          timeoutMs: 12000,
+        },
+      },
+    },
+  };
+  const runtime = createScenarioRuntime({
+    executeScenario: async (request, options) => {
+      capturedRequest = request;
+      capturedOptions = options;
+      return runtimeScenarioTextOutput('Grounded follow-up answer.', {
+        modelResolved: 'gpt-runtime',
+        routeDecision: 2,
+      });
+    },
+    peekScheduling: async (request) => {
+      capturedSchedulingRequest = request;
+      return {
+        aggregateJudgement: {
+          state: 1,
+          detail: '',
+          resourceWarnings: [],
+        },
+        targetJudgements: [],
+      };
+    },
+  });
+  const bridge = createShijingConversationChatBridge({
+    loadConfig: () => config,
+    getClient: () => ({ runtime }),
+    getSubjectUserId: () => 'acct-runtime-1',
+  });
+
+  const result = await bridge.send({
+    user_message: 'Can I continue with this plan?',
+    source_readings: [validReading({ id: 'r_source' })],
+  });
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.text, 'Grounded follow-up answer.');
+  assert.equal(capturedRequest.head.subjectUserId, 'acct-runtime-1');
+  assert.equal(capturedRequest.head.modelId, 'gpt-runtime');
+  assert.equal(capturedRequest.head.routePolicy, 2);
+  assert.equal(capturedRequest.head.connectorId, 'connector-openai');
+  assert.equal(capturedRequest.head.timeoutMs, 12000);
+  assert.equal(capturedRequest.spec.spec.oneofKind, 'textGenerate');
+  assert.match(capturedRequest.spec.spec.textGenerate.systemPrompt, /ShiJing/);
+  assert.equal(capturedRequest.spec.spec.textGenerate.temperature, 0.15);
+  assert.equal(capturedRequest.spec.spec.textGenerate.topP, 0.8);
+  assert.equal(capturedRequest.spec.spec.textGenerate.maxTokens, 700);
+  assert.match(capturedRequest.spec.spec.textGenerate.input[0].content, /Can I continue/);
+  assert.match(capturedRequest.spec.spec.textGenerate.input[0].content, /r_source/);
+  assert.equal(capturedOptions.metadata.surfaceId, 'shijing.conversation.runtime-ai');
+  assert.equal(capturedOptions.metadata.aiConfigCapabilityId, 'text.generate');
   assert.equal(capturedSchedulingRequest.targets[0].targetId, 'connector-openai');
   assert.equal(capturedSchedulingRequest.targets[0].profileId, 'gpt-runtime');
 });

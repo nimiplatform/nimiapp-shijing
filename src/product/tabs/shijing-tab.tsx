@@ -1,9 +1,9 @@
 // SJG-ASTRO-07 — ShiJing consultation mirror screen (问时镜).
 //
-// Grounded multi-reading consultation. Source Reading ids come from the
-// store's pending_shijing_source_reading_ids (mutated through the
-// shijing/import-source-reading reducer action). Explicit user
-// confirmation is still required to convert any user question into a
+// Grounded multi-reading consultation. Explicitly imported source Reading ids
+// from pending_shijing_source_reading_ids take priority; otherwise the surface
+// falls back to the latest fresh RiJing/YueJing/NianJing readings. Explicit
+// user confirmation is still required to convert any user question into a
 // saved EventMemory.
 //
 // The 问时镜 redesign frames this as a calm "ask the time mirror" surface:
@@ -11,7 +11,8 @@
 // and example prompt chips. Every AI answer still displays its cited
 // readings (design-system: ShiJing) and the generation依据 drawer.
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type SVGProps } from 'react';
+import { Tooltip } from '@nimiplatform/kit/ui';
 import type { ShiJingMirrorOutput } from '../../domain/mirror-output.ts';
 import type { ReadingGenerationFailure } from '../../domain/reading.ts';
 import type { Conversation, ConversationTurn } from '../../domain/conversation.ts';
@@ -27,10 +28,54 @@ import { latestReadingByMirrorKind } from '../reading/reading-selectors.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { useProductCopy, type ProductCopy } from '../i18n/copy.ts';
 import { consultationMirrorScopeFor } from './mirror-scope-helpers.ts';
+import { resolveShiJingSourceReadingIds } from './shijing-source-readings.ts';
 import { CitationDrawer } from './shared/citation-drawer.tsx';
 import { FailureBanner } from './shared/failure-banner.tsx';
 import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
 import type { ConcernTag } from '../../domain/concern-tag.ts';
+import { InlineConcernEditorPopover } from '../concern-tags/inline-concern-editor.tsx';
+import {
+  sendConversationFollowUp,
+  type ConversationFollowUpFailure,
+} from '../conversations/conversation-follow-up.ts';
+
+type IconProps = SVGProps<SVGSVGElement>;
+
+function ArrowUpIcon(props: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M12 18V6" />
+      <path d="M7 11l5-5 5 5" />
+    </svg>
+  );
+}
+
+function SearchIcon(props: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m16 16 4 4" />
+    </svg>
+  );
+}
 
 function nowIso(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -39,6 +84,27 @@ function nowIso(): string {
 function firstUserQuestion(conv: Conversation, copy: ProductCopy): string {
   const turn = conv.turns.find((t) => t.role === 'user');
   return turn?.body ?? copy.shijing.unrecordedQuestion;
+}
+
+function followUpFailureAsReadingFailure(
+  failure: ConversationFollowUpFailure,
+  sourceReadingIds: readonly string[],
+): ReadingGenerationFailure {
+  if (failure.kind === 'chat_bridge_failed') {
+    return {
+      kind: 'runtime_ai_failed',
+      mirror_kind: 'shijing',
+      mirror_scope: consultationMirrorScopeFor(sourceReadingIds),
+      detail: failure.detail,
+    };
+  }
+  return {
+    kind: 'pipeline_stage_failed',
+    mirror_kind: 'shijing',
+    mirror_scope: consultationMirrorScopeFor(sourceReadingIds),
+    stage: `conversation_follow_up.${failure.kind}`,
+    detail: failure.detail,
+  };
 }
 
 // History entry timestamp: today → `HH:mm`, otherwise → `M月D日`.
@@ -95,14 +161,15 @@ export interface ShiJingTabProps {
   readonly onRequestOpenSettings?: (page?: ShijingSettingsPageId) => void;
 }
 
-export function ShiJingTab(props: ShiJingTabProps) {
+export function ShiJingTab(_props: ShiJingTabProps) {
   const copy = useProductCopy();
-  const { state, dispatch, runtime_ai_client } = useShijingStore();
+  const { state, dispatch, runtime_ai_client, conversation_chat_bridge } = useShijingStore();
   const [loading, setLoading] = useState(false);
   const [failure, setFailure] = useState<ReadingGenerationFailure | null>(null);
   const [question, setQuestion] = useState('');
   const [search, setSearch] = useState('');
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [draftingNewQuestion, setDraftingNewQuestion] = useState(false);
 
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -131,7 +198,14 @@ export function ShiJingTab(props: ShiJingTabProps) {
     if (seedCount > 0) composerRef.current?.focus();
   }, [seedCount]);
 
-  const sourceReadingIds = importedIds;
+  const sourceReadingIds = useMemo(
+    () =>
+      resolveShiJingSourceReadingIds({
+        imported_reading_ids: importedIds,
+        readings: state.snapshot.readings,
+      }),
+    [importedIds, state.snapshot.readings],
+  );
 
   // History rail, newest first.
   const conversations = useMemo(
@@ -145,22 +219,53 @@ export function ShiJingTab(props: ShiJingTabProps) {
   }, [conversations, search, copy]);
 
   const newestConversation = conversations[0] ?? null;
-  const resultConversation =
-    (selectedConversationId
-      ? conversations.find((c) => c.id === selectedConversationId)
-      : null) ?? newestConversation;
+  const selectedConversation = selectedConversationId
+    ? conversations.find((c) => c.id === selectedConversationId) ?? null
+    : null;
+  const resultConversation = draftingNewQuestion ? null : selectedConversation ?? newestConversation;
+  const followUpConversation =
+    !draftingNewQuestion && resultConversation != null && importedIds.length === 0 && seedCount === 0
+      ? resultConversation
+      : null;
   const latestConsultation = latestReadingByMirrorKind({
     readings: state.snapshot.readings,
     mirror_kind: 'shijing',
   });
   const resultIsLatest = resultConversation != null && resultConversation === newestConversation;
 
-  const canAsk = question.trim().length > 0 && sourceReadingIds.length > 0 && !loading;
+  const canAsk =
+    question.trim().length > 0 &&
+    !loading &&
+    (followUpConversation
+      ? followUpConversation.source_reading_ids.length > 0
+      : sourceReadingIds.length > 0);
 
   async function handleAsk(e: FormEvent) {
     e.preventDefault();
     const q = question.trim();
-    if (q.length === 0 || sourceReadingIds.length === 0) return;
+    if (q.length === 0) return;
+    if (followUpConversation) {
+      if (followUpConversation.source_reading_ids.length === 0) return;
+      setLoading(true);
+      setFailure(null);
+      const outcome = await sendConversationFollowUp({
+        space: state.snapshot,
+        conversation_id: followUpConversation.id,
+        question: q,
+        bridge: conversation_chat_bridge,
+      });
+      setLoading(false);
+      if (!outcome.ok) {
+        setFailure(followUpFailureAsReadingFailure(outcome.failure, followUpConversation.source_reading_ids));
+        return;
+      }
+      dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+      setQuestion('');
+      setSelectedConversationId(followUpConversation.id);
+      setDraftingNewQuestion(false);
+      return;
+    }
+    if (sourceReadingIds.length === 0) return;
     setLoading(true);
     setFailure(null);
     const id = newReadingId();
@@ -221,6 +326,7 @@ export function ShiJingTab(props: ShiJingTabProps) {
     dispatch({ type: 'snapshot/replace', snapshot: nextSpace });
     setQuestion('');
     setSelectedConversationId(convId);
+    setDraftingNewQuestion(false);
     dispatch({ type: 'shijing/clear-import-bus' });
     dispatch({ type: 'shijing/clear-seed-memory' });
     dispatch({ type: 'shijing/clear-seed-plan' });
@@ -231,9 +337,105 @@ export function ShiJingTab(props: ShiJingTabProps) {
     ? ''
     : question.trim().length === 0
       ? ''
+      : followUpConversation
+        ? followUpConversation.source_reading_ids.length === 0
+          ? copy.shijing.sourceMissing
+          : ''
       : sourceReadingIds.length === 0
         ? copy.shijing.sourceMissing
         : '';
+  const submitTitle = followUpConversation ? copy.shijing.sendTitle : copy.shijing.generateTitle;
+  const submitLabel = loading
+    ? followUpConversation
+      ? copy.shijing.sending
+      : copy.shijing.generating
+    : followUpConversation
+      ? copy.shijing.send
+      : copy.shijing.generate;
+  const chatActive = !draftingNewQuestion && resultConversation != null && importedIds.length === 0 && seedCount === 0;
+  const composerPlaceholder = chatActive ? '' : copy.shijing.composerPlaceholder;
+
+  function startNewQuestion() {
+    setDraftingNewQuestion(true);
+    setSelectedConversationId(null);
+    setQuestion('');
+    setFailure(null);
+    setTimeout(() => composerRef.current?.focus(), 0);
+  }
+
+  function renderComposer() {
+    return (
+      <form
+        className="shijing-ask__composer"
+        data-chat-composer={chatActive ? 'true' : 'false'}
+        onSubmit={handleAsk}
+        aria-label={copy.shijing.composerAria}
+      >
+        <h2 className="shijing-ask__composer-title">{copy.shijing.composerTitle}</h2>
+
+        {seedItems.length > 0 ? (
+          <div className="shijing-ask__seed" aria-label={copy.shijing.seedAria}>
+            <span className="shijing-ask__seed-label">{copy.shijing.seedLabel}</span>
+            <ul className="shijing-ask__seed-list">
+              {seedItems.map((item) => (
+                <li key={`${item.kind}-${item.id}`} className="shijing-ask__seed-chip" data-kind={item.kind}>
+                  <span className="shijing-ask__seed-tag">
+                    {item.kind === 'plan' ? copy.shijing.seedKindPlan : copy.shijing.seedKindMemory}
+                  </span>
+                  <span className="shijing-ask__seed-date">{item.date}</span>
+                  <span className="shijing-ask__seed-body">{item.body}</span>
+                  <button
+                    type="button"
+                    className="shijing-ask__seed-remove"
+                    aria-label={copy.shijing.seedRemoveAria}
+                    onClick={() =>
+                      dispatch(
+                        item.kind === 'plan'
+                          ? { type: 'shijing/clear-seed-plan', plan_id: item.id }
+                          : { type: 'shijing/clear-seed-memory', memory_id: item.id },
+                      )
+                    }
+                  >
+                    x
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        <textarea
+          ref={composerRef}
+          className="shijing-ask__textarea"
+          rows={2}
+          value={question}
+          onChange={(e) => setQuestion(e.currentTarget.value)}
+          placeholder={composerPlaceholder}
+          aria-label={copy.shijing.questionAria}
+        />
+
+        <div className="shijing-ask__toolbar">
+          <div className="shijing-ask__actions">
+            <div className="shijing-ask__submit-wrap">
+              {!canAsk && askReason ? (
+                <span className="shijing-ask__submit-reason">{askReason}</span>
+              ) : null}
+              <Tooltip content={askReason || submitTitle} placement="top">
+                <button
+                  type="submit"
+                  className="shijing-ask__submit"
+                  disabled={!canAsk}
+                >
+                  <ArrowUpIcon className="shijing-ask__submit-icon" />
+                  <span className="shijing-ask__submit-text">{submitLabel}</span>
+                </button>
+              </Tooltip>
+            </div>
+          </div>
+        </div>
+      </form>
+    );
+  }
 
   return (
     <section
@@ -250,10 +452,18 @@ export function ShiJingTab(props: ShiJingTabProps) {
       <div className="shijing-ask__layout">
         <aside className="shijing-ask__rail" aria-label={copy.shijing.railAria}>
           <div className="shijing-ask__rail-head">
+            <button
+              type="button"
+              className="shijing-ask__new-question"
+              aria-label={copy.shijing.newQuestionAria}
+              aria-current={draftingNewQuestion ? 'true' : undefined}
+              onClick={startNewQuestion}
+            >
+              <span aria-hidden>+</span>
+              {copy.shijing.newQuestion}
+            </button>
             <div className="shijing-ask__search">
-              <span className="shijing-ask__search-icon" aria-hidden>
-                ⌕
-              </span>
+              <SearchIcon className="shijing-ask__search-icon" />
               <input
                 type="text"
                 value={search}
@@ -286,7 +496,10 @@ export function ShiJingTab(props: ShiJingTabProps) {
                           type="button"
                           className="shijing-ask__session"
                           aria-current={conv === resultConversation ? 'true' : undefined}
-                          onClick={() => setSelectedConversationId(conv.id)}
+                          onClick={() => {
+                            setDraftingNewQuestion(false);
+                            setSelectedConversationId(conv.id);
+                          }}
                         >
                           <span className="shijing-ask__session-q">{firstUserQuestion(conv, copy)}</span>
                           <span className="shijing-ask__session-time">
@@ -302,75 +515,27 @@ export function ShiJingTab(props: ShiJingTabProps) {
           )}
         </aside>
 
-        <div className="shijing-ask__main">
-          <form className="shijing-ask__composer" onSubmit={handleAsk} aria-label={copy.shijing.composerAria}>
-            <h2 className="shijing-ask__composer-title">{copy.shijing.composerTitle}</h2>
-
-            {seedItems.length > 0 ? (
-              <div className="shijing-ask__seed" aria-label={copy.shijing.seedAria}>
-                <span className="shijing-ask__seed-label">{copy.shijing.seedLabel}</span>
-                <ul className="shijing-ask__seed-list">
-                  {seedItems.map((item) => (
-                    <li key={`${item.kind}-${item.id}`} className="shijing-ask__seed-chip" data-kind={item.kind}>
-                      <span className="shijing-ask__seed-tag">
-                        {item.kind === 'plan' ? copy.shijing.seedKindPlan : copy.shijing.seedKindMemory}
-                      </span>
-                      <span className="shijing-ask__seed-date">{item.date}</span>
-                      <span className="shijing-ask__seed-body">{item.body}</span>
-                      <button
-                        type="button"
-                        className="shijing-ask__seed-remove"
-                        aria-label={copy.shijing.seedRemoveAria}
-                        onClick={() =>
-                          dispatch(
-                            item.kind === 'plan'
-                              ? { type: 'shijing/clear-seed-plan', plan_id: item.id }
-                              : { type: 'shijing/clear-seed-memory', memory_id: item.id },
-                          )
-                        }
-                      >
-                        ×
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
-            <textarea
-              ref={composerRef}
-              className="shijing-ask__textarea"
-              value={question}
-              onChange={(e) => setQuestion(e.currentTarget.value)}
-              placeholder={copy.shijing.composerPlaceholder}
-              aria-label={copy.shijing.questionAria}
-            />
-
-            <div className="shijing-ask__toolbar">
-              <div className="shijing-ask__actions">
-                <div className="shijing-ask__submit-wrap">
-                  {!canAsk && askReason ? (
-                    <span className="shijing-ask__submit-reason">{askReason}</span>
+        <div className="shijing-ask__main" data-chat-active={chatActive ? 'true' : 'false'}>
+          {chatActive ? (
+            <>
+              {failure ? <FailureBanner failure={failure} /> : null}
+              {resultConversation ? (
+                <article className="shijing-ask__result" aria-label={copy.shijing.resultAria}>
+                  <ConversationThread conversation={resultConversation} />
+                  {resultIsLatest && latestConsultation ? (
+                    <CitationDrawer reading={latestConsultation} />
                   ) : null}
-                  <button
-                    type="submit"
-                    className="shijing-ask__submit"
-                    disabled={!canAsk}
-                    title={askReason || copy.shijing.generateTitle}
-                  >
-                    {loading ? copy.shijing.generating : copy.shijing.generate}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </form>
+                </article>
+              ) : null}
+              {renderComposer()}
+            </>
+          ) : (
+            <>
+              {renderComposer()}
 
           {failure ? <FailureBanner failure={failure} /> : null}
 
-          <ContextFocusBar
-            tags={state.snapshot.concern_tags}
-            onManage={() => props.onRequestOpenSettings?.('concerns')}
-          />
+          <ContextFocusBar tags={state.snapshot.concern_tags} />
 
           <div className="shijing-ask__suggest">
             <span className="shijing-ask__suggest-label">{copy.shijing.suggestLabel}</span>
@@ -396,21 +561,22 @@ export function ShiJingTab(props: ShiJingTabProps) {
               ) : null}
             </article>
           ) : null}
+            </>
+          )}
         </div>
       </div>
     </section>
   );
 }
 
-// Read-only 上下文焦点 bar for the consultation surface. It surfaces the
-// active concern tags that will shape this reading, with a link out to
-// the full management surface (Settings → 关注). No active/archived
-// toggling, creation, or mention resolution happens here.
+// Context focus bar for the consultation surface. It surfaces the active
+// concern tags that will shape this reading and opens the same compact
+// inline concern editor used by the time-window mirrors.
 function ContextFocusBar(props: {
   readonly tags: readonly ConcernTag[];
-  readonly onManage?: () => void;
 }) {
   const copy = useProductCopy();
+  const [editorOpen, setEditorOpen] = useState(false);
   const active = props.tags.filter((t) => t.status === 'active');
   return (
     <section className="shijing-ctx" aria-label={copy.shijing.context.aria}>
@@ -423,20 +589,39 @@ function ContextFocusBar(props: {
           <p className="shijing-ctx__desc">{copy.shijing.context.description}</p>
         </div>
       </div>
-      <ul className="shijing-ctx__chips">
-        {active.length === 0 ? (
-          <li className="shijing-ctx__empty">{copy.shijing.context.empty}</li>
-        ) : (
-          active.map((t) => (
-            <li key={t.id} className="shijing-ctx__chip">
-              {t.label}
-            </li>
-          ))
-        )}
-      </ul>
-      <button type="button" className="shijing-ctx__manage" onClick={() => props.onManage?.()}>
-        {copy.shijing.context.manage}
-      </button>
+      <div className="shijing-ctx__focus">
+        <ul className="shijing-ctx__chips">
+          {active.length === 0 ? (
+            <li className="shijing-ctx__empty">{copy.shijing.context.empty}</li>
+          ) : (
+            active.map((t) => (
+              <li key={t.id} className="shijing-ctx__chip">
+                {t.label}
+              </li>
+            ))
+          )}
+        </ul>
+        <span className="shijing-ctx__editor-anchor">
+          <button
+            type="button"
+            className="shijing-ctx__manage"
+            aria-expanded={editorOpen}
+            aria-haspopup="dialog"
+            onClick={() => setEditorOpen((open) => !open)}
+          >
+            ✎ {copy.shijing.context.manage}
+          </button>
+          {editorOpen ? (
+            <InlineConcernEditorPopover
+              classNamePrefix="shijing-ctx-editor"
+              ariaLabel={copy.shijing.context.manage}
+              title={copy.shijing.context.manage}
+              subtitle={copy.shijing.context.editorSubtitle}
+              onClose={() => setEditorOpen(false)}
+            />
+          ) : null}
+        </span>
+      </div>
     </section>
   );
 }

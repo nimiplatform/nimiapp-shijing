@@ -62,10 +62,58 @@ function structuredFailureToRuntimeParseFailure(
   };
 }
 
-function parseRuntimeAiWordingPatch(
+function extractBalancedJsonObjects(raw: string): string[] {
+  const candidates: string[] = [];
+  let start = -1;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = 0; index < raw.length; index += 1) {
+    const ch = raw[index]!;
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === '\\') {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (ch === '{') {
+      if (depth === 0) start = index;
+      depth += 1;
+      continue;
+    }
+
+    if (ch !== '}' || depth === 0) continue;
+
+    depth -= 1;
+    if (depth === 0 && start >= 0) {
+      candidates.push(raw.slice(start, index + 1));
+      start = -1;
+    }
+  }
+
+  return Array.from(new Set(candidates));
+}
+
+function parseRuntimeAiWordingPatchCandidate(
   mirrorKind: MirrorKind,
   text: string,
-): { ok: true; value: RuntimeAiWordingPatch } | { ok: false; failure: RuntimeAiParseFailure } {
+): {
+  readonly parsed: ReturnType<typeof parseNimiStructuredJson<RuntimeAiWordingPatch>>;
+  readonly normalized: RuntimeAiWordingPatch | null;
+  readonly validationError: unknown;
+} {
   let normalized: RuntimeAiWordingPatch | null = null;
   let validationError: unknown;
   const parsed = parseNimiStructuredJson<RuntimeAiWordingPatch>({
@@ -81,7 +129,38 @@ function parseRuntimeAiWordingPatch(
       }
     },
   });
+  return { parsed, normalized, validationError };
+}
+
+function parseRuntimeAiWordingPatch(
+  mirrorKind: MirrorKind,
+  text: string,
+): { ok: true; value: RuntimeAiWordingPatch } | { ok: false; failure: RuntimeAiParseFailure } {
+  const { parsed, normalized, validationError } = parseRuntimeAiWordingPatchCandidate(
+    mirrorKind,
+    text,
+  );
   if (!parsed.ok) {
+    const accepted = new Map<string, RuntimeAiWordingPatch>();
+    for (const candidate of extractBalancedJsonObjects(text)) {
+      if (candidate.trim() === text.trim()) continue;
+      const retry = parseRuntimeAiWordingPatchCandidate(mirrorKind, candidate);
+      if (retry.parsed.ok && retry.normalized) {
+        accepted.set(JSON.stringify(retry.normalized), retry.normalized);
+      }
+    }
+    if (accepted.size === 1) {
+      return { ok: true, value: [...accepted.values()][0]! };
+    }
+    if (accepted.size > 1) {
+      return {
+        ok: false,
+        failure: {
+          kind: 'validation_failed',
+          detail: 'multiple_valid_runtime_ai_wording_patches',
+        },
+      };
+    }
     return {
       ok: false,
       failure: structuredFailureToRuntimeParseFailure(parsed, validationError),

@@ -152,7 +152,7 @@ export function resolveShijingTextGenerateBinding(
   };
 }
 
-async function schedulingMetadata(
+export async function resolveShijingRuntimeAISchedulingMetadata(
   client: NimiClient,
   config: NimiAIConfig,
   target: NimiAISchedulingTargetInput | null,
@@ -227,7 +227,11 @@ class AIConfigBackedRuntimeAiClient implements RuntimeAiClient {
       };
     }
 
-    const scheduling = await schedulingMetadata(client, config, resolved.schedulingTarget);
+    const scheduling = await resolveShijingRuntimeAISchedulingMetadata(
+      client,
+      config,
+      resolved.schedulingTarget,
+    );
     if ('failure' in scheduling) {
       return { ok: false, failure: { kind: 'runtime_unavailable', detail: scheduling.failure } };
     }

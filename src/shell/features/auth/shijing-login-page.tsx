@@ -8,6 +8,8 @@ import {
 } from './shijing-auth-adapter.js';
 import { shijingTauriOAuthBridge } from '../../bridge/index.js';
 
+const shijingLogoUrl = new URL('../../../../src-tauri/icons/128x128@2x.png', import.meta.url).href;
+
 export function ShijingLoginPage() {
   const adapter = useMemo(() => createShijingDesktopBrowserAuthAdapter(), []);
   const runtimeAccountBroker = useMemo(() => createShijingRuntimeAccountBrowserBroker(), []);
@@ -16,6 +18,8 @@ export function ShijingLoginPage() {
   return (
     <DesktopShellAuthPage
       adapter={adapter}
+      logo={shijingLogoUrl}
+      logoAltText="ShiJing"
       session={{
         mode: 'desktop-browser',
         authStatus: 'unauthenticated',
