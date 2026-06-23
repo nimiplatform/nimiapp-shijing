@@ -34,7 +34,9 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [savedNoticeVisible, setSavedNoticeVisible] = useState(false);
   const autoOpenedRef = useRef(false);
+  const draftDirtyRef = useRef(false);
 
   // Close the editor drawer on Escape.
   useEffect(() => {
@@ -53,33 +55,50 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
   }, [editing, inlineEditor, saving]);
 
   function update<K extends keyof SelfNatalDraft>(key: K, value: SelfNatalDraft[K]) {
+    draftDirtyRef.current = true;
+    setSavedNoticeVisible(false);
     setDraft((prev) => ({ ...prev, [key]: value }));
   }
 
   function openEdit() {
     // Seed the draft from the latest snapshot each time the drawer opens.
+    draftDirtyRef.current = false;
     setDraft(selfDraftFromSpace(state.snapshot));
     setErrorCode(null);
+    setSavedNoticeVisible(false);
     setEditing(true);
   }
 
   useEffect(() => {
-    if (!autoOpenEditor || autoOpenedRef.current) return;
-    autoOpenedRef.current = true;
+    if (!inlineEditor) return;
+    if (draftDirtyRef.current) return;
     setDraft(selfDraftFromSpace(state.snapshot));
     setErrorCode(null);
+    setSavedNoticeVisible(false);
+  }, [inlineEditor, state.snapshot]);
+
+  useEffect(() => {
+    if (!autoOpenEditor || autoOpenedRef.current) return;
+    autoOpenedRef.current = true;
+    draftDirtyRef.current = false;
+    setDraft(selfDraftFromSpace(state.snapshot));
+    setErrorCode(null);
+    setSavedNoticeVisible(false);
     setEditing(true);
   }, [autoOpenEditor, state.snapshot]);
 
   function closeEdit() {
     if (saving) return;
     if (inlineEditor) {
+      draftDirtyRef.current = false;
       setDraft(selfDraftFromSpace(state.snapshot));
       setErrorCode(null);
+      setSavedNoticeVisible(false);
       return;
     }
     setEditing(false);
     setErrorCode(null);
+    setSavedNoticeVisible(false);
   }
 
   async function save() {
@@ -88,21 +107,29 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
     if (outcome.ok) {
       setSaving(true);
       setErrorCode(null);
+      setSavedNoticeVisible(false);
       try {
         const persistence = await replace_snapshot(outcome.next_space);
         if (persistence.kind === 'saved' || persistence.kind === 'idle') {
+          draftDirtyRef.current = false;
+          setDraft(selfDraftFromSpace(outcome.next_space));
           setSaving(false);
           if (!inlineEditor) {
             closeEdit();
+          } else {
+            setSavedNoticeVisible(true);
           }
           return;
         }
         if (persistence.kind === 'error') {
+          setSavedNoticeVisible(false);
           setErrorCode(describePersistenceSaveError(persistence.error, copy));
           return;
         }
+        setSavedNoticeVisible(false);
         setErrorCode(copy.self.saveIncomplete(persistence.kind));
       } catch (error) {
+        setSavedNoticeVisible(false);
         setErrorCode(copy.self.saveFailed(error instanceof Error ? error.message : String(error)));
       } finally {
         setSaving(false);
@@ -115,6 +142,7 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
           : err.code === 'birth_datetime_underivable'
             ? err.reason
             : err.code;
+      setSavedNoticeVisible(false);
       setErrorCode(describeNatalError(code, copy));
     }
   }
@@ -142,6 +170,11 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
         ) : null}
 
         <div className="sjp-actions sjp-actions--drawer">
+          {savedNoticeVisible ? (
+            <span className="sjp-actions__status" role="status">
+              {copy.common.saved}
+            </span>
+          ) : null}
           <Button
             type="submit"
             tone="primary"

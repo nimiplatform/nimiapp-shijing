@@ -102,7 +102,7 @@ function DiagnosticsSection() {
   const { state } = useShijingStore();
   const copy = useProductCopy();
   return (
-    <section className="sjp-card">
+    <section id="settings-diagnostics" className="sjp-card" tabIndex={-1}>
       <div className="sjp-card-head">
         <span className="sjp-card-icon">
           <svg

@@ -46,12 +46,22 @@
   isolation: isolate;
 }
 
-/* widen the kit layout frame to the mock's 960px and relax top padding */
+/* Match the mirror content measure while keeping the settings module rail in-flow. */
 .shijing-settings-page--styled .nimi-page-detail-layout {
-  max-width: 960px;
+  max-width: 920px;
   padding-left: 24px;
   padding-right: 24px;
   padding-bottom: 96px;
+}
+
+.shijing-settings-page--styled.shijing-settings-page--settings {
+  overflow: hidden;
+}
+
+.shijing-settings-page--styled.shijing-settings-page--settings .nimi-page-detail-layout {
+  box-sizing: border-box;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* hero: serif title with an accent dot + descriptive subtitle */
@@ -138,11 +148,94 @@
   cursor: default;
 }
 
+.shijing-settings-page--styled .shijing-settings-page__body {
+  display: grid;
+  grid-template-columns: minmax(150px, 188px) minmax(0, 1fr);
+  gap: 30px;
+  align-items: start;
+  height: max(420px, calc(100vh - 300px));
+  overflow: hidden;
+}
+
+.shijing-settings-page--styled .shijing-settings-page__surface-nav {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  max-height: 100%;
+  padding: 10px;
+  border: 1px solid var(--sjp-border-subtle);
+  border-radius: var(--sjp-radius-lg);
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: var(--sjp-elevation-base);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.shijing-settings-page--styled .shijing-settings-page__surface-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shijing-settings-page--styled .shijing-settings-page__surface-nav-item {
+  appearance: none;
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--sjp-radius-md);
+  background: transparent;
+  color: var(--sjp-fg-3);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 160ms, background 160ms, box-shadow 160ms;
+}
+
+.shijing-settings-page--styled .shijing-settings-page__surface-nav-item:hover,
+.shijing-settings-page--styled .shijing-settings-page__surface-nav-item:focus-visible {
+  color: var(--sjp-accent-hover);
+  background: rgba(78, 204, 163, 0.1);
+  outline: none;
+}
+
+.shijing-settings-page--styled .shijing-settings-page__surface-nav-item:focus-visible {
+  box-shadow: 0 0 0 3px var(--sjp-accent-soft);
+}
+
+.shijing-settings-page--styled .sjp-card[id^="settings-"] {
+  scroll-margin-top: 0;
+  outline: none;
+}
+
+.shijing-settings-page--styled .sjp-card[id^="settings-"]:focus-visible {
+  box-shadow: var(--sjp-elevation-raised), 0 0 0 3px var(--sjp-accent-soft);
+}
+
 /* the self/people page renders editors directly (no generic section chrome) */
 .shijing-settings-page--styled .shijing-settings {
   display: flex;
   flex-direction: column;
   gap: 28px;
+}
+
+.shijing-settings-page--styled .shijing-settings-page__content-scroll {
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 10px;
+  padding-bottom: max(360px, calc(100vh - 480px));
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
 }
 
 /* page-foot privacy note — the single light line that closes the 档案 page */
@@ -635,6 +728,13 @@
   color: var(--sjp-fg-3);
 }
 
+.shijing-settings-page--styled .sjp-people__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
 /* ── Actions / buttons ─────────────────────────────────────── */
 .shijing-settings-page--styled .sjp-actions {
   grid-column: 1 / -1;
@@ -694,6 +794,27 @@
 .shijing-settings-page--styled .sjp-btn--ghost:hover {
   background: rgba(148, 163, 184, 0.12);
   border-color: transparent;
+  box-shadow: none;
+}
+
+.shijing-settings-page--styled .sjp-inline-self-form .nimi-action--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--sjp-fg-2);
+  box-shadow: none;
+}
+
+.shijing-settings-page--styled .sjp-inline-self-form .nimi-action--ghost:hover:not(:disabled) {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: transparent;
+  color: var(--sjp-fg-1);
+  box-shadow: none;
+}
+
+.shijing-settings-page--styled .sjp-inline-self-form .nimi-action--ghost:disabled {
+  background: transparent;
+  border-color: transparent;
+  color: var(--sjp-fg-4);
   box-shadow: none;
 }
 
@@ -1073,6 +1194,29 @@
   letter-spacing: 0.01em;
 }
 
+@media (max-width: 960px) {
+  .shijing-settings-page--styled .shijing-settings-page__body {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .shijing-settings-page--styled .shijing-settings-page__surface-nav {
+    position: relative;
+    top: auto;
+    overflow-x: auto;
+    padding: 8px;
+  }
+
+  .shijing-settings-page--styled .shijing-settings-page__surface-nav-list {
+    flex-direction: row;
+    min-width: max-content;
+  }
+
+  .shijing-settings-page--styled .shijing-settings-page__surface-nav-item {
+    white-space: nowrap;
+  }
+}
+
 @media (max-width: 680px) {
   .shijing-settings-page--styled .sjp-grid {
     grid-template-columns: 1fr;
@@ -1234,6 +1378,7 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
+  flex: 1;
   min-width: 0;
 }
 
@@ -1698,13 +1843,4 @@
   background: transparent;
   background-image: none;
   isolation: auto;
-}
-
-.shijing-onboarding .shijing-settings-page--styled .sjp-card {
-  border: 0;
-  box-shadow: none;
-  background: transparent;
-  background-image: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
 }

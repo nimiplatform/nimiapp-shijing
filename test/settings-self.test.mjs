@@ -1,6 +1,7 @@
 // W-c03 — Settings > Self editor state tests.
 
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -11,6 +12,11 @@ import {
 import { buildEmptyShiJingSpace } from '../src/product/dev/initial-space.ts';
 import { isUnknownClockTimeChecked } from '../src/product/natal/birth-time-precision.ts';
 import { validShiJingSpace } from './_fixtures.mjs';
+
+const selfEditorSource = readFileSync(
+  new URL('../src/product/self/self-editor.tsx', import.meta.url),
+  'utf8',
+);
 
 function gregorianDraft(overrides = {}) {
   return {
@@ -139,4 +145,16 @@ test('commitSelfDraft commits a valid draft and surfaces validator errors otherw
   const bad = commitSelfDraft(space, gregorianDraft({ latitude: '999' }));
   assert.equal(bad.ok, false);
   if (!bad.ok) assert.equal(bad.error.code, 'natal_inputs_invalid');
+});
+
+test('inline self editor surfaces a saved status after a successful save', () => {
+  assert.match(selfEditorSource, /setSavedNoticeVisible\(true\)/);
+  assert.match(selfEditorSource, /role="status"/);
+  assert.match(selfEditorSource, /copy\.common\.saved/);
+});
+
+test('inline self editor refreshes its draft when the persisted snapshot changes', () => {
+  assert.match(selfEditorSource, /if \(!inlineEditor\) return;/);
+  assert.match(selfEditorSource, /setDraft\(selfDraftFromSpace\(state\.snapshot\)\);/);
+  assert.match(selfEditorSource, /\[inlineEditor, state\.snapshot\]/);
 });

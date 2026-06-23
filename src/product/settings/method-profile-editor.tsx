@@ -26,7 +26,7 @@ export function MethodProfileEditor() {
   }
 
   return (
-    <section className="sjp-card">
+    <section id="settings-method-profile" className="sjp-card" tabIndex={-1}>
       <div className="sjp-card-head">
         <span className="sjp-card-icon">
           <svg

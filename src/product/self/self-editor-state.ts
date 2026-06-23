@@ -68,9 +68,7 @@ export function emptyNatalDraft(): SelfNatalDraft {
   };
 }
 
-export function selfDraftFromSpace(space: ShiJingSpace): SelfNatalDraft {
-  const inputs = space.self_subject.natal_inputs;
-  if (isScaffoldNatalInputs(inputs)) return emptyNatalDraft();
+export function natalDraftFromInputs(inputs: NatalInputs): SelfNatalDraft {
   const raw = inputs.raw_birth_input;
   const loc = inputs.birth_location;
   return {
@@ -97,6 +95,12 @@ export function selfDraftFromSpace(space: ShiJingSpace): SelfNatalDraft {
     place_name: loc.place_name ?? '',
     notes: inputs.notes ?? '',
   };
+}
+
+export function selfDraftFromSpace(space: ShiJingSpace): SelfNatalDraft {
+  const inputs = space.self_subject.natal_inputs;
+  if (isScaffoldNatalInputs(inputs)) return emptyNatalDraft();
+  return natalDraftFromInputs(inputs);
 }
 
 export type SelfDraftBuildError =

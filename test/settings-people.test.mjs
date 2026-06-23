@@ -1,13 +1,20 @@
 // W-c03 — Settings > People editor state tests.
 
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
   deletePerson,
+  personDraftFromPerson,
   upsertPerson,
 } from '../src/product/persons/person-editor-state.ts';
 import { validConcernTag, validPerson, validShiJingSpace } from './_fixtures.mjs';
+
+const personEditorSource = readFileSync(
+  new URL('../src/product/persons/person-editor.tsx', import.meta.url),
+  'utf8',
+);
 
 test('upsertPerson appends a valid Person', () => {
   const space = validShiJingSpace();
@@ -36,6 +43,31 @@ test('upsertPerson updates an existing Person at the same id', () => {
   const r = upsertPerson(space, validPerson('p_alice', { display_name: 'Alice v2' }));
   assert.equal(r.ok, true);
   if (r.ok) assert.equal(r.next_space.persons[0].display_name, 'Alice v2');
+});
+
+test('personDraftFromPerson seeds the editor from an existing Person', () => {
+  const draft = personDraftFromPerson(validPerson('p_alice', {
+    display_name: 'Alice',
+    relation: 'partner',
+    consent_state: 'subject_consented',
+    notes: 'provided directly',
+  }));
+
+  assert.equal(draft.meta.id, 'p_alice');
+  assert.equal(draft.meta.display_name, 'Alice');
+  assert.equal(draft.meta.relation, 'partner');
+  assert.equal(draft.meta.consent_state, 'subject_consented');
+  assert.equal(draft.meta.notes, 'provided directly');
+  assert.equal(draft.natal.local_date_text, '1990-04-12');
+  assert.equal(draft.natal.local_time_text, '08:30');
+  assert.equal(draft.natal.place_text, 'Shanghai');
+  assert.equal(draft.natal.iana_time_zone, 'Asia/Shanghai');
+});
+
+test('PersonEditor exposes an edit action for each existing person', () => {
+  assert.match(personEditorSource, /onClick=\{\(\) => openEdit\(p\)\}/);
+  assert.match(personEditorSource, /aria-label=\{copy\.people\.editPersonAria\(p\.display_name\)\}/);
+  assert.match(personEditorSource, /\{copy\.common\.edit\}/);
 });
 
 test('deletePerson refuses when concern_tag mentions still reference the person', () => {

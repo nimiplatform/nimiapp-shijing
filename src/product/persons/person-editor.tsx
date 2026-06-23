@@ -20,19 +20,16 @@ import {
   type SelfNatalDraft,
 } from '../self/self-editor-state.ts';
 import { describeNatalError } from '../natal/natal-error-copy.ts';
-import { deletePerson, upsertPerson } from './person-editor-state.ts';
+import {
+  deletePerson,
+  personDraftFromPerson,
+  type PersonMetaDraft,
+  upsertPerson,
+} from './person-editor-state.ts';
 
 // Identity + provenance metadata for a new person. The ULID is generated up
 // front but kept out of the UI — it carries no meaning for the user. The
 // person's birth data lives in a separate NatalInputs draft.
-interface PersonMetaDraft {
-  readonly id: string;
-  readonly display_name: string;
-  readonly relation: string;
-  readonly consent_state: Person['consent_state'];
-  readonly notes: string;
-}
-
 function emptyMeta(): PersonMetaDraft {
   return {
     id: newUlid(),
@@ -50,12 +47,16 @@ export function PersonEditor() {
   const [natal, setNatal] = useState<SelfNatalDraft>(emptyNatalDraft);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editingPersonId, setEditingPersonId] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState<Person | null>(null);
   const persons = state.snapshot.persons;
   const consentOptions = CONSENT_STATE_ORDER.filter((c) => CONSENT_STATES.includes(c)).map((c) => ({
     value: c,
     label: copy.consentStateLabels[c],
   }));
+  const drawerTitle = editingPersonId ? copy.people.editDialog : copy.people.addDialog;
+  const drawerPrimaryLabel = editingPersonId ? copy.common.save : copy.people.addPerson;
+  const drawerPrimaryIconPath = editingPersonId ? 'M20 6L9 17l-5-5' : 'M12 5v14M5 12h14';
 
   // Close drawer on Escape. Inlining the state setters here (rather than
   // calling closeDrawer) keeps the effect's dependency list honest.
@@ -65,6 +66,7 @@ export function PersonEditor() {
       if (event.key === 'Escape') {
         event.stopPropagation();
         setDrawerOpen(false);
+        setEditingPersonId(null);
         setErrorCode(null);
       }
     }
@@ -79,16 +81,27 @@ export function PersonEditor() {
   function openDrawer() {
     setMeta(emptyMeta());
     setNatal(emptyNatalDraft());
+    setEditingPersonId(null);
+    setErrorCode(null);
+    setDrawerOpen(true);
+  }
+
+  function openEdit(person: Person) {
+    const draft = personDraftFromPerson(person);
+    setMeta(draft.meta);
+    setNatal(draft.natal);
+    setEditingPersonId(person.id);
     setErrorCode(null);
     setDrawerOpen(true);
   }
 
   function closeDrawer() {
     setDrawerOpen(false);
+    setEditingPersonId(null);
     setErrorCode(null);
   }
 
-  function add() {
+  function savePerson() {
     // A Person is a first-class astrology subject (SJG-PROD-06): it carries
     // its own complete natal inputs rather than inheriting the self subject's.
     const built = buildSelfNatalInputs(natal);
@@ -190,14 +203,37 @@ export function PersonEditor() {
                   {copy.consentStateLabels[p.consent_state]}
                 </span>
               </span>
-              <button
-                type="button"
-                className="sjp-btn sjp-btn--ghost"
-                onClick={() => setConfirmingDelete(p)}
-                aria-label={copy.people.deletePersonAria(p.display_name)}
-              >
-                {copy.common.delete}
-              </button>
+              <div className="sjp-people__actions">
+                <button
+                  type="button"
+                  className="sjp-btn sjp-btn--ghost"
+                  onClick={() => openEdit(p)}
+                  aria-label={copy.people.editPersonAria(p.display_name)}
+                >
+                  <svg
+                    className="sjp-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z" />
+                  </svg>
+                  {copy.common.edit}
+                </button>
+                <button
+                  type="button"
+                  className="sjp-btn sjp-btn--ghost"
+                  onClick={() => setConfirmingDelete(p)}
+                  aria-label={copy.people.deletePersonAria(p.display_name)}
+                >
+                  {copy.common.delete}
+                </button>
+              </div>
             </li>
           ))}
         </ul>
@@ -214,11 +250,11 @@ export function PersonEditor() {
 
       {drawerOpen
         ? createPortal(
-            <div className="sjp-drawer" role="dialog" aria-modal="true" aria-label={copy.people.addDialog}>
+            <div className="sjp-drawer" role="dialog" aria-modal="true" aria-label={drawerTitle}>
               <div className="sjp-drawer__scrim" onClick={closeDrawer} />
               <div className="sjp-drawer__panel">
                 <header className="sjp-drawer__head">
-                  <h3 className="sjp-drawer__title">{copy.people.addDialog}</h3>
+                  <h3 className="sjp-drawer__title">{drawerTitle}</h3>
                   <button
                     type="button"
                     className="sjp-drawer__close"
@@ -245,7 +281,7 @@ export function PersonEditor() {
                   className="sjp-drawer__body sjp-grid"
                   onSubmit={(e) => {
                     e.preventDefault();
-                    add();
+                    savePerson();
                   }}
                 >
                   <div className="sjp-field">
@@ -321,11 +357,11 @@ export function PersonEditor() {
                           strokeLinejoin="round"
                           aria-hidden="true"
                         >
-                          <path d="M12 5v14M5 12h14" />
+                          <path d={drawerPrimaryIconPath} />
                         </svg>
                       }
                     >
-                      {copy.people.addPerson}
+                      {drawerPrimaryLabel}
                     </Button>
                     <Button type="button" tone="ghost" onClick={closeDrawer}>
                       {copy.common.cancel}

@@ -5,7 +5,37 @@ import type { Person } from '../../domain/person.ts';
 import { PERSON_RELATION_MAX_LENGTH } from '../../domain/person.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import { validateNatalInputs } from '../../contracts/natal-inputs-validator.ts';
+import {
+  natalDraftFromInputs,
+  type SelfNatalDraft,
+} from '../self/self-editor-state.ts';
 import { findReferencesToPerson } from './dangling-reference.ts';
+
+export interface PersonMetaDraft {
+  readonly id: string;
+  readonly display_name: string;
+  readonly relation: string;
+  readonly consent_state: Person['consent_state'];
+  readonly notes: string;
+}
+
+export interface PersonEditorDraft {
+  readonly meta: PersonMetaDraft;
+  readonly natal: SelfNatalDraft;
+}
+
+export function personDraftFromPerson(person: Person): PersonEditorDraft {
+  return {
+    meta: {
+      id: person.id,
+      display_name: person.display_name,
+      relation: person.relation ?? '',
+      consent_state: person.consent_state,
+      notes: person.notes ?? '',
+    },
+    natal: natalDraftFromInputs(person.natal_inputs),
+  };
+}
 
 export type PersonUpsertError =
   | { code: 'person_id_empty' }

@@ -78,7 +78,7 @@ export function UiLanguageSwitch({
   }
 
   return (
-    <section className="sjp-card">
+    <section id="settings-ui-language" className="sjp-card" tabIndex={-1}>
       <div className="sjp-card-head">
         <span className="sjp-card-icon">
           <svg
