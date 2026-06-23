@@ -187,3 +187,15 @@ It must not:
   calibrate emphasis and build resonance;
 - create an astrology output entity outside `Reading`;
 - emit any SJG-ASTRO-08 forbidden output.
+
+## SJG-ASTRO-13 - MingJing Relationship HePan Output
+
+MingJing Relationship HePan (`mirror_kind = mingjing`,
+`scope = relationship_natal`) is grounded in deterministic self-plus-person
+relationship evidence. It contains stable relationship structure and
+anchor-year timing windows.
+
+It must not output compatibility scores, match percentages, fate claims, trend
+curves, relation graphs, contact-management payloads, or a Runtime-AI-only
+reading. Runtime AI may word admitted prose fields only after deterministic
+relationship evidence exists.

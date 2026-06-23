@@ -41,6 +41,16 @@ At most five concern tags may be active in one `ShiJingSpace`.
 Person is not a customer/contact/account and does not own conversations,
 events, memories, plans, settings, relationships, notifications, or lifecycle.
 
+## SJG-PROD-06A - Relationship HePan Belongs To MingJing
+
+Relationship HePan is a MingJing-owned Reading mode for exactly
+`self + one Person`. It is not a primary product surface, relation graph,
+contact workspace, consultant workflow, or Person-owned lifecycle.
+
+The People settings surface may launch Relationship HePan for a selected
+Person, but the generated result is stored only as a `Reading` and displayed on
+MingJing or cited by ShiJing consultation.
+
 ## SJG-PROD-07 - Event Memory and Plan Item Separation
 
 Past facts are `EventMemory`. Future intentions are `PlanItem`. They are not

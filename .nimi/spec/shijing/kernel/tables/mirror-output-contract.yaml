@@ -151,3 +151,36 @@ mingjing:
     - chart_numbers_never_recomputed_by_ai
     - no_concern_tags_required
     - cannot_mutate_deterministic_facts
+mingjing_relationship_hepan:
+  surface: MingJing relationship HePan over deterministic self-plus-person evidence
+  required_fields:
+    - mirror_kind
+    - output_kind
+    - relationship_subject
+    - summary
+    - structure
+    - timing
+    - practice
+    - cited_event_memory_refs
+    - cited_plan_item_refs
+    - citations
+  output_kind: relationship_hepan
+  structure:
+    required_fields:
+      - baseline_pattern
+      - attraction_and_support
+      - friction_and_misread
+      - communication_rhythm
+      - boundary_advice
+  timing_window:
+    required_fields:
+      - start_date
+      - end_date
+      - nature
+      - driver_refs
+      - summary
+  rules:
+    - exactly_one_related_person
+    - timing_driver_refs_are_deterministic
+    - no_match_scores
+    - no_runtime_ai_calculation

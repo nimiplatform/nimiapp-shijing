@@ -618,3 +618,19 @@ Rules:
   K-line/ledger constraint).
 - The natal projection carries no tendency classes, K-line bars, numeric trend
   series, luck scores, or rankable numbers as authoritative data.
+
+## SJG-ALGO-17 - Relationship HePan Evidence
+
+Relationship HePan evidence is computed from the self subject and exactly one
+related Person. The minimum evidence set is:
+
+- both subject charts;
+- pairwise branch interactions across year, month, day, and hour positions when
+  available;
+- day-master element relation;
+- ten-god relation direction when the method provides it;
+- yong-shen complement and depletion direction when the method provides it;
+- anchor-year timing windows from both subjects' period markers;
+- uncertainty inputs for precision, location, consent, and related-person data.
+
+Runtime AI must not compute or alter these evidence fields.

@@ -11,6 +11,7 @@ mirror_scopes:
   - rolling_30_day
   - long_horizon
   - natal
+  - relationship_natal
   - consultation
 matrix:
   rijing:
@@ -18,30 +19,35 @@ matrix:
     rolling_30_day: forbidden
     long_horizon: forbidden
     natal: forbidden
+    relationship_natal: forbidden
     consultation: forbidden
   yuejing:
     daily: forbidden
     rolling_30_day: allowed
     long_horizon: forbidden
     natal: forbidden
+    relationship_natal: forbidden
     consultation: forbidden
   nianjing:
     daily: forbidden
     rolling_30_day: forbidden
     long_horizon: allowed
     natal: forbidden
+    relationship_natal: forbidden
     consultation: forbidden
   mingjing:
     daily: forbidden
     rolling_30_day: forbidden
     long_horizon: forbidden
     natal: allowed
+    relationship_natal: allowed
     consultation: forbidden
   shijing:
     daily: forbidden
     rolling_30_day: forbidden
     long_horizon: forbidden
     natal: forbidden
+    relationship_natal: forbidden
     consultation: allowed
 scope_requirements:
   daily:
@@ -90,6 +96,15 @@ scope_requirements:
     anchor_year_max: 2200
     user_freeform_window: forbidden
     reusable_time_container: forbidden
+  relationship_natal:
+    required_fields:
+      - related_person_ref
+      - anchor_year
+      - basis_time_zone
+    primary_subject_ref: self
+    related_person_refs_count: 1
+    concern_tag_refs: forbidden
+    cited_reading_ids: forbidden
   consultation:
     required_fields:
       - source_reading_ids

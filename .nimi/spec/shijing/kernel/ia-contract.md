@@ -128,3 +128,8 @@ sex (DaYun, SJG-ALGO-07); otherwise it shows the matching typed blocker and rout
 to the Self profile. The 命镜 AI 解读 reading kind (命局核心特点, 长期阶段策略) and
 历史事件验证 (event overlay on the deterministic DaYun/流年 timeline) are admitted
 separately and never recompute the deterministic projection.
+
+MingJing admits two secondary modes: `benming` and `relationship_hepan`.
+`relationship_hepan` remains inside MingJing and may be launched from a Person
+card, but People remains a data-entry surface and does not own generated
+results.

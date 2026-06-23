@@ -218,6 +218,12 @@ Invariants:
 - `mirror_kind` / `mirror_scope` must satisfy
   `tables/mirror-kind-scope-matrix.yaml`.
 - `output` must satisfy `tables/mirror-output-contract.yaml`.
+- For `relationship_natal`, `mirror_kind` MUST be `mingjing`.
+- For `relationship_natal`, `primary_subject_ref` is `self`.
+- For `relationship_natal`, `related_person_refs[]` contains exactly one Person
+  ref and it MUST equal `mirror_scope.related_person_ref`.
+- For `relationship_natal`, `concern_tag_refs[]` and `cited_reading_ids[]` are
+  empty.
 - `cited_reading_ids[]` is empty except for ShiJing consultation readings,
   where it mirrors `mirror_scope.source_reading_ids[]` and the output
   citation set.
@@ -242,6 +248,7 @@ MirrorScope =
   | { kind: "daily"; date: string; basis_time_zone: string }
   | { kind: "rolling_30_day"; start_date: string; end_date: string; basis_time_zone: string }
   | { kind: "long_horizon"; start_date: string; end_date: string; basis_time_zone: string }
+  | { kind: "relationship_natal"; related_person_ref: { kind: "person"; id: string }; anchor_year: number; basis_time_zone: string }
   | { kind: "consultation"; source_reading_ids: string[]; basis_time_zone: string; question_window?: { start_date: string; end_date: string } }
 ```
 
