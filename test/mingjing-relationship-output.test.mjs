@@ -161,6 +161,24 @@ test('mingjing relationship hepan rejects extra practice field', () => {
   }
 });
 
+test('mingjing relationship hepan rejects extra citation field', () => {
+  const result = validateMirrorOutput(
+    validMingjingRelationshipOutput({
+      citations: [
+        {
+          method: 'bazi_ziping_v1',
+          reference: 'mingjing.relationship_hepan.v1',
+          unadmitted: 'x',
+        },
+      ],
+    }),
+  );
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'mirror_output_citation_method_invalid');
+  }
+});
+
 test('mingjing relationship hepan rejects missing practice field', () => {
   const output = validMingjingRelationshipOutput();
   const practice = { ...output.practice };

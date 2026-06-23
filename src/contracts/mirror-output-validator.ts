@@ -139,6 +139,8 @@ function isAllowedCitationMethod(
   );
 }
 
+const MIRROR_CITATION_KEYS = new Set<string>(['method', 'reference']);
+
 function isAllowedTendencyClass(value: unknown): boolean {
   return typeof value === 'string' && (TENDENCY_CLASSES as readonly string[]).includes(value);
 }
@@ -177,6 +179,17 @@ function validateCitations(
       return {
         ok: false,
         error: { code: 'mirror_output_citation_method_invalid', index: i, received: citation },
+      };
+    }
+    const citationExtra = findUnexpectedKey(citation, MIRROR_CITATION_KEYS);
+    if (citationExtra) {
+      return {
+        ok: false,
+        error: {
+          code: 'mirror_output_citation_method_invalid',
+          index: i,
+          received: citationExtra,
+        },
       };
     }
     if (!isAllowedCitationMethod(citation.method)) {
