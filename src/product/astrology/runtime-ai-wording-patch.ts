@@ -114,9 +114,10 @@ export type MingJingRelationshipPracticePatch = {
 export type MingJingRelationshipWordingPatch = WordingPatchBase & {
   readonly mirror_kind: 'mingjing';
   readonly output_kind: 'relationship_hepan';
-  readonly structure?: MingJingRelationshipStructurePatch;
-  readonly timing_windows?: readonly MingJingRelationshipTimingWindowPatch[];
-  readonly practice?: MingJingRelationshipPracticePatch;
+  readonly summary: string;
+  readonly structure: MingJingRelationshipStructurePatch;
+  readonly timing_windows: readonly MingJingRelationshipTimingWindowPatch[];
+  readonly practice: MingJingRelationshipPracticePatch;
 };
 
 export type RuntimeAiWordingPatch =
@@ -335,8 +336,10 @@ function validateMingjingNatalPatch(record: Record<string, unknown>): MingJingWo
 
 function validateMingjingRelationshipStructurePatch(
   value: unknown,
-): MingJingRelationshipStructurePatch | undefined {
-  if (value === undefined) return undefined;
+): MingJingRelationshipStructurePatch {
+  if (value === undefined) {
+    throw new RuntimeAiWordingPatchValidationError('mingjing_relationship_structure_required');
+  }
   if (!isRecord(value)) {
     throw new RuntimeAiWordingPatchValidationError('structure_invalid');
   }
@@ -347,16 +350,17 @@ function validateMingjingRelationshipStructurePatch(
   );
   const structure: Record<string, string> = {};
   for (const key of MINGJING_RELATIONSHIP_STRUCTURE_PATCH_KEYS) {
-    const text = optionalText(value, key);
-    if (text) structure[key] = text;
+    structure[key] = requireText(value, key);
   }
   return structure;
 }
 
 function validateMingjingRelationshipPracticePatch(
   value: unknown,
-): MingJingRelationshipPracticePatch | undefined {
-  if (value === undefined) return undefined;
+): MingJingRelationshipPracticePatch {
+  if (value === undefined) {
+    throw new RuntimeAiWordingPatchValidationError('mingjing_relationship_practice_required');
+  }
   if (!isRecord(value)) {
     throw new RuntimeAiWordingPatchValidationError('practice_invalid');
   }
@@ -367,8 +371,7 @@ function validateMingjingRelationshipPracticePatch(
   );
   const practice: Record<string, string> = {};
   for (const key of MINGJING_RELATIONSHIP_PRACTICE_PATCH_KEYS) {
-    const text = optionalText(value, key);
-    if (text) practice[key] = text;
+    practice[key] = requireText(value, key);
   }
   return practice;
 }
@@ -381,10 +384,12 @@ function validateMingjingRelationshipPatch(
     MINGJING_RELATIONSHIP_TOP_LEVEL_PATCH_KEYS,
     'mingjing_relationship_patch_forbidden_key',
   );
-  const structure = Object.prototype.hasOwnProperty.call(record, 'structure')
-    ? validateMingjingRelationshipStructurePatch(record.structure)
-    : undefined;
-  const timingWindows = optionalRecordArray(record, 'timing_windows')?.map((item) => {
+  const structure = validateMingjingRelationshipStructurePatch(record.structure);
+  const rawTimingWindows = optionalRecordArray(record, 'timing_windows');
+  if (!rawTimingWindows || rawTimingWindows.length === 0) {
+    throw new RuntimeAiWordingPatchValidationError('mingjing_relationship_timing_windows_required');
+  }
+  const timingWindows = rawTimingWindows.map((item) => {
     assertOnlyAllowedKeys(
       item,
       MINGJING_RELATIONSHIP_TIMING_WINDOW_PATCH_KEYS,
@@ -393,20 +398,18 @@ function validateMingjingRelationshipPatch(
     return {
       start_date: requireText(item, 'start_date'),
       end_date: requireText(item, 'end_date'),
-      ...(optionalText(item, 'summary') ? { summary: optionalText(item, 'summary')! } : {}),
+      summary: requireText(item, 'summary'),
     };
   });
-  const practice = Object.prototype.hasOwnProperty.call(record, 'practice')
-    ? validateMingjingRelationshipPracticePatch(record.practice)
-    : undefined;
+  const practice = validateMingjingRelationshipPracticePatch(record.practice);
   return {
     patch_kind: RUNTIME_AI_WORDING_PATCH_KIND,
     mirror_kind: 'mingjing',
     output_kind: 'relationship_hepan',
-    ...(optionalText(record, 'summary') ? { summary: optionalText(record, 'summary')! } : {}),
-    ...(structure ? { structure } : {}),
-    ...(timingWindows ? { timing_windows: timingWindows } : {}),
-    ...(practice ? { practice } : {}),
+    summary: requireText(record, 'summary'),
+    structure,
+    timing_windows: timingWindows,
+    practice,
   };
 }
 
@@ -660,7 +663,7 @@ function assertAllMingjingRelationshipPatchTargetsResolve(
   patch: MingJingRelationshipWordingPatch,
 ): void {
   const seenTargets = new Set<string>();
-  for (const item of patch.timing_windows ?? []) {
+  for (const item of patch.timing_windows) {
     const key = `${item.start_date}\u0000${item.end_date}`;
     if (seenTargets.has(key)) {
       throw new RuntimeAiWordingPatchValidationError(
@@ -673,6 +676,13 @@ function assertAllMingjingRelationshipPatchTargetsResolve(
     )) {
       throw new RuntimeAiWordingPatchValidationError(
         'mingjing_relationship_timing_window_target_unknown',
+      );
+    }
+  }
+  for (const window of base.timing_windows) {
+    if (!seenTargets.has(`${window.start_date}\u0000${window.end_date}`)) {
+      throw new RuntimeAiWordingPatchValidationError(
+        'mingjing_relationship_timing_window_target_missing',
       );
     }
   }

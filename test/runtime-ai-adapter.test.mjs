@@ -845,6 +845,54 @@ test('SdkRuntimeAiClient rejects MingJing relationship patch with unknown timing
   }
 });
 
+test('SdkRuntimeAiClient rejects incomplete MingJing relationship wording patches', async () => {
+  const cases = [
+    {
+      name: 'summary only',
+      patch: {
+        patch_kind: 'shijing.runtime_ai_wording_patch.v1',
+        mirror_kind: 'mingjing',
+        output_kind: 'relationship_hepan',
+        summary: 'Only a summary is not a complete relationship reading.',
+      },
+      detail: 'mingjing_relationship_structure_required',
+    },
+    {
+      name: 'missing practice',
+      patch: {
+        ...mingjingRelationshipPatch(),
+        practice: {
+          communication: 'Runtime communication practice.',
+          boundary: 'Runtime boundary practice.',
+        },
+      },
+      detail: 'repair_empty',
+    },
+    {
+      name: 'missing timing window',
+      patch: {
+        ...mingjingRelationshipPatch(),
+        timing_windows: [],
+      },
+      detail: 'mingjing_relationship_timing_windows_required',
+    },
+  ];
+
+  for (const item of cases) {
+    const runtime = createTextRuntime({
+      generateText: async () => runtimeTextOutput(JSON.stringify(item.patch)),
+    });
+    const client = createSdkRuntimeAiClient({ runtime });
+    const result = await client.generate('mingjing', mingjingRelationshipPromptRequest());
+
+    assert.equal(result.ok, false, item.name);
+    if (result.ok) continue;
+    assert.equal(result.failure.kind, 'parse_failure');
+    assert.equal(result.failure.failure.kind, 'validation_failed');
+    assert.equal(result.failure.failure.detail, item.detail);
+  }
+});
+
 test('resolveShijingTextGenerateBinding fails closed when AIConfig has no text.generate targetRef', () => {
   const resolved = resolveShijingTextGenerateBinding(emptyAIConfig());
   assert.equal(resolved.ok, false);
