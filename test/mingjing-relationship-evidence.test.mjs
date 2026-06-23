@@ -17,6 +17,7 @@ import {
 const TZ = 'Asia/Shanghai';
 const REL_SCOPE = relationshipNatalMirrorScope({ anchor_year: 2026 });
 const ALICE_REF = { kind: 'person', id: 'p_alice' };
+const RELATION_LABELS = new Set(['supporting', 'draining', 'controlling', 'same', 'unknown']);
 
 function natalAt(localDate, localTime, calculationSex) {
   return validNatalInputs({
@@ -75,6 +76,27 @@ test('relationship_natal feature snapshot carries deterministic relationship_hep
       (window) => window.driver_refs.length > 0 && window.driver_refs.every(Boolean),
     ),
   );
+});
+
+test('relationship_natal timing windows include both subjects period evidence or explicit fallback', () => {
+  const result = relationshipSnapshot();
+  assert.equal(result.ok, true, JSON.stringify(result));
+  const windows = result.value.common.relationship_hepan.timing_windows;
+  assert.ok(
+    windows.some((window) =>
+      window.driver_refs.some((ref) => ref.includes('self') && /period|fallback/u.test(ref)) &&
+      window.driver_refs.some((ref) => ref.includes('person:p_alice') && /period|fallback/u.test(ref)),
+    ),
+    JSON.stringify(windows, null, 2),
+  );
+});
+
+test('relationship_natal evidence carries method-backed ten-god relation direction', () => {
+  const result = relationshipSnapshot();
+  assert.equal(result.ok, true, JSON.stringify(result));
+  const relation = result.value.common.relationship_hepan.ten_god_relation;
+  assert.ok(relation.driver_ref.length > 0);
+  assert.equal(RELATION_LABELS.has(relation.label), true, JSON.stringify(relation));
 });
 
 test('relationship_natal fails closed when related person consent is withheld', () => {

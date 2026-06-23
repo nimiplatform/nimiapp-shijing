@@ -6,6 +6,7 @@
 
 import type {
   BaziSubjectChart,
+  CycleMarker,
   MethodEvidence,
   PillarPosition,
   RelationshipElementDirection,
@@ -13,12 +14,13 @@ import type {
   RelationshipTimingEvidenceWindow,
 } from '../../domain/algorithm.ts';
 import type { SubjectRef } from '../../domain/subject-ref.ts';
-import { subjectRefEquals } from '../../domain/subject-ref.ts';
+import { isSelfRef, subjectRefEquals } from '../../domain/subject-ref.ts';
 import type { StageResult } from './stage-result.ts';
 import { classifyBranchPair } from './branch-relations.ts';
 import { STEM_TO_ELEMENT, elementControls, elementGenerates } from './element-relations.ts';
 
 const PILLAR_POSITIONS: readonly PillarPosition[] = ['year', 'month', 'day', 'hour'] as const;
+const PERIOD_MARKER_KINDS = new Set<string>(['dayun_boundary', 'annual_transition']);
 
 function chartPillar(chart: BaziSubjectChart, position: PillarPosition) {
   switch (position) {
@@ -76,6 +78,59 @@ function yongShenDirection(
     return { label: 'draining', driver_ref: driverRef };
   }
   return { label: 'unknown', driver_ref: driverRef };
+}
+
+function directionForTenGod(tenGod: string | undefined, driverRef: string): RelationshipElementDirection {
+  if (!tenGod) return unknownDirection(driverRef);
+  if (/比|劫/u.test(tenGod)) return { label: 'same', driver_ref: driverRef };
+  if (/印/u.test(tenGod)) return { label: 'supporting', driver_ref: driverRef };
+  if (/官|杀|殺/u.test(tenGod)) return { label: 'controlling', driver_ref: driverRef };
+  if (/食|伤|傷|财|財/u.test(tenGod)) return { label: 'draining', driver_ref: driverRef };
+  return { label: 'unknown', driver_ref: driverRef };
+}
+
+function tenGodDirection(
+  self: BaziSubjectChart,
+  related: BaziSubjectChart,
+): RelationshipElementDirection {
+  const selfDayTenGod = self.interpretation?.pillars.find((pillar) => pillar.position === 'day')?.ten_god;
+  const relatedDayTenGod = related.interpretation?.pillars.find((pillar) => pillar.position === 'day')?.ten_god;
+  const driverRef = `bazi:relationship.ten_god.self_day.${selfDayTenGod ?? 'unknown'}->related_day.${relatedDayTenGod ?? 'unknown'}`;
+  if (!selfDayTenGod && !relatedDayTenGod) return unknownDirection(driverRef);
+  if (selfDayTenGod && relatedDayTenGod && selfDayTenGod === relatedDayTenGod) {
+    return { label: 'same', driver_ref: driverRef };
+  }
+  return directionForTenGod(relatedDayTenGod ?? selfDayTenGod, driverRef);
+}
+
+function subjectDriverLabel(ref: SubjectRef): string {
+  if (isSelfRef(ref)) return 'self';
+  return `person:${ref.id}`;
+}
+
+function markerUtcYear(marker: CycleMarker): number | null {
+  const date = new Date(marker.start_utc);
+  const year = date.getUTCFullYear();
+  return Number.isFinite(year) ? year : null;
+}
+
+function isRelevantPeriodMarker(marker: CycleMarker, anchorYear: number): boolean {
+  if (!PERIOD_MARKER_KINDS.has(marker.kind)) return false;
+  const year = markerUtcYear(marker);
+  return year !== null && Math.abs(year - anchorYear) <= 1;
+}
+
+function periodMarkerDriverRefs(chart: BaziSubjectChart, anchorYear: number): string[] {
+  const subjectLabel = subjectDriverLabel(chart.subject_ref);
+  const markers = chart.cycle_snapshot.markers
+    .filter((marker) => isRelevantPeriodMarker(marker, anchorYear))
+    .sort((a, b) => a.start_utc.localeCompare(b.start_utc));
+  if (markers.length === 0) {
+    return [`bazi:relationship.period.${subjectLabel}.fallback.anchor_year.${anchorYear}`];
+  }
+  return markers.map(
+    (marker) => `bazi:relationship.period.${subjectLabel}.${marker.kind}@${marker.start_utc}`,
+  );
 }
 
 function natureForDirection(direction: RelationshipElementDirection['label']): RelationshipTimingEvidenceWindow['nature'] {
@@ -146,10 +201,17 @@ function deriveBaziRelationshipHePan(input: {
   }
 
   const dayMasterRelation = dayMasterDirection(self, related);
+  const tenGodRelation = tenGodDirection(self, related);
   const yongShenRelation = yongShenDirection(self, related);
+  const periodDriverRefs = [
+    ...periodMarkerDriverRefs(self, input.anchor_year),
+    ...periodMarkerDriverRefs(related, input.anchor_year),
+  ];
   const timingDriverRefs = [
     `bazi:relationship.anchor_year.${input.anchor_year}`,
+    ...periodDriverRefs,
     dayMasterRelation.driver_ref,
+    tenGodRelation.driver_ref,
     yongShenRelation.driver_ref,
     ...branchInteractions.slice(0, 3).map((item) => item.driver_ref),
   ];
@@ -161,6 +223,7 @@ function deriveBaziRelationshipHePan(input: {
       display_name_snapshot: input.display_name_snapshot,
       branch_interactions: branchInteractions,
       day_master_relation: dayMasterRelation,
+      ten_god_relation: tenGodRelation,
       yong_shen_relation: yongShenRelation,
       timing_windows: [
         annualWindow(input.anchor_year, timingDriverRefs, natureForDirection(yongShenRelation.label)),
@@ -181,6 +244,7 @@ function deriveUnknownMethodRelationshipHePan(input: {
     display_name_snapshot: input.display_name_snapshot,
     branch_interactions: [],
     day_master_relation: { label: 'unknown', driver_ref: `${methodRef}.day_master` },
+    ten_god_relation: { label: 'unknown', driver_ref: `${methodRef}.ten_god` },
     yong_shen_relation: { label: 'unknown', driver_ref: `${methodRef}.yong_shen` },
     timing_windows: [
       annualWindow(input.anchor_year, [`${methodRef}.anchor_year.${input.anchor_year}`], 'steady'),

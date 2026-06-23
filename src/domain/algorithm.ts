@@ -325,6 +325,7 @@ export interface RelationshipHePanEvidence {
   readonly display_name_snapshot: string;
   readonly branch_interactions: readonly RelationshipBranchInteraction[];
   readonly day_master_relation: RelationshipElementDirection;
+  readonly ten_god_relation: RelationshipElementDirection;
   readonly yong_shen_relation: RelationshipElementDirection;
   readonly timing_windows: readonly RelationshipTimingEvidenceWindow[];
 }
