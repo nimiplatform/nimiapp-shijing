@@ -45,6 +45,7 @@ const MIRROR_KIND_LABELS: Record<MirrorKind, string> = {
   rijing: '日镜',
   yuejing: '月镜',
   nianjing: '年镜',
+  mingjing: '命镜',
   shijing: '时镜',
 };
 

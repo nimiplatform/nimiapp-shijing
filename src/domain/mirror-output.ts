@@ -1,7 +1,7 @@
 // SJG-ASTRO-03..07 — MirrorOutput (discriminated by mirror_kind).
 
 import type { MirrorKind } from './mirror-scope.ts';
-import { ADMITTED_METHOD_PROFILE_IDS, type MethodProfileId } from './algorithm.ts';
+import { ADMITTED_METHOD_PROFILE_IDS, type GanzhiPillar, type MethodProfileId } from './algorithm.ts';
 
 export type TendencyClass = 'supportive' | 'steady' | 'watch' | 'blocked' | 'turning';
 
@@ -124,10 +124,51 @@ export interface ShiJingMirrorOutput {
   readonly citations: readonly MirrorCitation[];
 }
 
+// SJG-ASTRO — 命镜 AI 解读 output. The deterministic natal chart (MingJingChart,
+// SJG-ALGO-16) is the evidence; this is the AI-worded narrative + the
+// deterministic historical-event resonance. `core` + `life_stage_strategies`
+// theme/strategy are AI wording; `event_validations` and each strategy's
+// phase_label/age_range/dayun_pillar are deterministic and never AI-patched.
+export interface MingJingCore {
+  readonly personality: string; // 性格底色
+  readonly strengths: string; // 优势能力
+  readonly long_term_themes: string; // 长期课题
+  readonly relationship_pattern: string; // 关系模式
+  readonly career_inclination: string; // 事业倾向
+}
+
+export interface MingJingLifeStageStrategy {
+  readonly phase_label: string; // e.g. 壬午大运
+  readonly age_range: string; // e.g. 33–42
+  readonly dayun_pillar: GanzhiPillar;
+  readonly theme: string; // AI
+  readonly strategy: string; // AI
+}
+
+export interface MingJingEventValidation {
+  readonly event_memory_ref: string;
+  readonly occurred_year: number;
+  readonly dayun_pillar?: GanzhiPillar;
+  readonly period_nature: TendencyClass;
+  readonly note: string; // deterministic templated resonance note
+}
+
+export interface MingJingMirrorOutput {
+  readonly mirror_kind: 'mingjing';
+  readonly summary: string;
+  readonly core: MingJingCore;
+  readonly life_stage_strategies: readonly MingJingLifeStageStrategy[];
+  readonly event_validations: readonly MingJingEventValidation[];
+  readonly cited_event_memory_refs: readonly string[];
+  readonly cited_plan_item_refs: readonly string[];
+  readonly citations: readonly MirrorCitation[];
+}
+
 export type MirrorOutput =
   | RiJingMirrorOutput
   | YueJingMirrorOutput
   | NianJingMirrorOutput
+  | MingJingMirrorOutput
   | ShiJingMirrorOutput;
 
 export function mirrorOutputKind(output: MirrorOutput): MirrorKind {

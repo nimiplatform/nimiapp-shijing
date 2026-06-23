@@ -1,6 +1,6 @@
 // SJG-ALGO-08/09/11 — project the 紫微 chart onto the algorithm-agnostic common
 // driver surface. The mapping (v1, 三合派 四化飞星):
-//   - concern → palace: love→夫妻, career→官禄, wealth→财帛, health→疾厄, general→命宫
+//   - concern → palace: love→夫妻, career→官禄, wealth→财帛, health→疾厄, family→田宅, general→命宫
 //   - dated tendency (rijing/yuejing): 流日/流月 四化 (禄/权/科/忌) flying into the
 //     concern's natal palace → supportive / steady / watch / turning
 //   - stage label: 流年 四化 into 命宫 → 进/养/收时, else 守时
@@ -28,6 +28,7 @@ const DOMAIN_PALACE: Readonly<Record<ConcernDomain, string>> = {
   career: '官禄',
   wealth: '财帛',
   health: '疾厄',
+  family: '田宅',
   general: '命宫',
 };
 

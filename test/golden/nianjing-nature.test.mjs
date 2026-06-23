@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { buildAstrologyFeatureSnapshot } from '../../src/product/astrology/build-feature-snapshot.ts';
 import { localWallClockToUtcInstant } from '../../src/product/astrology/local-wall-clock.ts';
-import { validConcernTag } from '../_fixtures.mjs';
+import { validConcernTag, validNatalInputs, validShiJingSpace } from '../_fixtures.mjs';
 
 const TZ = 'Asia/Shanghai';
 
@@ -39,8 +39,40 @@ function nianjingCommon(methodProfileId) {
 }
 const nianjingPhases = (m) => nianjingCommon(m).nianjing_phase_drivers;
 
+function baziNianjingCommonForTags(tags) {
+  const space = validShiJingSpace({
+    self_subject: { natal_inputs: validNatalInputs({ calculation_sex: 'male' }) },
+    concern_tags: tags,
+  });
+  const r = buildAstrologyFeatureSnapshot({
+    mirror_kind: 'nianjing',
+    mirror_scope: { kind: 'long_horizon', start_date: '2026-01-01', end_date: '2036-12-31', basis_time_zone: TZ },
+    space,
+    related_person_refs: [],
+    active_concern_tags: tags,
+  });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  return r.value.common;
+}
+
+function byTag(items) {
+  const out = new Map();
+  for (const item of items) {
+    const list = out.get(item.concern_tag_ref) ?? [];
+    list.push(item);
+    out.set(item.concern_tag_ref, list);
+  }
+  return out;
+}
+
 test('八字 年镜: phase nature is 用神-derived (varied), not the degenerate all-转折', () => {
-  const phases = nianjingPhases('bazi_ziping_v1');
+  const phases = baziNianjingCommonForTags([
+    validConcernTag('tag_general', {
+      label: '#整体',
+      parsed_topics: ['general'],
+      prompt_text: 'general life rhythm',
+    }),
+  ]).nianjing_phase_drivers;
   assert.ok(phases.length > 2, 'multiple phase bands across the horizon');
   const natures = new Set(phases.map((p) => p.nature));
   assert.ok(!(natures.size === 1 && natures.has('turning')), 'must not be all turning');
@@ -50,6 +82,92 @@ test('八字 年镜: phase nature is 用神-derived (varied), not the degenerate
   assert.ok(phases.some((p) => p.nature === 'watch' || p.nature === 'blocked'), 'a 忌神 period appears');
   // Each phase carries a traceable, opaque period-favourability ref.
   assert.ok(phases.every((p) => p.driver_refs.some((ref) => ref.startsWith('bazi:period.'))), 'period evidence ref present');
+});
+
+test('八字 年镜: phase bands continue until the next long-horizon marker', () => {
+  const phases = nianjingPhases('bazi_ziping_v1');
+  const phase2026 = phases.find((p) => p.start_date === '2026-02-04');
+
+  assert.ok(phase2026, '2026 Li Chun annual phase is present');
+  assert.equal(phase2026.end_date, '2027-02-03');
+  assert.ok(
+    phase2026.start_date <= '2026-06-21' && '2026-06-21' <= phase2026.end_date,
+    'the current year remains covered after the annual transition',
+  );
+});
+
+test('八字 年镜: adjacent DaYun and annual markers are emitted as one cluster', () => {
+  const inflections = nianjingCommon('bazi_ziping_v1').nianjing_inflection_drivers;
+  const cluster = inflections.find((i) =>
+    i.kind === 'marker_cluster' &&
+    i.date === '2028-01-01' &&
+    i.concern_tag_ref === 'tag_career'
+  );
+
+  assert.ok(cluster, '2028 DaYun + annual short window is clustered');
+  assert.deepEqual(cluster.date_window, { start_date: '2028-01-01', end_date: '2028-02-04' });
+  assert.ok(cluster.driver_refs.some((ref) => ref.startsWith('bazi:dayun_boundary@')));
+  assert.ok(cluster.driver_refs.some((ref) => ref.startsWith('bazi:annual_transition@')));
+  assert.equal(
+    inflections.some((i) => i.kind === 'dayun_boundary' && i.date === '2028-01-01'),
+    false,
+  );
+  assert.equal(
+    inflections.some((i) => i.kind === 'annual_transition' && i.date === '2028-02-04'),
+    false,
+  );
+});
+
+test('八字 年镜: phase nature is modulated per concern while inflection dates stay shared', () => {
+  const tags = [
+    validConcernTag('tag_career', {
+      label: '#事业',
+      parsed_topics: ['career'],
+      prompt_text: 'career work project output',
+      sort_order: 0,
+    }),
+    validConcernTag('tag_body', {
+      label: '#身体',
+      parsed_topics: ['body'],
+      prompt_text: 'body health sleep recovery',
+      sort_order: 1,
+    }),
+    validConcernTag('tag_family', {
+      label: '#家人',
+      parsed_topics: ['family'],
+      prompt_text: 'family household parents partner children',
+      sort_order: 2,
+    }),
+  ];
+  const common = baziNianjingCommonForTags(tags);
+  const phases = byTag(common.nianjing_phase_drivers);
+  const inflections = byTag(common.nianjing_inflection_drivers);
+
+  const phaseSignatures = tags.map((tag) =>
+    (phases.get(tag.id) ?? []).map((p) => `${p.start_date}->${p.end_date}:${p.nature}`).join('|')
+  );
+  assert.equal(new Set(phaseSignatures).size, tags.length, 'career/body/family phase signatures must diverge');
+
+  const inflectionSignatures = tags.map((tag) =>
+    (inflections.get(tag.id) ?? []).map((p) => `${p.date}:${p.kind}`).join('|')
+  );
+  assert.equal(new Set(inflectionSignatures).size, 1, 'inflection dates remain the shared natal-cycle skeleton');
+
+  for (const tag of tags) {
+    const driverRefs = (phases.get(tag.id) ?? []).flatMap((p) => p.driver_refs);
+    const expectedDomain =
+      tag.id === 'tag_body' ? 'health'
+        : tag.id === 'tag_family' ? 'family'
+          : 'career';
+    assert.ok(
+      driverRefs.some((ref) => ref === `bazi:domain.${expectedDomain}`),
+      `${tag.id} must carry domain evidence`,
+    );
+    assert.ok(
+      driverRefs.some((ref) => ref.startsWith('bazi:tenGod.')),
+      `${tag.id} must carry ten-god evidence`,
+    );
+  }
 });
 
 test('紫微 年镜: phase nature is 大限四化×三方四正-derived and genuinely varies', () => {

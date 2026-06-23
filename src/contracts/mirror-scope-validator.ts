@@ -6,6 +6,8 @@ import {
   MIRROR_KIND_SCOPE_MATRIX,
   MIRROR_KINDS,
   MIRROR_SCOPE_KINDS,
+  NATAL_ANCHOR_YEAR_MAX,
+  NATAL_ANCHOR_YEAR_MIN,
   NIANJING_MAX_LOCAL_YEARS,
   NIANJING_MIN_LOCAL_MONTHS,
   ROLLING_30_DAY_LOCAL_LENGTH,
@@ -24,6 +26,7 @@ export type MirrorScopeValidationError =
   | { code: 'mirror_scope_long_horizon_too_short'; min_months: number; received_months: number }
   | { code: 'mirror_scope_long_horizon_too_long'; max_years: number }
   | { code: 'mirror_scope_long_horizon_start_after_end' }
+  | { code: 'mirror_scope_natal_anchor_year_invalid'; received: unknown }
   | { code: 'mirror_scope_consultation_source_reading_ids_empty' }
   | { code: 'mirror_scope_consultation_source_reading_id_empty'; index: number }
   | { code: 'mirror_scope_consultation_question_window_invalid_range' }
@@ -159,6 +162,19 @@ export function validateMirrorScope(scope: MirrorScope): MirrorScopeValidationRe
           code: 'mirror_scope_long_horizon_too_long',
           max_years: NIANJING_MAX_LOCAL_YEARS,
         },
+      };
+    }
+    return { ok: true };
+  }
+  if (scope.kind === 'natal') {
+    if (
+      !Number.isInteger(scope.anchor_year) ||
+      scope.anchor_year < NATAL_ANCHOR_YEAR_MIN ||
+      scope.anchor_year > NATAL_ANCHOR_YEAR_MAX
+    ) {
+      return {
+        ok: false,
+        error: { code: 'mirror_scope_natal_anchor_year_invalid', received: scope.anchor_year },
       };
     }
     return { ok: true };

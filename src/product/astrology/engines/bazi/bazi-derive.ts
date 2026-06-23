@@ -10,15 +10,20 @@ import type {
   BaziSubjectChart,
   CommonDrivers,
   CycleMarker,
+  HeavenlyStem,
   KeyWindowFeature,
   NianJingInflectionDriver,
   NianJingPhaseDriver,
   StageDriver,
   UncertaintyInput,
   YueJingTendencyDriver,
+  YongShen,
 } from '../../../../domain/algorithm.ts';
 import type { MirrorKind, MirrorScope } from '../../../../domain/mirror-scope.ts';
-import { baziDomainTendency, baziPeriodNature } from './bazi-tendency.ts';
+import { baziDomainPeriodNature, baziDomainTendency } from './bazi-tendency.ts';
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const NIANJING_CLUSTER_WINDOW_DAYS = 45;
 
 const MARKER_TO_STAGE: Readonly<Record<string, StageDriver['stage_label']>> = {
   dayun_boundary: '转时',
@@ -100,10 +105,98 @@ function buildDatedTendencyDrivers(
   });
 }
 
+type BaziMajorNianjingMarker = CycleMarker & {
+  readonly kind: 'dayun_boundary' | 'annual_transition';
+};
+
+interface BaziInflectionProjection {
+  readonly date: string;
+  readonly date_window?: { readonly start_date: string; readonly end_date: string };
+  readonly kind: NianJingInflectionDriver['kind'];
+  readonly driver_refs: readonly string[];
+}
+
+function markerDate(marker: CycleMarker): string {
+  return marker.start_utc.slice(0, 10);
+}
+
+function markerStartMs(marker: CycleMarker): number {
+  return Date.parse(`${markerDate(marker)}T00:00:00Z`);
+}
+
+function markerDriverRef(marker: CycleMarker): string {
+  return `bazi:${marker.kind}@${marker.start_utc}`;
+}
+
+function withPeriodNatureRef(
+  refs: readonly string[],
+  tag: ConcernTag,
+  marker: Pick<CycleMarker, 'pillar'>,
+  yong: YongShen | undefined,
+  dayMaster: HeavenlyStem | undefined,
+  calculationSex: CalculationSex,
+): { readonly nature: NianJingPhaseDriver['nature']; readonly driver_refs: string[] } {
+  const periodNature = marker.pillar && yong && dayMaster
+    ? baziDomainPeriodNature({
+        tag,
+        yong,
+        periodStem: marker.pillar.stem,
+        dayMaster,
+        calculationSex,
+      })
+    : null;
+  const driverRefs = [...refs];
+  if (periodNature) {
+    driverRefs.push(
+      `bazi:period.${periodNature.favor}@${periodNature.element}`,
+      `bazi:domain.${periodNature.domain}`,
+      `bazi:tenGod.${periodNature.ten_god}`,
+      `bazi:domain_relevance.${periodNature.relevant ? 'focused' : 'background'}`,
+    );
+  }
+  return { nature: periodNature ? periodNature.nature : 'steady', driver_refs: driverRefs };
+}
+
+function buildInflectionProjections(
+  majorMarkers: readonly BaziMajorNianjingMarker[],
+): BaziInflectionProjection[] {
+  const projections: BaziInflectionProjection[] = [];
+  for (let i = 0; i < majorMarkers.length; i += 1) {
+    const marker = majorMarkers[i]!;
+    const next = majorMarkers[i + 1];
+    const sameShortWindow =
+      next &&
+      marker.kind !== next.kind &&
+      Math.abs(markerStartMs(next) - markerStartMs(marker)) <=
+        NIANJING_CLUSTER_WINDOW_DAYS * MS_PER_DAY;
+
+    if (sameShortWindow) {
+      const startDate = markerDate(marker);
+      const endDate = markerDate(next);
+      projections.push({
+        date: startDate,
+        date_window: { start_date: startDate, end_date: endDate },
+        kind: 'marker_cluster',
+        driver_refs: [markerDriverRef(marker), markerDriverRef(next)],
+      });
+      i += 1;
+      continue;
+    }
+
+    projections.push({
+      date: markerDate(marker),
+      kind: marker.kind,
+      driver_refs: [markerDriverRef(marker)],
+    });
+  }
+  return projections;
+}
+
 function buildNianJingDrivers(
   charts: readonly BaziSubjectChart[],
   scope: MirrorScope,
   activeConcernTags: readonly ConcernTag[],
+  calculationSex: CalculationSex,
 ): { phases: NianJingPhaseDriver[]; inflections: NianJingInflectionDriver[] } {
   if (scope.kind !== 'long_horizon') return { phases: [], inflections: [] };
   const phases: NianJingPhaseDriver[] = [];
@@ -111,37 +204,68 @@ function buildNianJingDrivers(
   const self = charts[0];
   if (!self) return { phases, inflections };
   const yong = self.interpretation?.yong_shen;
+  const dayMaster = self.natal_chart.day_pillar?.stem;
+  const horizonStartMs = Date.parse(`${scope.start_date}T00:00:00Z`);
   const horizonEndMs = Date.parse(`${scope.end_date}T00:00:00Z`);
   // 大运 + 流年 markers only; 流月 belongs to 月镜 and would flood a 10-year timeline.
   const majorMarkers = self.cycle_snapshot.markers
-    .filter((marker): marker is CycleMarker & { readonly kind: NianJingInflectionDriver['kind'] } =>
+    .filter((marker): marker is BaziMajorNianjingMarker =>
       marker.kind === 'dayun_boundary' || marker.kind === 'annual_transition')
     .sort((a, b) => Date.parse(a.start_utc) - Date.parse(b.start_utc));
+  const inflectionProjections = buildInflectionProjections(majorMarkers);
   for (const tag of activeConcernTags) {
+    const firstMarker = majorMarkers[0];
+    if (firstMarker && self.cycle_snapshot.annual_pillar) {
+      const firstMarkerStartMs = markerStartMs(firstMarker);
+      const leadingPhaseEndMs = firstMarkerStartMs - MS_PER_DAY;
+      if (Number.isFinite(horizonStartMs) && leadingPhaseEndMs >= horizonStartMs) {
+        const nature = withPeriodNatureRef(
+          [`bazi:annual_context@${scope.start_date}`],
+          tag,
+          { pillar: self.cycle_snapshot.annual_pillar },
+          yong,
+          dayMaster,
+          calculationSex,
+        );
+        phases.push({
+          concern_tag_ref: tag.id,
+          start_date: scope.start_date,
+          end_date: new Date(leadingPhaseEndMs).toISOString().slice(0, 10),
+          nature: nature.nature,
+          driver_refs: nature.driver_refs,
+        });
+      }
+    }
+
     for (let i = 0; i < majorMarkers.length; i += 1) {
       const marker = majorMarkers[i]!;
-      const markerDate = marker.start_utc.slice(0, 10);
-      const markerStartMs = Date.parse(`${markerDate}T00:00:00Z`);
+      const date = markerDate(marker);
       const nextMarker = majorMarkers[i + 1];
-      const nextMarkerStartMs = nextMarker ? Date.parse(`${nextMarker.start_utc.slice(0, 10)}T00:00:00Z`) : Number.POSITIVE_INFINITY;
-      const phaseEndMs = Math.min(horizonEndMs, markerStartMs + 89 * 24 * 60 * 60 * 1000, nextMarkerStartMs - 24 * 60 * 60 * 1000);
+      const nextMarkerStartMs = nextMarker ? markerStartMs(nextMarker) : Number.POSITIVE_INFINITY;
+      const phaseEndMs = Math.min(horizonEndMs, nextMarkerStartMs - MS_PER_DAY);
       const phaseEndDate = new Date(phaseEndMs).toISOString().slice(0, 10);
-      if (phaseEndDate >= markerDate) {
+      if (phaseEndDate >= date) {
         // Phase nature from the period's 流年/大运 element vs 用神 — not a blanket
         // 转折. Falls back to 'steady' only when 用神 or the period pillar is
         // unavailable (degraded chart), never to the degenerate all-'turning'.
-        const periodNature = marker.pillar && yong ? baziPeriodNature(marker.pillar.stem, yong) : null;
-        const driverRefs = [`bazi:${marker.kind}@${marker.start_utc}`];
-        if (periodNature) driverRefs.push(`bazi:period.${periodNature.favor}@${periodNature.element}`);
+        const nature = withPeriodNatureRef([markerDriverRef(marker)], tag, marker, yong, dayMaster, calculationSex);
         phases.push({
           concern_tag_ref: tag.id,
-          start_date: markerDate,
+          start_date: date,
           end_date: phaseEndDate,
-          nature: periodNature ? periodNature.nature : 'steady',
-          driver_refs: driverRefs,
+          nature: nature.nature,
+          driver_refs: nature.driver_refs,
         });
       }
-      inflections.push({ concern_tag_ref: tag.id, date: markerDate, kind: marker.kind, driver_refs: [`bazi:${marker.kind}@${marker.start_utc}`] });
+    }
+    for (const projection of inflectionProjections) {
+      inflections.push({
+        concern_tag_ref: tag.id,
+        date: projection.date,
+        ...(projection.date_window ? { date_window: { ...projection.date_window } } : {}),
+        kind: projection.kind,
+        driver_refs: [...projection.driver_refs],
+      });
     }
   }
   return { phases, inflections };
@@ -165,7 +289,7 @@ export function deriveBaziCommonDrivers(input: DeriveBaziCommonDriversInput): Co
       : [];
   const nianjing =
     input.mirror_kind === 'nianjing'
-      ? buildNianJingDrivers(charts, input.mirror_scope, input.active_concern_tags)
+      ? buildNianJingDrivers(charts, input.mirror_scope, input.active_concern_tags, input.self_calculation_sex)
       : { phases: [], inflections: [] };
   return {
     stage_drivers: buildStageDrivers(allMarkers),

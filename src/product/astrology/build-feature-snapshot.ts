@@ -44,6 +44,7 @@ function natalInputsForSubject(subject: SubjectRef, space: ShiJingSpace): NatalI
 // to exactly 30 days), so they do not require DaYun.
 function deriveDayunRequired(mirrorKind: MirrorKind, scope: MirrorScope): boolean {
   if (mirrorKind === 'nianjing') return true;
+  if (mirrorKind === 'mingjing') return true; // 命镜 always needs the DaYun arc (SJG-ALGO-16)
   if (scope.kind === 'long_horizon') return true;
   return false;
 }
@@ -128,7 +129,13 @@ export function buildAstrologyFeatureSnapshot(
     ...commonResult.value.uncertainty_inputs,
     ...consentUncertainty(input.related_person_refs, input.space),
   ];
-  if (input.active_concern_tags.length === 0 && input.mirror_kind !== 'shijing') {
+  // 命镜 is a whole-life natal surface; it is self-anchored and does not require
+  // concern tags (SJG-IA-08), like the consultation mirror.
+  if (
+    input.active_concern_tags.length === 0 &&
+    input.mirror_kind !== 'shijing' &&
+    input.mirror_kind !== 'mingjing'
+  ) {
     uncertainty.push({ code: 'no_active_concern_tags', severity: 'fail_close' });
   }
   const common: CommonDrivers = { ...commonResult.value, uncertainty_inputs: uncertainty };

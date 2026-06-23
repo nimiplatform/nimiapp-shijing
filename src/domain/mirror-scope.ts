@@ -1,20 +1,22 @@
 // SJG-DATA-08 + SJG-ASTRO-02 — MirrorScope.
 
-export type MirrorKind = 'rijing' | 'yuejing' | 'nianjing' | 'shijing';
+export type MirrorKind = 'rijing' | 'yuejing' | 'nianjing' | 'mingjing' | 'shijing';
 
 export const MIRROR_KINDS: readonly MirrorKind[] = [
   'rijing',
   'yuejing',
   'nianjing',
+  'mingjing',
   'shijing',
 ] as const;
 
-export type MirrorScopeKind = 'daily' | 'rolling_30_day' | 'long_horizon' | 'consultation';
+export type MirrorScopeKind = 'daily' | 'rolling_30_day' | 'long_horizon' | 'natal' | 'consultation';
 
 export const MIRROR_SCOPE_KINDS: readonly MirrorScopeKind[] = [
   'daily',
   'rolling_30_day',
   'long_horizon',
+  'natal',
   'consultation',
 ] as const;
 
@@ -38,6 +40,15 @@ export interface LongHorizonMirrorScope {
   readonly basis_time_zone: string;
 }
 
+// 命镜 (SJG-ASTRO-02): a whole-life natal scope. It is not a transit window —
+// `anchor_year` only fixes the "current"/流年-horizon reference for the projection
+// and keeps the canonical window deterministic for hashing.
+export interface NatalMirrorScope {
+  readonly kind: 'natal';
+  readonly anchor_year: number;
+  readonly basis_time_zone: string;
+}
+
 export interface ConsultationQuestionWindow {
   readonly start_date: string;
   readonly end_date: string;
@@ -54,6 +65,7 @@ export type MirrorScope =
   | DailyMirrorScope
   | Rolling30DayMirrorScope
   | LongHorizonMirrorScope
+  | NatalMirrorScope
   | ConsultationMirrorScope;
 
 export const MIRROR_KIND_SCOPE_MATRIX: {
@@ -63,24 +75,35 @@ export const MIRROR_KIND_SCOPE_MATRIX: {
     daily: 'allowed',
     rolling_30_day: 'forbidden',
     long_horizon: 'forbidden',
+    natal: 'forbidden',
     consultation: 'forbidden',
   },
   yuejing: {
     daily: 'forbidden',
     rolling_30_day: 'allowed',
     long_horizon: 'forbidden',
+    natal: 'forbidden',
     consultation: 'forbidden',
   },
   nianjing: {
     daily: 'forbidden',
     rolling_30_day: 'forbidden',
     long_horizon: 'allowed',
+    natal: 'forbidden',
+    consultation: 'forbidden',
+  },
+  mingjing: {
+    daily: 'forbidden',
+    rolling_30_day: 'forbidden',
+    long_horizon: 'forbidden',
+    natal: 'allowed',
     consultation: 'forbidden',
   },
   shijing: {
     daily: 'forbidden',
     rolling_30_day: 'forbidden',
     long_horizon: 'forbidden',
+    natal: 'forbidden',
     consultation: 'allowed',
   },
 };
@@ -99,3 +122,8 @@ export const ROLLING_30_DAY_LOCAL_LENGTH = 30 as const;
 
 export const CONSULTATION_QUESTION_WINDOW_MIN_LOCAL_DAYS = 1 as const;
 export const CONSULTATION_QUESTION_WINDOW_MAX_LOCAL_DAYS = 365 as const;
+
+// 命镜 natal anchor-year sanity bounds (Gregorian). The anchor is a reference
+// year, not a birth year; it must fall within the supported ephemeris era.
+export const NATAL_ANCHOR_YEAR_MIN = 1900 as const;
+export const NATAL_ANCHOR_YEAR_MAX = 2200 as const;

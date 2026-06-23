@@ -14,6 +14,7 @@ export type StageId =
   | 'yuejing_generate'
   | 'nianjing_generate'
   | 'shijing_generate'
+  | 'mingjing_projection'
   | 'mirror_window';
 
 export const STAGE_IDS: readonly StageId[] = [
@@ -25,6 +26,7 @@ export const STAGE_IDS: readonly StageId[] = [
   'yuejing_generate',
   'nianjing_generate',
   'shijing_generate',
+  'mingjing_projection',
   'mirror_window',
 ] as const;
 

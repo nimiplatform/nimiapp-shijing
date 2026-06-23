@@ -22,6 +22,9 @@ export const INPUTS_SUMMARY_EXPIRY_HORIZONS_MS: Readonly<Record<MirrorKind, numb
   rijing: 24 * MS_PER_HOUR,
   yuejing: 7 * MS_PER_DAY,
   nianjing: 30 * MS_PER_DAY,
+  // 命镜 — the natal chart is fixed; only events/preferences shift the input_hash
+  // (which forces regeneration anyway), so the narrative stays fresh far longer.
+  mingjing: 180 * MS_PER_DAY,
   shijing: 7 * MS_PER_DAY,
 };
 
@@ -41,6 +44,7 @@ export type InputsSummaryStalenessReason =
   | 'age'
   | 'mirror_scope_changed'
   | 'concern_tag_missing'
+  | 'event_memory_refs_changed'
   | 'feature_snapshot_failed'
   | 'input_hash_changed'
   | 'feature_snapshot_hash_changed';
@@ -51,6 +55,7 @@ export interface InputsSummaryStalenessInput {
   readonly now: Date;
   readonly expected_mirror_scope?: Reading['mirror_scope'];
   readonly expected_concern_tag_refs?: readonly string[];
+  readonly expected_cited_event_memory_refs?: readonly string[];
 }
 
 export type InputsSummaryStaleness =
@@ -113,6 +118,13 @@ export function inputsSummaryStalenessForSpace(
   const tagRefs = input.expected_concern_tag_refs ?? reading.concern_tag_refs;
   const tagsResult = activeConcernTagsForRefs(tagRefs, space);
   if (!tagsResult.ok) return { stale: true, reason: 'concern_tag_missing' };
+
+  if (
+    input.expected_cited_event_memory_refs &&
+    computeCanonicalHash(input.expected_cited_event_memory_refs) !== computeCanonicalHash(reading.cited_event_memory_refs)
+  ) {
+    return { stale: true, reason: 'event_memory_refs_changed' };
+  }
 
   const featureResult = buildAstrologyFeatureSnapshot({
     mirror_kind: reading.mirror_kind,

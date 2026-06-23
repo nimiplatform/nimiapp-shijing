@@ -1,6 +1,7 @@
 // SJG-ALGO-13 — Runtime AI wording patch.
 
 import type {
+  MingJingMirrorOutput,
   MirrorOutput,
   NianJingMirrorOutput,
   RiJingMirrorOutput,
@@ -69,10 +70,31 @@ export type ShiJingWordingPatch = WordingPatchBase & {
   readonly answer?: string;
 };
 
+export type MingJingWordingCorePatch = {
+  readonly personality?: string;
+  readonly strengths?: string;
+  readonly long_term_themes?: string;
+  readonly relationship_pattern?: string;
+  readonly career_inclination?: string;
+};
+
+export type MingJingWordingStrategyPatch = {
+  readonly phase_label: string;
+  readonly theme?: string;
+  readonly strategy?: string;
+};
+
+export type MingJingWordingPatch = WordingPatchBase & {
+  readonly mirror_kind: 'mingjing';
+  readonly core?: MingJingWordingCorePatch;
+  readonly life_stage_strategies?: readonly MingJingWordingStrategyPatch[];
+};
+
 export type RuntimeAiWordingPatch =
   | RiJingWordingPatch
   | YueJingWordingPatch
   | NianJingWordingPatch
+  | MingJingWordingPatch
   | ShiJingWordingPatch;
 
 export class RuntimeAiWordingPatchValidationError extends Error {
@@ -200,6 +222,45 @@ function validateShijingPatch(record: Record<string, unknown>): ShiJingWordingPa
   };
 }
 
+const MINGJING_CORE_PATCH_KEYS = [
+  'personality',
+  'strengths',
+  'long_term_themes',
+  'relationship_pattern',
+  'career_inclination',
+] as const;
+
+function validateMingjingCorePatch(value: unknown): MingJingWordingCorePatch | undefined {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) {
+    throw new RuntimeAiWordingPatchValidationError('core_invalid');
+  }
+  const core: Record<string, string> = {};
+  for (const key of MINGJING_CORE_PATCH_KEYS) {
+    const text = optionalText(value, key);
+    if (text) core[key] = text;
+  }
+  return core;
+}
+
+function validateMingjingPatch(record: Record<string, unknown>): MingJingWordingPatch {
+  const core = Object.prototype.hasOwnProperty.call(record, 'core')
+    ? validateMingjingCorePatch(record.core)
+    : undefined;
+  const strategies = optionalRecordArray(record, 'life_stage_strategies')?.map((item) => ({
+    phase_label: requireText(item, 'phase_label'),
+    ...(optionalText(item, 'theme') ? { theme: optionalText(item, 'theme')! } : {}),
+    ...(optionalText(item, 'strategy') ? { strategy: optionalText(item, 'strategy')! } : {}),
+  }));
+  return {
+    patch_kind: RUNTIME_AI_WORDING_PATCH_KIND,
+    mirror_kind: 'mingjing',
+    ...(optionalText(record, 'summary') ? { summary: optionalText(record, 'summary')! } : {}),
+    ...(core ? { core } : {}),
+    ...(strategies ? { life_stage_strategies: strategies } : {}),
+  };
+}
+
 export function validateRuntimeAiWordingPatchValue(
   expectedKind: MirrorKind,
   value: unknown,
@@ -224,6 +285,8 @@ export function validateRuntimeAiWordingPatchValue(
       return validateYuejingPatch(value);
     case 'nianjing':
       return validateNianjingPatch(value);
+    case 'mingjing':
+      return validateMingjingPatch(value);
     case 'shijing':
       return validateShijingPatch(value);
   }
@@ -370,6 +433,38 @@ function applyShijingPatch(
   };
 }
 
+function applyMingjingPatch(
+  base: MingJingMirrorOutput,
+  patch: MingJingWordingPatch,
+): MingJingMirrorOutput {
+  const strategyPatches = patch.life_stage_strategies ?? [];
+  return {
+    ...withSummary(base, patch),
+    // event_validations + each strategy's deterministic fields are never patched.
+    ...(patch.core ? { core: { ...base.core, ...patch.core } } : {}),
+    life_stage_strategies: base.life_stage_strategies.map((strategy) => {
+      const item = strategyPatches.find((candidate) => candidate.phase_label === strategy.phase_label);
+      if (!item) return strategy;
+      return {
+        ...strategy,
+        ...(item.theme ? { theme: item.theme } : {}),
+        ...(item.strategy ? { strategy: item.strategy } : {}),
+      };
+    }),
+  };
+}
+
+function assertAllMingjingPatchTargetsResolve(
+  base: MingJingMirrorOutput,
+  patch: MingJingWordingPatch,
+): void {
+  for (const item of patch.life_stage_strategies ?? []) {
+    if (!base.life_stage_strategies.some((strategy) => strategy.phase_label === item.phase_label)) {
+      throw new RuntimeAiWordingPatchValidationError('mingjing_life_stage_strategy_target_unknown');
+    }
+  }
+}
+
 export function applyRuntimeAiWordingPatch(
   base: MirrorOutput,
   patch: RuntimeAiWordingPatch,
@@ -394,6 +489,10 @@ export function applyRuntimeAiWordingPatch(
     case 'nianjing':
       assertAllNianjingPatchTargetsResolve(base, patch as NianJingWordingPatch);
       output = applyNianjingPatch(base, patch as NianJingWordingPatch);
+      break;
+    case 'mingjing':
+      assertAllMingjingPatchTargetsResolve(base, patch as MingJingWordingPatch);
+      output = applyMingjingPatch(base, patch as MingJingWordingPatch);
       break;
     case 'shijing':
       output = applyShijingPatch(base, patch as ShiJingWordingPatch);

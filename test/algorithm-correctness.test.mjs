@@ -8,14 +8,19 @@ import {
   computeCanonicalHash,
   sha256HexFromUtf8,
 } from '../src/product/astrology/canonical-hash.ts';
-import { inputsSummaryExpired } from '../src/product/astrology/inputs-summary-expiry.ts';
+import {
+  inputsSummaryExpired,
+  inputsSummaryStalenessForSpace,
+} from '../src/product/astrology/inputs-summary-expiry.ts';
 import { resolveCanonicalMirrorWindow } from '../src/product/astrology/mirror-window.ts';
 import {
   consultationMirrorScope,
   dailyMirrorScope,
   longHorizonMirrorScope,
   rolling30DayMirrorScope,
+  validConcernTag,
   validReading,
+  validShiJingSpace,
 } from './_fixtures.mjs';
 
 test('canonicalSerialize sorts object keys deterministically', () => {
@@ -104,4 +109,21 @@ test('inputsSummaryExpired: shijing 7d horizon', () => {
   });
   r.inputs_summary = { ...r.inputs_summary, captured_at: r.created_at };
   assert.equal(inputsSummaryExpired(r, new Date()), true);
+});
+
+test('inputsSummaryStalenessForSpace: rijing stales when expected cited event refs change', () => {
+  const reading = validReading({
+    mirror_kind: 'rijing',
+    cited_event_memory_refs: [],
+  });
+  const staleness = inputsSummaryStalenessForSpace({
+    reading,
+    space: validShiJingSpace({ concern_tags: [validConcernTag('tag_love')] }),
+    now: new Date('2026-05-25T01:00:00Z'),
+    expected_mirror_scope: reading.mirror_scope,
+    expected_concern_tag_refs: ['tag_love'],
+    expected_cited_event_memory_refs: ['mem_today'],
+  });
+
+  assert.deepEqual(staleness, { stale: true, reason: 'event_memory_refs_changed' });
 });

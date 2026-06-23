@@ -4,7 +4,7 @@
 
 import type { ConcernTag } from '../../../domain/concern-tag.ts';
 
-export type ConcernDomain = 'love' | 'career' | 'health' | 'wealth' | 'general';
+export type ConcernDomain = 'love' | 'career' | 'health' | 'wealth' | 'family' | 'general';
 
 function textHasAny(value: string, tokens: readonly string[]): boolean {
   return tokens.some((token) => value.includes(token));
@@ -12,6 +12,7 @@ function textHasAny(value: string, tokens: readonly string[]): boolean {
 
 export function concernDomainFor(tag: ConcernTag): ConcernDomain {
   const haystack = [tag.id, tag.label, tag.prompt_text, ...tag.parsed_topics].join(' ').toLowerCase();
+  if (textHasAny(haystack, ['family', 'home', 'household', 'parent', 'child', '家人', '家庭', '父母', '孩子', '子女', '亲人'])) return 'family';
   if (textHasAny(haystack, ['love', 'relationship', 'romance', 'partner', '姻缘', '婚恋', '感情', '关系'])) return 'love';
   if (textHasAny(haystack, ['career', 'work', 'job', 'office', 'profession', '事业', '工作', '职场', '职业'])) return 'career';
   if (textHasAny(haystack, ['health', 'body', 'sleep', 'wellness', '健康', '身体', '睡眠', '精力'])) return 'health';

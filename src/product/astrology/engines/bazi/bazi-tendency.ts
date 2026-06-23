@@ -31,9 +31,27 @@ function domainFocus(domain: ConcernDomain, sex: CalculationSex): ReadonlySet<Tr
       return new Set<TransitElementRelation>([sex === 'female' ? 'constraint' : 'wealth']); // 配偶星: 女看官, 男看财
     case 'health':
       return new Set<TransitElementRelation>(['same', 'resource']); // 比劫/印 (日主元气)
+    case 'family':
+      return new Set<TransitElementRelation>([
+        'resource', // parents / elders
+        'output', // children / care output
+        sex === 'female' ? 'constraint' : 'wealth', // partner star
+      ]);
     case 'general':
       return null;
   }
+}
+
+function modulateByDomainRelevance(base: TendencyClass, relevant: boolean): TendencyClass {
+  if (base === 'turning') return base;
+  if (relevant) {
+    if (base === 'watch') return 'blocked';
+    return base;
+  }
+  if (base === 'supportive') return 'steady';
+  if (base === 'blocked') return 'watch';
+  if (base === 'watch') return 'steady';
+  return base;
 }
 
 // SJG-ALGO-15 — NianJing phase quality. A phase band opens at a 大运/流年 marker;
@@ -55,6 +73,35 @@ export function baziPeriodNature(periodStem: HeavenlyStem, yong: YongShen): Bazi
   else if (unfavorable) nature = yong.ji[0] === element ? 'blocked' : 'watch';
   else nature = 'steady';
   return { nature, element, favor: favorable ? '喜' : unfavorable ? '忌' : '平' };
+}
+
+export interface BaziDomainPeriodNature extends BaziPeriodNature {
+  readonly domain: ConcernDomain;
+  readonly ten_god: TransitElementRelation;
+  readonly relevant: boolean;
+}
+
+export interface BaziDomainPeriodInput {
+  readonly tag: ConcernTag;
+  readonly yong: YongShen;
+  readonly periodStem: HeavenlyStem;
+  readonly dayMaster: HeavenlyStem;
+  readonly calculationSex: CalculationSex;
+}
+
+export function baziDomainPeriodNature(input: BaziDomainPeriodInput): BaziDomainPeriodNature {
+  const base = baziPeriodNature(input.periodStem, input.yong);
+  const domain = concernDomainFor(input.tag);
+  const tenGod = classifyTransitToDayStem(input.periodStem, input.dayMaster);
+  const focus = domainFocus(domain, input.calculationSex);
+  const relevant = !focus || focus.has(tenGod);
+  return {
+    ...base,
+    nature: modulateByDomainRelevance(base.nature, relevant),
+    domain,
+    ten_god: tenGod,
+    relevant,
+  };
 }
 
 export interface BaziTendencyInput {
@@ -94,18 +141,7 @@ export function baziDomainTendency(input: BaziTendencyInput): { tendency: Tenden
   const relevant = !focus || focus.has(category);
 
   // Relevance modulates intensity (per-concern divergence) but not direction.
-  let tendency = base;
-  if (base !== 'turning') {
-    if (relevant) {
-      if (base === 'watch') tendency = 'blocked'; // a忌 in the concern's own domain bites harder
-    } else if (base === 'supportive') {
-      tendency = 'steady';
-    } else if (base === 'blocked') {
-      tendency = 'watch';
-    } else if (base === 'watch') {
-      tendency = 'steady';
-    }
-  }
+  const tendency = modulateByDomainRelevance(base, relevant);
 
   const yongTag = favorable ? '喜' : unfavorable ? '忌' : '平';
   const driverRefs = [

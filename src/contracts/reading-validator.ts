@@ -61,7 +61,7 @@ export type ReadingValidationResult =
   | { ok: true }
   | { ok: false; error: ReadingValidationError };
 
-const MIRROR_KINDS_RUNTIME = new Set<string>(['rijing', 'yuejing', 'nianjing', 'shijing']);
+const MIRROR_KINDS_RUNTIME = new Set<string>(['rijing', 'yuejing', 'nianjing', 'mingjing', 'shijing']);
 const CONFIDENCE_LEVELS_RUNTIME = new Set<string>(['low', 'medium', 'high']);
 
 function mirrorScopesEqual(a: MirrorScope, b: MirrorScope): boolean {
@@ -75,6 +75,9 @@ function mirrorScopesEqual(a: MirrorScope, b: MirrorScope): boolean {
     (a.kind === 'long_horizon' && b.kind === 'long_horizon')
   ) {
     return a.start_date === b.start_date && a.end_date === b.end_date;
+  }
+  if (a.kind === 'natal' && b.kind === 'natal') {
+    return a.anchor_year === b.anchor_year;
   }
   if (a.kind === 'consultation' && b.kind === 'consultation') {
     if (a.source_reading_ids.length !== b.source_reading_ids.length) return false;

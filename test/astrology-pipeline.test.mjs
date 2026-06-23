@@ -22,6 +22,7 @@ import {
   longHorizonMirrorScope,
   rolling30DayMirrorScope,
   validConcernTag,
+  validFeatureSnapshot,
   validNatalInputs,
   validNianjingOutput,
   validReading,
@@ -176,6 +177,95 @@ test('generateRiJingOutput: emits projection per active concern tag', () => {
     assert.equal(result.value.mirror_kind, 'rijing');
     assert.equal(result.value.concern_projections.length, 1);
   }
+});
+
+test('generateRiJingOutput: uses natural Chinese target copy for the rich banner', () => {
+  const featureSnapshot = validFeatureSnapshot();
+  const result = generateRiJingOutput({
+    feature_snapshot: {
+      ...featureSnapshot,
+      common: {
+        ...featureSnapshot.common,
+        stage_drivers: [
+          { stage_label: '养时', marker_refs: ['driver-stage'], explanation_key: 'stage.nourish' },
+        ],
+        yuejing_tendency_drivers: [
+          {
+            date: '2026-05-25',
+            concern_tag_ref: 'tag_career',
+            tendency_class: 'steady',
+            driver_refs: ['bazi:domain.career'],
+          },
+          {
+            date: '2026-05-25',
+            concern_tag_ref: 'tag_body',
+            tendency_class: 'supportive',
+            driver_refs: ['bazi:domain.body'],
+          },
+          {
+            date: '2026-05-25',
+            concern_tag_ref: 'tag_family',
+            tendency_class: 'supportive',
+            driver_refs: ['bazi:domain.family'],
+          },
+        ],
+      },
+    },
+    active_concern_tags: [
+      validConcernTag('tag_career', {
+        label: '#事业',
+        parsed_topics: ['career'],
+        prompt_text: 'career and work reflection',
+      }),
+      validConcernTag('tag_body', {
+        label: '#身体',
+        parsed_topics: ['body'],
+        prompt_text: 'body and health reflection',
+      }),
+      validConcernTag('tag_family', {
+        label: '#家人',
+        parsed_topics: ['family'],
+        prompt_text: 'family reflection',
+      }),
+    ],
+    cited_event_memory_refs: [],
+    cited_plan_item_refs: [],
+  });
+
+  assert.equal(result.ok, true, JSON.stringify(result));
+  if (!result.ok) return;
+
+  const output = result.value;
+  const allCopy = [
+    output.summary,
+    output.daily_overview,
+    ...output.concern_projections.flatMap((projection) => [
+      projection.summary,
+      ...projection.recommendations,
+    ]),
+  ].join('\n');
+
+  assert.doesNotMatch(allCopy, /\b(?:steady|supportive|watch|blocked|turning)\b/);
+  assert.doesNotMatch(allCopy, /今日处于.+时段/);
+  assert.doesNotMatch(allCopy, /(?:事业领域今日处于|身体状态今日受|关注 #[^ ]+ 的当下信号)/);
+  assert.match(output.daily_overview, /像|风|水|土|灯|院|河|晨/);
+
+  const byRef = new Map(output.concern_projections.map((projection) => [
+    projection.concern_tag_ref,
+    projection,
+  ]));
+  const career = byRef.get('tag_career');
+  const body = byRef.get('tag_body');
+  const family = byRef.get('tag_family');
+  assert.ok(career);
+  assert.ok(body);
+  assert.ok(family);
+  assert.ok(career.summary.length >= 80, career.summary);
+  assert.ok(body.summary.length >= 80, body.summary);
+  assert.ok(family.summary.length >= 80, family.summary);
+  assert.match(career.summary, /会议|邮件|合作|发言/);
+  assert.match(body.summary, /呼吸|散步|饮水|午餐/);
+  assert.match(family.summary, /晚餐|电话|家人|餐桌/);
 });
 
 test('generateRiJingOutput: refuses with no active concern tags', () => {
