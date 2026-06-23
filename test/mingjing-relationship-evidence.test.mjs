@@ -97,6 +97,9 @@ test('relationship_natal evidence carries method-backed ten-god relation directi
   const relation = result.value.common.relationship_hepan.ten_god_relation;
   assert.ok(relation.driver_ref.length > 0);
   assert.equal(RELATION_LABELS.has(relation.label), true, JSON.stringify(relation));
+  assert.equal(relation.label, 'controlling');
+  assert.match(relation.driver_ref, /related_day_master\.[a-z]+:guansha->self_day_master\.[a-z]+/u);
+  assert.doesNotMatch(relation.driver_ref, /self_day\.|related_day\./u);
 });
 
 test('relationship_natal fails closed when related person consent is withheld', () => {

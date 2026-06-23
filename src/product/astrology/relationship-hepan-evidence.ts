@@ -80,27 +80,52 @@ function yongShenDirection(
   return { label: 'unknown', driver_ref: driverRef };
 }
 
-function directionForTenGod(tenGod: string | undefined, driverRef: string): RelationshipElementDirection {
-  if (!tenGod) return unknownDirection(driverRef);
-  if (/比|劫/u.test(tenGod)) return { label: 'same', driver_ref: driverRef };
-  if (/印/u.test(tenGod)) return { label: 'supporting', driver_ref: driverRef };
-  if (/官|杀|殺/u.test(tenGod)) return { label: 'controlling', driver_ref: driverRef };
-  if (/食|伤|傷|财|財/u.test(tenGod)) return { label: 'draining', driver_ref: driverRef };
-  return { label: 'unknown', driver_ref: driverRef };
-}
-
 function tenGodDirection(
   self: BaziSubjectChart,
   related: BaziSubjectChart,
 ): RelationshipElementDirection {
-  const selfDayTenGod = self.interpretation?.pillars.find((pillar) => pillar.position === 'day')?.ten_god;
-  const relatedDayTenGod = related.interpretation?.pillars.find((pillar) => pillar.position === 'day')?.ten_god;
-  const driverRef = `bazi:relationship.ten_god.self_day.${selfDayTenGod ?? 'unknown'}->related_day.${relatedDayTenGod ?? 'unknown'}`;
-  if (!selfDayTenGod && !relatedDayTenGod) return unknownDirection(driverRef);
-  if (selfDayTenGod && relatedDayTenGod && selfDayTenGod === relatedDayTenGod) {
-    return { label: 'same', driver_ref: driverRef };
+  const selfStem = self.natal_chart.day_master ?? self.natal_chart.day_pillar?.stem;
+  const relatedStem = related.natal_chart.day_master ?? related.natal_chart.day_pillar?.stem;
+  if (!selfStem || !relatedStem) {
+    return unknownDirection(
+      `bazi:relationship.ten_god.related_day_master.${relatedStem ?? 'unknown'}:unknown->self_day_master.${selfStem ?? 'unknown'}`,
+    );
   }
-  return directionForTenGod(relatedDayTenGod ?? selfDayTenGod, driverRef);
+  const selfElement = STEM_TO_ELEMENT[selfStem];
+  const relatedElement = STEM_TO_ELEMENT[relatedStem];
+  if (relatedElement === selfElement) {
+    return {
+      label: 'same',
+      driver_ref: `bazi:relationship.ten_god.related_day_master.${relatedStem}:bijie->self_day_master.${selfStem}`,
+    };
+  }
+  if (elementGenerates(relatedElement, selfElement)) {
+    return {
+      label: 'supporting',
+      driver_ref: `bazi:relationship.ten_god.related_day_master.${relatedStem}:yin->self_day_master.${selfStem}`,
+    };
+  }
+  if (elementGenerates(selfElement, relatedElement)) {
+    return {
+      label: 'draining',
+      driver_ref: `bazi:relationship.ten_god.related_day_master.${relatedStem}:shishang->self_day_master.${selfStem}`,
+    };
+  }
+  if (elementControls(relatedElement, selfElement)) {
+    return {
+      label: 'controlling',
+      driver_ref: `bazi:relationship.ten_god.related_day_master.${relatedStem}:guansha->self_day_master.${selfStem}`,
+    };
+  }
+  if (elementControls(selfElement, relatedElement)) {
+    return {
+      label: 'draining',
+      driver_ref: `bazi:relationship.ten_god.related_day_master.${relatedStem}:cai->self_day_master.${selfStem}`,
+    };
+  }
+  return unknownDirection(
+    `bazi:relationship.ten_god.related_day_master.${relatedStem}:unknown->self_day_master.${selfStem}`,
+  );
 }
 
 function subjectDriverLabel(ref: SubjectRef): string {
