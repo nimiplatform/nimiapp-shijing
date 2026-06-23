@@ -1,10 +1,12 @@
 /* =====================================================================
- * RiJing rich tab — Hero + readiness info card + event-input +
- * projection grid + evidence row + Hero-embedded memory list.
+ * RiJing rich tab — progressive-disclosure layout: 今日总览 hero (energy
+ * meter + collapsible 完整解读), 今日关注分镜 (lens filter + collapsible
+ * frames), 今日参照 (reference list + composer), 今日行动 (do / say +
+ * import), and the collapsible 推演依据 data panel.
  *
- * Tokens reference the Nimi primary action color directly so the
- * tab reads as an extension of the kit theme. No yellow warning
- * blocks; readiness is presented as a calm completeness signal.
+ * Tokens reference the Nimi primary action color directly so the tab
+ * reads as an extension of the kit theme. No yellow warning blocks;
+ * readiness folds into the data panel as a calm completeness signal.
  * ===================================================================== */
 
 /* Aurora background — applied to the whole shell when the RiJing tab is
@@ -37,6 +39,7 @@
   /* Nimi-kit accent + supporting tints, scoped to the rijing tab. */
   --rijing-accent: var(--nimi-action-primary-bg, #4ECCA3);
   --rijing-accent-hover: var(--nimi-action-primary-bg-hover, #3DBB96);
+  --rijing-accent-ink: var(--nimi-accent-ink, #157a5b);
   --rijing-glass-thick-bg: var(--nimi-material-glass-thick-bg, rgba(255, 255, 255, 0.70));
   --rijing-glass-thick-border: var(--nimi-material-glass-thick-border, rgba(226, 232, 240, 0.40));
   --rijing-glass-regular-bg: var(--nimi-material-glass-regular-bg, rgba(255, 255, 255, 0.45));
@@ -110,6 +113,12 @@
 /* ----- Startup onboarding ---------------------------------------- */
 
 .shijing-onboarding {
+  --rijing-accent: var(--nimi-action-primary-bg, #4ECCA3);
+  --rijing-accent-hover: var(--nimi-action-primary-bg-hover, #3DBB96);
+  --rijing-ink-strong: #17202a;
+  --rijing-ink-soft: rgba(23, 32, 42, 0.58);
+  --rijing-ink-faint: rgba(23, 32, 42, 0.42);
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -203,20 +212,24 @@
     background 160ms ease,
     color 160ms ease,
     opacity 160ms ease,
-    box-shadow 160ms ease,
     transform 160ms ease;
 }
 
 .shijing-onboarding__confirm,
-.shijing-onboarding__mobile-confirm {
-  min-height: 44px;
-  padding: 0 22px;
-  background: var(--rijing-accent);
+.shijing-onboarding__mobile-confirm,
+.shijing-tab .shijing-onboarding__confirm,
+.shijing-tab .shijing-onboarding__mobile-confirm {
+  min-height: 40px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: var(--shijing-brand-primary);
+  background-color: var(--shijing-brand-primary);
   color: #fff;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 800;
+  opacity: 1;
   white-space: nowrap;
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--rijing-accent) 24%, transparent);
+  box-shadow: none;
 }
 
 .shijing-onboarding__confirm {
@@ -224,19 +237,33 @@
 }
 
 .shijing-onboarding__confirm:hover:not(:disabled),
-.shijing-onboarding__mobile-confirm:hover:not(:disabled) {
+.shijing-onboarding__mobile-confirm:hover:not(:disabled),
+.shijing-tab .shijing-onboarding__confirm:hover:not(:disabled),
+.shijing-tab .shijing-onboarding__mobile-confirm:hover:not(:disabled) {
   background: var(--rijing-accent-hover);
-  box-shadow: 0 12px 28px color-mix(in srgb, var(--rijing-accent) 30%, transparent);
+  background-color: var(--rijing-accent-hover);
+  box-shadow: none;
+  opacity: 1;
   transform: translateY(-2px);
 }
 
+.shijing-tab .shijing-onboarding__actions:has(.shijing-onboarding__confirm:not(:disabled)) .shijing-onboarding__confirm:hover {
+  background: var(--rijing-accent-hover);
+  background-color: var(--rijing-accent-hover);
+  color: #fff;
+  opacity: 1;
+}
+
 .shijing-onboarding__confirm:disabled,
-.shijing-onboarding__mobile-confirm:disabled {
-  background: var(--rijing-accent);
+.shijing-onboarding__mobile-confirm:disabled,
+.shijing-tab .shijing-onboarding__confirm:disabled,
+.shijing-tab .shijing-onboarding__mobile-confirm:disabled {
+  background: var(--shijing-brand-primary);
+  background-color: var(--shijing-brand-primary);
   color: #fff;
   cursor: not-allowed;
-  opacity: 0.58;
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--rijing-accent) 18%, transparent);
+  opacity: 1;
+  box-shadow: none;
 }
 
 .shijing-onboarding__steps {
@@ -324,11 +351,11 @@
 
 .shijing-onboarding__actions:has(.shijing-onboarding__confirm:not(:disabled)) {
   width: 100%;
-  padding: 8px;
-  border: 1px solid color-mix(in srgb, var(--rijing-accent) 22%, transparent);
-  border-radius: 22px;
-  background: color-mix(in srgb, var(--rijing-accent) 9%, rgba(255, 255, 255, 0.62));
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.10);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .shijing-onboarding__actions:has(.shijing-onboarding__confirm:not(:disabled)) .shijing-onboarding__confirm {
@@ -412,16 +439,8 @@
   display: none;
 }
 
-.shijing-onboarding .shijing-settings-page--styled .sjp-card {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  background: transparent;
-}
-
 .shijing-onboarding .shijing-settings-page--styled .sjp-card--inline-self-editor {
+  margin: 0;
   min-height: 100%;
 }
 
@@ -443,6 +462,16 @@
 .shijing-onboarding .shijing-settings-page--styled .sjp-inline-self-form {
   padding: 22px 0 0;
   overflow: visible;
+}
+
+.shijing-onboarding .shijing-settings-page--styled .sjp-inline-self-form .sjp-actions--drawer {
+  justify-content: flex-end;
+}
+
+.shijing-onboarding .shijing-settings-page--styled .sjp-inline-self-form .sjp-actions__status {
+  color: var(--sjp-accent-hover);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .shijing-onboarding .shijing-settings-page--styled .sjp-card-head {
@@ -469,14 +498,14 @@
   background: color-mix(in srgb, var(--shijing-status-warning) 8%, #fff);
 }
 
-/* ----- Hero conclusion card -----
- *
- * Direct-child article elements of `.shijing-tab` get a baseline
- * pill from `styles-mirror-v1.css` (`.shijing-tab > article` has
- * specificity 0,2,0). We bump the Hero selector to `.shijing-rijing
- * .shijing-rijing__hero` so it matches that specificity and, being
- * later in source order, wins on padding / radius / background /
- * box-shadow. */
+/* ===================================================================== *
+ * RiJing progressive-disclosure layout: 今日总览 hero (energy meter +
+ * collapsible 完整解读), 今日关注分镜 (lens filter + collapsible frames),
+ * 今日参照 (reference list + composer), 今日行动 (do / say + import), and
+ * the collapsible 推演依据 data panel.
+ * ===================================================================== */
+
+/* ----- 今日总览 overview card ----- */
 
 .shijing-rijing .shijing-rijing__hero {
   position: relative;
@@ -484,14 +513,15 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 14px;
-  padding: 36px 40px 28px;
+  gap: 16px;
+  padding: clamp(28px, 4vw, 44px) clamp(22px, 5vw, 56px) 30px;
   border-radius: var(--shijing-radius-3xl);
   background: var(--rijing-glass-thick-bg);
   border: 1px solid var(--rijing-glass-thick-border);
   box-shadow: var(--rijing-elev-raised);
   backdrop-filter: blur(var(--rijing-blur-chrome)) saturate(140%);
   -webkit-backdrop-filter: blur(var(--rijing-blur-chrome)) saturate(140%);
+  overflow: hidden;
 }
 
 .shijing-rijing__hero--empty {
@@ -505,16 +535,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   appearance: none;
-  background: var(--rijing-glass-thin-bg);
-  border: 1px solid var(--rijing-glass-thin-border);
-  color: var(--shijing-text-secondary);
-  border-radius: 999px;
+  background: var(--nimi-surface-card, rgba(255, 255, 255, 0.7));
+  border: 1px solid var(--shijing-border-subtle);
+  color: var(--shijing-text-muted);
+  border-radius: 10px;
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease, transform 200ms ease;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease, transform 320ms ease;
 }
 
 .shijing-tab .shijing-rijing__hero-refresh:hover:not(:disabled) {
@@ -542,107 +572,134 @@
   align-items: center;
   gap: 12px;
   color: var(--shijing-text-muted);
-  font-size: 13px;
-  letter-spacing: 0.32em;
+  font-size: 12px;
+  letter-spacing: 0.18em;
 }
 
 .shijing-rijing__hero-eyebrow-dash {
   display: inline-block;
-  width: 28px;
+  width: 24px;
   height: 1px;
   background: var(--shijing-border-strong);
 }
 
-/* Specificity bump: the baseline `.shijing-tab h3` rule (0,1,1) would
- * otherwise pin this `<h3>` headline to 14px. `.shijing-rijing
- * .shijing-rijing__hero-headline` is (0,2,0) and wins. */
 .shijing-rijing .shijing-rijing__hero-headline {
   margin: 0;
   font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
-  /* Oversized conclusion type, per the mockup. Scales with the
-   * viewport so it stays dramatic on desktop without overflowing on
-   * narrow widths. */
-  font-size: clamp(40px, 7.2vw, 64px);
-  font-weight: 600;
+  font-size: clamp(40px, 7vw, 62px);
+  font-weight: 700;
   letter-spacing: 0.1em;
   color: var(--shijing-text-primary);
   line-height: 1.12;
 }
 
-/* 解读视角 row — the active concern tags, merged into the overview card
- * (previously a standalone bottom module). Kept low-key so it reads as
- * part of the card chrome, not a separate block: a thin tinted strip
- * with a label on the left, light-green tag capsules, and a quiet
- * 「管理」text button pinned to the far right. */
-.shijing-rijing__hero-focus {
+.shijing-rijing .shijing-rijing__hero-subtitle {
+  margin: 0;
+  max-width: 540px;
+  color: var(--shijing-text-secondary);
+  font-size: 16px;
+  line-height: 1.85;
+}
+
+/* ----- energy meter (旺衰 ←→ 阶段) ----- */
+
+.shijing-rijing__meter {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-rijing__meter-track {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--rijing-accent) 0%, color-mix(in srgb, var(--shijing-text-muted) 45%, transparent) 100%);
+}
+
+.shijing-rijing__meter-dot {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--rijing-accent);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--rijing-accent) 16%, transparent), var(--rijing-elev-base);
+}
+
+.shijing-rijing__meter-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-rijing__meter-caption {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-rijing__meter-caption b {
+  color: var(--shijing-text-secondary);
+  font-weight: 600;
+}
+
+/* ----- tendency pills + confidence ----- */
+
+.shijing-rijing__hero-status {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   flex-wrap: wrap;
-  width: 100%;
-  max-width: 540px;
-  padding: 7px 12px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--rijing-accent) 5%, transparent);
-  border: 1px solid color-mix(in srgb, var(--rijing-accent) 12%, transparent);
+  max-width: 560px;
 }
 
-.shijing-rijing__hero-focus-label {
-  flex-shrink: 0;
-  color: var(--shijing-text-muted);
-  font-size: 12.5px;
-  letter-spacing: 0.04em;
-}
-
-.shijing-rijing__hero-focus-tags {
+.shijing-rijing__hero-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
-}
-
-.shijing-rijing__hero-focus-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 10px;
+  padding: 5px 12px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--rijing-accent) 13%, transparent);
-  border: 1px solid color-mix(in srgb, var(--rijing-accent) 24%, transparent);
-  color: var(--rijing-accent);
   font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--rijing-pill-tone) 14%, transparent);
+  color: var(--rijing-pill-ink, var(--rijing-pill-tone));
 }
 
-.shijing-rijing__hero-focus-empty {
-  color: var(--shijing-text-muted);
-  font-size: 12px;
+.shijing-rijing__hero-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--rijing-pill-tone);
 }
 
-.shijing-tab .shijing-rijing__hero-focus-manage {
-  margin-left: auto;
-  flex-shrink: 0;
-  appearance: none;
-  padding: 2px 4px;
-  background: none;
-  border: none;
-  color: var(--rijing-accent);
+.shijing-rijing__hero-pill[data-tone="supportive"] { --rijing-pill-tone: var(--rijing-accent); --rijing-pill-ink: var(--rijing-accent-ink); }
+.shijing-rijing__hero-pill[data-tone="steady"]     { --rijing-pill-tone: #5b78ed; --rijing-pill-ink: #3a52c2; }
+.shijing-rijing__hero-pill[data-tone="watch"]      { --rijing-pill-tone: #d49b3a; --rijing-pill-ink: #936a1c; }
+.shijing-rijing__hero-pill[data-tone="blocked"]    { --rijing-pill-tone: var(--shijing-status-danger); --rijing-pill-ink: var(--shijing-status-danger); }
+.shijing-rijing__hero-pill[data-tone="turning"]    { --rijing-pill-tone: #b376e3; --rijing-pill-ink: #8a4cc0; }
+
+.shijing-rijing__hero-status-sep {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--shijing-border-strong);
+}
+
+.shijing-rijing__hero-confidence {
   font-size: 12.5px;
-  cursor: pointer;
-  transition: opacity 120ms ease;
+  color: var(--shijing-text-muted);
+  line-height: 1.6;
 }
 
-.shijing-tab .shijing-rijing__hero-focus-manage:hover {
-  opacity: 0.72;
-}
-
-.shijing-rijing__hero-body {
-  margin: 4px 0 0;
-  max-width: 540px;
-  color: var(--shijing-text-primary);
-  font-size: 15px;
-  line-height: 1.9;
-  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+.shijing-rijing__hero-confidence-value {
+  color: var(--shijing-text-secondary);
+  font-weight: 600;
 }
 
 .shijing-tab .shijing-rijing__hero-empty-action {
@@ -650,12 +707,12 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 34px;
-  padding: 7px 16px;
+  min-height: 36px;
+  padding: 8px 18px;
   border: 1px solid color-mix(in srgb, var(--rijing-accent) 28%, transparent);
   border-radius: 999px;
   background: color-mix(in srgb, var(--rijing-accent) 13%, transparent);
-  color: var(--rijing-accent);
+  color: var(--rijing-accent-ink);
   font: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -668,344 +725,583 @@
   transform: translateY(-1px);
 }
 
-.shijing-rijing__hero-leanings {
-  display: inline-flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.shijing-rijing__hero-leaning {
-  display: inline-flex;
-  align-items: center;
-  padding: 5px 14px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--rijing-accent) 12%, transparent);
-  color: var(--rijing-accent);
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-}
-
-.shijing-rijing__hero-confidence {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-  color: var(--shijing-text-muted);
+.shijing-rijing .shijing-rijing__hero-empty-note {
+  margin: 0;
+  max-width: 480px;
   font-size: 12.5px;
-  flex-wrap: wrap;
-  justify-content: center;
-  max-width: 540px;
+  line-height: 1.7;
+  color: var(--shijing-text-muted);
 }
 
-.shijing-rijing__hero-confidence-label {
-  letter-spacing: 0.18em;
+/* ----- 展开完整解读 ----- */
+
+.shijing-rijing__hero-readmore {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
 }
 
-.shijing-rijing__hero-confidence-value {
-  color: var(--shijing-text-primary);
-  font-weight: 500;
-}
-
-.shijing-rijing__hero-confidence-note {
-  color: var(--shijing-text-secondary);
-  line-height: 1.6;
-}
-
-.shijing-rijing__hero-reminder {
+.shijing-tab .shijing-rijing__hero-toggle {
   display: inline-flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px 18px;
-  border-radius: var(--shijing-radius-lg);
-  background: color-mix(in srgb, var(--rijing-accent) 5%, transparent);
-  border: 1px solid color-mix(in srgb, var(--rijing-accent) 14%, transparent);
-  color: var(--shijing-text-secondary);
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  border: 1px solid var(--shijing-border-subtle);
+  background: var(--nimi-surface-card, rgba(255, 255, 255, 0.7));
+  border-radius: 999px;
+  font: inherit;
   font-size: 13px;
-  line-height: 1.65;
-  text-align: left;
-  max-width: 560px;
+  font-weight: 500;
+  color: var(--shijing-text-secondary);
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease;
 }
 
-.shijing-rijing__hero-reminder svg {
-  color: var(--rijing-accent);
-  flex-shrink: 0;
-  margin-top: 2px;
+.shijing-tab .shijing-rijing__hero-toggle:hover {
+  border-color: color-mix(in srgb, var(--rijing-accent) 30%, var(--shijing-border-subtle));
+  color: var(--rijing-accent-ink);
+}
+
+.shijing-rijing__hero-toggle-chevron {
+  display: inline-flex;
+  transition: transform 220ms ease;
+}
+
+.shijing-rijing__hero-toggle-chevron[data-open="true"] {
+  transform: rotate(180deg);
+}
+
+.shijing-rijing__hero-toggle-chevron svg {
   width: 16px;
   height: 16px;
 }
 
-.shijing-rijing__hero-reminder p {
-  margin: 0;
+.shijing-rijing__hero-full {
+  width: 100%;
+  max-width: 720px;
+  margin-top: 22px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  animation: sj-fade 0.24s ease both;
 }
 
-/* ----- Hero embedded memory list ----- */
+.shijing-rijing__hero-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
-.shijing-rijing__hero-memories {
+.shijing-rijing .shijing-rijing__hero-block-title {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  color: var(--rijing-accent-ink);
+}
+
+.shijing-rijing__hero-block-title--muted {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-rijing .shijing-rijing__hero-block-body {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.95;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-rijing__hero-block-body--soft {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-rijing__hero-divider {
+  width: 100%;
+  max-width: 720px;
+  height: 1px;
+  background: var(--shijing-border-subtle);
+  margin: 8px auto 0;
+}
+
+/* ----- 寄语 ----- */
+
+.shijing-rijing__hero-wish {
   width: 100%;
   max-width: 560px;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 6px;
-  padding-top: 16px;
-  border-top: 1px solid color-mix(in srgb, var(--rijing-accent) 14%, var(--rijing-glass-thick-border));
+  gap: 13px;
   text-align: left;
+  padding: 16px 20px;
+  background: var(--nimi-surface-card, rgba(255, 255, 255, 0.62));
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-lg);
 }
 
-.shijing-rijing__hero-memories-head {
+.shijing-rijing__hero-wish-icon {
+  color: var(--rijing-accent);
+  flex: none;
+  margin-top: 1px;
+}
+
+.shijing-rijing__hero-wish-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.shijing-rijing__hero-wish-copy {
   display: flex;
-  align-items: baseline;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shijing-rijing__hero-wish-label {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  color: var(--rijing-accent-ink);
+}
+
+.shijing-rijing .shijing-rijing__hero-wish p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--shijing-text-secondary);
+}
+
+/* ----- 今日关注分镜 ----- */
+
+.shijing-rijing .shijing-rijing__projections {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.shijing-rijing__projections-head {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
 }
 
-.shijing-rijing__hero-memories-title {
+.shijing-rijing .shijing-rijing__projections-title {
   margin: 0;
-  font-size: 12.5px;
-  color: var(--rijing-accent);
+  font-size: 20px;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  color: var(--shijing-text-primary);
 }
 
-.shijing-rijing__hero-memories-intro {
-  margin: 0;
-  color: var(--shijing-text-muted);
-  font-size: 12px;
-}
-
-.shijing-rijing__hero-memories-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.shijing-rijing__hero-memories-item {
-  display: grid;
-  grid-template-columns: 100px minmax(0, 1fr) auto;
+.shijing-rijing__lens {
+  display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 8px 0;
-  border-top: 1px solid color-mix(in srgb, var(--rijing-accent) 8%, var(--rijing-glass-thin-border));
+  gap: 6px;
+  flex-wrap: wrap;
   position: relative;
 }
 
-.shijing-rijing__hero-memories-item:first-child {
-  border-top: 0;
-}
-
-.shijing-rijing__hero-memories-date {
-  color: var(--shijing-text-muted);
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 12px;
-}
-
-.shijing-rijing__hero-memories-text {
-  color: var(--shijing-text-primary);
-  font-size: 13.5px;
-  line-height: 1.6;
-  overflow-wrap: anywhere;
-}
-
-.shijing-rijing__hero-memories-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  opacity: 0;
-  transition: opacity 120ms ease;
-}
-
-.shijing-rijing__hero-memories-item:hover .shijing-rijing__hero-memories-actions,
-.shijing-rijing__hero-memories-item:focus-within .shijing-rijing__hero-memories-actions {
-  opacity: 1;
-}
-
-.shijing-tab .shijing-rijing__hero-memories-action {
+.shijing-tab .shijing-rijing__lens-chip {
   appearance: none;
-  background: transparent;
-  border: 0;
-  padding: 6px;
-  cursor: pointer;
-  color: var(--shijing-text-muted);
-  border-radius: 8px;
-}
-
-.shijing-tab .shijing-rijing__hero-memories-action:hover {
-  color: var(--rijing-accent);
-  background: color-mix(in srgb, var(--rijing-accent) 10%, transparent);
-}
-
-.shijing-tab .shijing-rijing__hero-memories-action:last-child:hover {
-  color: var(--shijing-status-danger);
-  background: color-mix(in srgb, var(--shijing-status-danger) 10%, transparent);
-}
-
-.shijing-rijing__hero-memories-item--editing {
-  grid-template-columns: 100px minmax(0, 1fr);
-  align-items: start;
-  padding: 12px 0;
-}
-
-.shijing-rijing__hero-memories-edit {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.shijing-tab .shijing-rijing__hero-memories-textarea {
-  width: 100%;
-  min-height: 44px;
-  padding: 8px 10px;
-  font: inherit;
-  font-size: 13.5px;
-  line-height: 1.55;
-  color: var(--shijing-text-primary);
-  background: color-mix(in srgb, #ffffff 80%, transparent);
-  border: 1px solid color-mix(in srgb, var(--rijing-accent) 18%, var(--rijing-glass-thin-border));
-  border-radius: 10px;
-  resize: vertical;
-}
-
-.shijing-tab .shijing-rijing__hero-memories-textarea:focus {
-  outline: none;
-  border-color: color-mix(in srgb, var(--rijing-accent) 40%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rijing-accent) 14%, transparent);
-}
-
-.shijing-rijing__hero-memories-edit-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.shijing-tab .shijing-rijing__hero-memories-edit-save,
-.shijing-tab .shijing-rijing__hero-memories-edit-cancel {
-  appearance: none;
-  border: 0;
-  padding: 5px 12px;
+  padding: 6px 13px;
   border-radius: 999px;
+  font: inherit;
   font-size: 12.5px;
   font-weight: 500;
   cursor: pointer;
-  min-height: 28px;
+  border: 1px solid var(--shijing-border-subtle);
+  background: var(--nimi-surface-card, rgba(255, 255, 255, 0.7));
+  color: var(--shijing-text-secondary);
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
-.shijing-tab .shijing-rijing__hero-memories-edit-save {
+.shijing-tab .shijing-rijing__lens-chip:hover {
+  border-color: color-mix(in srgb, var(--rijing-accent) 36%, var(--shijing-border-subtle));
+}
+
+.shijing-tab .shijing-rijing__lens-chip[data-active="true"] {
   background: var(--rijing-accent);
-  color: #fff;
+  border-color: var(--rijing-accent);
+  color: var(--nimi-accent-onAccent, #06281e);
 }
 
-.shijing-tab .shijing-rijing__hero-memories-edit-cancel {
+.shijing-tab .shijing-rijing__lens-manage {
+  appearance: none;
   background: transparent;
+  color: var(--shijing-text-secondary);
+  border: 1px dashed var(--shijing-border-default);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 6px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.shijing-tab .shijing-rijing__lens-manage:hover,
+.shijing-tab .shijing-rijing__lens-manage[aria-expanded="true"] {
+  color: var(--shijing-text-primary);
+  border-color: var(--rijing-accent);
+  background: color-mix(in srgb, var(--rijing-accent) 8%, transparent);
+}
+
+.shijing-rijing__editor-anchor {
+  position: relative;
+  display: inline-block;
+}
+
+.shijing-rijing-concern-editor {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 70;
+  min-width: 320px;
+  max-width: min(380px, calc(100vw - 32px));
+  padding: 16px 18px 14px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--shijing-radius-2xl, 20px);
+  box-shadow:
+    0 18px 40px -16px rgba(15, 23, 38, 0.22),
+    0 2px 8px -4px rgba(15, 23, 38, 0.10);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.shijing-rijing-concern-editor__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.shijing-rijing-concern-editor__head strong {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0;
+}
+
+.shijing-rijing-concern-editor__count {
+  font-size: 12px;
   color: var(--shijing-text-muted);
 }
 
-.shijing-tab .shijing-rijing__hero-memories-edit-cancel:hover {
-  color: var(--shijing-text-primary);
-  background: color-mix(in srgb, var(--shijing-text-primary) 6%, transparent);
-}
-
-.shijing-rijing__hero-memories-error {
-  grid-column: 1 / -1;
-  margin: 4px 0 0;
-  color: var(--shijing-status-danger);
+.shijing-rijing-concern-editor__subtitle {
   font-size: 12px;
+  color: var(--shijing-text-secondary);
+  line-height: 1.55;
+  margin: 0 0 2px;
 }
 
-/* ----- Readiness info card ----- */
+.shijing-rijing-concern-editor__section h4 {
+  margin: 6px 0 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--shijing-text-muted);
+  letter-spacing: 0;
+}
 
-.shijing-rijing__readiness {
+.shijing-rijing .shijing-rijing-concern-editor__section ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shijing-rijing .shijing-rijing-concern-editor__section li {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
-  border-radius: var(--shijing-radius-lg);
-  background: color-mix(in srgb, var(--rijing-accent) 6%, color-mix(in srgb, #ffffff 92%, transparent));
-  border: 1px solid color-mix(in srgb, var(--rijing-accent) 14%, transparent);
-  font-size: 13px;
-  line-height: 1.55;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 12px;
 }
 
-.shijing-rijing__readiness-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--rijing-accent) 14%, transparent);
-  color: var(--rijing-accent);
-  flex-shrink: 0;
-}
-
-.shijing-rijing__readiness-icon svg {
-  width: 14px;
-  height: 14px;
-}
-
-.shijing-rijing__readiness-copy {
+.shijing-rijing-concern-editor__row-text {
   flex: 1;
-  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
+  min-width: 0;
 }
 
-.shijing-rijing__readiness-title {
-  margin: 0;
-  font-size: 13px;
+.shijing-rijing-concern-editor__row-text strong {
+  font-size: 14px;
   font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0;
+}
+
+.shijing-rijing-concern-editor__row-text small {
+  font-size: 11.5px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-rijing .shijing-rijing-concern-editor__remove {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--shijing-border-default);
+  color: var(--shijing-text-secondary);
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+  flex: 0 0 auto;
+}
+
+.shijing-rijing .shijing-rijing-concern-editor__remove:hover {
+  background: var(--shijing-hover-surface);
+  border-color: var(--shijing-border-default);
   color: var(--shijing-text-primary);
 }
 
-.shijing-rijing__readiness-body {
-  margin: 0;
+.shijing-rijing .shijing-rijing-concern-editor__add {
+  appearance: none;
+  background: var(--rijing-accent);
+  color: #fff;
+  border: 0;
+  padding: 6px 16px;
+  border-radius: 999px;
   font-size: 12.5px;
-  color: var(--shijing-text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: background 120ms ease;
 }
 
-.shijing-tab .shijing-rijing__readiness-link {
+.shijing-rijing .shijing-rijing-concern-editor__add:hover:not(:disabled) {
+  background: var(--rijing-accent-hover);
+}
+
+.shijing-rijing .shijing-rijing-concern-editor__add:disabled {
+  background: var(--shijing-text-disabled);
+  cursor: not-allowed;
+}
+
+.shijing-rijing-concern-editor__custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid color-mix(in srgb, var(--rijing-accent) 35%, transparent);
+  border-radius: 12px;
+  margin-top: 4px;
+}
+
+.shijing-rijing .shijing-rijing-concern-editor__custom input {
+  flex: 1;
   appearance: none;
   background: transparent;
   border: 0;
+  outline: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+  padding: 4px 0;
+  min-width: 0;
+}
+
+.shijing-rijing .shijing-rijing-concern-editor__custom input::placeholder {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-rijing .shijing-rijing-concern-editor__custom input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.shijing-rijing .shijing-rijing-concern-editor__custom input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.shijing-rijing .shijing-rijing__frames {
+  list-style: none;
+  margin: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shijing-rijing__frame {
+  background: var(--rijing-glass-regular-bg);
+  border: 1px solid var(--rijing-glass-regular-border);
+  border-radius: var(--shijing-radius-lg);
+  box-shadow: var(--rijing-elev-base);
+  backdrop-filter: blur(var(--rijing-blur)) saturate(135%);
+  -webkit-backdrop-filter: blur(var(--rijing-blur)) saturate(135%);
+  overflow: hidden;
+}
+
+.shijing-tab .shijing-rijing__frame-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 22px;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  font: inherit;
   cursor: pointer;
-  color: var(--rijing-accent);
-  font-size: 12.5px;
-  font-weight: 500;
+}
+
+.shijing-rijing__frame-icon {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-  flex-shrink: 0;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--rijing-tone) 14%, transparent);
+  color: var(--rijing-tone-ink, var(--rijing-tone));
 }
 
-.shijing-tab .shijing-rijing__readiness-link:hover {
-  background: transparent;
-  color: var(--rijing-accent-hover);
-  filter: brightness(0.85);
+.shijing-rijing__frame-icon svg {
+  width: 20px;
+  height: 20px;
 }
 
-.shijing-tab .shijing-rijing__readiness-link:active {
-  background: transparent;
+.shijing-rijing__frame-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 84px;
+  flex: none;
 }
 
-.shijing-rijing__readiness-link-arrow {
-  display: inline-block;
-  transition: transform 120ms ease;
+.shijing-rijing__frame-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  overflow-wrap: anywhere;
 }
 
-.shijing-tab .shijing-rijing__readiness-link:hover .shijing-rijing__readiness-link-arrow {
-  transform: translateX(2px);
+.shijing-rijing__frame-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--rijing-tone) 14%, transparent);
+  color: var(--rijing-tone-ink, var(--rijing-tone));
 }
 
-/* ----- Event-input card ----- */
+.shijing-rijing__frame-icon[data-tone],
+.shijing-rijing__frame-pill[data-tone] { --rijing-tone: var(--rijing-accent); }
+.shijing-rijing__frame-icon[data-tone="supportive"], .shijing-rijing__frame-pill[data-tone="supportive"] { --rijing-tone: var(--rijing-accent); --rijing-tone-ink: var(--rijing-accent-ink); }
+.shijing-rijing__frame-icon[data-tone="steady"],     .shijing-rijing__frame-pill[data-tone="steady"]     { --rijing-tone: #5b78ed; --rijing-tone-ink: #3a52c2; }
+.shijing-rijing__frame-icon[data-tone="watch"],      .shijing-rijing__frame-pill[data-tone="watch"]      { --rijing-tone: #d49b3a; --rijing-tone-ink: #936a1c; }
+.shijing-rijing__frame-icon[data-tone="blocked"],    .shijing-rijing__frame-pill[data-tone="blocked"]    { --rijing-tone: var(--shijing-status-danger); --rijing-tone-ink: var(--shijing-status-danger); }
+.shijing-rijing__frame-icon[data-tone="turning"],    .shijing-rijing__frame-pill[data-tone="turning"]    { --rijing-tone: #b376e3; --rijing-tone-ink: #8a4cc0; }
 
-/* 今日参照 — a light note card, not a backend form. White translucent
- * surface, modern sans-serif, calm ink tones, generous breathing room. */
+.shijing-rijing__frame-takeaway {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--shijing-text-secondary);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.shijing-rijing__frame-chevron {
+  flex: none;
+  color: var(--shijing-text-muted);
+  display: inline-flex;
+  transition: transform 220ms ease;
+}
+
+.shijing-rijing__frame-chevron[data-open="true"] {
+  transform: rotate(180deg);
+}
+
+.shijing-rijing__frame-chevron svg {
+  width: 16px;
+  height: 16px;
+}
+
+.shijing-rijing__frame-detail {
+  padding: 2px 26px 22px 80px;
+  animation: sj-fade 0.2s ease both;
+}
+
+.shijing-rijing__frame-detail-divider {
+  height: 1px;
+  background: var(--shijing-border-subtle);
+  margin: 0 0 16px;
+}
+
+.shijing-rijing .shijing-rijing__frame-detail-body {
+  margin: 0 0 18px;
+  font-size: 13.5px;
+  line-height: 1.85;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-rijing__frame-actions-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--shijing-text-muted);
+  margin-bottom: 11px;
+}
+
+.shijing-rijing .shijing-rijing__frame-actions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.shijing-rijing__frame-action {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-rijing__frame-action-dot {
+  margin-top: 7px;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--rijing-accent);
+  flex: none;
+}
+
+/* ----- 今日参照 event-input ----- */
+
 .shijing-rijing__event-input {
   display: flex;
   flex-direction: column;
@@ -1026,12 +1322,10 @@
   gap: 6px;
 }
 
-/* Prefixed with `.shijing-rijing` to win over the baseline
- * `.shijing-tab h3` / `.shijing-tab p` element rules (0,1,1). */
 .shijing-rijing .shijing-rijing__event-input-title {
   margin: 0;
   font-family: var(--rijing-font-sans);
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 600;
   letter-spacing: 0.01em;
   color: var(--rijing-ink-strong);
@@ -1047,10 +1341,10 @@
 
 .shijing-tab .shijing-rijing__event-input-textarea {
   width: 100%;
-  min-height: 76px;
+  min-height: 92px;
   padding: 14px 16px;
   font-family: var(--rijing-font-sans);
-  font-size: 13.5px;
+  font-size: 14px;
   line-height: 1.7;
   color: var(--rijing-ink-strong);
   background: rgba(255, 255, 255, 0.5);
@@ -1094,24 +1388,21 @@
 .shijing-rijing__event-input-hint--warn { color: var(--shijing-status-warning); }
 .shijing-rijing__event-input-hint--ok { color: var(--rijing-accent-hover); }
 
-/* Calm, flat action — no gradient, no glow. Reads as a quiet confirm,
- * not a marketing CTA. */
 .shijing-tab .shijing-rijing__event-input-submit {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 0 18px;
-  height: 36px;
+  height: 38px;
   background: var(--rijing-accent);
   color: #fff;
   border: 0;
-  border-radius: var(--shijing-radius-lg);
+  border-radius: 10px;
   font-family: var(--rijing-font-sans);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.02em;
   cursor: pointer;
-  box-shadow: none;
   margin-left: auto;
   transition: background 0.18s ease, opacity 0.18s ease;
 }
@@ -1121,15 +1412,162 @@
 }
 
 .shijing-tab .shijing-rijing__event-input-submit:disabled {
-  opacity: 0.45;
+  background: var(--nimi-surface-active, rgba(148, 163, 184, 0.16));
+  color: var(--shijing-text-muted);
   cursor: not-allowed;
-  box-shadow: none;
 }
 
-/* ----- 「今天怎么做」 do / say / avoid cards ----- */
+/* reference-event list */
 
-/* Specificity bump matches `.shijing-tab > section` from the baseline
- * stylesheet so the rich layout wins on padding / background. */
+.shijing-rijing .shijing-rijing__refs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-rijing__ref {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 15px;
+  background: var(--nimi-surface-card, rgba(255, 255, 255, 0.7));
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-md);
+  position: relative;
+}
+
+.shijing-rijing__ref-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--rijing-accent);
+  flex: none;
+}
+
+.shijing-rijing__ref-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  color: var(--shijing-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.shijing-rijing__ref-badge {
+  font-size: 11px;
+  color: var(--rijing-accent-ink);
+  font-weight: 500;
+  flex: none;
+}
+
+.shijing-rijing__ref-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.shijing-rijing__ref:hover .shijing-rijing__ref-actions,
+.shijing-rijing__ref:focus-within .shijing-rijing__ref-actions {
+  opacity: 1;
+}
+
+.shijing-tab .shijing-rijing__ref-action {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--shijing-text-muted);
+  border-radius: 8px;
+}
+
+.shijing-tab .shijing-rijing__ref-action:hover {
+  color: var(--rijing-accent);
+  background: color-mix(in srgb, var(--rijing-accent) 10%, transparent);
+}
+
+.shijing-tab .shijing-rijing__ref-action:last-child:hover {
+  color: var(--shijing-status-danger);
+  background: color-mix(in srgb, var(--shijing-status-danger) 10%, transparent);
+}
+
+.shijing-rijing__ref-action svg {
+  width: 15px;
+  height: 15px;
+}
+
+.shijing-rijing__ref--editing {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.shijing-tab .shijing-rijing__ref-textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--shijing-text-primary);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid color-mix(in srgb, var(--rijing-accent) 18%, var(--shijing-border-subtle));
+  border-radius: 10px;
+  resize: vertical;
+}
+
+.shijing-tab .shijing-rijing__ref-textarea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--rijing-accent) 40%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rijing-accent) 14%, transparent);
+}
+
+.shijing-rijing__ref-edit-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shijing-tab .shijing-rijing__ref-edit-save,
+.shijing-tab .shijing-rijing__ref-edit-cancel {
+  appearance: none;
+  border: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  min-height: 30px;
+}
+
+.shijing-tab .shijing-rijing__ref-edit-save {
+  background: var(--rijing-accent);
+  color: #fff;
+}
+
+.shijing-tab .shijing-rijing__ref-edit-cancel {
+  background: transparent;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-tab .shijing-rijing__ref-edit-cancel:hover {
+  color: var(--shijing-text-primary);
+  background: color-mix(in srgb, var(--shijing-text-primary) 6%, transparent);
+}
+
+.shijing-rijing .shijing-rijing__ref-error {
+  margin: 4px 0 0;
+  color: var(--shijing-status-danger);
+  font-size: 12px;
+}
+
+/* ----- 今日行动 ----- */
+
 .shijing-rijing .shijing-rijing__actions {
   background: transparent;
   border: 0;
@@ -1141,35 +1579,24 @@
   font-family: var(--rijing-font-sans);
 }
 
-.shijing-rijing__actions-head {
-  padding: 0 4px;
-}
-
-/* Specificity bump over the baseline `.shijing-tab h3` (0,1,1).
- * Quieter weight — restrained, not a banner. */
 .shijing-rijing .shijing-rijing__actions-title {
   margin: 0;
   font-family: var(--rijing-font-sans);
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
   letter-spacing: 0.01em;
   color: var(--rijing-ink-strong);
 }
 
-/* Prefixed with `.shijing-rijing` so this wins over the generic
- * `.shijing-tab ul` rule (styles-mirror-v1.css), which otherwise forces
- * the action cards into a flex column. */
 .shijing-rijing .shijing-rijing__actions-grid {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
 }
 
-/* Unified white translucent card. No colored accent line, no overflow
- * clipping — a calm surface, not a strong "feature card". */
 .shijing-rijing__action {
   display: flex;
   flex-direction: column;
@@ -1189,270 +1616,340 @@
   gap: 8px;
 }
 
-/* Weakened icon — no filled circle, no slot color. A faint monochrome
- * glyph that sits beside the eyebrow rather than shouting beside it. */
 .shijing-rijing__action-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
-  background: none;
-  color: var(--rijing-ink-faint);
+  color: var(--rijing-accent);
   flex-shrink: 0;
 }
 
 .shijing-rijing__action-badge svg {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   color: inherit;
 }
 
 .shijing-rijing__action-eyebrow {
   font-family: var(--rijing-font-sans);
-  color: var(--rijing-ink-soft);
-  font-size: 12.5px;
-  letter-spacing: 0.02em;
+  color: var(--shijing-text-muted);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  font-weight: 500;
 }
 
-.shijing-rijing__action-title {
-  margin: 2px 0 0;
+.shijing-rijing .shijing-rijing__action-body {
+  margin: 0;
   font-family: var(--rijing-font-sans);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.65;
   color: var(--rijing-ink-strong);
   overflow-wrap: anywhere;
 }
 
-/* Prefixed to win over baseline `.shijing-tab p` (0,1,1). */
-.shijing-rijing .shijing-rijing__action-body {
-  margin: 0;
-  font-family: var(--rijing-font-sans);
-  color: var(--rijing-ink-soft);
-  font-size: 13px;
-  line-height: 1.75;
+.shijing-rijing__action-source {
+  font-size: 12px;
+  color: var(--rijing-ink-faint);
 }
 
-/* ----- Concern-projection grid ----- */
-
-/* Specificity bump matches `.shijing-tab > section` from the
- * baseline stylesheet so the rich layout wins. */
-.shijing-rijing .shijing-rijing__projections {
-  background: transparent;
-  border: 0;
-  padding: 0;
-  box-shadow: none;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.shijing-rijing__projections-head {
-  padding: 0 4px;
-}
-
-.shijing-rijing__projections-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--shijing-text-primary);
-}
-
-.shijing-rijing__projections-grid {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.shijing-rijing__projection {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 18px 20px;
-  background: var(--rijing-glass-thick-bg);
-  border: 1px solid var(--rijing-glass-thick-border);
-  border-radius: var(--shijing-radius-xl);
-  box-shadow: var(--rijing-elev-base);
-  backdrop-filter: blur(var(--rijing-blur)) saturate(140%);
-  -webkit-backdrop-filter: blur(var(--rijing-blur)) saturate(140%);
-  position: relative;
-  overflow: hidden;
-}
-
-.shijing-rijing__projection::after {
-  content: '';
-  position: absolute;
-  inset: auto 18px 0 18px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--rijing-projection-accent, var(--rijing-accent));
-  opacity: 0.6;
-}
-
-.shijing-rijing__projection--supportive { --rijing-projection-accent: var(--rijing-accent); }
-.shijing-rijing__projection--steady     { --rijing-projection-accent: #5b78ed; }
-.shijing-rijing__projection--watch      { --rijing-projection-accent: #d49b3a; }
-.shijing-rijing__projection--blocked    { --rijing-projection-accent: var(--shijing-status-danger); }
-.shijing-rijing__projection--turning    { --rijing-projection-accent: #b376e3; }
-
-.shijing-rijing__projection-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.shijing-rijing__projection-tag {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--shijing-text-primary);
-  overflow-wrap: anywhere;
-}
-
-.shijing-rijing__projection-tendency {
-  font-size: 11.5px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--rijing-projection-accent) 14%, transparent);
-  color: var(--rijing-projection-accent);
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.shijing-rijing__projection-summary {
-  margin: 0;
-  color: var(--shijing-text-secondary);
-  font-size: 13px;
-  line-height: 1.65;
-}
-
-.shijing-rijing__projection-recs {
-  list-style: disc;
-  margin: 0;
-  padding-left: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.shijing-rijing__projection-recs li {
-  color: var(--shijing-text-secondary);
-  font-size: 12.5px;
-  line-height: 1.6;
-}
-
-.shijing-rijing__quick-actions {
-  background: transparent;
-  border: 0;
-  padding: 0;
-  box-shadow: none;
+.shijing-rijing__actions-footer {
   display: flex;
   justify-content: flex-end;
 }
 
-/* ----- Evidence collapsible ----- */
+.shijing-rijing .shijing-import-to-consultation {
+  margin-top: 0;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 17px;
+  border-radius: 10px;
+}
 
-/* Specificity bump matches `.shijing-tab > section` from the
- * baseline stylesheet. */
-.shijing-rijing .shijing-rijing__evidence {
-  background: var(--rijing-glass-thick-bg);
-  border: 1px solid var(--rijing-glass-thick-border);
+/* ----- 推演依据与数据说明 ----- */
+
+.shijing-rijing .shijing-rijing__data {
+  background: var(--rijing-glass-regular-bg);
+  border: 1px solid var(--rijing-glass-regular-border);
   border-radius: var(--shijing-radius-lg);
   box-shadow: var(--rijing-elev-base);
-  backdrop-filter: blur(var(--rijing-blur)) saturate(140%);
-  -webkit-backdrop-filter: blur(var(--rijing-blur)) saturate(140%);
+  backdrop-filter: blur(var(--rijing-blur)) saturate(135%);
+  -webkit-backdrop-filter: blur(var(--rijing-blur)) saturate(135%);
   overflow: hidden;
   padding: 0;
 }
 
-.shijing-tab .shijing-rijing__evidence-bar {
+.shijing-tab .shijing-rijing__data-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
-  padding: 12px 16px;
+  padding: 16px 24px;
   background: transparent;
   border: 0;
   cursor: pointer;
   color: var(--shijing-text-primary);
   text-align: left;
   font: inherit;
-  min-height: 52px;
-  border-radius: 0;
+  flex-wrap: wrap;
 }
 
-.shijing-tab .shijing-rijing__evidence-bar:disabled {
+.shijing-rijing__data-bar--static {
   cursor: default;
-  color: var(--shijing-text-secondary);
 }
 
-.shijing-rijing__evidence-icon {
+.shijing-rijing__data-icon {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--rijing-accent) 10%, transparent);
   color: var(--rijing-accent);
-  flex-shrink: 0;
+  flex: none;
 }
 
-.shijing-rijing__evidence-icon svg {
-  width: 14px;
-  height: 14px;
+.shijing-rijing__data-icon svg {
+  width: 16px;
+  height: 16px;
 }
 
-.shijing-rijing__evidence-title {
+.shijing-rijing__data-title {
   font-size: 13px;
   font-weight: 600;
-  color: var(--shijing-text-primary);
-  flex-shrink: 0;
+  color: var(--shijing-text-secondary);
+  flex: none;
 }
 
-.shijing-rijing__evidence-chips {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
+.shijing-rijing__data-chips {
   flex: 1;
   min-width: 0;
-}
-
-.shijing-rijing__evidence-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--rijing-accent) 5%, var(--rijing-glass-thin-bg));
-  border: 1px solid var(--rijing-glass-thin-border);
-  font-size: 11.5px;
-}
-
-.shijing-rijing__evidence-chip-label { color: var(--shijing-text-muted); }
-.shijing-rijing__evidence-chip-value {
-  color: var(--shijing-text-primary);
-  font-weight: 500;
-}
-
-.shijing-rijing__evidence-chevron {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
   color: var(--shijing-text-muted);
-  flex-shrink: 0;
-  transition: transform 200ms ease;
 }
 
-.shijing-rijing__evidence--open .shijing-rijing__evidence-chevron {
+.shijing-rijing__data-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.shijing-rijing__data-chip-label {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-rijing__data-chip-value {
+  color: var(--shijing-text-secondary);
+  font-weight: 600;
+}
+
+.shijing-rijing__data-chevron {
+  flex: none;
+  color: var(--shijing-text-muted);
+  display: inline-flex;
+  transition: transform 220ms ease;
+}
+
+.shijing-rijing__data-chevron[data-open="true"] {
   transform: rotate(180deg);
 }
 
-.shijing-rijing__evidence-panel {
-  padding: 0 18px 16px;
-  border-top: 1px solid var(--shijing-border-subtle);
+.shijing-rijing__data-chevron svg {
+  width: 16px;
+  height: 16px;
+}
+
+.shijing-rijing__data-panel {
+  padding: 4px 24px 26px;
+  animation: sj-fade 0.2s ease both;
+}
+
+.shijing-rijing__data-divider {
+  height: 1px;
+  background: var(--shijing-border-subtle);
+  margin: 0 0 22px;
+}
+
+.shijing-rijing__data-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.shijing-rijing__data-card {
+  background: var(--nimi-surface-card, rgba(255, 255, 255, 0.7));
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-md);
+  padding: 16px;
+}
+
+.shijing-rijing__data-card-label {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--shijing-text-muted);
+  margin-bottom: 12px;
+}
+
+.shijing-rijing__data-strength {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--shijing-text-primary);
+  margin-bottom: 12px;
+}
+
+.shijing-rijing__data-segments {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 7px;
+}
+
+.shijing-rijing__data-segment {
+  flex: 1;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--nimi-surface-active, rgba(148, 163, 184, 0.16));
+}
+
+.shijing-rijing__data-segment[data-active="true"] {
+  background: var(--rijing-accent);
+}
+
+.shijing-rijing__data-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-rijing__data-elements {
+  display: flex;
+  gap: 8px;
+}
+
+.shijing-rijing__data-element {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 0;
+  flex: 1;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--rijing-element) 16%, transparent);
+}
+
+.shijing-rijing__data-element[data-element="wood"]  { --rijing-element: #6aa05a; --rijing-element-ink: #3f7a3a; }
+.shijing-rijing__data-element[data-element="fire"]  { --rijing-element: #e8836b; --rijing-element-ink: #c2553c; }
+.shijing-rijing__data-element[data-element="earth"] { --rijing-element: #c79a5b; --rijing-element-ink: #9a6f33; }
+.shijing-rijing__data-element[data-element="metal"] { --rijing-element: #b9bcc4; --rijing-element-ink: #7c828f; }
+.shijing-rijing__data-element[data-element="water"] { --rijing-element: #6aa6c9; --rijing-element-ink: #3b7fa6; }
+
+.shijing-rijing__data-element-char {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  color: var(--rijing-element-ink, var(--shijing-text-primary));
+}
+
+.shijing-rijing__data-element-nature {
+  font-size: 10px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-rijing__data-pillars {
+  display: flex;
+  gap: 8px;
+}
+
+.shijing-rijing__data-pillar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 10px;
+  background: var(--nimi-surface-active, rgba(148, 163, 184, 0.14));
+}
+
+.shijing-rijing__data-pillar[data-emphasis="true"] {
+  background: color-mix(in srgb, var(--rijing-accent) 16%, transparent);
+}
+
+.shijing-rijing__data-pillar-char {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-rijing__data-pillar[data-emphasis="true"] .shijing-rijing__data-pillar-char {
+  color: var(--shijing-text-primary);
+}
+
+.shijing-rijing__data-pillar-pos {
+  font-size: 10px;
+  margin-top: 4px;
+  font-weight: 600;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-rijing__data-pillar[data-emphasis="true"] .shijing-rijing__data-pillar-pos {
+  color: var(--rijing-accent-ink);
+}
+
+.shijing-rijing__data-dots {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.shijing-rijing__data-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  background: var(--nimi-surface-active, rgba(148, 163, 184, 0.2));
+}
+
+.shijing-rijing__data-dot[data-filled="true"] {
+  background: var(--rijing-accent);
+}
+
+.shijing-rijing__data-completeness {
+  font-size: 12.5px;
+  color: var(--shijing-text-secondary);
+  margin-bottom: 8px;
+}
+
+.shijing-rijing__data-completeness b {
+  font-weight: 600;
+}
+
+.shijing-rijing__data-stage-pill {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--rijing-accent) 14%, transparent);
+  color: var(--rijing-accent-ink);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.shijing-tab .shijing-rijing__data-complete {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--rijing-accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.shijing-tab .shijing-rijing__data-complete:hover {
+  color: var(--rijing-accent-hover);
 }
 
 /* ----- Responsive ----- */
@@ -1501,8 +1998,8 @@
     min-height: min(560px, calc(100dvh - 360px));
   }
 
-  .shijing-rijing__projections-grid {
-    grid-template-columns: 1fr;
+  .shijing-rijing__data-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -1589,21 +2086,39 @@
     letter-spacing: 0.06em;
   }
 
-  .shijing-rijing__hero-body {
-    font-size: 14px;
-    line-height: 1.85;
-  }
-
-  .shijing-rijing__hero-memories-item {
+  .shijing-rijing__data-grid {
     grid-template-columns: 1fr;
-    gap: 2px;
   }
 
-  .shijing-rijing__readiness {
-    flex-wrap: wrap;
+  .shijing-rijing__hero-subtitle {
+    font-size: 14px;
   }
 
-  .shijing-rijing__readiness .shijing-rijing__readiness-link {
-    margin-left: auto;
+  .shijing-rijing__projections-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .shijing-tab .shijing-rijing__frame-row {
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .shijing-rijing__frame-meta {
+    width: auto;
+  }
+
+  .shijing-rijing__frame-takeaway {
+    display: none;
+  }
+
+  .shijing-rijing__frame-detail {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .shijing-rijing__data-bar {
+    padding-left: 18px;
+    padding-right: 18px;
   }
 }

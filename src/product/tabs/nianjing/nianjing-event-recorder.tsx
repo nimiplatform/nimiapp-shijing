@@ -18,7 +18,7 @@
 
 import { useMemo, useState } from 'react';
 
-import { ConfirmDialog } from '@nimiplatform/kit/ui';
+import { ConfirmDialog, Tooltip } from '@nimiplatform/kit/ui';
 
 import type { ConcernTag } from '../../../domain/concern-tag.ts';
 import type { EventMemory } from '../../../domain/event-memory.ts';
@@ -210,26 +210,27 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
                   onChange={(e) => setDraftDate(e.currentTarget.value)}
                 />
               )}
-              <button
-                type="button"
-                className="shijing-nianjing__rec-save"
-                onClick={saveNew}
-                disabled={draft.trim().length === 0}
-                aria-label="保存事件"
-                title="保存事件"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
+              <Tooltip content="保存事件" placement="top">
+                <button
+                  type="button"
+                  className="shijing-nianjing__rec-save"
+                  onClick={saveNew}
+                  disabled={draft.trim().length === 0}
+                  aria-label="保存事件"
                 >
-                  <path d="M5 12l5 5L20 7" />
-                </svg>
-              </button>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 12l5 5L20 7" />
+                  </svg>
+                </button>
+              </Tooltip>
             </div>
           </div>
         </>
@@ -303,30 +304,33 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
                     </span>
                     <span className="shijing-nianjing__rec-body">{m.body}</span>
                     <div className="shijing-nianjing__rec-actions">
-                      <button
-                        type="button"
-                        aria-label="去时镜问这条"
-                        title="去时镜问这条"
-                        onClick={() => askInShiJing(m.id)}
-                      >
-                        问
-                      </button>
-                      <button
-                        type="button"
-                        aria-label="编辑这条事件"
-                        title="编辑"
-                        onClick={() => startEdit(m)}
-                      >
-                        ✎
-                      </button>
-                      <button
-                        type="button"
-                        aria-label="删除这条事件"
-                        title="删除"
-                        onClick={() => setConfirmingDelete(m)}
-                      >
-                        ✕
-                      </button>
+                      <Tooltip content="去时镜问这条" placement="top">
+                        <button
+                          type="button"
+                          aria-label="去时镜问这条"
+                          onClick={() => askInShiJing(m.id)}
+                        >
+                          问
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="编辑" placement="top">
+                        <button
+                          type="button"
+                          aria-label="编辑这条事件"
+                          onClick={() => startEdit(m)}
+                        >
+                          ✎
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="删除" placement="top">
+                        <button
+                          type="button"
+                          aria-label="删除这条事件"
+                          onClick={() => setConfirmingDelete(m)}
+                        >
+                          ✕
+                        </button>
+                      </Tooltip>
                     </div>
                   </>
                 )}

@@ -21,7 +21,7 @@
 // unchanged — this is a presentation-layer refactor.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ConfirmDialog } from '@nimiplatform/kit/ui';
+import { ConfirmDialog, Tooltip } from '@nimiplatform/kit/ui';
 import type {
   YueJingCell,
   YueJingMirrorOutput,
@@ -68,6 +68,11 @@ import {
 import { CitationDrawer } from './shared/citation-drawer.tsx';
 import { ImportToShiJingButton } from './shared/import-to-shijing-button.tsx';
 import { FailureBanner } from './shared/failure-banner.tsx';
+import {
+  YUEJING_MONTH_TENDENCY_CLASSES,
+  YUEJING_TENDENCY_SEVERITY,
+  deriveYueJingMonthInterpretation,
+} from './yuejing-month-interpretation.ts';
 
 // ===== Pure helpers (no React) =======================================
 
@@ -86,14 +91,6 @@ const WEEKDAY_SHORT = ['周一', '周二', '周三', '周四', '周五', '周六
 // concern projections. Higher score = more notable → wins the day's
 // color slot. The ordering matches SJG-DSY-01's "what should the user
 // notice first" priority.
-const TENDENCY_SEVERITY: Record<TendencyClass, number> = {
-  blocked: 4,
-  turning: 3,
-  watch: 2,
-  supportive: 1,
-  steady: 0,
-};
-
 const TODAY_BODY_BY_TENDENCY: Record<TendencyClass, string> = {
   supportive: '整体助力,今天适合主动推进。',
   steady: '节奏平稳,适合按部就班的推进。',
@@ -142,7 +139,7 @@ function dominantTendency(entries: readonly YueJingCell[]): TendencyClass {
   let best: TendencyClass = 'steady';
   let bestScore = -1;
   for (const e of entries) {
-    const s = TENDENCY_SEVERITY[e.tendency_class];
+    const s = YUEJING_TENDENCY_SEVERITY[e.tendency_class];
     if (s > bestScore) {
       best = e.tendency_class;
       bestScore = s;
@@ -258,225 +255,6 @@ function nextMissingYuejingDate(input: {
     if (input.activeTagIds.some((tagId) => !existing.has(tagId))) return date;
   }
   return null;
-}
-
-type TendencyCounts = Record<TendencyClass, number>;
-
-const MONTH_TENDENCY_CLASSES: readonly TendencyClass[] = [
-  'supportive',
-  'steady',
-  'watch',
-  'turning',
-  'blocked',
-] as const;
-
-function emptyTendencyCounts(): TendencyCounts {
-  return {
-    supportive: 0,
-    steady: 0,
-    watch: 0,
-    blocked: 0,
-    turning: 0,
-  };
-}
-
-function countTendencies(cells: readonly YueJingCell[]): TendencyCounts {
-  const counts = emptyTendencyCounts();
-  for (const cell of cells) counts[cell.tendency_class] += 1;
-  return counts;
-}
-
-function primaryTendencyFromCounts(counts: TendencyCounts): TendencyClass {
-  let best: TendencyClass = 'steady';
-  let bestCount = -1;
-  for (const tendency of MONTH_TENDENCY_CLASSES) {
-    const count = counts[tendency];
-    if (
-      count > bestCount ||
-      (count === bestCount && TENDENCY_SEVERITY[tendency] > TENDENCY_SEVERITY[best])
-    ) {
-      best = tendency;
-      bestCount = count;
-    }
-  }
-  return best;
-}
-
-function cellsForConcernInWindow(input: {
-  readonly dates: readonly string[];
-  readonly cellsByDate: ReadonlyMap<string, readonly YueJingCell[]>;
-  readonly concernTagId: string;
-}): YueJingCell[] {
-  const cells: YueJingCell[] = [];
-  for (const date of input.dates) {
-    const cell = (input.cellsByDate.get(date) ?? []).find(
-      (candidate) => candidate.concern_tag_ref === input.concernTagId,
-    );
-    if (cell) cells.push(cell);
-  }
-  return cells;
-}
-
-function compactDateRangeLabel(startDate: string, endDate: string): string {
-  if (startDate === endDate) return shortMonthDay(startDate);
-  return `${shortMonthDay(startDate)}-${shortMonthDay(endDate)}`;
-}
-
-function contiguousDateRanges(
-  cells: readonly YueJingCell[],
-  dates: readonly string[],
-  predicate: (cell: YueJingCell) => boolean,
-): string[] {
-  const dateIndex = new Map(dates.map((date, index) => [date, index] as const));
-  const selected = cells
-    .filter(predicate)
-    .map((cell) => cell.date)
-    .filter((date, index, arr) => arr.indexOf(date) === index)
-    .sort((a, b) => (dateIndex.get(a) ?? 0) - (dateIndex.get(b) ?? 0));
-  const ranges: string[] = [];
-  let start: string | null = null;
-  let previous: string | null = null;
-  for (const date of selected) {
-    if (!start || !previous) {
-      start = date;
-      previous = date;
-      continue;
-    }
-    if ((dateIndex.get(date) ?? -1) === (dateIndex.get(previous) ?? -3) + 1) {
-      previous = date;
-      continue;
-    }
-    ranges.push(compactDateRangeLabel(start, previous));
-    start = date;
-    previous = date;
-  }
-  if (start && previous) ranges.push(compactDateRangeLabel(start, previous));
-  return ranges;
-}
-
-function limitedRangeText(ranges: readonly string[]): string {
-  if (ranges.length === 0) return '暂无集中窗口';
-  const head = ranges.slice(0, 3).join('、');
-  return ranges.length > 3 ? `${head} 等` : head;
-}
-
-function meaningfulCellDetails(cells: readonly YueJingCell[]): string[] {
-  const seen = new Set<string>();
-  const details: string[] = [];
-  for (const cell of cells) {
-    const detail = yuejingCellDetail(cell).replace(/^#[^:：]+[:：]\s*/, '').trim();
-    if (!detail || seen.has(detail)) continue;
-    seen.add(detail);
-    details.push(detail);
-    if (details.length >= 2) break;
-  }
-  return details;
-}
-
-function countCells(
-  cells: readonly YueJingCell[],
-  predicate: (cell: YueJingCell) => boolean,
-): number {
-  let count = 0;
-  for (const cell of cells) {
-    if (predicate(cell)) count += 1;
-  }
-  return count;
-}
-
-function attentionWeight(counts: TendencyCounts): number {
-  return counts.blocked * 5 + counts.turning * 4 + counts.watch * 3 + counts.supportive * 2 + counts.steady;
-}
-
-function monthOperatingAdvice(primary: TendencyClass): {
-  readonly posture: string;
-  readonly doFirst: string;
-  readonly protect: string;
-} {
-  switch (primary) {
-    case 'supportive':
-      return {
-        posture: '这 30 天适合把已经有把握的事往前放,不要只停留在观察。',
-        doFirst: '先安排需要主动表达、提交、见面、确认资源的事项。',
-        protect: '阻滞日保留缓冲,避免把所有关键动作挤在同一段。',
-      };
-    case 'steady':
-      return {
-        posture: '主节奏偏稳,适合维持长期动作,用连续性换结果。',
-        doFirst: '先固定每个关注的基础节奏,把大动作拆成可确认的小步。',
-        protect: '不要因为单日助力就突然加码,保持低损耗推进。',
-      };
-    case 'watch':
-      return {
-        posture: '这 30 天的重点是校准,先看清反馈再决定是否加速。',
-        doFirst: '先检查沟通、承诺、身体负荷和资源安排里的不确定点。',
-        protect: '观察日不急着定性,把判断留到连续信号出现之后。',
-      };
-    case 'turning':
-      return {
-        posture: '窗口内有明显转向信号,旧节奏可能不再完全适用。',
-        doFirst: '先把转折日附近的变化记录下来,判断是机会、边界还是节奏变化。',
-        protect: '不要用过去的处理方式硬套新局面,给调整预留空间。',
-      };
-    case 'blocked':
-      return {
-        posture: '阻力偏重时,最有价值的是止损、复核和保存余地。',
-        doFirst: '先收束高消耗事项,把必须推进的动作放到阻滞段之外。',
-        protect: '避免硬碰硬、逼问、冲动承诺和一次性投入过多资源。',
-      };
-  }
-}
-
-interface ConcernMonthLanguage {
-  readonly supportive: string;
-  readonly steady: string;
-  readonly watch: string;
-  readonly turning: string;
-  readonly blocked: string;
-}
-
-const GENERIC_MONTH_LANGUAGE: ConcernMonthLanguage = {
-  supportive: '适合把已经明确的事往前推,让行动落到可确认的节点上。',
-  steady: '适合维持既有节奏,把基础动作做稳定,不必额外制造变化。',
-  watch: '适合多观察反馈与细节,先校准节奏,再决定是否加速。',
-  turning: '适合识别方向变化,把新信号记录下来,避免用旧节奏处理新局面。',
-  blocked: '适合收束、复盘和保留余地,不要在阻力最重的位置硬推。',
-};
-
-const MONTH_LANGUAGE_BY_LABEL: Record<string, ConcernMonthLanguage> = {
-  '姻缘': {
-    supportive: '适合增加真实接触、把话说清楚,推进见面、确认边界或修复沟通。',
-    steady: '适合维持稳定互动,让关系在低压节奏里自然显形。',
-    watch: '适合观察对方回应与自己的情绪波动,先不要急着定义关系。',
-    turning: '适合留意关系角色、距离或表达方式的变化,新信号比旧判断更重要。',
-    blocked: '适合降低拉扯,暂停追问和施压,把边界与期待先放回自己这里。',
-  },
-  '事业': {
-    supportive: '适合推进协作、提交方案、争取资源,把想法落到可执行安排。',
-    steady: '适合维护既有工作流,处理例行产出和长期建设。',
-    watch: '适合检查沟通成本、排期和外部依赖,先把风险点摊开。',
-    turning: '适合识别岗位、项目或合作关系里的换轨信号,预留调整空间。',
-    blocked: '适合减少正面硬碰,把重心放在复盘、补材料和等待结构松动。',
-  },
-  '身体': {
-    supportive: '适合恢复规律作息、温和训练和主动修复,让身体节律回到可持续状态。',
-    steady: '适合维持已经有效的生活作息,不必临时增加负荷。',
-    watch: '适合观察睡眠、饮食和精力波动,及时减少透支。',
-    turning: '适合捕捉身体状态的变化点,调整运动、休息或检查安排。',
-    blocked: '适合优先休整,避免硬扛、熬夜和高强度消耗。',
-  },
-  '财运': {
-    supportive: '适合整理现金流、推进稳妥回款、做理性配置或资源整合。',
-    steady: '适合维持预算纪律,处理固定收支与长期储备。',
-    watch: '适合审查合同、报价、冲动消费和不确定投入。',
-    turning: '适合留意收入结构、资源来源或合作分配方式的变化。',
-    blocked: '适合保守处理大额承诺,先止损、延后和复核。',
-  },
-};
-
-function monthLanguageForConcern(tag: ConcernTag): ConcernMonthLanguage {
-  const label = yuejingTagLabel(tag).replace(/^#/, '');
-  return MONTH_LANGUAGE_BY_LABEL[label] ?? GENERIC_MONTH_LANGUAGE;
 }
 
 // ===== Top-level component ==========================================
@@ -818,6 +596,8 @@ export function YueJingTab() {
           dates={placeholderDates}
           cellsByDate={scopedCellsByDate}
           activeTags={scopedActiveTags}
+          eventMemories={state.snapshot.event_memories}
+          planItems={state.snapshot.plan_items}
           onClose={() => setMonthPanelOpen(false)}
         />
       ) : null}
@@ -1191,27 +971,29 @@ function YueJingConcernEditorPopover(props: { readonly onClose: () => void }) {
               const label = s.kind === 'archived' ? s.label : s.preset.label;
               const subtitle = s.kind === 'archived' ? s.subtitle : s.preset.subtitle;
               const key = s.kind === 'archived' ? `arc-${s.id}` : `pre-${s.preset.label}`;
+              const addTitle = atLimit ? `已达激活上限 ${CONCERN_TAG_ACTIVE_LIMIT}` : '加入关注';
               return (
                 <li key={key}>
                   <div className="shijing-yuejing__editor-row-text">
                     <strong>{label.replace(/^#/, '')}</strong>
                     <small>{subtitle}</small>
                   </div>
-                  <button
-                    type="button"
-                    className="shijing-yuejing__editor-add"
-                    disabled={atLimit}
-                    title={atLimit ? `已达激活上限 ${CONCERN_TAG_ACTIVE_LIMIT}` : '加入关注'}
-                    onClick={() => {
-                      if (s.kind === 'archived') {
-                        activateExisting(s.id);
-                      } else {
-                        addPreset(s.preset);
-                      }
-                    }}
-                  >
-                    添加
-                  </button>
+                  <Tooltip content={addTitle} placement="top">
+                    <button
+                      type="button"
+                      className="shijing-yuejing__editor-add"
+                      disabled={atLimit}
+                      onClick={() => {
+                        if (s.kind === 'archived') {
+                          activateExisting(s.id);
+                        } else {
+                          addPreset(s.preset);
+                        }
+                      }}
+                    >
+                      添加
+                    </button>
+                  </Tooltip>
                 </li>
               );
             })}
@@ -1511,10 +1293,146 @@ function ClipboardIcon() {
   );
 }
 
-function YueJingMonthPanel(props: {
+// ===== 5c) Month-panel icon set (SJG-DSY-01「30 日解读」mockup) =======
+// Stroke-only glyphs matching the existing icon family. Used by the
+// numbered sections of the 30-day reading panel below.
+
+function monthIconProps() {
+  return {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.6,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+  };
+}
+
+// ① 本期主线 — a glyph per dominant tendency in the headline card.
+function MonthTendencyGlyph({ tendency }: { readonly tendency: TendencyClass }) {
+  return (
+    <svg {...monthIconProps()} aria-hidden>
+      {tendency === 'supportive' ? (
+        <>
+          <path d="M3 17l6-6 4 4 8-8" />
+          <path d="M17 7h4v4" />
+        </>
+      ) : null}
+      {tendency === 'steady' ? (
+        <>
+          <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+          <path d="M2 21c0-3 1.85-5.36 5.08-6" />
+        </>
+      ) : null}
+      {tendency === 'watch' ? (
+        <>
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+          <circle cx="12" cy="12" r="3" />
+        </>
+      ) : null}
+      {tendency === 'turning' ? (
+        <>
+          <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+          <path d="M21 3v5h-5" />
+          <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+          <path d="M3 21v-5h5" />
+        </>
+      ) : null}
+      {tendency === 'blocked' ? (
+        <>
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+          <path d="M9 12h6" />
+        </>
+      ) : null}
+    </svg>
+  );
+}
+
+// ② 关键日期窗口 — paper-plane / pause / cycle by window index.
+function MonthWindowGlyph({ index }: { readonly index: number }) {
+  return (
+    <svg {...monthIconProps()} aria-hidden>
+      {index === 0 ? (
+        <>
+          <path d="M22 2 11 13" />
+          <path d="M22 2 15 22l-4-9-9-4Z" />
+        </>
+      ) : index === 1 ? (
+        <>
+          <rect x="6" y="4" width="4" height="16" rx="1" />
+          <rect x="14" y="4" width="4" height="16" rx="1" />
+        </>
+      ) : (
+        <>
+          <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+          <path d="M21 3v5h-5" />
+          <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+          <path d="M3 21v-5h5" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+// ③ 30 日节奏 — calendar / message / check / flag by phase index.
+function MonthPhaseGlyph({ index }: { readonly index: number }) {
+  return (
+    <svg {...monthIconProps()} aria-hidden>
+      {index === 0 ? (
+        <>
+          <rect x="3" y="4" width="18" height="18" rx="2" />
+          <path d="M16 2v4M8 2v4M3 10h18" />
+        </>
+      ) : index === 1 ? (
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      ) : index === 2 ? (
+        <>
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+          <path d="m9 11 3 3L22 4" />
+        </>
+      ) : (
+        <>
+          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+          <path d="M4 22v-7" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg {...monthIconProps()} aria-hidden>
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+function WarningIcon() {
+  return (
+    <svg {...monthIconProps()} aria-hidden>
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <path d="M12 9v4M12 17h.01" />
+    </svg>
+  );
+}
+
+function ReviewIcon() {
+  return (
+    <svg {...monthIconProps()} aria-hidden>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="M9 13h6M9 17h4" />
+    </svg>
+  );
+}
+
+export function YueJingMonthPanel(props: {
   readonly dates: readonly string[];
   readonly cellsByDate: ReadonlyMap<string, readonly YueJingCell[]>;
   readonly activeTags: readonly ConcernTag[];
+  readonly eventMemories: readonly EventMemory[];
+  readonly planItems: readonly PlanItem[];
   readonly onClose: () => void;
 }) {
   useEffect(() => {
@@ -1525,86 +1443,17 @@ function YueJingMonthPanel(props: {
     return () => document.removeEventListener('keydown', onKey);
   }, [props]);
 
-  const allCells = useMemo(
-    () => props.dates.flatMap((date) => [...(props.cellsByDate.get(date) ?? [])]),
-    [props.dates, props.cellsByDate],
+  const interpretation = useMemo(
+    () => deriveYueJingMonthInterpretation({
+      dates: props.dates,
+      cellsByDate: props.cellsByDate,
+      activeTags: props.activeTags,
+      eventMemories: props.eventMemories,
+      planItems: props.planItems,
+    }),
+    [props.activeTags, props.cellsByDate, props.dates, props.eventMemories, props.planItems],
   );
-  const monthCounts = useMemo(() => countTendencies(allCells), [allCells]);
-  const monthPrimary = primaryTendencyFromCounts(monthCounts);
-  const rangeLabel = props.dates.length > 0
-    ? compactDateRangeLabel(props.dates[0], props.dates[props.dates.length - 1])
-    : '当前窗口';
-  const supportiveRanges = contiguousDateRanges(
-    allCells,
-    props.dates,
-    (cell) => cell.tendency_class === 'supportive',
-  );
-  const cautionRanges = contiguousDateRanges(
-    allCells,
-    props.dates,
-    (cell) => cell.tendency_class === 'watch' || cell.tendency_class === 'blocked',
-  );
-  const turningRanges = contiguousDateRanges(
-    allCells,
-    props.dates,
-    (cell) => cell.tendency_class === 'turning',
-  );
-  const blockedRanges = contiguousDateRanges(
-    allCells,
-    props.dates,
-    (cell) => cell.tendency_class === 'blocked',
-  );
-  const monthAdvice = monthOperatingAdvice(monthPrimary);
-  const generatedDayCount = useMemo(
-    () => props.dates.filter((date) => (props.cellsByDate.get(date) ?? []).length > 0).length,
-    [props.dates, props.cellsByDate],
-  );
-  const supportiveCount = countCells(allCells, (cell) => cell.tendency_class === 'supportive');
-  const cautionCount = countCells(
-    allCells,
-    (cell) => cell.tendency_class === 'watch' || cell.tendency_class === 'blocked',
-  );
-  const turningCount = countCells(allCells, (cell) => cell.tendency_class === 'turning');
-
-  const insights = useMemo(
-    () =>
-      props.activeTags.map((tag) => {
-        const cells = cellsForConcernInWindow({
-          dates: props.dates,
-          cellsByDate: props.cellsByDate,
-          concernTagId: tag.id,
-        });
-        const counts = countTendencies(cells);
-        return {
-          tag,
-          cells,
-          counts,
-          primary: primaryTendencyFromCounts(counts),
-          supportiveRanges: contiguousDateRanges(
-            cells,
-            props.dates,
-            (cell) => cell.tendency_class === 'supportive',
-          ),
-          cautionRanges: contiguousDateRanges(
-            cells,
-            props.dates,
-            (cell) => cell.tendency_class === 'watch' || cell.tendency_class === 'blocked',
-          ),
-          turningRanges: contiguousDateRanges(
-            cells,
-            props.dates,
-            (cell) => cell.tendency_class === 'turning',
-          ),
-          blockedRanges: contiguousDateRanges(
-            cells,
-            props.dates,
-            (cell) => cell.tendency_class === 'blocked',
-          ),
-          detailExamples: meaningfulCellDetails(cells),
-        };
-      }).sort((a, b) => attentionWeight(b.counts) - attentionWeight(a.counts)),
-    [props.activeTags, props.cellsByDate, props.dates],
-  );
+  const hasGeneratedCells = interpretation.generated_day_count > 0;
 
   return (
     <>
@@ -1618,7 +1467,7 @@ function YueJingMonthPanel(props: {
         className="shijing-yuejing__panel shijing-yuejing__month-panel"
         role="dialog"
         aria-modal="true"
-        aria-label={`${rangeLabel} 完整解读`}
+        aria-label={`${interpretation.range_label} 完整解读`}
         data-panel-kind="month"
       >
         <button
@@ -1632,135 +1481,285 @@ function YueJingMonthPanel(props: {
 
         <header className="shijing-yuejing__panel-head shijing-yuejing__month-head">
           <strong>30 日解读</strong>
-          <small>{rangeLabel} · 已生成 {generatedDayCount}/30 日 · {props.activeTags.length} 个关注</small>
+          <small>
+            {interpretation.range_label} · 已生成 {interpretation.generated_day_count}/30 日 · {interpretation.active_tag_count} 个关注
+          </small>
         </header>
 
-        <section className="shijing-yuejing__month-brief" aria-label="本轮最需要先看的内容">
-          {allCells.length > 0 ? (
-            <>
-              <article className="shijing-yuejing__month-primary" data-tendency={monthPrimary}>
-                <span>本轮主节奏</span>
-                <strong>{TENDENCY_CLASS_LABELS[monthPrimary]}</strong>
-                <p>{monthAdvice.posture}</p>
-              </article>
-              <ul className="shijing-yuejing__month-focus">
-                <li data-tendency="supportive">
-                  <span>可以主动推进</span>
-                  <strong>{limitedRangeText(supportiveRanges)}</strong>
-                  <small>{supportiveCount} 个关注日</small>
-                </li>
-                <li data-tendency="watch">
-                  <span>需要放慢判断</span>
-                  <strong>{limitedRangeText(cautionRanges)}</strong>
-                  <small>{cautionCount} 个关注日</small>
-                </li>
-                <li data-tendency="turning">
-                  <span>留意转向信号</span>
-                  <strong>{limitedRangeText(turningRanges)}</strong>
-                  <small>{turningCount} 个关注日</small>
-                </li>
-              </ul>
-            </>
-          ) : (
-            <div className="shijing-yuejing__month-empty">
-              当前 30 日窗口还没有可解读的月镜数据。生成后这里会按关注给出推进、观察和转折窗口。
-            </div>
-          )}
-        </section>
-
-        {allCells.length > 0 ? (
-          <section className="shijing-yuejing__panel-section shijing-yuejing__month-overview">
-            <h3>这 30 天怎么用</h3>
-            <div className="shijing-yuejing__month-use">
-              <p>{monthAdvice.doFirst}</p>
-              <p>{monthAdvice.protect}</p>
-            </div>
-            <ul className="shijing-yuejing__month-counts" aria-label="月内倾向分布">
-              {MONTH_TENDENCY_CLASSES.filter((tendency) => monthCounts[tendency] > 0).map((tendency) => (
-                <li key={tendency} data-tendency={tendency}>
-                  <span className="shijing-yuejing__panel-tend-dot" aria-hidden />
-                  {TENDENCY_CLASS_LABELS[tendency]} {monthCounts[tendency]} 条
-                </li>
-              ))}
-            </ul>
-            {blockedRanges.length > 0 ? (
-              <p className="shijing-yuejing__month-warning">
-                阻滞集中在 {limitedRangeText(blockedRanges)}。这些日期更适合复核、收束和保留余地。
-              </p>
-            ) : null}
-          </section>
-        ) : null}
-
-        <section className="shijing-yuejing__panel-section shijing-yuejing__month-insight-section">
-          <div className="shijing-yuejing__month-section-head">
-            <h3>按关注处理</h3>
-            <span>优先显示本轮更需要注意的关注</span>
+        {!hasGeneratedCells ? (
+          <div className="shijing-yuejing__month-empty">
+            当前 30 日窗口还没有可解读的月镜数据。生成后这里会按关注给出本期主线、关键窗口、30 日节奏、关注行动和复盘问题。
           </div>
-          <ul className="shijing-yuejing__month-insights">
-            {insights.map((insight) => {
-              const tagName = yuejingTagLabel(insight.tag);
-              const iconStyle = concernIconStyle(insight.tag.label ?? tagName);
-              const language = monthLanguageForConcern(insight.tag);
-              const insightAdvice = monthOperatingAdvice(insight.primary);
-              return (
-                <li key={insight.tag.id} data-primary={insight.primary}>
-                  <div className="shijing-yuejing__month-insight-head">
-                    <ConcernIcon style={iconStyle} />
-                    <div>
-                      <strong>{tagName}</strong>
-                      <span>
-                        {insight.cells.length > 0
-                          ? `主调: ${TENDENCY_CLASS_LABELS[insight.primary]}`
-                          : '尚未生成'}
-                      </span>
-                    </div>
+        ) : (
+          <>
+            {/* ① 本期主线 */}
+            <section className="shijing-yuejing__month-section" aria-label="本期主线">
+              <h3>
+                <span className="shijing-yuejing__month-num" aria-hidden>1</span>
+                本期主线
+              </h3>
+              <div className="shijing-yuejing__month-mainline">
+                <article className="shijing-yuejing__month-primary" data-tendency={interpretation.primary}>
+                  <span className="shijing-yuejing__month-primary-icon" aria-hidden>
+                    <MonthTendencyGlyph tendency={interpretation.primary} />
+                  </span>
+                  <strong className="shijing-yuejing__month-primary-label">
+                    {TENDENCY_CLASS_LABELS[interpretation.primary]}
+                  </strong>
+                  <span className="shijing-yuejing__month-primary-tagline">
+                    {interpretation.mainline.tagline}
+                  </span>
+                  <p className="shijing-yuejing__month-primary-body">
+                    {interpretation.mainline.body}
+                  </p>
+                </article>
+                <article className="shijing-yuejing__month-rhythm">
+                  <h4>30 日节奏概览</h4>
+                  <ul className="shijing-yuejing__month-rhythm-legend" aria-hidden>
+                    {YUEJING_MONTH_TENDENCY_CLASSES.filter(
+                      (tendency) => interpretation.day_counts[tendency] > 0,
+                    ).map((tendency) => (
+                      <li key={tendency} data-tendency={tendency}>
+                        <span className="shijing-yuejing__month-rhythm-dot" />
+                        {TENDENCY_CLASS_LABELS[tendency]}
+                      </li>
+                    ))}
+                  </ul>
+                  <ol
+                    className="shijing-yuejing__month-rhythm-grid"
+                    aria-label={`${interpretation.range_label} 每日节奏`}
+                  >
+                    {interpretation.day_series.map((day) => {
+                      const tooltip = `${Number(day.date.slice(5, 7))}/${Number(day.date.slice(8, 10))}${day.tendency ? ` · ${TENDENCY_CLASS_LABELS[day.tendency]}` : ' · 待生成'}`;
+                      return (
+                        <li
+                          key={day.date}
+                          data-tendency={day.tendency ?? 'empty'}
+                        >
+                          <Tooltip
+                            content={tooltip}
+                            placement="top"
+                            className="shijing-yuejing__month-rhythm-cell"
+                          >
+                            <span aria-hidden />
+                          </Tooltip>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                  <div className="shijing-yuejing__month-rhythm-axis" aria-hidden>
+                    <span>{interpretation.start_label}</span>
+                    <span>{interpretation.end_label}</span>
                   </div>
-                  {insight.cells.length > 0 ? (
-                    <>
-                      <p className="shijing-yuejing__month-reading">
-                        {language[insight.primary]} {insightAdvice.protect}
-                        {insight.blockedRanges.length > 0
-                          ? ` 阻滞段落在 ${limitedRangeText(insight.blockedRanges)},这些日期更适合收束和复核。`
-                          : ''}
-                      </p>
-                      <dl className="shijing-yuejing__month-windows">
+                </article>
+              </div>
+              <ul className="shijing-yuejing__month-stats" aria-label="30 日节奏分布">
+                {YUEJING_MONTH_TENDENCY_CLASSES.filter(
+                  (tendency) => interpretation.day_counts[tendency] > 0,
+                ).map((tendency) => (
+                  <li key={tendency} data-tendency={tendency}>
+                    <span className="shijing-yuejing__month-stat-head">
+                      <span className="shijing-yuejing__month-stat-dot" aria-hidden />
+                      {TENDENCY_CLASS_LABELS[tendency]}
+                      <strong>{interpretation.day_counts[tendency]} 日</strong>
+                    </span>
+                    <span className="shijing-yuejing__month-stat-bar" aria-hidden>
+                      <i
+                        style={{
+                          width: `${Math.round(
+                            (interpretation.day_counts[tendency] / interpretation.generated_day_count) * 100,
+                          )}%`,
+                        }}
+                      />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            {/* ② 关键日期窗口 */}
+            <section className="shijing-yuejing__month-section" aria-label="关键日期窗口">
+              <h3>
+                <span className="shijing-yuejing__month-num" aria-hidden>2</span>
+                关键日期窗口
+              </h3>
+              <ul className="shijing-yuejing__month-windows-grid">
+                {interpretation.key_windows.map((window, index) => (
+                  <li key={window.title} data-tendency={window.tendency ?? 'steady'}>
+                    <span className="shijing-yuejing__month-window-icon" aria-hidden>
+                      <MonthWindowGlyph index={index} />
+                    </span>
+                    <strong>{window.title}</strong>
+                    <span className="shijing-yuejing__month-window-dates">{window.window}</span>
+                    <p>{window.brief}</p>
+                  </li>
+                ))}
+              </ul>
+              {interpretation.context_windows.length > 0 ? (
+                <ul className="shijing-yuejing__month-context" aria-label="本期已有的记录与计划">
+                  {interpretation.context_windows.map((window) => (
+                    <li key={window.title}>
+                      <strong>{window.title}</strong>
+                      <span>{window.window}</span>
+                      <p>{window.brief}</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </section>
+
+            {/* ③ 30 日节奏 */}
+            <section className="shijing-yuejing__month-section" aria-label="30 日节奏">
+              <h3>
+                <span className="shijing-yuejing__month-num" aria-hidden>3</span>
+                30 日节奏
+              </h3>
+              <ol className="shijing-yuejing__month-timeline">
+                {interpretation.phases.map((phase, index) => (
+                  <li key={`${phase.title}-${phase.window}`} data-tendency={phase.tendency}>
+                    <span className="shijing-yuejing__month-timeline-icon" aria-hidden>
+                      <MonthPhaseGlyph index={index} />
+                    </span>
+                    <div className="shijing-yuejing__month-timeline-card">
+                      <header>
+                        <strong>{phase.title} {phase.name}</strong>
+                        <span>{phase.window}</span>
+                      </header>
+                      <dl className="shijing-yuejing__month-timeline-meta">
                         <div>
-                          <dt>适合推进</dt>
-                          <dd>{limitedRangeText(insight.supportiveRanges)}</dd>
+                          <dt>主题</dt>
+                          <dd>{phase.theme}</dd>
                         </div>
                         <div>
-                          <dt>先观察</dt>
-                          <dd>{limitedRangeText(insight.cautionRanges)}</dd>
+                          <dt>适合</dt>
+                          <dd>{phase.suitable}</dd>
                         </div>
-                        <div>
-                          <dt>可能转向</dt>
-                          <dd>{limitedRangeText(insight.turningRanges)}</dd>
+                        <div data-kind="avoid">
+                          <dt>不适合</dt>
+                          <dd>{phase.unsuitable}</dd>
                         </div>
                       </dl>
-                      <ul className="shijing-yuejing__month-counts shijing-yuejing__month-counts--compact" aria-label={`${tagName} 倾向分布`}>
-                        {MONTH_TENDENCY_CLASSES.filter((tendency) => insight.counts[tendency] > 0).map((tendency) => (
-                          <li key={tendency} data-tendency={tendency}>
-                            <span className="shijing-yuejing__panel-tend-dot" aria-hidden />
-                            {TENDENCY_CLASS_LABELS[tendency]} {insight.counts[tendency]} 日
-                          </li>
-                        ))}
-                      </ul>
-                      {insight.detailExamples.length > 0 ? (
-                        <p className="shijing-yuejing__month-detail">
-                          细节线索: {insight.detailExamples.join(' / ')}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+
+            {/* ④ 关注行动 */}
+            <section className="shijing-yuejing__month-section" aria-label="关注行动">
+              <h3>
+                <span className="shijing-yuejing__month-num" aria-hidden>4</span>
+                关注行动
+                <span className="shijing-yuejing__month-section-hint">优先显示本轮更需要注意的关注</span>
+              </h3>
+              <ul className="shijing-yuejing__month-concerns">
+                {interpretation.concern_interpretations.map((insight) => {
+                  const tagName = insight.tag_label;
+                  const iconStyle = concernIconStyle(insight.tag.label ?? tagName);
+                  return (
+                    <li key={insight.tag.id} data-primary={insight.primary}>
+                      <div className="shijing-yuejing__month-concern-head">
+                        <ConcernIcon style={iconStyle} />
+                        <div>
+                          <strong>{tagName}</strong>
+                          {insight.has_cells ? (
+                            <span className="shijing-yuejing__month-concern-axis">主轴 · {insight.axis}</span>
+                          ) : (
+                            <span className="shijing-yuejing__month-concern-axis" data-pending="true">尚未生成</span>
+                          )}
+                        </div>
+                      </div>
+                      {insight.has_cells ? (
+                        <>
+                          <p className="shijing-yuejing__month-concern-summary">{insight.summary}</p>
+                          <ul className="shijing-yuejing__month-concern-windows">
+                            {insight.key_windows.map((window) => (
+                              <li key={`${insight.tag.id}-${window.title}`} data-tendency={window.tendency ?? 'steady'}>
+                                <span className="shijing-yuejing__month-concern-window-label">{window.title}</span>
+                                <strong>{window.window}</strong>
+                                <p>{window.brief}</p>
+                              </li>
+                            ))}
+                          </ul>
+                          <div className="shijing-yuejing__month-concern-checklist">
+                            <h5>本期行动清单</h5>
+                            <ul>
+                              {insight.checklist.map((item) => (
+                                <li key={item}>
+                                  <span className="shijing-yuejing__month-check" aria-hidden>
+                                    <CheckIcon />
+                                  </span>
+                                  {item}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </>
+                      ) : (
+                        <p className="shijing-yuejing__month-concern-summary">
+                          这个关注还没有进入当前 30 日窗口的生成结果。重新生成后再纳入完整解读。
                         </p>
-                      ) : null}
-                    </>
-                  ) : (
-                    <p className="shijing-yuejing__month-reading">
-                      这个关注还没有进入当前 30 日窗口的生成结果。重新生成后再纳入完整解读。
-                    </p>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </section>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+
+            {/* ⑤ 收尾提醒 */}
+            <section className="shijing-yuejing__month-section" aria-label="收尾提醒">
+              <h3>
+                <span className="shijing-yuejing__month-num" aria-hidden>5</span>
+                收尾提醒
+              </h3>
+              <div className="shijing-yuejing__month-closing">
+                <article className="shijing-yuejing__month-avoid">
+                  <header>
+                    <span className="shijing-yuejing__month-closing-icon" aria-hidden>
+                      <WarningIcon />
+                    </span>
+                    不建议做的事
+                  </header>
+                  <ul>
+                    {interpretation.closing_avoid.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </article>
+                <article className="shijing-yuejing__month-review">
+                  <header>
+                    <span className="shijing-yuejing__month-closing-icon" aria-hidden>
+                      <ReviewIcon />
+                    </span>
+                    复盘问题
+                  </header>
+                  <ul>
+                    {interpretation.review_prompts.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </article>
+              </div>
+            </section>
+
+            <details className="shijing-yuejing__month-evidence">
+              <summary>生成依据</summary>
+              <ul>
+                {interpretation.basis_items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+              <ul className="shijing-yuejing__month-counts" aria-label="月内倾向分布">
+                {YUEJING_MONTH_TENDENCY_CLASSES.filter((tendency) => interpretation.counts[tendency] > 0).map((tendency) => (
+                  <li key={tendency} data-tendency={tendency}>
+                    <span className="shijing-yuejing__panel-tend-dot" aria-hidden />
+                    {TENDENCY_CLASS_LABELS[tendency]} {interpretation.counts[tendency]} 条
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </>
+        )}
       </aside>
     </>
   );
@@ -2116,33 +2115,36 @@ function YueJingDayPanel(props: {
                       <>
                         <span className="shijing-yuejing__panel-record-body">{r.body}</span>
                         <div className="shijing-yuejing__panel-record-actions">
-                          <button
-                            type="button"
-                            data-action="ask"
-                            aria-label="去时镜问这条"
-                            title="去时镜问这条"
-                            onClick={() => askInShiJing(r.id)}
-                          >
-                            <AskIcon />
-                          </button>
-                          <button
-                            type="button"
-                            data-action="edit"
-                            aria-label={`编辑这条${recordKind}`}
-                            title="编辑"
-                            onClick={() => startEdit(r.id, r.body)}
-                          >
-                            <PencilIcon />
-                          </button>
-                          <button
-                            type="button"
-                            data-action="delete"
-                            aria-label={`删除这条${recordKind}`}
-                            title="删除"
-                            onClick={() => setConfirmingDelete({ id: r.id, body: r.body })}
-                          >
-                            <TrashIcon />
-                          </button>
+                          <Tooltip content="去时镜问这条" placement="top">
+                            <button
+                              type="button"
+                              data-action="ask"
+                              aria-label="去时镜问这条"
+                              onClick={() => askInShiJing(r.id)}
+                            >
+                              <AskIcon />
+                            </button>
+                          </Tooltip>
+                          <Tooltip content="编辑" placement="top">
+                            <button
+                              type="button"
+                              data-action="edit"
+                              aria-label={`编辑这条${recordKind}`}
+                              onClick={() => startEdit(r.id, r.body)}
+                            >
+                              <PencilIcon />
+                            </button>
+                          </Tooltip>
+                          <Tooltip content="删除" placement="top">
+                            <button
+                              type="button"
+                              data-action="delete"
+                              aria-label={`删除这条${recordKind}`}
+                              onClick={() => setConfirmingDelete({ id: r.id, body: r.body })}
+                            >
+                              <TrashIcon />
+                            </button>
+                          </Tooltip>
                         </div>
                       </>
                     )}

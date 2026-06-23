@@ -10,6 +10,7 @@
 // from the「管理」entry here.
 
 import { useMemo } from 'react';
+import { Tooltip } from '@nimiplatform/kit/ui';
 import { CONCERN_TAG_ACTIVE_LIMIT } from '../../domain/concern-tag.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { useProductCopy } from '../i18n/copy.ts';
@@ -65,25 +66,25 @@ export function ConcernFocusBar({ onManage }: ConcernFocusBarProps) {
         <ul className="shijing-concern-bar__pills">
           {tags.map((tag) => {
             const active = tag.status === 'active';
+            const tooltip = active
+              ? copy.concerns.toggleOffTitle
+              : atLimit
+                ? copy.concerns.addLimitTitle(CONCERN_TAG_ACTIVE_LIMIT)
+                : copy.concerns.toggleOnTitle;
             return (
               <li key={tag.id}>
-                <button
-                  type="button"
-                  className="shijing-concern-bar__pill"
-                  data-status={tag.status}
-                  aria-pressed={active}
-                  disabled={!active && atLimit}
-                  title={
-                    active
-                      ? copy.concerns.toggleOffTitle
-                      : atLimit
-                        ? copy.concerns.addLimitTitle(CONCERN_TAG_ACTIVE_LIMIT)
-                        : copy.concerns.toggleOnTitle
-                  }
-                  onClick={() => toggle(tag.id, tag.status)}
-                >
-                  {tag.label}
-                </button>
+                <Tooltip content={tooltip} placement="top">
+                  <button
+                    type="button"
+                    className="shijing-concern-bar__pill"
+                    data-status={tag.status}
+                    aria-pressed={active}
+                    disabled={!active && atLimit}
+                    onClick={() => toggle(tag.id, tag.status)}
+                  >
+                    {tag.label}
+                  </button>
+                </Tooltip>
               </li>
             );
           })}

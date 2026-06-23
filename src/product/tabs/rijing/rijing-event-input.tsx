@@ -18,12 +18,19 @@ import { upsertEventMemory } from '../../memories/memory-editor-state.ts';
 import { newEventMemoryId } from '../../ids/index.ts';
 import type { EventMemory } from '../../../domain/event-memory.ts';
 import { useProductCopy } from '../../i18n/copy.ts';
+import { RiJingReferenceList } from './rijing-reference-list.tsx';
 
 function nowIso(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
-export function RiJingEventInput() {
+export interface RiJingEventInputProps {
+  // Events already folded into today's reading, newest first. Rendered above the
+  // composer with inline edit/delete; empty → only the composer shows.
+  readonly references: readonly EventMemory[];
+}
+
+export function RiJingEventInput(props: RiJingEventInputProps) {
   const copy = useProductCopy();
   const { state, dispatch } = useShijingStore();
   const [draft, setDraft] = useState('');
@@ -108,6 +115,7 @@ export function RiJingEventInput() {
           {copy.rijing.eventInput.intro}
         </p>
       </header>
+      <RiJingReferenceList references={props.references} />
       <textarea
         className="shijing-rijing__event-input-textarea"
         value={draft}

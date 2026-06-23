@@ -5,6 +5,7 @@ import type {
   ConsultationMirrorScope,
   DailyMirrorScope,
   LongHorizonMirrorScope,
+  NatalMirrorScope,
   Rolling30DayMirrorScope,
 } from '../../domain/mirror-scope.ts';
 
@@ -49,6 +50,13 @@ export function longHorizonMirrorScopeNextTenYears(
     end_date: `${startYear + 10}-12-31`,
     basis_time_zone,
   };
+}
+
+export function natalMirrorScopeForToday(
+  now: Date = new Date(),
+  basis_time_zone: string = DEFAULT_BASIS_TIME_ZONE,
+): NatalMirrorScope {
+  return { kind: 'natal', anchor_year: now.getUTCFullYear(), basis_time_zone };
 }
 
 export function consultationMirrorScopeFor(

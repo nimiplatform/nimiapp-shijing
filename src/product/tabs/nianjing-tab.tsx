@@ -26,6 +26,7 @@
 // as rendered visual primitives.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Tooltip } from '@nimiplatform/kit/ui';
 import type {
   NianJingInflectionKind,
   NianJingInflectionPoint,
@@ -39,7 +40,7 @@ import {
 } from '../../domain/concern-tag.ts';
 import type { ReadingGenerationFailure, Reading } from '../../domain/reading.ts';
 import { generateReadingForStorage } from '../reading/generate-and-store.ts';
-import { inputsSummaryStaleForSpace } from '../astrology/inputs-summary-expiry.ts';
+import { inputsSummaryStalenessForSpace } from '../astrology/inputs-summary-expiry.ts';
 import { newConcernTagId, newReadingId } from '../ids/index.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import {
@@ -48,7 +49,6 @@ import {
   TENDENCY_CLASS_LABELS,
 } from '../i18n/copy.ts';
 import { longHorizonMirrorScopeNextTenYears } from './mirror-scope-helpers.ts';
-import { classifyMirrorTabState } from './mirror-state.ts';
 import {
   deriveConcernTagLabelForDisplay,
   parseConcernTagInput,
@@ -63,6 +63,8 @@ import { CitationDrawer } from './shared/citation-drawer.tsx';
 import { ImportToShiJingButton } from './shared/import-to-shijing-button.tsx';
 import { FailureBanner } from './shared/failure-banner.tsx';
 import { NianJingEventRecorder } from './nianjing/nianjing-event-recorder.tsx';
+import { nianjingFreshnessView } from './nianjing/nianjing-staleness.ts';
+import { buildNianJingDirectDisplayOutput } from './nianjing/nianjing-direct-output.ts';
 import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
 
 // ===== Pure helpers (no React) =======================================
@@ -419,24 +421,26 @@ export function NianJingTab(props: NianJingTabProps) {
       ? nianjingReadings[1]
       : latestNianjingReading;
 
-  const stale = reading
-    ? inputsSummaryStaleForSpace({
+  const staleness = reading
+    ? inputsSummaryStalenessForSpace({
         reading,
         space: state.snapshot,
         now: new Date(),
         expected_mirror_scope: nianjingScope,
         expected_concern_tag_refs: activeTagIds,
       })
-    : false;
-  const tabState = useMemo(
+    : { stale: false as const };
+  const freshness = nianjingFreshnessView(staleness);
+  const directDisplay = useMemo(
     () =>
-      classifyMirrorTabState({
-        ...(reading ? { reading } : {}),
-        ...(failure ? { failure } : {}),
-        loading,
-        stale,
-      }),
-    [reading, failure, loading, stale],
+      activeTags.length > 0
+        ? buildNianJingDirectDisplayOutput({
+            space: state.snapshot,
+            mirror_scope: nianjingScope,
+            active_concern_tags: activeTags,
+          })
+        : null,
+    [activeTags, nianjingScope, state.snapshot],
   );
 
   async function handleGenerate() {
@@ -460,7 +464,18 @@ export function NianJingTab(props: NianJingTabProps) {
     }
   }
 
-  const output = reading ? (reading.output as NianJingMirrorOutput) : null;
+  const persistedOutput =
+    reading && freshness.render_output
+      ? (reading.output as NianJingMirrorOutput)
+      : null;
+  const liveOutput = directDisplay?.ok ? directDisplay.output : null;
+  const output = persistedOutput ?? liveOutput;
+  const outputReading = persistedOutput ? reading : null;
+  const displayFailure =
+    failure ??
+    (!loading && activeTagIds.length > 0 && !output && directDisplay && !directDisplay.ok
+      ? directDisplay.failure
+      : null);
 
   return (
     <section
@@ -471,9 +486,12 @@ export function NianJingTab(props: NianJingTabProps) {
       <NianJingHeaderStrip
         generating={loading}
         canGenerate={activeTagIds.length > 0}
-        readingId={reading?.id ?? null}
+        readingId={
+          freshness.can_import_to_consultation ? reading?.id ?? null : null
+        }
         readingCreatedAt={reading?.created_at ?? null}
         onGenerate={handleGenerate}
+        hasDisplayOutput={output !== null}
         hasPreviousReading={hasPreviousReading}
         viewingPrevious={viewingPrevious}
         onToggleVersion={() => setViewingPrevious((v) => !v)}
@@ -484,21 +502,20 @@ export function NianJingTab(props: NianJingTabProps) {
           请先在下方「关注标签」中添加并激活至少一个关注。
         </p>
       ) : null}
-      {tabState.kind === 'loading' ? (
+      {loading ? (
         <p role="status" className="shijing-nianjing__notice">正在生成长程相位…</p>
       ) : null}
-      {tabState.kind === 'empty' && activeTagIds.length > 0 ? (
+      {!loading && !displayFailure && !output && activeTagIds.length > 0 ? (
         <p role="status" className="shijing-nianjing__notice">
-          尚未生成长程相位,点击右上「生成长程相位」开始。
+          当前资料还无法推导出长程相位，请先补全本命输入与关注。
         </p>
       ) : null}
-      {tabState.kind === 'failure' ? <FailureBanner failure={tabState.failure} /> : null}
+      {displayFailure ? <FailureBanner failure={displayFailure} /> : null}
 
-      {tabState.kind === 'ready' && output ? (
+      {output ? (
         <NianJingReadyView
-          reading={tabState.reading}
+          reading={outputReading}
           output={output}
-          stale={tabState.stale}
           activeTags={activeTags}
           filterTagId={filterTagId}
           onFilterChange={setFilterTagId}
@@ -525,6 +542,7 @@ interface NianJingHeaderStripProps {
   readonly readingId: string | null;
   readonly readingCreatedAt: string | null;
   readonly onGenerate: () => void;
+  readonly hasDisplayOutput: boolean;
   readonly hasPreviousReading: boolean;
   readonly viewingPrevious: boolean;
   readonly onToggleVersion: () => void;
@@ -533,6 +551,13 @@ interface NianJingHeaderStripProps {
 function NianJingHeaderStrip(props: NianJingHeaderStripProps) {
   const ago = props.readingCreatedAt ? relativeTimeShort(props.readingCreatedAt) : null;
   const agoPrefix = props.viewingPrevious ? '上一版生成' : '上次生成';
+  const actionLabel = props.generating
+    ? '生成中...'
+    : props.readingId
+      ? '更新可引用版本'
+      : props.hasDisplayOutput
+        ? '保存可引用版本'
+        : '生成长程相位';
   return (
     <header className="shijing-nianjing__strip">
       <div className="shijing-nianjing__strip-titles">
@@ -548,7 +573,7 @@ function NianJingHeaderStrip(props: NianJingHeaderStripProps) {
             onClick={props.onGenerate}
           >
             <span className="shijing-nianjing__generate-icon" aria-hidden />
-            {props.generating ? '生成中…' : '生成长程相位'}
+            {actionLabel}
           </button>
         </div>
         <div className="shijing-nianjing__strip-footer">
@@ -615,9 +640,8 @@ function buildLanes(
 }
 
 interface NianJingReadyViewProps {
-  readonly reading: Reading;
+  readonly reading: Reading | null;
   readonly output: NianJingMirrorOutput;
-  readonly stale: boolean;
   readonly activeTags: readonly ConcernTag[];
   readonly filterTagId: string | null;
   readonly onFilterChange: (id: string | null) => void;
@@ -668,12 +692,6 @@ function NianJingReadyView(props: NianJingReadyViewProps) {
 
   return (
     <>
-      {props.stale ? (
-        <p role="alert" className="shijing-nianjing__stale">
-          当前长程相位已超过 30 天,建议重新生成。
-        </p>
-      ) : null}
-
       {hasCurrent ? (
         <NianJingPhaseHero
           horizon={props.output.horizon}
@@ -701,7 +719,17 @@ function NianJingReadyView(props: NianJingReadyViewProps) {
       <details className="shijing-nianjing__footer">
         <summary>长程相位摘要与生成依据</summary>
         <p className="shijing-nianjing__footer-summary">{props.output.summary}</p>
-        <CitationDrawer reading={props.reading} />
+        {props.reading ? (
+          <CitationDrawer reading={props.reading} />
+        ) : props.output.citations.length > 0 ? (
+          <ul>
+            {props.output.citations.map((citation, i) => (
+              <li key={i}>
+                <strong>{citation.method}</strong> · {citation.reference}
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </details>
     </>
   );
@@ -1005,27 +1033,29 @@ function ConcernEditorPopover(props: { readonly onClose: () => void }) {
               const label = s.kind === 'archived' ? s.label : s.preset.label;
               const subtitle = s.kind === 'archived' ? s.subtitle : s.preset.subtitle;
               const key = s.kind === 'archived' ? `arc-${s.id}` : `pre-${s.preset.label}`;
+              const addTitle = atLimit ? `已达激活上限 ${CONCERN_TAG_ACTIVE_LIMIT}` : '加入关注';
               return (
                 <li key={key}>
                   <div className="shijing-nianjing__editor-row-text">
                     <strong>{label.replace(/^#/, '')}</strong>
                     <small>{subtitle}</small>
                   </div>
-                  <button
-                    type="button"
-                    className="shijing-nianjing__editor-add"
-                    disabled={atLimit}
-                    title={atLimit ? `已达激活上限 ${CONCERN_TAG_ACTIVE_LIMIT}` : '加入关注'}
-                    onClick={() => {
-                      if (s.kind === 'archived') {
-                        activateExisting(s.id);
-                      } else {
-                        addPreset(s.preset);
-                      }
-                    }}
-                  >
-                    添加
-                  </button>
+                  <Tooltip content={addTitle} placement="top">
+                    <button
+                      type="button"
+                      className="shijing-nianjing__editor-add"
+                      disabled={atLimit}
+                      onClick={() => {
+                        if (s.kind === 'archived') {
+                          activateExisting(s.id);
+                        } else {
+                          addPreset(s.preset);
+                        }
+                      }}
+                    >
+                      添加
+                    </button>
+                  </Tooltip>
                 </li>
               );
             })}
@@ -1149,48 +1179,50 @@ function NianJingTimeline(props: NianJingTimelineProps) {
                 const right = props.percentOf(band.end_date);
                 const width = Math.max(0.5, right - left);
                 const natureLabel = TENDENCY_CLASS_LABELS[band.nature];
+                const tooltip = `${band.start_date} → ${band.end_date} · ${natureLabel}期 · 点按查看`;
                 return (
-                  <button
-                    key={i}
-                    type="button"
-                    className="shijing-nianjing__band"
-                    data-nature={band.nature}
-                    style={{ left: `${left}%`, width: `${width}%` }}
-                    title={`${band.start_date} → ${band.end_date} · ${natureLabel}期 · 点按查看`}
-                    aria-label={`${bandYearRangeLabel(band)} ${natureLabel}期,点按查看说明`}
-                    onClick={() =>
-                      props.onSelectDetail({ kind: 'band', band, tag: lane.tag })
-                    }
-                  >
-                    <span className="shijing-nianjing__band-label">
-                      {natureLabel}
-                    </span>
-                    <span className="shijing-nianjing__band-detail">
-                      {bandYearRangeLabel(band)}
-                    </span>
-                  </button>
+                  <Tooltip key={i} content={tooltip} placement="top">
+                    <button
+                      type="button"
+                      className="shijing-nianjing__band"
+                      data-nature={band.nature}
+                      style={{ left: `${left}%`, width: `${width}%` }}
+                      aria-label={`${bandYearRangeLabel(band)} ${natureLabel}期,点按查看说明`}
+                      onClick={() =>
+                        props.onSelectDetail({ kind: 'band', band, tag: lane.tag })
+                      }
+                    >
+                      <span className="shijing-nianjing__band-label">
+                        {natureLabel}
+                      </span>
+                      <span className="shijing-nianjing__band-detail">
+                        {bandYearRangeLabel(band)}
+                      </span>
+                    </button>
+                  </Tooltip>
                 );
               })}
               {lane.inflections.map((inflection, i) => {
                 const left = props.percentOf(inflection.date);
                 const kindLabel = INFLECTION_KIND_LABELS[inflection.kind];
+                const tooltip = `${inflection.date} · ${kindLabel} · 点按查看`;
                 return (
-                  <button
-                    key={`marker-${i}`}
-                    type="button"
-                    className="shijing-nianjing__marker"
-                    data-kind={inflection.kind}
-                    style={{ left: `${left}%` }}
-                    title={`${inflection.date} · ${kindLabel} · 点按查看`}
-                    aria-label={`${inflection.date} ${kindLabel},点按查看说明`}
-                    onClick={() =>
-                      props.onSelectDetail({
-                        kind: 'inflection',
-                        inflection,
-                        tag: lane.tag,
-                      })
-                    }
-                  />
+                  <Tooltip key={`marker-${i}`} content={tooltip} placement="top">
+                    <button
+                      type="button"
+                      className="shijing-nianjing__marker"
+                      data-kind={inflection.kind}
+                      style={{ left: `${left}%` }}
+                      aria-label={`${inflection.date} ${kindLabel},点按查看说明`}
+                      onClick={() =>
+                        props.onSelectDetail({
+                          kind: 'inflection',
+                          inflection,
+                          tag: lane.tag,
+                        })
+                      }
+                    />
+                  </Tooltip>
                 );
               })}
             </div>

@@ -1,25 +1,25 @@
 // SJG-ASTRO-04 — RiJing daily mirror screen.
 //
-// Restores the rich Today/RiJing visual experience that the W05 cutover
-// temporarily collapsed into a minimal head + memory form. The pieces
-// here all hang off the new Mirror Architecture v1 contracts:
+// Progressive-disclosure layout (Mirror Architecture v1). Each module reads as
+// one takeaway; depth is folded behind explicit toggles so the surface no
+// longer lays every detail out flat:
 //
-//   Header                — "日镜" title + inline date / weekday
-//   RiJingHero            — conclusion / keywords / leanings / reminder
-//                           with an icon-only refresh control and an
-//                           embedded "今日参考的事件" footer (edit +
-//                           delete with kit ConfirmDialog)
-//   RiJingReadinessNotice — 资料完整度 info card (subjectMirrorReadiness)
-//   RiJingEventInput      — "今天有特别的事情吗？" → upsertEventMemory
-//   RiJingProjections     — concern-tag projection grid (one card per
-//                           active tag)
-//   ImportToShiJingButton — quick action: ask 时镜 about this reading
-//   RiJingEvidenceRow     — collapsible wrapping CitationDrawer
+//   Header             — "日镜" title + inline date / weekday
+//   RiJingHero         — 今日总览: conclusion + energy meter + tendency /
+//                        confidence, with the full 解读 (今日基调 + 今日事件解析)
+//                        folded behind 展开完整解读
+//   RiJingProjections  — 今日关注分镜: lens filter + collapsible concern rows
+//   RiJingEventInput   — 今日参照: today's reference events (inline edit /
+//                        delete) + composer → upsertEventMemory
+//   RiJingActions      — 今日行动: 做一件事 / 说一句话 + 导入到时镜咨询
+//   RiJingDataSection  — 推演依据与数据说明: evidence chips + an expandable data
+//                        panel that folds in the 资料完整度 readiness signal
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { ReadingGenerationFailure } from '../../domain/reading.ts';
 import type { RiJingMirrorOutput } from '../../domain/mirror-output.ts';
+import type { EventMemory } from '../../domain/event-memory.ts';
 import { generateReadingForStorage } from '../reading/generate-and-store.ts';
 import { computeCanonicalHash } from '../astrology/canonical-hash.ts';
 import { inputsSummaryStaleForSpace } from '../astrology/inputs-summary-expiry.ts';
@@ -37,22 +37,20 @@ import {
 import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
 import type { ShijingSettingsFocusTarget } from '../settings/settings-page-view.tsx';
 import type { PersistenceLifecycleStatus } from '../state/persistence-bridge.ts';
-import { CitationDrawer } from './shared/citation-drawer.tsx';
-import { ImportToShiJingButton } from './shared/import-to-shijing-button.tsx';
 import { FailureBanner } from './shared/failure-banner.tsx';
 import {
-  deriveEvidenceChips,
   deriveRiJingActions,
+  deriveRiJingDataPanel,
   deriveRiJingHero,
+  deriveRiJingReferenceEventRefs,
   type RiJingEmptyStateKind,
   rijingDateLabel,
 } from './rijing/rijing-derive.ts';
 import { RiJingHero } from './rijing/rijing-hero.tsx';
-import { RiJingReadinessNotice } from './rijing/rijing-readiness.tsx';
 import { RiJingEventInput } from './rijing/rijing-event-input.tsx';
 import { RiJingActions } from './rijing/rijing-actions.tsx';
 import { RiJingProjections } from './rijing/rijing-projections.tsx';
-import { RiJingEvidenceRow } from './rijing/rijing-evidence.tsx';
+import { RiJingDataSection } from './rijing/rijing-evidence.tsx';
 
 function nowIso(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -154,6 +152,14 @@ export function RiJingTab(props: RiJingTabProps) {
   const activeTagIds = useMemo(() => activeTags.map((t) => t.id), [activeTags]);
   const today = new Date().toISOString().slice(0, 10);
   const dailyScope = useMemo(() => dailyMirrorScopeForToday(), [today]);
+  const referenceEventRefs = useMemo(
+    () =>
+      deriveRiJingReferenceEventRefs({
+        memories: state.snapshot.event_memories,
+        scope: dailyScope,
+      }),
+    [state.snapshot.event_memories, dailyScope],
+  );
   const reading = latestReadingByMirrorKind({
     readings: state.snapshot.readings,
     mirror_kind: 'rijing',
@@ -165,6 +171,7 @@ export function RiJingTab(props: RiJingTabProps) {
         now: new Date(),
         expected_mirror_scope: dailyScope,
         expected_concern_tag_refs: activeTagIds,
+        expected_cited_event_memory_refs: referenceEventRefs,
       })
     : false;
   const currentReading = reading && !stale ? reading : undefined;
@@ -208,6 +215,7 @@ export function RiJingTab(props: RiJingTabProps) {
           prompt_text: tag.prompt_text,
         })),
         response_preferences: state.snapshot.settings.response_preferences,
+        cited_event_memory_refs: referenceEventRefs,
       }),
     [
       dailyScope,
@@ -215,6 +223,7 @@ export function RiJingTab(props: RiJingTabProps) {
       state.snapshot.self_subject.natal_inputs,
       activeTags,
       state.snapshot.settings.response_preferences,
+      referenceEventRefs,
     ],
   );
   const autoGenAttemptRef = useRef<string | null>(null);
@@ -245,6 +254,7 @@ export function RiJingTab(props: RiJingTabProps) {
       mirror_scope: dailyMirrorScopeForToday(),
       related_person_refs: [],
       concern_tag_refs: activeTagIds,
+      cited_event_memory_refs: referenceEventRefs,
       space: state.snapshot,
       deps: { runtime_ai_client },
     });
@@ -264,13 +274,39 @@ export function RiJingTab(props: RiJingTabProps) {
     readiness,
     activeTagCount: activeTagIds.length,
   });
-  const hero = deriveRiJingHero(currentReading, { empty_state: emptyState, copy });
+  const heroReferenceMemories = useMemo(() => {
+    const refs = new Set(currentReading?.cited_event_memory_refs ?? referenceEventRefs);
+    return state.snapshot.event_memories.filter((memory) => refs.has(memory.id));
+  }, [currentReading, referenceEventRefs, state.snapshot.event_memories]);
+  // All of today's RiJing-sourced reference events (newest first), shown in
+  // 今日参照 with inline edit/delete.
+  const todayReferenceMemories = useMemo(() => {
+    const refs = deriveRiJingReferenceEventRefs({
+      memories: state.snapshot.event_memories,
+      scope: dailyScope,
+      limit: Number.MAX_SAFE_INTEGER,
+    });
+    const byId = new Map(state.snapshot.event_memories.map((memory) => [memory.id, memory]));
+    return refs
+      .map((ref) => byId.get(ref))
+      .filter((memory): memory is EventMemory => memory !== undefined);
+  }, [state.snapshot.event_memories, dailyScope]);
+  const hero = deriveRiJingHero(currentReading, {
+    empty_state: emptyState,
+    copy,
+    focus_tags: activeTags.map((tag) => ({ id: tag.id, label: tag.label })),
+    reference_memories: heroReferenceMemories,
+  });
   const heroEmptyAction =
     currentReading || loading
       ? undefined
       : emptyActionForState(emptyState, props.onRequestOpenSettings, handleGenerate, copy);
-  const actions = deriveRiJingActions(currentReading, copy);
-  const evidenceChips = deriveEvidenceChips(currentReading, copy);
+  const actions = deriveRiJingActions(
+    currentReading,
+    copy,
+    activeTags.map((t) => ({ id: t.id, label: t.label })),
+  );
+  const dataPanel = deriveRiJingDataPanel(currentReading, copy);
   const dateLabel = rijingDateLabel(dailyScope.basis_time_zone, copy);
   const runtimeFailureAction =
     tabState.kind === 'failure'
@@ -331,31 +367,24 @@ export function RiJingTab(props: RiJingTabProps) {
         refreshDisabled={refreshDisabled}
         refreshAriaLabel={refreshAriaLabel}
         onRefresh={handleGenerate}
-        focusTags={activeTags.map((t) => ({ id: t.id, label: t.label }))}
-        onManageFocus={() => props.onRequestOpenSettings?.('concerns')}
         emptyAction={heroEmptyAction}
       />
 
-      <RiJingReadinessNotice
-        readiness={readiness}
-        onRequestOpenSettings={() => props.onRequestOpenSettings?.('profile', 'self_profile_editor')}
-      />
-
-      <RiJingEventInput />
-
-      <RiJingActions items={actions} />
-
       <RiJingProjections projections={projections} concernTags={state.snapshot.concern_tags} />
 
-      {tabState.kind === 'ready' ? (
-        <div className="shijing-rijing__quick-actions">
-          <ImportToShiJingButton readingId={tabState.reading.id} />
-        </div>
-      ) : null}
+      <RiJingEventInput references={todayReferenceMemories} />
 
-      <RiJingEvidenceRow chips={evidenceChips} disabled={!currentReading}>
-        {currentReading ? <CitationDrawer reading={currentReading} /> : null}
-      </RiJingEvidenceRow>
+      <RiJingActions
+        items={actions}
+        importReadingId={tabState.kind === 'ready' ? tabState.reading.id : undefined}
+      />
+
+      <RiJingDataSection
+        panel={dataPanel}
+        readiness={readiness}
+        onCompleteProfile={() => props.onRequestOpenSettings?.('profile', 'self_profile_editor')}
+        disabled={!currentReading}
+      />
     </section>
   );
 }

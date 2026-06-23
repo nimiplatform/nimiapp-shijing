@@ -10,7 +10,7 @@
 // catalog so every surface offers the same set.
 
 import { useMemo, useState } from 'react';
-import { ConfirmDialog } from '@nimiplatform/kit/ui';
+import { ConfirmDialog, Tooltip } from '@nimiplatform/kit/ui';
 import {
   CONCERN_TAG_ACTIVE_LIMIT,
   type ConcernTag,
@@ -269,6 +269,9 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
               const label = s.kind === 'archived' ? s.label : s.preset.label;
               const subtitle = s.kind === 'archived' ? s.subtitle : s.preset.subtitle;
               const key = s.kind === 'archived' ? `arc-${s.id}` : `pre-${s.preset.label}`;
+              const addTitle = atLimit
+                ? copy.concerns.addLimitTitle(CONCERN_TAG_ACTIVE_LIMIT)
+                : copy.concerns.addTitle;
               return (
                 <li className="sjp-concern-row" key={key} data-status="suggestion">
                   <div className="sjp-concern-row__text">
@@ -276,25 +279,22 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
                     <small>{subtitle}</small>
                   </div>
                   <div className="sjp-concern-row__actions">
-                    <button
-                      type="button"
-                      className="sjp-concern-row__action sjp-concern-row__action--add"
-                      disabled={atLimit}
-                      title={
-                        atLimit
-                          ? copy.concerns.addLimitTitle(CONCERN_TAG_ACTIVE_LIMIT)
-                          : copy.concerns.addTitle
-                      }
-                      onClick={() => {
-                        if (s.kind === 'archived') {
-                          activateExisting(s.id);
-                        } else {
-                          addPreset(s.preset);
-                        }
-                      }}
-                    >
-                      {copy.common.add}
-                    </button>
+                    <Tooltip content={addTitle} placement="top">
+                      <button
+                        type="button"
+                        className="sjp-concern-row__action sjp-concern-row__action--add"
+                        disabled={atLimit}
+                        onClick={() => {
+                          if (s.kind === 'archived') {
+                            activateExisting(s.id);
+                          } else {
+                            addPreset(s.preset);
+                          }
+                        }}
+                      >
+                        {copy.common.add}
+                      </button>
+                    </Tooltip>
                     {s.kind === 'archived' && s.isCustom ? (
                       <button
                         type="button"

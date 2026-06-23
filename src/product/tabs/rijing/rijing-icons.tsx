@@ -2,7 +2,7 @@
 // inherit `currentColor` so callers control tone via CSS. We deliberately
 // avoid emoji to keep the visual register calm and brand-aligned.
 
-import type { SVGProps } from 'react';
+import type { ReactElement, SVGProps } from 'react';
 
 type IconProps = SVGProps<SVGSVGElement>;
 
@@ -77,6 +77,14 @@ export function ChevronDownIcon(props: IconProps) {
   );
 }
 
+export function ChevronRightIcon(props: IconProps) {
+  return (
+    <svg {...COMMON_PROPS} aria-hidden {...props}>
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
+}
+
 export function PencilIcon(props: IconProps) {
   return (
     <svg {...COMMON_PROPS} aria-hidden {...props}>
@@ -126,4 +134,77 @@ export function ProhibitIcon(props: IconProps) {
       <path d="M5.6 5.6l12.8 12.8" />
     </svg>
   );
+}
+
+// ----- 关注视角 category glyphs -----
+//
+// One calm line-glyph per concern category. `concernIconFor` keyword-matches a
+// concern tag's label / parsed topics to a category; anything unrecognised falls
+// back to the neutral aperture mark so a user's free-form concern still reads as
+// a deliberate lens rather than a missing icon.
+
+export function BriefcaseIcon(props: IconProps) {
+  return (
+    <svg {...COMMON_PROPS} aria-hidden {...props}>
+      <rect x="2" y="7" width="20" height="14" rx="2" />
+      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+      <path d="M2 13h20" />
+    </svg>
+  );
+}
+
+export function ActivityIcon(props: IconProps) {
+  return (
+    <svg {...COMMON_PROPS} aria-hidden {...props}>
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+    </svg>
+  );
+}
+
+export function UsersIcon(props: IconProps) {
+  return (
+    <svg {...COMMON_PROPS} aria-hidden {...props}>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+export function WalletIcon(props: IconProps) {
+  return (
+    <svg {...COMMON_PROPS} aria-hidden {...props}>
+      <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+      <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+      <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+    </svg>
+  );
+}
+
+export function ApertureIcon(props: IconProps) {
+  return (
+    <svg {...COMMON_PROPS} aria-hidden {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="3.2" />
+    </svg>
+  );
+}
+
+type ConcernIcon = (props: IconProps) => ReactElement;
+
+const CONCERN_ICON_RULES: ReadonlyArray<readonly [ConcernIcon, readonly string[]]> = [
+  [BriefcaseIcon, ['事业', '事業', '工作', '职场', '職場', '生意', '创业', 'career', 'work', 'job', 'business']],
+  [ActivityIcon, ['身体', '身體', '健康', '睡眠', '情绪', '心理', 'health', 'body', 'sleep', 'mood']],
+  [UsersIcon, ['家人', '家庭', '父母', '孩子', '亲子', '亲人', 'family', 'home', 'parent', 'child']],
+  [WalletIcon, ['财运', '財運', '财务', '理财', '金钱', '收入', '投资', 'wealth', 'money', 'finance', 'income']],
+  [HeartIcon, ['姻缘', '感情', '爱情', '恋爱', '婚姻', '关系', '伴侣', 'love', 'relationship', 'romance', 'partner']],
+];
+
+export function concernIconFor(label: string, topics: readonly string[] = []): ConcernIcon {
+  const haystack = [label, ...topics].join(' ').toLowerCase();
+  for (const [icon, keywords] of CONCERN_ICON_RULES) {
+    if (keywords.some((kw) => haystack.includes(kw.toLowerCase()))) return icon;
+  }
+  return ApertureIcon;
 }
