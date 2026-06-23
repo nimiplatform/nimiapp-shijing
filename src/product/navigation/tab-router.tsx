@@ -25,7 +25,7 @@ export function PrimaryTabBar(_props: PrimaryTabBarProps) {
           onClick={() => dispatch({ type: 'tab/activate', tab: tab.id })}
           data-mirror-kind={tab.id}
         >
-          {copy.mirrorKindLabels[tab.id]}
+          {copy.tabLabels[tab.id]}
         </button>
       ))}
     </nav>

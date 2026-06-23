@@ -20,8 +20,10 @@ import type {
   UiLanguage,
 } from '../../domain/settings.ts';
 import type { ReadingGenerationFailure } from '../../domain/reading.ts';
-import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
+import type { ShijingSettingsPageId, ShijingTabId } from '../../contracts/ia-contract.ts';
 import type { NatalReadinessReason } from '../subjects/natal-readiness.ts';
+import type { FiveElement, ShijingStageLabel } from '../../domain/algorithm.ts';
+import type { PeriodFavor } from '../../domain/mingjing.ts';
 
 type LabelMap<K extends string> = Record<K, string>;
 
@@ -44,10 +46,51 @@ type RiJingReadinessCopy = {
   readonly body: string;
 };
 
+const ZH_TWELVE_STAGE_LABELS: Readonly<Record<string, string>> = {
+  长生: '长生（生发）',
+  沐浴: '沐浴（调整）',
+  冠带: '冠带（成形）',
+  临官: '临官（成事）',
+  帝旺: '帝旺（峰值）',
+  衰: '衰（回落）',
+  病: '病（失衡）',
+  死: '死（收束）',
+  墓: '墓（收藏）',
+  绝: '绝（断旧）',
+  胎: '胎（酝酿）',
+  养: '养（培育）',
+};
+
+const EN_TWELVE_STAGE_LABELS: Readonly<Record<string, string>> = {
+  长生: 'Changsheng (emergence)',
+  沐浴: 'Muyu (adjustment)',
+  冠带: 'Guandai (forming)',
+  临官: 'Linguan (taking office)',
+  帝旺: 'Diwang (peak)',
+  衰: 'Shuai (decline)',
+  病: 'Bing (imbalance)',
+  死: 'Si (closure)',
+  墓: 'Mu (storage)',
+  绝: 'Jue (cutover)',
+  胎: 'Tai (gestation)',
+  养: 'Yang (nurturing)',
+};
+
+function zhTwelveStageLabel(terrain: string): string {
+  return ZH_TWELVE_STAGE_LABELS[terrain] ?? `${terrain}（十二长生阶段）`;
+}
+
+function enTwelveStageLabel(terrain: string): string {
+  return EN_TWELVE_STAGE_LABELS[terrain] ?? `${terrain} (twelve-stage term)`;
+}
+
 export interface ProductCopy {
   readonly brandName: string;
   readonly brandSub: string;
   readonly mirrorKindLabels: LabelMap<MirrorKind>;
+  // Primary-tab labels keyed by tab id. Distinct from mirrorKindLabels: 命镜 is a
+  // primary tab (SJG-IA-08) but not a MirrorKind in the natal-projection layer.
+  readonly tabLabels: LabelMap<ShijingTabId>;
   readonly tendencyClassLabels: LabelMap<TendencyClass>;
   readonly nianjingInflectionKindLabels: LabelMap<NianJingInflectionKind>;
   readonly calendarSystemLabels: LabelMap<CalendarSystem>;
@@ -103,6 +146,7 @@ export interface ProductCopy {
     readonly save: string;
     readonly saving: string;
     readonly optional: string;
+    readonly automatic: string;
     readonly saved: string;
     readonly loading: string;
   };
@@ -174,6 +218,7 @@ export interface ProductCopy {
     readonly description: string;
     readonly empty: string;
     readonly addDialog: string;
+    readonly editDialog: string;
     readonly displayName: string;
     readonly displayNamePlaceholder: string;
     readonly relation: string;
@@ -182,6 +227,7 @@ export interface ProductCopy {
     readonly notes: string;
     readonly notesPlaceholder: string;
     readonly addPerson: string;
+    readonly editPersonAria: (name: string) => string;
     readonly deletePersonAria: (name: string) => string;
     readonly deleteBlocked: string;
     readonly deleteTitle: string;
@@ -359,6 +405,14 @@ export interface ProductCopy {
       readonly manageFocus: string;
       readonly leaningsAria: string;
       readonly confidenceLabel: string;
+      readonly themeLabel: string;
+      readonly perspectivesLabel: string;
+      readonly eventInsightLabel: string;
+      readonly eventActionLead: string;
+      readonly eventFallbackBody: string;
+      readonly eventFallbackGuidance: string;
+      readonly closingLabel: string;
+      readonly closingWish: string;
     };
     readonly heroMemories: {
       readonly ariaLabel: string;
@@ -382,6 +436,8 @@ export interface ProductCopy {
       readonly invalidHint: (reason: string) => string;
       readonly successHint: string;
       readonly submit: string;
+      readonly refsAria: string;
+      readonly refsBadge: string;
     };
     readonly readiness: {
       readonly ariaLabel: string;
@@ -393,15 +449,46 @@ export interface ProductCopy {
       readonly ariaLabel: string;
       readonly title: string;
       readonly slots: Record<'do' | 'say' | 'avoid', string>;
+      readonly sourceLead: string;
     };
     readonly projections: {
       readonly ariaLabel: string;
       readonly title: string;
+      readonly allLabel: string;
+      readonly filterAria: string;
+      readonly manage: string;
+      readonly editorSubtitle: string;
+      readonly actionsLabel: string;
+      readonly expandAria: (name: string) => string;
     };
     readonly evidence: {
       readonly title: string;
       readonly emptyChipGroup: string;
       readonly emptyChipValue: string;
+      readonly ariaLabel: string;
+      readonly toggleAria: string;
+      readonly strengthLabel: string;
+      readonly yongLabel: string;
+      readonly pillarsLabel: string;
+      readonly completenessLabel: string;
+      readonly completenessFull: string;
+      readonly completenessKnown: (filled: number, total: number) => string;
+      readonly stageDriverLabel: string;
+      readonly completeProfile: string;
+      readonly elementNatures: Record<FiveElement, string>;
+      readonly pillarPositions: Record<'year' | 'month' | 'day' | 'hour', string>;
+    };
+    readonly overview: {
+      readonly meterAxisStart: string;
+      readonly meterAxisEnd: string;
+      readonly meterAria: string;
+      readonly meterStrengthLabel: string;
+      readonly meterStageConnector: string;
+      readonly meterStageSuffix: string;
+      readonly stageGuidance: Record<ShijingStageLabel, string>;
+      readonly confidencePrefix: string;
+      readonly expandLabel: string;
+      readonly collapseLabel: string;
     };
   };
   readonly shijing: {
@@ -417,6 +504,8 @@ export interface ProductCopy {
     readonly sourceMissing: string;
     readonly title: string;
     readonly railAria: string;
+    readonly newQuestion: string;
+    readonly newQuestionAria: string;
     readonly searchPlaceholder: string;
     readonly searchAria: string;
     readonly emptyHistory: string;
@@ -433,6 +522,9 @@ export interface ProductCopy {
     readonly generateTitle: string;
     readonly generating: string;
     readonly generate: string;
+    readonly sendTitle: string;
+    readonly sending: string;
+    readonly send: string;
     readonly suggestLabel: string;
     readonly resultAria: string;
     readonly context: {
@@ -441,8 +533,209 @@ export interface ProductCopy {
       readonly description: string;
       readonly empty: string;
       readonly manage: string;
+      readonly editorSubtitle: string;
     };
     readonly citedReadings: (count: number) => string;
+  };
+  readonly mingjing: {
+    readonly title: string;
+    readonly eyebrow: string;
+    readonly subtitle: string;
+    readonly loadingStatus: string;
+    readonly failureTitle: string;
+    readonly hero: {
+      readonly eyebrow: string;
+      readonly fixedNote: string;
+      readonly favorableTitle: string;
+      readonly adverseTitle: string;
+      readonly currentStage: string;
+      readonly dayunWord: string;
+      readonly notStarted: string;
+      readonly seeStages: string;
+    };
+    readonly readiness: {
+      readonly title: string;
+      readonly button: string;
+      readonly fallback: string;
+      readonly reasons: Record<NatalReadinessReason, string>;
+    };
+    readonly paipan: {
+      readonly title: string;
+      readonly intro: string;
+      readonly explanation: string;
+      readonly sectionTitle: string;
+      readonly sectionIntro: string;
+      readonly roles: { readonly year: string; readonly month: string; readonly day: string; readonly hour: string };
+      readonly dayBadge: string;
+      readonly expand: string;
+      readonly collapse: string;
+      readonly detailTitle: string;
+      readonly pillarLabels: {
+        readonly year: string;
+        readonly month: string;
+        readonly day: string;
+        readonly hour: string;
+      };
+      readonly rows: {
+        readonly stem: string;
+        readonly branch: string;
+        readonly hidden: string;
+        readonly tenGod: string;
+        readonly nayin: string;
+        readonly terrain: string;
+        readonly voidRow: string;
+      };
+      readonly dayMaster: string;
+      readonly self: string;
+      readonly voidMark: string;
+      readonly voidEmpty: string;
+    };
+    readonly fiveElements: {
+      readonly title: string;
+      readonly explanation: string;
+      readonly labels: LabelMap<FiveElement>;
+      readonly dominant: string;
+      readonly weakest: string;
+      readonly absentLabel: string;
+      readonly absentNone: string;
+    };
+    readonly geju: {
+      readonly title: string;
+      readonly explanation: string;
+      readonly strengthLabel: string;
+      readonly supportRatioLabel: string;
+      readonly patternLabel: string;
+      readonly sourceLabel: string;
+      readonly transparent: string;
+      readonly notTransparent: string;
+      readonly rooted: string;
+      readonly notRooted: string;
+      readonly yong: string;
+      readonly xi: string;
+      readonly ji: string;
+      readonly tiaohou: string;
+      readonly relationsLabel: string;
+      readonly relationsEmpty: string;
+      readonly basisLabel: string;
+    };
+    readonly dayun: {
+      readonly title: string;
+      readonly explanation: string;
+      readonly sectionTitle: string;
+      readonly sectionIntro: string;
+      readonly introSegments: (input: {
+        readonly currentNatureLabel: string | null;
+        readonly highlightAge: number | null;
+      }) => readonly { readonly text: string; readonly tone?: 'current' | 'highlight' }[];
+      readonly highlightLabel: string;
+      readonly directionLabels: { readonly forward: string; readonly reverse: string };
+      readonly startAge: (age: string) => string;
+      readonly current: string;
+      readonly currentPrefix: string;
+      readonly inflection: string;
+      readonly distantTitle: string;
+      readonly distantDescription: string;
+      readonly phaseTitle: (index: number, current: boolean) => string;
+      readonly periodExplanation: (input: {
+        readonly tenGod: string;
+        readonly nature: string;
+        readonly favor: PeriodFavor;
+        readonly terrain: string;
+        readonly current: boolean;
+        readonly nextStartAge?: number;
+        readonly relationText?: string;
+      }) => string;
+      readonly terrainLabel: (terrain: string) => string;
+      readonly cols: {
+        readonly age: string;
+        readonly years: string;
+        readonly pillar: string;
+        readonly tenGod: string;
+        readonly terrain: string;
+        readonly nature: string;
+      };
+      readonly ageRange: (start: number, end: number) => string;
+      readonly yearRange: (start: number, end: number) => string;
+    };
+    readonly liunian: {
+      readonly title: string;
+      readonly intro: string;
+      readonly explanation: string;
+      readonly sectionTitle: string;
+      readonly sectionIntro: string;
+      readonly detailToggle: string;
+      readonly horizon: (start: number, end: number) => string;
+      readonly salienceLabels: { readonly high: string; readonly medium: string };
+      readonly favorLabels: LabelMap<PeriodFavor>;
+      readonly windowRange: (start: number, end: number) => string;
+      readonly singleYear: (year: number) => string;
+      readonly yearsLabel: string;
+      readonly evidenceLabel: string;
+      readonly dayunLabel: string;
+      readonly relationMore: (count: number) => string;
+      readonly basisMore: (count: number) => string;
+      readonly empty: string;
+    };
+    readonly reading: {
+      readonly eyebrow: string;
+      readonly coreTitle: string;
+      readonly explanation: string;
+      readonly coreLabels: {
+        readonly personality: string;
+        readonly strengths: string;
+        readonly long_term_themes: string;
+        readonly relationship_pattern: string;
+        readonly career_inclination: string;
+      };
+      readonly strategiesTitle: string;
+      readonly strategyTheme: string;
+      readonly strategyStrategy: string;
+      readonly generate: string;
+      readonly regenerate: string;
+      readonly generating: string;
+      readonly empty: string;
+      readonly stale: string;
+      readonly failureTitle: string;
+    };
+    readonly events: {
+      readonly title: string;
+      readonly intro: string;
+      readonly explanation: string;
+      readonly dateLabel: string;
+      readonly datePlaceholder: string;
+      readonly bodyLabel: string;
+      readonly bodyPlaceholder: string;
+      readonly add: string;
+      readonly invalidHint: string;
+      readonly empty: string;
+      readonly delete: string;
+      readonly dayunColumn: string;
+      readonly liunianColumn: string;
+      readonly preGenHint: string;
+    };
+    readonly rectify: {
+      readonly title: string;
+      readonly intro: string;
+      readonly howItWorks: string;
+      readonly needMoreEvents: string;
+      readonly unsupportedCalendar: string;
+      readonly sexRequired: string;
+      readonly confidenceLabel: string;
+      readonly confidenceValues: { readonly high: string; readonly medium: string; readonly low: string };
+      readonly lowConfidenceCaveat: string;
+      readonly recommended: string;
+      readonly fitLabel: string;
+      readonly startAge: (age: string) => string;
+      readonly hourPillarLabel: string;
+      readonly alignedLabel: string;
+      readonly adopt: string;
+      readonly entryLive: string;
+      readonly entryBlocked: string;
+      readonly earlyZi: string;
+      readonly lateZi: string;
+      readonly shichenSuffix: string;
+      readonly close: string;
+    };
   };
   readonly natalErrors: Record<string, string>;
   readonly operationFailed: (code: string) => string;
@@ -455,6 +748,14 @@ const ZH_COPY: ProductCopy = {
     rijing: '日镜',
     yuejing: '月镜',
     nianjing: '年镜',
+    mingjing: '命镜',
+    shijing: '时镜',
+  },
+  tabLabels: {
+    rijing: '日镜',
+    yuejing: '月镜',
+    nianjing: '年镜',
+    mingjing: '命镜',
     shijing: '时镜',
   },
   tendencyClassLabels: {
@@ -563,11 +864,12 @@ const ZH_COPY: ProductCopy = {
     save: '保存',
     saving: '保存中',
     optional: '可选',
+    automatic: '自动',
     saved: '已保存',
     loading: '加载中',
   },
   shell: {
-    navAriaLabel: '时镜四镜',
+    navAriaLabel: '时镜五镜',
     accountMenu: '账户菜单',
     settingsMenu: '设置',
     languageSwitch: '界面语言',
@@ -635,6 +937,7 @@ const ZH_COPY: ProductCopy = {
     description: '添加家人、伴侣或重要的人，用于关系合盘和事件解读。',
     empty: '暂无关系人物',
     addDialog: '添加关系人物',
+    editDialog: '编辑关系人物',
     displayName: '称呼',
     displayNamePlaceholder: '例如：阿楠、老张',
     relation: '关系',
@@ -643,6 +946,7 @@ const ZH_COPY: ProductCopy = {
     notes: '备注',
     notesPlaceholder: '关于这个人的补充说明…',
     addPerson: '添加人物',
+    editPersonAria: (name) => `编辑 ${name}`,
     deletePersonAria: (name) => `删除 ${name}`,
     deleteBlocked: '无法删除：仍有关注标签等内容引用了该人物，请先解除引用再删除。',
     deleteTitle: '删除这个人物？',
@@ -689,9 +993,9 @@ const ZH_COPY: ProductCopy = {
   onboarding: {
     ariaLabel: '启动准备',
     eyebrow: '启动准备',
-    title: '让日镜先认识你。',
-    lede: '完成本人资料和关注，日镜会据此生成今日判断。',
-    enter: '进入日镜',
+    title: '让命镜先认识你。',
+    lede: '完成本人资料和关注，命镜会先建立本命推算依据。',
+    enter: '进入命镜',
     readinessAria: '准备状态',
     selfTitle: '本人资料',
     selfPending: '建立本命输入',
@@ -702,7 +1006,7 @@ const ZH_COPY: ProductCopy = {
     profileStageEyebrow: '出生信息',
     concernStageEyebrow: '关注镜片',
     profileStageTitle: '先确定推算依据。',
-    concernStageTitle: '再告诉日镜该看向哪里。',
+    concernStageTitle: '再告诉时镜该看向哪里。',
     continueProfile: '继续完善资料',
     continueConcerns: '继续选择关注',
   },
@@ -896,6 +1200,14 @@ const ZH_COPY: ProductCopy = {
       manageFocus: '管理',
       leaningsAria: '今日倾向',
       confidenceLabel: '可信度',
+      themeLabel: '今日基调',
+      perspectivesLabel: '专属视角解读',
+      eventInsightLabel: '今日事件解析',
+      eventActionLead: '可以先落到一个小动作：',
+      eventFallbackBody: '今天没有被某个具体事件牵引，这反而给了你更宽的余地去观察自己的节奏。',
+      eventFallbackGuidance: '从整体能量看，今日更适合把生活重新调到可掌控的速度：先做一件能安顿心神的小事，再回应外界的要求。命理给出的不是判决，而是一盏灯，照见你仍然可以选择怎样说话、怎样行动、怎样照顾自己。',
+      closingLabel: '寄语',
+      closingWish: '命由天定，运由己造；愿你在今天的节奏里，稳稳拿回自己的选择权。',
     },
     heroMemories: {
       ariaLabel: '今日参考的事件',
@@ -919,6 +1231,8 @@ const ZH_COPY: ProductCopy = {
       invalidHint: (reason) => `这条事件没有加入（${reason}）。请稍后再试或调整描述。`,
       successHint: '已加入今日参照，今日判断会优先结合这件事来看。',
       submit: '加入今日参照',
+      refsAria: '今日已参照的事件',
+      refsBadge: '已结合今日判断',
     },
     readiness: {
       ariaLabel: '资料完整度提示',
@@ -971,15 +1285,63 @@ const ZH_COPY: ProductCopy = {
         say: '今天说一句话',
         avoid: '今天避免一件事',
       },
+      sourceLead: '来自',
     },
     projections: {
       ariaLabel: '今日关注分镜',
       title: '今日关注分镜',
+      allLabel: '全部',
+      filterAria: '按关注视角筛选',
+      manage: '编辑关注',
+      editorSubtitle: '激活的关注会进入日镜生成与今日关注分镜；已生成读数保留当时快照，下一次生成会使用新的关注。',
+      actionsLabel: '今 日 动 作',
+      expandAria: (name) => `展开「${name}」分镜`,
     },
     evidence: {
       title: '推演依据与数据说明',
       emptyChipGroup: '数据完整度',
       emptyChipValue: '待生成',
+      ariaLabel: '推演依据与数据说明',
+      toggleAria: '展开推演依据与数据说明',
+      strengthLabel: '旺衰',
+      yongLabel: '用神 · 喜用',
+      pillarsLabel: '四柱 · 已知',
+      completenessLabel: '数据完整度',
+      completenessFull: '四柱齐备',
+      completenessKnown: (filled, total) => `已知 ${filled}/${total}`,
+      stageDriverLabel: '阶段驱动',
+      completeProfile: '完善资料',
+      elementNatures: {
+        wood: '生发',
+        fire: '温煦',
+        earth: '承载',
+        metal: '肃敛',
+        water: '润下',
+      },
+      pillarPositions: {
+        year: '年柱',
+        month: '月柱',
+        day: '日柱',
+        hour: '时柱',
+      },
+    },
+    overview: {
+      meterAxisStart: '收敛蓄力',
+      meterAxisEnd: '向外扩张',
+      meterAria: '旺衰与阶段能量条',
+      meterStrengthLabel: '旺衰',
+      meterStageConnector: '· 处于',
+      meterStageSuffix: '阶段，',
+      stageGuidance: {
+        进时: '宜进取，顺势主动',
+        收时: '宜收束，落袋归档',
+        养时: '宜收不宜放',
+        转时: '宜观望，等转机明朗',
+        守时: '宜守成，稳定为先',
+      },
+      confidencePrefix: '可信度',
+      expandLabel: '展开完整解读',
+      collapseLabel: '收起完整解读',
     },
   },
   shijing: {
@@ -1003,6 +1365,8 @@ const ZH_COPY: ProductCopy = {
     sourceMissing: '尚无可引用的解读',
     title: '问时镜',
     railAria: '提问记录',
+    newQuestion: '新提问',
+    newQuestionAria: '开始新的问时镜提问',
     searchPlaceholder: '搜索提问',
     searchAria: '搜索提问',
     emptyHistory: '还没有提问记录',
@@ -1019,6 +1383,9 @@ const ZH_COPY: ProductCopy = {
     generateTitle: '生成解读',
     generating: '生成中…',
     generate: '✦ 生成解读',
+    sendTitle: '发送追问',
+    sending: '发送中…',
+    send: '发送',
     suggestLabel: '可以这样问',
     resultAria: '解读结果',
     context: {
@@ -1026,9 +1393,261 @@ const ZH_COPY: ProductCopy = {
       title: '上下文焦点',
       description: '当前激活的关注会自动影响本次问时镜解读。',
       empty: '未设置关注',
-      manage: '去设置管理 ›',
+      manage: '编辑关注',
+      editorSubtitle: '激活的关注会进入本次问时镜上下文，生成时作为引用语境冻结。',
     },
     citedReadings: (count) => `引用解读 ${count} 份`,
+  },
+  mingjing: {
+    title: '命镜',
+    eyebrow: '本命盘 · 全局分析',
+    subtitle: '一次性的全局命盘解读,基于八字排盘、原局格局、大运结构与流年关键窗口。',
+    loadingStatus: '正在排布本命盘…',
+    failureTitle: '命盘生成未成功',
+    hero: {
+      eyebrow: '本命 · 命局总览',
+      fixedNote: '命盘终生固定',
+      favorableTitle: '时机有利 · 多依靠',
+      adverseTitle: '时机不利 · 宜节制',
+      currentStage: '当前所处阶段',
+      dayunWord: '大运',
+      notStarted: '尚未起运',
+      seeStages: '看我各阶段的起落 →',
+    },
+    readiness: {
+      title: '生成命镜前需要完善生辰',
+      button: '去完善生辰资料',
+      fallback: '生成前需要先完善生辰资料。',
+      reasons: {
+        subject_missing: '尚未录入本人资料,无法排盘。',
+        natal_inputs_invalid: '生辰资料尚不完整,请先补全。',
+        scaffold_default_natal_inputs: '当前仍是初始占位生辰,请先录入真实出生信息。',
+        birth_precision_unknown: '出生时间精度为不详,无法排出完整命盘。',
+        birth_location_unresolved: '出生地点仍是默认值,请先补全地点与时区。',
+        birth_time_required_for_method: '命镜需要精确到时辰的出生时间,请补全准确出生时刻。',
+        birth_precision_rough_year_for_mirror: '出生时间只到年份,无法排出四柱命盘。',
+        birth_precision_rough_month_for_dayun: '出生时间只到月份,无法推算大运。',
+        calculation_sex_unspecified_for_dayun: '缺少用于推算大运方向的性别,请先补全。',
+      },
+    },
+    paipan: {
+      title: '八字排盘',
+      intro: '四柱、十神、藏干、纳音、十二长生与空亡。',
+      explanation:
+        '四柱记录出生年、月、日、时对应的干支。日柱 / 日主用于标识本人，其余三柱用于呈现不同时间位置的结构信息；下方条目展示十神、纳音、长生、藏干与空亡。',
+      sectionTitle: '你的命盘',
+      sectionIntro:
+        '四柱记录出生年、月、日、时的干支结构。日柱天干是日主标识，其余柱位用于呈现不同时间位置的关系、五行与藏干信息。',
+      roles: { year: '长辈 / 根基', month: '事业 / 社会', day: '自己', hour: '子女 / 晚年' },
+      dayBadge: '这就是你',
+      expand: '展开完整排盘（藏干 · 纳音 · 长生 · 空亡）',
+      collapse: '收起完整排盘',
+      detailTitle: '完整排盘（藏干、纳音、十二长生、空亡）',
+      pillarLabels: { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' },
+      rows: {
+        stem: '天干',
+        branch: '地支',
+        hidden: '藏干',
+        tenGod: '十神',
+        nayin: '纳音',
+        terrain: '长生',
+        voidRow: '空亡',
+      },
+      dayMaster: '日主',
+      self: '本人',
+      voidMark: '空',
+      voidEmpty: '无',
+    },
+    fiveElements: {
+      title: '五行分布',
+      explanation:
+        '柱状高度表示五行在命盘中的相对集中度。该分布不是评分，用于辅助识别元素偏重、相对不足与后续用神 / 忌神判断的背景。',
+      labels: { wood: '木', fire: '火', earth: '土', metal: '金', water: '水' },
+      dominant: '最旺',
+      weakest: '最弱',
+      absentLabel: '五行缺',
+      absentNone: '五行俱全',
+    },
+    geju: {
+      title: '原局格局',
+      explanation:
+        '这里把排盘合成判断：日主旺衰看承受力，格局看做事底色，用神 / 喜忌提示更适合借力或节制的方向，合冲刑害看盘内张力。',
+      strengthLabel: '日主旺衰',
+      supportRatioLabel: '助身比',
+      patternLabel: '格局',
+      sourceLabel: '取格',
+      transparent: '透干',
+      notTransparent: '不透',
+      rooted: '通根',
+      notRooted: '无根',
+      yong: '用神',
+      xi: '喜神',
+      ji: '忌神',
+      tiaohou: '调候',
+      relationsLabel: '合冲刑害破',
+      relationsEmpty: '原局无明显刑冲合害',
+      basisLabel: '依据',
+    },
+    dayun: {
+      title: '大运结构',
+      explanation:
+        '大运以约十年为一段呈现长期阶段背景。命镜保留完整排盘序列；具体年份的细读交给年镜。',
+      sectionTitle: '大运排布',
+      sectionIntro:
+        '每个大运阶段约覆盖十年，颜色表示阶段性质；“你在这里”标记当前所在的长期阶段。',
+      introSegments: ({ currentNatureLabel, highlightAge }) => {
+        const out: { text: string; tone?: 'current' | 'highlight' }[] = [
+          { text: '这里保留完整大运序列，用作专业命盘结构总览。' },
+        ];
+        if (currentNatureLabel) {
+          out.push(
+            { text: '当前所在阶段为' },
+            { text: `${currentNatureLabel}期`, tone: 'current' },
+            { text: '。' },
+          );
+        } else if (highlightAge != null) {
+          out.push(
+            { text: '后续可见' },
+            { text: `${highlightAge} 岁后的助力段`, tone: 'highlight' },
+            { text: '。' },
+          );
+        }
+        out.push({ text: '年镜负责未来年份细读，命镜只做完整排盘与当前阶段展开。' });
+        return out;
+      },
+      highlightLabel: '助力',
+      directionLabels: { forward: '顺行', reverse: '逆行' },
+      startAge: (age) => `${age} 岁起运`,
+      current: '你在这里',
+      currentPrefix: '当前 · ',
+      inflection: '转折',
+      distantTitle: '90岁以后 · 远期排盘',
+      distantDescription: '这是大运周期的技术延展，用于保持命盘完整，不代表寿命判断。',
+      phaseTitle: (index, current) => {
+        const title = `第${index + 1}步大运`;
+        return `${current ? '当前 · ' : ''}${title}`;
+      },
+      terrainLabel: (terrain) => zhTwelveStageLabel(terrain),
+      periodExplanation: (input) => {
+        const tenGodNotes: Record<string, string> = {
+          正官: '正官当令，责任、规则、他人的期待都会加重。',
+          七杀: '七杀当令，外部压力、竞争和突破欲会更明显。',
+          正财: '正财当令，学习如何稳定经营资源、关系和现实秩序。',
+          偏财: '偏财当令，外部机会、人情往来和资源流动会更活跃。',
+          正印: '正印当令，贵人、学习、凭证和系统性保护会更显眼。',
+          偏印: '偏印当令，灵感、转向、独立判断和非标准路径会变多。',
+          食神: '食神当令，表达、产出、照顾感和稳定创造力会被放大。',
+          伤官: '伤官当令，自我表达、反规则意识和技术锋芒会更突出。',
+          比肩: '比肩当令，自主性、同辈竞争和自我边界会被推到前面。',
+          劫财: '劫财当令，合作、分配、竞争和资源争夺会更需要分寸。',
+        };
+        const natureNotes: Record<string, string> = {
+          助力: '这一段更容易借到顺势的力量，适合把资源、能力和稳定关系往前推。',
+          观察: '这一段不适合硬冲，少硬扛、多借力：找到能依靠的人和稳定的结构，比单打独斗更重要。',
+          阻滞: '这一段阻力更重，先守住边界与节奏，少做高风险扩张。',
+          平稳: '这一段波动相对小，适合把基础做扎实，把长期习惯沉下来。',
+          转折: '这一段会带来明显切换，先观察变化从哪里来，再决定要顺势转向还是暂时收束。',
+        };
+        const next = input.nextStartAge ? `熬过这一段，${input.nextStartAge} 岁后会进入下一轮节奏。` : '';
+        const relation = input.relationText ? `${input.relationText}。` : '';
+        const terrainNote = input.terrain === '死'
+          ? '“死”是十二长生的阶段名，表示气机收束、旧模式退场，不是死亡或寿命判断。'
+          : `十二长生阶段为${zhTwelveStageLabel(input.terrain)}。`;
+        return `${tenGodNotes[input.tenGod] ?? `${input.tenGod}当令，这一阶段的主题会围绕它展开。`}${input.current ? '你正在这里，' : ''}${natureNotes[input.nature] ?? '这一段需要按阶段性质来安排用力方式。'}${relation}${next}${terrainNote} 专业上看，这是${input.tenGod}、${zhTwelveStageLabel(input.terrain)}、${input.favor}的组合。`;
+      },
+      cols: {
+        age: '虚岁',
+        years: '年份',
+        pillar: '干支',
+        tenGod: '十神',
+        terrain: '十二长生',
+        nature: '性质',
+      },
+      ageRange: (start, end) => `${start}–${end}岁`,
+      yearRange: (start, end) => `${start}–${end}`,
+    },
+    liunian: {
+      title: '流年关键窗口',
+      intro: '这里不是给每一年打分，而是把未来几年中最需要提前安排的时间段拎出来。',
+      explanation:
+        '颜色表示这一段的整体倾向：适合主动推进、稳步积累、放缓观察、守住边界或处理转折。干支、合冲与用神关系只作为算法依据，不是命运分数。',
+      sectionTitle: '未来需要提前安排的年份段',
+      sectionIntro: '先看这一段适合主动、稳定还是谨慎，再展开查看它为什么被标出来。',
+      detailToggle: '查看算法依据',
+      horizon: (start, end) => `未来窗口 ${start}–${end} 年`,
+      salienceLabels: { high: '优先关注', medium: '留意即可' },
+      favorLabels: { 喜: '顺势证据', 忌: '阻力证据', 平: '中性证据' },
+      windowRange: (start, end) => `${start}–${end} 年`,
+      singleYear: (year) => `${year} 年`,
+      yearsLabel: '涉及年份',
+      evidenceLabel: '为什么被标出来',
+      dayunLabel: '背景大运',
+      relationMore: (count) => `另有 ${count} 项关系`,
+      basisMore: (count) => `另有 ${count} 条依据`,
+      empty: '未来窗口内暂无特别需要关注的流年。',
+    },
+    reading: {
+      eyebrow: 'AI 解读 · 结合你记录的历史',
+      coreTitle: '命局核心特点与长期策略',
+      explanation:
+        '该模块调用 Runtime AI，将确定性命盘、阶段结构与已记录事件转写为结构化解读。运行失败时显示失败状态，不生成替代内容。',
+      coreLabels: {
+        personality: '性格底色',
+        strengths: '优势能力',
+        long_term_themes: '长期课题',
+        relationship_pattern: '关系模式',
+        career_inclination: '事业倾向',
+      },
+      strategiesTitle: '长期阶段策略',
+      strategyTheme: '阶段主题',
+      strategyStrategy: '策略',
+      generate: '生成命镜解读',
+      regenerate: '重新生成解读',
+      generating: '正在生成命镜解读…',
+      empty: '基于本命盘与你记录的历史事件，生成核心特点与长期阶段策略。',
+      stale: '生辰或历史事件已更新,可重新生成解读。',
+      failureTitle: '解读生成未成功',
+    },
+    events: {
+      title: '用过去的事，校准这张盘',
+      intro: '记录已发生的重要事件（工作、关系、迁移、重大决定等），用于在时间轴上查看其对应的大运与流年位置。',
+      explanation:
+        '历史事件会映射到大运和流年位置，用于检查事件发生时间与命盘阶段之间的对应关系。该记录只影响解释依据，不改写排盘结果。',
+      dateLabel: '发生日期',
+      datePlaceholder: 'yyyy/mm/dd',
+      bodyLabel: '事件',
+      bodyPlaceholder: '例如:换工作、重要关系开始或结束、搬迁、重大决定…',
+      add: '记录事件',
+      invalidHint: '请填写日期与事件内容。',
+      empty: '还没有记录历史事件。记录后即可看到它落在命盘时间轴的位置。',
+      delete: '删除',
+      dayunColumn: '所在大运',
+      liunianColumn: '当年流年',
+      preGenHint: '以下为确定性时间轴定位;生成解读后,AI 会结合这些经历给出更贴合的叙述。',
+    },
+    rectify: {
+      title: '生时校正',
+      intro: '在出生时辰不确定时，可使用已记录事件对候选时辰进行确定性排序。',
+      howItWorks: '时辰会影响起运与大运换运年份。系统逐一试排 12 个候选时辰，并比较候选大运 / 流年与已记录事件的对应关系；校正对象是出生时辰输入，不改写命盘规则。',
+      needMoreEvents: '至少记录 2 件人生大事(换工作、婚恋开始或结束、搬迁、重大决定…)才能反推。',
+      unsupportedCalendar: '生时校正暂支持公历生日。',
+      sexRequired: '需要先填写用于推算大运方向的性别。',
+      confidenceLabel: '置信度',
+      confidenceValues: { high: '高', medium: '中', low: '低' },
+      lowConfidenceCaveat: '候选时辰区分度不高,建议补充更多大事(尤其是转折性的)以提高准确度。',
+      recommended: '推荐',
+      fitLabel: '吻合度',
+      startAge: (age) => `${age} 岁起运`,
+      hourPillarLabel: '时柱',
+      alignedLabel: '对齐的大事',
+      adopt: '采用此生时',
+      entryLive: '对结果存疑？用人生中的大事，反推并校正你的出生时辰 →',
+      entryBlocked: '不知道确切时辰?用人生大事反推 →',
+      earlyZi: '早子时',
+      lateZi: '晚子时',
+      shichenSuffix: '时',
+      close: '收起',
+    },
   },
   natalErrors: {
     birth_location_required: '请选择出生地。系统会自动匹配经纬度和时区。',
@@ -1067,6 +1686,14 @@ const EN_COPY: ProductCopy = {
     rijing: 'Daily Mirror',
     yuejing: 'Monthly Mirror',
     nianjing: 'Yearly Mirror',
+    mingjing: 'Destiny Mirror',
+    shijing: 'Consultation Mirror',
+  },
+  tabLabels: {
+    rijing: 'Daily Mirror',
+    yuejing: 'Monthly Mirror',
+    nianjing: 'Yearly Mirror',
+    mingjing: 'Destiny Mirror',
     shijing: 'Consultation Mirror',
   },
   tendencyClassLabels: {
@@ -1175,6 +1802,7 @@ const EN_COPY: ProductCopy = {
     save: 'Save',
     saving: 'Saving',
     optional: 'Optional',
+    automatic: 'Automatic',
     saved: 'Saved',
     loading: 'Loading',
   },
@@ -1247,6 +1875,7 @@ const EN_COPY: ProductCopy = {
     description: 'Add family, partners, or important people for relationship charts and event readings.',
     empty: 'No people yet',
     addDialog: 'Add person',
+    editDialog: 'Edit person',
     displayName: 'Name',
     displayNamePlaceholder: 'For example: Anna, Lao Zhang',
     relation: 'Relation',
@@ -1255,6 +1884,7 @@ const EN_COPY: ProductCopy = {
     notes: 'Notes',
     notesPlaceholder: 'Additional context about this person...',
     addPerson: 'Add person',
+    editPersonAria: (name) => `Edit ${name}`,
     deletePersonAria: (name) => `Delete ${name}`,
     deleteBlocked: 'Cannot delete: this person is still referenced by concern tags or other records. Remove those references first.',
     deleteTitle: 'Delete this person?',
@@ -1301,9 +1931,9 @@ const EN_COPY: ProductCopy = {
   onboarding: {
     ariaLabel: 'Startup readiness',
     eyebrow: 'Startup readiness',
-    title: 'Let Daily Mirror know you first.',
-    lede: 'Complete your self profile and concerns so Daily Mirror can generate today’s reading.',
-    enter: 'Enter Daily Mirror',
+    title: 'Let Destiny Mirror know you first.',
+    lede: 'Complete your self profile and concerns so Destiny Mirror can anchor the natal projection.',
+    enter: 'Enter Destiny Mirror',
     readinessAria: 'Readiness status',
     selfTitle: 'Self profile',
     selfPending: 'Add natal inputs',
@@ -1314,7 +1944,7 @@ const EN_COPY: ProductCopy = {
     profileStageEyebrow: 'Birth data',
     concernStageEyebrow: 'Concern lens',
     profileStageTitle: 'First, set the calculation basis.',
-    concernStageTitle: 'Then tell Daily Mirror where to look.',
+    concernStageTitle: 'Then tell ShiJing where to look.',
     continueProfile: 'Continue profile',
     continueConcerns: 'Continue concerns',
   },
@@ -1508,6 +2138,14 @@ const EN_COPY: ProductCopy = {
       manageFocus: 'Manage',
       leaningsAria: 'Today tendency',
       confidenceLabel: 'Confidence',
+      themeLabel: 'Today theme',
+      perspectivesLabel: 'Perspective guidance',
+      eventInsightLabel: 'Event insight',
+      eventActionLead: 'Start with one concrete move: ',
+      eventFallbackBody: 'No single event is pulling the day into focus, which leaves more room to notice your own pace.',
+      eventFallbackGuidance: 'Use the day as a wider reading of energy: settle one small thing, then answer the outside world from a steadier place. Timing is not a verdict; it is a lamp that helps you see the next choice.',
+      closingLabel: 'Closing note',
+      closingWish: 'Timing gives tendencies; your choices shape the path. May today return agency to your hands.',
     },
     heroMemories: {
       ariaLabel: 'Events referenced today',
@@ -1531,6 +2169,8 @@ const EN_COPY: ProductCopy = {
       invalidHint: (reason) => `This event was not added (${reason}). Try again later or adjust the description.`,
       successHint: 'Added as today’s reference. Today’s reading will prioritize this event.',
       submit: 'Add today reference',
+      refsAria: 'Events referenced today',
+      refsBadge: 'Folded into today',
     },
     readiness: {
       ariaLabel: 'Profile completeness notice',
@@ -1583,15 +2223,63 @@ const EN_COPY: ProductCopy = {
         say: 'Say one thing today',
         avoid: 'Avoid one thing today',
       },
+      sourceLead: 'From',
     },
     projections: {
       ariaLabel: 'Today concern frames',
       title: 'Today concern frames',
+      allLabel: 'All',
+      filterAria: 'Filter by reading lens',
+      manage: 'Edit concerns',
+      editorSubtitle: 'Active concerns shape Daily Mirror generation and today concern frames. Existing readings keep their captured snapshot until regenerated.',
+      actionsLabel: 'TODAY · MOVES',
+      expandAria: (name) => `Expand the “${name}” frame`,
     },
     evidence: {
       title: 'Calculation evidence and data notes',
       emptyChipGroup: 'Data completeness',
       emptyChipValue: 'Not generated',
+      ariaLabel: 'Calculation evidence and data notes',
+      toggleAria: 'Expand calculation evidence and data notes',
+      strengthLabel: 'Strength',
+      yongLabel: 'Favorable elements',
+      pillarsLabel: 'Four pillars · known',
+      completenessLabel: 'Data completeness',
+      completenessFull: 'All four pillars',
+      completenessKnown: (filled, total) => `Known ${filled}/${total}`,
+      stageDriverLabel: 'Stage driver',
+      completeProfile: 'Complete profile',
+      elementNatures: {
+        wood: 'Growth',
+        fire: 'Warmth',
+        earth: 'Support',
+        metal: 'Restraint',
+        water: 'Flow',
+      },
+      pillarPositions: {
+        year: 'Year',
+        month: 'Month',
+        day: 'Day',
+        hour: 'Hour',
+      },
+    },
+    overview: {
+      meterAxisStart: 'Gather and store',
+      meterAxisEnd: 'Expand outward',
+      meterAria: 'Strength and stage energy meter',
+      meterStrengthLabel: 'Strength',
+      meterStageConnector: '· in the',
+      meterStageSuffix: 'phase —',
+      stageGuidance: {
+        进时: 'lean into momentum',
+        收时: 'close out and file',
+        养时: 'gather, do not release',
+        转时: 'wait for the turn to clear',
+        守时: 'hold steady, stability first',
+      },
+      confidencePrefix: 'Confidence',
+      expandLabel: 'Show full reading',
+      collapseLabel: 'Hide full reading',
     },
   },
   shijing: {
@@ -1615,6 +2303,8 @@ const EN_COPY: ProductCopy = {
     sourceMissing: 'No cited reading is available yet',
     title: 'Ask ShiJing',
     railAria: 'Question history',
+    newQuestion: 'New question',
+    newQuestionAria: 'Start a new ShiJing question',
     searchPlaceholder: 'Search questions',
     searchAria: 'Search questions',
     emptyHistory: 'No question history yet',
@@ -1631,6 +2321,9 @@ const EN_COPY: ProductCopy = {
     generateTitle: 'Generate reading',
     generating: 'Generating...',
     generate: '✦ Generate reading',
+    sendTitle: 'Send follow-up',
+    sending: 'Sending...',
+    send: 'Send',
     suggestLabel: 'Try asking',
     resultAria: 'Reading result',
     context: {
@@ -1638,9 +2331,262 @@ const EN_COPY: ProductCopy = {
       title: 'Context focus',
       description: 'Active concerns automatically shape this Consultation Mirror reading.',
       empty: 'No concern set',
-      manage: 'Manage in Settings ›',
+      manage: 'Edit concerns',
+      editorSubtitle: 'Active concerns enter this Consultation Mirror context and are frozen as cited wording context at generation time.',
     },
     citedReadings: (count) => `${count} cited reading${count === 1 ? '' : 's'}`,
+  },
+  mingjing: {
+    title: 'Destiny Mirror',
+    eyebrow: 'Natal chart · whole-life reading',
+    subtitle:
+      'A one-time whole-life chart reading: pillar layout, original structure, DaYun arc, and the key future-year windows.',
+    loadingStatus: 'Casting the natal chart…',
+    failureTitle: 'Chart could not be cast',
+    hero: {
+      eyebrow: 'Natal · whole-chart overview',
+      fixedNote: 'Fixed for life',
+      favorableTitle: 'Favourable timing · lean on support',
+      adverseTitle: 'Adverse timing · hold back',
+      currentStage: 'Current stage',
+      dayunWord: 'DaYun',
+      notStarted: 'DaYun not yet started',
+      seeStages: 'See each life stage →',
+    },
+    readiness: {
+      title: 'Complete the birth data before the Destiny Mirror',
+      button: 'Complete birth data',
+      fallback: 'Birth data must be completed first.',
+      reasons: {
+        subject_missing: 'No self profile yet — the chart cannot be cast.',
+        natal_inputs_invalid: 'Birth data is incomplete; please complete it first.',
+        scaffold_default_natal_inputs: 'Still a placeholder birth record — enter the real birth data first.',
+        birth_precision_unknown: 'Birth-time precision is unknown; a full chart cannot be cast.',
+        birth_location_unresolved: 'Birth place is still the default — complete place and time zone first.',
+        birth_time_required_for_method: 'The Destiny Mirror needs an exact birth time (to the hour).',
+        birth_precision_rough_year_for_mirror: 'Birth time is only to the year; four pillars cannot be cast.',
+        birth_precision_rough_month_for_dayun: 'Birth time is only to the month; DaYun cannot be derived.',
+        calculation_sex_unspecified_for_dayun: 'Calculation sex (for DaYun direction) is missing — complete it first.',
+      },
+    },
+    paipan: {
+      title: 'Pillar Layout',
+      intro: 'Four pillars, ten gods, hidden stems, nayin, twelve stages, and 空亡 (void).',
+      explanation:
+        'The four pillars record the stems and branches for birth year, month, day, and hour. The Day pillar / Day Master identifies the subject; the other pillars present structure at different time positions. The rows below expose ten-god, nayin, stage, hidden-stem, and void data.',
+      sectionTitle: 'Natal chart',
+      sectionIntro:
+        'The four pillars record the stem-branch structure for birth year, month, day, and hour. The Day stem is the Day Master marker; the other positions show relation, element, and hidden-stem context.',
+      roles: { year: 'Year / roots', month: 'Month / context', day: 'Day Master', hour: 'Hour / later arc' },
+      dayBadge: 'Day Master',
+      expand: 'Show full layout (hidden stems · nayin · stages · void)',
+      collapse: 'Hide full layout',
+      detailTitle: 'Full layout (hidden stems, nayin, twelve stages, void)',
+      pillarLabels: { year: 'Year', month: 'Month', day: 'Day', hour: 'Hour' },
+      rows: {
+        stem: 'Stem',
+        branch: 'Branch',
+        hidden: 'Hidden',
+        tenGod: 'Ten God',
+        nayin: 'Nayin',
+        terrain: 'Stage',
+        voidRow: '空亡',
+      },
+      dayMaster: 'Day Master',
+      self: 'you',
+      voidMark: '空',
+      voidEmpty: 'none',
+    },
+    fiveElements: {
+      title: 'Five-Element Balance',
+      explanation:
+        'Bar height indicates the relative concentration of each element in the chart. This distribution is not a score; it provides context for identifying emphasis, relative scarcity, and later useful / adverse element judgments.',
+      labels: { wood: 'Wood', fire: 'Fire', earth: 'Earth', metal: 'Metal', water: 'Water' },
+      dominant: 'Strongest',
+      weakest: 'Weakest',
+      absentLabel: 'Absent',
+      absentNone: 'All five present',
+    },
+    geju: {
+      title: 'Original Structure',
+      explanation:
+        'This section combines the layout into a readable judgment: day-master strength shows capacity, pattern shows default style, useful/favourable/avoid elements show where to lean or restrain, and branch relations show inner tension.',
+      strengthLabel: 'Day-master strength',
+      supportRatioLabel: 'Support ratio',
+      patternLabel: 'Pattern',
+      sourceLabel: 'Taken from',
+      transparent: '透干',
+      notTransparent: 'not transparent',
+      rooted: 'rooted',
+      notRooted: 'unrooted',
+      yong: '用神',
+      xi: '喜神',
+      ji: '忌神',
+      tiaohou: '调候',
+      relationsLabel: 'Branch relations',
+      relationsEmpty: 'No notable natal clash/combination.',
+      basisLabel: 'Basis',
+    },
+    dayun: {
+      title: 'DaYun Arc',
+      explanation:
+        'DaYun presents long-term background phases at roughly decade scale. MingJing keeps the complete chart sequence; detailed future-year reading belongs in NianJing.',
+      sectionTitle: 'DaYun Chart Sequence',
+      sectionIntro:
+        'Each DaYun phase covers roughly ten years. Color indicates phase nature; You are here marks the active long-term phase.',
+      introSegments: ({ currentNatureLabel, highlightAge }) => {
+        const out: { text: string; tone?: 'current' | 'highlight' }[] = [
+          { text: 'This keeps the complete DaYun sequence as a professional natal-chart structure. ' },
+        ];
+        if (currentNatureLabel) {
+          out.push(
+            { text: 'The active phase is ' },
+            { text: `${currentNatureLabel} stretch`, tone: 'current' },
+            { text: '. ' },
+          );
+        } else if (highlightAge != null) {
+          out.push(
+            { text: 'A later supportive stretch appears ' },
+            { text: `after age ${highlightAge}`, tone: 'highlight' },
+            { text: '. ' },
+          );
+        }
+        out.push({ text: 'NianJing handles detailed future-year reading; MingJing shows the full chart and expands the current phase first.' });
+        return out;
+      },
+      highlightLabel: 'Support',
+      directionLabels: { forward: 'Forward (顺)', reverse: 'Reverse (逆)' },
+      startAge: (age) => `Starts at age ${age}`,
+      current: 'You are here',
+      currentPrefix: 'Current · ',
+      inflection: 'Turning',
+      distantTitle: 'After age 90 · distant chart sequence',
+      distantDescription: 'This is the technical extension of the DaYun cycle for chart completeness; it is not a lifespan claim.',
+      phaseTitle: (index, current) => {
+        const title = `DaYun step ${index + 1}`;
+        return `${current ? 'Current · ' : ''}${title}`;
+      },
+      terrainLabel: (terrain) => enTwelveStageLabel(terrain),
+      periodExplanation: (input) => {
+        const tenGodNotes: Record<string, string> = {
+          正官: 'Zhengguan is active: responsibility, rules, and other people’s expectations become heavier.',
+          七杀: 'Qisha is active: pressure, competition, and the urge to break through become more visible.',
+          正财: 'Zhengcai is active: stable resources, relationships, and practical order become central.',
+          偏财: 'Piancai is active: outside opportunities, social exchange, and resource flow become livelier.',
+          正印: 'Zhengyin is active: mentors, learning, credentials, and systemic protection stand out.',
+          偏印: 'Pianyin is active: intuition, redirection, independent judgment, and non-standard paths increase.',
+          食神: 'Shishen is active: expression, output, care, and steady creativity are amplified.',
+          伤官: 'Shangguan is active: self-expression, anti-rule pressure, and technical edge become sharper.',
+          比肩: 'Bijian is active: autonomy, peer competition, and personal boundaries move forward.',
+          劫财: 'Jiecai is active: cooperation, allocation, competition, and resource sharing need proportion.',
+        };
+        const natureNotes: Record<string, string> = {
+          Supportive: 'This phase can borrow momentum more easily; push resources, capability, and stable relationships forward.',
+          Watch: 'Do not force it. Carry less alone and borrow more structure: reliable people and stable systems matter more than going solo.',
+          Blocked: 'Resistance is heavier here. Protect boundaries and rhythm before expanding.',
+          Steady: 'Volatility is lower here. Build foundations and let long-term habits settle.',
+          Turning: 'A real switch is active here. Watch where the change comes from before deciding whether to turn or contract.',
+        };
+        const next = input.nextStartAge ? `After this, age ${input.nextStartAge} opens the next rhythm.` : '';
+        const relation = input.relationText ? `${input.relationText}.` : '';
+        const terrainNote = input.terrain === '死'
+          ? 'Si is a twelve-stage term for closure and old-pattern release; it is not a death or lifespan claim.'
+          : `The twelve-stage position is ${enTwelveStageLabel(input.terrain)}.`;
+        return `${tenGodNotes[input.tenGod] ?? `${input.tenGod} is active; this phase turns around that theme.`}${input.current ? 'You are here. ' : ''}${natureNotes[input.nature] ?? 'Use effort according to this phase quality.'}${relation}${next}${terrainNote} Technically this combines ${input.tenGod}, ${enTwelveStageLabel(input.terrain)}, and ${input.favor}.`;
+      },
+      cols: {
+        age: 'Age',
+        years: 'Years',
+        pillar: 'Pillar',
+        tenGod: 'Ten God',
+        terrain: 'Twelve-stage',
+        nature: 'Nature',
+      },
+      ageRange: (start, end) => `Age ${start}–${end}`,
+      yearRange: (start, end) => `${start}–${end}`,
+    },
+    liunian: {
+      title: 'Key Year Windows',
+      intro: 'This is not a score for every year. It pulls out the future stretches that need planning ahead.',
+      explanation:
+        'The colour shows the overall tendency of this stretch: push, consolidate, slow down, hold boundaries, or handle a turn. Pillars, branch relations, and favourable/adverse evidence are shown only as algorithmic evidence, never as destiny scores.',
+      sectionTitle: 'Year stretches to plan around',
+      sectionIntro: 'Read whether this stretch asks for action, steadiness, or caution first, then expand the evidence only if needed.',
+      detailToggle: 'View algorithm evidence',
+      horizon: (start, end) => `Future window ${start}–${end}`,
+      salienceLabels: { high: 'Prioritise', medium: 'Keep in view' },
+      favorLabels: { 喜: 'Support evidence', 忌: 'Resistance evidence', 平: 'Neutral evidence' },
+      windowRange: (start, end) => `${start}–${end}`,
+      singleYear: (year) => `${year}`,
+      yearsLabel: 'Years involved',
+      evidenceLabel: 'Why this was surfaced',
+      dayunLabel: 'Background DaYun',
+      relationMore: (count) => `${count} more relations`,
+      basisMore: (count) => `${count} more evidence notes`,
+      empty: 'No especially notable years within the outlook window.',
+    },
+    reading: {
+      eyebrow: 'AI reading · grounded in your history',
+      coreTitle: 'Core character & long-term strategy',
+      explanation:
+        'This module calls Runtime AI to translate the deterministic chart, phase structure, and recorded events into a structured reading. If runtime fails, the failure state is shown and no substitute content is generated.',
+      coreLabels: {
+        personality: 'Temperament',
+        strengths: 'Strengths',
+        long_term_themes: 'Lifelong themes',
+        relationship_pattern: 'Relationship pattern',
+        career_inclination: 'Career inclination',
+      },
+      strategiesTitle: 'Life-Stage Strategy',
+      strategyTheme: 'Theme',
+      strategyStrategy: 'Strategy',
+      generate: 'Generate reading',
+      regenerate: 'Regenerate reading',
+      generating: 'Generating the Destiny Mirror reading…',
+      empty: 'Generate the core character and life-stage strategy from this chart and your recorded history.',
+      stale: 'Birth data or history changed — you can regenerate the reading.',
+      failureTitle: 'Reading could not be generated',
+    },
+    events: {
+      title: 'Calibrate the chart with your past',
+      intro: 'Recorded life events (work, relationships, relocation, major decisions, and similar milestones) are placed on the DaYun and key-year timeline.',
+      explanation:
+        'Historical events are mapped to DaYun and key-year positions to inspect the relationship between event timing and chart phases. These records affect explanation grounding only; they do not rewrite the chart.',
+      dateLabel: 'Date',
+      datePlaceholder: 'yyyy/mm/dd',
+      bodyLabel: 'Event',
+      bodyPlaceholder: 'e.g. changed jobs, a relationship began or ended, relocation, a major decision…',
+      add: 'Record event',
+      invalidHint: 'Enter both a date and the event.',
+      empty: 'No historical events yet. Once recorded, you can see where they fall on the chart timeline.',
+      delete: 'Delete',
+      dayunColumn: 'DaYun',
+      liunianColumn: 'Year pillar',
+      preGenHint: 'Below is the deterministic timeline placement; after you generate the reading, the AI weaves these into a closer narrative.',
+    },
+    rectify: {
+      title: 'Birth-Time Rectification',
+      intro: 'When birth hour is uncertain, recorded events can be used to rank deterministic candidate hours.',
+      howItWorks: 'The hour affects DaYun start age and transition years. The system tests 12 candidate hours and compares their DaYun / year timelines with recorded events; the corrected field is the birth-hour input, not the chart rules.',
+      needMoreEvents: 'Record at least 2 major life events (job change, a relationship beginning/ending, relocation, a big decision…) to rectify.',
+      unsupportedCalendar: 'Rectification currently supports Gregorian birth dates.',
+      sexRequired: 'Set the calculation sex (for DaYun direction) first.',
+      confidenceLabel: 'Confidence',
+      confidenceValues: { high: 'High', medium: 'Medium', low: 'Low' },
+      lowConfidenceCaveat: 'The 时辰 are hard to separate — add more events (especially turning points) to improve accuracy.',
+      recommended: 'Recommended',
+      fitLabel: 'Fit',
+      startAge: (age) => `Starts DaYun at ${age}`,
+      hourPillarLabel: 'Hour pillar',
+      alignedLabel: 'Aligned events',
+      adopt: 'Use this birth time',
+      entryLive: 'Doubt the result? Back-solve and correct your birth hour from major life events →',
+      entryBlocked: 'Don’t know the exact hour? Back-solve it from life events →',
+      earlyZi: 'early 子时',
+      lateZi: 'late 子时',
+      shichenSuffix: '时',
+      close: 'Collapse',
+    },
   },
   natalErrors: {
     birth_location_required: 'Choose a birth place. The system will match latitude, longitude, and time zone automatically.',
@@ -1700,6 +2646,7 @@ export const CONSENT_STATE_ORDER: readonly ConsentState[] = [
 export const BRAND_NAME = ZH_COPY.brandName;
 export const BRAND_SUB = ZH_COPY.brandSub;
 export const MIRROR_KIND_LABELS = ZH_COPY.mirrorKindLabels;
+export const TAB_LABELS = ZH_COPY.tabLabels;
 export const TENDENCY_CLASS_LABELS = ZH_COPY.tendencyClassLabels;
 export const NIANJING_INFLECTION_KIND_LABELS = ZH_COPY.nianjingInflectionKindLabels;
 export const CALENDAR_SYSTEM_LABELS = ZH_COPY.calendarSystemLabels;

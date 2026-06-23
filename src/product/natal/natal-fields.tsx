@@ -196,7 +196,7 @@ export function NatalFields({ draft, onChange, idPrefix }: NatalFieldsProps) {
           >
             <span>
               {copy.natal.calibration}{' '}
-              <span className="sjp-opt">· {copy.common.optional}</span>
+              <span className="sjp-opt">· {copy.common.automatic}</span>
             </span>
             <svg
               className="sjp-collapse__chevron"

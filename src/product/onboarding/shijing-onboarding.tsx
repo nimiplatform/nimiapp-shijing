@@ -5,8 +5,7 @@ import { ConcernTagControls } from '../concern-tags/concern-tag-controls.tsx';
 import { useProductCopy } from '../i18n/copy.ts';
 import { SelfEditor } from '../self/self-editor.tsx';
 import { useShijingStore } from '../state/shijing-store.tsx';
-import { subjectMirrorReadiness } from '../subjects/natal-readiness.ts';
-import { dailyMirrorScopeForToday } from '../tabs/mirror-scope-helpers.ts';
+import { mingJingReadiness } from '../tabs/mingjing/mingjing-readiness.ts';
 
 export interface ShijingOnboardingProps {
   readonly onComplete: () => void;
@@ -18,16 +17,9 @@ export function ShijingOnboarding(props: ShijingOnboardingProps) {
   const { state } = useShijingStore();
   const copy = useProductCopy();
   const [activePanel, setActivePanel] = useState<OnboardingPanel>('profile');
-  const dailyScope = useMemo(() => dailyMirrorScopeForToday(), []);
   const selfReadiness = useMemo(
-    () =>
-      subjectMirrorReadiness({
-        subject: 'self',
-        space: state.snapshot,
-        mirror_kind: 'rijing',
-        mirror_scope: dailyScope,
-      }),
-    [state.snapshot, dailyScope],
+    () => mingJingReadiness(state.snapshot),
+    [state.snapshot],
   );
   const activeConcernCount = state.snapshot.concern_tags.filter((tag) => tag.status === 'active').length;
   const selfReady = selfReadiness.ok;

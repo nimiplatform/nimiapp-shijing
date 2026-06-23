@@ -11,18 +11,12 @@ import { ActionMenu, type NimiMenuItem } from '@nimiplatform/kit/ui';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { PrimaryTabBar } from '../navigation/tab-router.tsx';
 import type { ShijingSettingsFocusTarget } from '../settings/settings-page-view.tsx';
-import { ShijingOnboarding } from '../onboarding/shijing-onboarding.tsx';
-import { subjectMirrorReadiness } from '../subjects/natal-readiness.ts';
-import { dailyMirrorScopeForToday } from '../tabs/mirror-scope-helpers.ts';
 import {
   SHIJING_SETTINGS_PAGES,
   type ShijingSettingsPageId,
 } from '../../contracts/ia-contract.ts';
 import { useProductCopy } from '../i18n/copy.ts';
-import {
-  UiLanguageSwitch,
-  usePersistedUiLanguageSync,
-} from '../settings/ui-language-switch.tsx';
+import { usePersistedUiLanguageSync } from '../settings/ui-language-switch.tsx';
 import type { PersistenceError } from '../persistence/persistence-client.ts';
 
 const RiJingTab = lazy(() =>
@@ -33,6 +27,9 @@ const YueJingTab = lazy(() =>
 );
 const NianJingTab = lazy(() =>
   import('../tabs/nianjing-tab.tsx').then((module) => ({ default: module.NianJingTab })),
+);
+const MingJingTab = lazy(() =>
+  import('../tabs/mingjing-tab.tsx').then((module) => ({ default: module.MingJingTab })),
 );
 const ShiJingTab = lazy(() =>
   import('../tabs/shijing-tab.tsx').then((module) => ({ default: module.ShiJingTab })),
@@ -81,29 +78,9 @@ export function ShijingShell(props: ShijingShellProps) {
   const copy = useProductCopy();
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePage, setActivePage] = useState<ActiveSettingsPageState | null>(null);
-  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
-  const [onboardingStarted, setOnboardingStarted] = useState(false);
+  const [startupGuideDismissed, setStartupGuideDismissed] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
   const accountName = props.account?.name?.trim() ?? '';
-  const dailyScope = dailyMirrorScopeForToday();
-  const selfReady = subjectMirrorReadiness({
-    subject: 'self',
-    space: state.snapshot,
-    mirror_kind: 'rijing',
-    mirror_scope: dailyScope,
-  }).ok;
-  const hasActiveConcern = state.snapshot.concern_tags.some((tag) => tag.status === 'active');
-  const needsOnboarding = !selfReady || !hasActiveConcern;
-  const showOnboarding =
-    state.active_tab === 'rijing' &&
-    !onboardingDismissed &&
-    (needsOnboarding || onboardingStarted);
-
-  useEffect(() => {
-    if (state.active_tab === 'rijing' && needsOnboarding && !onboardingDismissed) {
-      setOnboardingStarted(true);
-    }
-  }, [state.active_tab, needsOnboarding, onboardingDismissed]);
 
   // Dropdown affordances: dismiss the avatar menu on Escape or on a click
   // outside the account cluster.
@@ -149,7 +126,6 @@ export function ShijingShell(props: ShijingShellProps) {
           </span>
         </div>
         <PrimaryTabBar />
-        <UiLanguageSwitch />
         <div className="shijing-topbar__account" ref={accountRef}>
           <button
             type="button"
@@ -197,15 +173,11 @@ export function ShijingShell(props: ShijingShellProps) {
             </p>
           }
         >
-          {showOnboarding ? (
-            <ShijingOnboarding
-              onComplete={() => {
-                setOnboardingStarted(false);
-                setOnboardingDismissed(true);
-              }}
-            />
-          ) : (
-            renderActiveTab(state.active_tab, (page, focusTarget) => openPage(page ?? 'profile', focusTarget))
+          {renderActiveTab(
+            state.active_tab,
+            (page, focusTarget) => openPage(page ?? 'profile', focusTarget),
+            startupGuideDismissed,
+            () => setStartupGuideDismissed(true),
           )}
         </Suspense>
       </main>
@@ -235,6 +207,8 @@ function renderActiveTab(
     page?: ShijingSettingsPageId,
     focusTarget?: ShijingSettingsFocusTarget | null,
   ) => void,
+  startupGuideDismissed: boolean,
+  onStartupGuideComplete: () => void,
 ) {
   switch (tab) {
     case 'rijing':
@@ -243,6 +217,14 @@ function renderActiveTab(
       return <YueJingTab />;
     case 'nianjing':
       return <NianJingTab onRequestOpenSettings={onRequestOpenSettings} />;
+    case 'mingjing':
+      return (
+        <MingJingTab
+          onRequestOpenSettings={onRequestOpenSettings}
+          startupGuideDismissed={startupGuideDismissed}
+          onStartupGuideComplete={onStartupGuideComplete}
+        />
+      );
     case 'shijing':
       return <ShiJingTab onRequestOpenSettings={onRequestOpenSettings} />;
     default:
