@@ -50,6 +50,7 @@ import { generateMingJingOutput } from './mingjing-reading-generator.ts';
 import { generateMingJingRelationshipOutput } from './mingjing-relationship-generator.ts';
 import { buildMingJingProjection } from './mingjing-projection.ts';
 import { validateMirrorOutput } from '../../contracts/mirror-output-validator.ts';
+import { evaluateMirrorKindScope, validateMirrorScope } from '../../contracts/mirror-scope-validator.ts';
 import {
   buildRuntimeAiPromptRequest,
 } from './runtime-ai-prompt.ts';
@@ -165,6 +166,29 @@ function defaultResponsePreferencesHash(space: ShiJingSpace): string {
   return computeCanonicalHash(space.settings.response_preferences);
 }
 
+function validateGenerationScopePairing(input: GenerateReadingInput): ReadingGenerationFailure | null {
+  const scopeCheck = validateMirrorScope(input.mirror_scope);
+  if (!scopeCheck.ok) {
+    return {
+      kind: 'validation_failed',
+      mirror_kind: input.mirror_kind,
+      mirror_scope: input.mirror_scope,
+      stage: 'orchestrator',
+      detail: `mirror_scope_invalid:${scopeCheck.error.code}`,
+    };
+  }
+  if (evaluateMirrorKindScope(input.mirror_kind, input.mirror_scope) === 'forbidden') {
+    return {
+      kind: 'validation_failed',
+      mirror_kind: input.mirror_kind,
+      mirror_scope: input.mirror_scope,
+      stage: 'orchestrator',
+      detail: `mirror_kind_scope_forbidden:${input.mirror_kind}:${input.mirror_scope.kind}`,
+    };
+  }
+  return null;
+}
+
 async function refineWithRuntimeAi(
   client: RuntimeAiClient,
   mirrorKind: MirrorKind,
@@ -194,6 +218,11 @@ export async function generateReading(
   input: GenerateReadingInput,
   deps: GenerateReadingDependencies = {},
 ): Promise<GenerateReadingResult> {
+  const scopePairingFailure = validateGenerationScopePairing(input);
+  if (scopePairingFailure) {
+    return { ok: false, failure: scopePairingFailure };
+  }
+
   const tagsResult = activeConcernTagsForRefs(input.concern_tag_refs, input.space);
   if (!tagsResult.ok) {
     return {

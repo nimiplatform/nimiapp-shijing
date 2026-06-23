@@ -17,6 +17,7 @@ import { DEFAULT_METHOD_PROFILE_ID, type MethodEvidence } from '../../domain/alg
 import type { MirrorKind, MirrorScope } from '../../domain/mirror-scope.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import { isPersonRef, isSelfRef, subjectRefEquals, type SubjectRef } from '../../domain/subject-ref.ts';
+import { evaluateMirrorKindScope, validateMirrorScope } from '../../contracts/mirror-scope-validator.ts';
 import { canonicalizeNatalInputs } from './canonicalize-natal-inputs.ts';
 import { getMethodEngine } from './engines/registry.ts';
 import type { ResolvedSubject } from './method-engine.ts';
@@ -150,9 +151,37 @@ function deriveRelationshipEvidenceForScope(input: {
   });
 }
 
+function validateSnapshotScopePairing(input: BuildFeatureSnapshotInput): StageResult<void> {
+  const scopeCheck = validateMirrorScope(input.mirror_scope);
+  if (!scopeCheck.ok) {
+    return {
+      ok: false,
+      error: {
+        stage: 'build_feature_snapshot',
+        kind: 'stage_invalid_input',
+        detail: `mirror_scope_invalid:${scopeCheck.error.code}`,
+      },
+    };
+  }
+  if (evaluateMirrorKindScope(input.mirror_kind, input.mirror_scope) === 'forbidden') {
+    return {
+      ok: false,
+      error: {
+        stage: 'build_feature_snapshot',
+        kind: 'stage_invalid_input',
+        detail: `mirror_kind_scope_forbidden:${input.mirror_kind}:${input.mirror_scope.kind}`,
+      },
+    };
+  }
+  return { ok: true, value: undefined };
+}
+
 export function buildAstrologyFeatureSnapshot(
   input: BuildFeatureSnapshotInput,
 ): StageResult<AstrologyFeatureSnapshot> {
+  const scopePairing = validateSnapshotScopePairing(input);
+  if (!scopePairing.ok) return scopePairing;
+
   const windowResult = resolveCanonicalMirrorWindow(input.mirror_scope);
   if (!windowResult.ok) return windowResult;
   const canonicalWindow = windowResult.value;

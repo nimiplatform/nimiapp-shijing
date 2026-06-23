@@ -115,3 +115,30 @@ test('generateReading routes relationship_natal to deterministic output then fai
   assert.equal(result.failure.kind, 'runtime_ai_failed');
   assert.match(result.failure.detail ?? '', /relationship.*runtime.*not.*supported|relationship_hepan_runtime_ai_prompt_not_supported/u);
 });
+
+test('generateReading fails closed for non-MingJing relationship_natal scope without throwing', async () => {
+  const runtimeClient = {
+    async generate() {
+      throw new Error('runtime client should not be reached for forbidden scope pairing');
+    },
+  };
+  const result = await generateReading(
+    {
+      id: 'rdg_rel_forbidden',
+      created_at: '2026-06-22T00:00:00Z',
+      mirror_kind: 'shijing',
+      mirror_scope: SCOPE,
+      related_person_refs: [ALICE_REF],
+      concern_tag_refs: [],
+      cited_reading_ids: [],
+      cited_event_memory_refs: [],
+      cited_plan_item_refs: [],
+      space: relationshipSpace(),
+    },
+    { runtime_ai_client: runtimeClient, now: NOW },
+  );
+  assert.equal(result.ok, false);
+  assert.equal(result.failure.kind, 'validation_failed');
+  assert.equal(result.failure.stage, 'orchestrator');
+  assert.match(result.failure.detail ?? '', /mirror_kind_scope_forbidden:shijing:relationship_natal/u);
+});

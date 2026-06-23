@@ -78,6 +78,13 @@ test('relationship_natal feature snapshot carries deterministic relationship_hep
   );
 });
 
+test('relationship_natal feature snapshot is MingJing-owned', () => {
+  const result = relationshipSnapshot({ mirror_kind: 'rijing' });
+  assert.equal(result.ok, false);
+  assert.equal(result.error.kind, 'stage_invalid_input');
+  assert.match(result.error.detail ?? '', /mirror_kind_scope_forbidden:rijing:relationship_natal/u);
+});
+
 test('relationship_natal timing windows include both subjects period evidence or explicit fallback', () => {
   const result = relationshipSnapshot();
   assert.equal(result.ok, true, JSON.stringify(result));
