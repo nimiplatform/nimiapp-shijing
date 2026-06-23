@@ -28,6 +28,7 @@ import type {
   MirrorKind,
   MirrorScope,
   NatalMirrorScope,
+  RelationshipNatalMirrorScope,
   Rolling30DayMirrorScope,
 } from '../../domain/mirror-scope.ts';
 import type { MirrorOutput } from '../../domain/mirror-output.ts';
@@ -46,6 +47,7 @@ import { generateYueJingOutput } from './yuejing-generator.ts';
 import { generateNianJingOutput } from './nianjing-generator.ts';
 import { generateShiJingOutput } from './shijing-generator.ts';
 import { generateMingJingOutput } from './mingjing-reading-generator.ts';
+import { generateMingJingRelationshipOutput } from './mingjing-relationship-generator.ts';
 import { buildMingJingProjection } from './mingjing-projection.ts';
 import { validateMirrorOutput } from '../../contracts/mirror-output-validator.ts';
 import {
@@ -342,31 +344,30 @@ export async function generateReading(
     }
     structuralOutput = out.value;
   } else if (input.mirror_kind === 'mingjing') {
-    const scope = input.mirror_scope as NatalMirrorScope;
-    const projection = buildMingJingProjection({
-      space: input.space,
-      reference_year: scope.anchor_year,
-    });
-    if (!projection.ok) {
-      return {
-        ok: false,
-        stage_failure: projection.error,
-        failure: {
-          kind: 'pipeline_stage_failed',
-          mirror_kind: input.mirror_kind,
-          mirror_scope: input.mirror_scope,
-          stage: projection.error.stage,
-          detail: projection.error.detail,
-        },
-      };
-    }
-    const out = generateMingJingOutput({
-      chart: projection.value,
-      method_profile_id: featureSnapshot.method_profile.id,
-      events: memoriesResult.memories,
-      cited_event_memory_refs: input.cited_event_memory_refs,
-      cited_plan_item_refs: input.cited_plan_item_refs,
-    });
+    const out =
+      input.mirror_scope.kind === 'relationship_natal'
+        ? generateMingJingRelationshipOutput({
+            feature_snapshot: featureSnapshot,
+            mirror_scope: input.mirror_scope as RelationshipNatalMirrorScope,
+            method_profile_id: featureSnapshot.method_profile.id,
+            cited_event_memory_refs: input.cited_event_memory_refs,
+            cited_plan_item_refs: input.cited_plan_item_refs,
+          })
+        : (() => {
+            const scope = input.mirror_scope as NatalMirrorScope;
+            const projection = buildMingJingProjection({
+              space: input.space,
+              reference_year: scope.anchor_year,
+            });
+            if (!projection.ok) return projection;
+            return generateMingJingOutput({
+              chart: projection.value,
+              method_profile_id: featureSnapshot.method_profile.id,
+              events: memoriesResult.memories,
+              cited_event_memory_refs: input.cited_event_memory_refs,
+              cited_plan_item_refs: input.cited_plan_item_refs,
+            });
+          })();
     if (!out.ok) {
       return {
         ok: false,
@@ -449,20 +450,46 @@ export async function generateReading(
       },
     };
   }
-  const promptRequest = buildRuntimeAiPromptRequest({
-    mirror_kind: input.mirror_kind,
-    feature_snapshot: featureSnapshot,
-    mirror_context: mirrorContext,
-    deterministic_output: structuralOutput,
-    response_preferences: input.space.settings.response_preferences,
-    cited_event_memories: memoriesResult.memories,
-    ...(input.question ? { question: input.question } : {}),
-  });
-  const aiResult = await refineWithRuntimeAi(
-    deps.runtime_ai_client,
-    input.mirror_kind,
-    promptRequest,
-  );
+  let promptRequest: ReturnType<typeof buildRuntimeAiPromptRequest>;
+  try {
+    promptRequest = buildRuntimeAiPromptRequest({
+      mirror_kind: input.mirror_kind,
+      feature_snapshot: featureSnapshot,
+      mirror_context: mirrorContext,
+      deterministic_output: structuralOutput,
+      response_preferences: input.space.settings.response_preferences,
+      cited_event_memories: memoriesResult.memories,
+      ...(input.question ? { question: input.question } : {}),
+    });
+  } catch (error) {
+    return {
+      ok: false,
+      failure: {
+        kind: 'runtime_ai_failed',
+        mirror_kind: input.mirror_kind,
+        mirror_scope: input.mirror_scope,
+        detail: `runtime_prompt_build_failed:${error instanceof Error ? error.message : String(error)}`,
+      },
+    };
+  }
+  let aiResult: RuntimeAiResult;
+  try {
+    aiResult = await refineWithRuntimeAi(
+      deps.runtime_ai_client,
+      input.mirror_kind,
+      promptRequest,
+    );
+  } catch (error) {
+    return {
+      ok: false,
+      failure: {
+        kind: 'runtime_ai_failed',
+        mirror_kind: input.mirror_kind,
+        mirror_scope: input.mirror_scope,
+        detail: `runtime_exception:${error instanceof Error ? error.message : String(error)}`,
+      },
+    };
+  }
   if (!aiResult.ok) {
     // SJG-PROD-11 - parse failure must surface typed runtime_ai_failed,
     // not be silently replaced by structural output.

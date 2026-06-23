@@ -301,6 +301,34 @@ export interface BaziBranchRelation {
   readonly positions: readonly PillarPosition[];
 }
 
+export interface RelationshipBranchInteraction {
+  readonly self_position: PillarPosition;
+  readonly related_position: PillarPosition;
+  readonly kind: BaziBranchRelationKind;
+  readonly driver_ref: string;
+}
+
+export interface RelationshipElementDirection {
+  readonly label: 'supporting' | 'draining' | 'controlling' | 'same' | 'unknown';
+  readonly driver_ref: string;
+}
+
+export interface RelationshipTimingEvidenceWindow {
+  readonly start_date: string;
+  readonly end_date: string;
+  readonly nature: TendencyClass;
+  readonly driver_refs: readonly string[];
+}
+
+export interface RelationshipHePanEvidence {
+  readonly related_person_ref: Extract<SubjectRef, { kind: 'person' }>;
+  readonly display_name_snapshot: string;
+  readonly branch_interactions: readonly RelationshipBranchInteraction[];
+  readonly day_master_relation: RelationshipElementDirection;
+  readonly yong_shen_relation: RelationshipElementDirection;
+  readonly timing_windows: readonly RelationshipTimingEvidenceWindow[];
+}
+
 export interface BaziInterpretation {
   readonly pillars: readonly BaziPillarFeatures[];
   readonly strength: BaziStrength;
@@ -449,6 +477,7 @@ export interface CommonDrivers {
   readonly yuejing_tendency_drivers: readonly YueJingTendencyDriver[];
   readonly nianjing_phase_drivers: readonly NianJingPhaseDriver[];
   readonly nianjing_inflection_drivers: readonly NianJingInflectionDriver[];
+  readonly relationship_hepan?: RelationshipHePanEvidence;
   readonly uncertainty_inputs: readonly UncertaintyInput[];
 }
 

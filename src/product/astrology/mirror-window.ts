@@ -13,6 +13,7 @@ import type {
   LongHorizonMirrorScope,
   MirrorScope,
   NatalMirrorScope,
+  RelationshipNatalMirrorScope,
   Rolling30DayMirrorScope,
 } from '../../domain/mirror-scope.ts';
 import { type StageResult } from './stage-result.ts';
@@ -116,7 +117,7 @@ function consultationWindow(scope: ConsultationMirrorScope): StageResult<Canonic
 // 命镜 (SJG-ALGO-16): the natal projection spans the whole life, so the canonical
 // window is anchored to the reference year only — a deterministic 1-year window
 // keyed to anchor_year. The chart's real span lives in MingJingChart, not here.
-function natalWindow(scope: NatalMirrorScope): StageResult<CanonicalMirrorWindow> {
+function natalWindow(scope: NatalMirrorScope | RelationshipNatalMirrorScope): StageResult<CanonicalMirrorWindow> {
   const startMs = Date.UTC(scope.anchor_year, 0, 1);
   const endMs = Date.UTC(scope.anchor_year, 11, 31);
   return {
@@ -125,7 +126,7 @@ function natalWindow(scope: NatalMirrorScope): StageResult<CanonicalMirrorWindow
       start_utc: isoFromUtc(startMs),
       end_utc: isoFromUtc(endMs + MS_PER_DAY - 1000),
       basis_time_zone: scope.basis_time_zone,
-      scope_kind: 'natal',
+      scope_kind: scope.kind,
     },
   };
 }
@@ -138,6 +139,7 @@ export function resolveCanonicalMirrorWindow(scope: MirrorScope): StageResult<Ca
     case 'long_horizon':
       return rangeWindow(scope);
     case 'natal':
+    case 'relationship_natal':
       return natalWindow(scope);
     case 'consultation':
       return consultationWindow(scope);

@@ -10,16 +10,18 @@ import type {
   AstrologyFeatureSnapshot,
   CommonDrivers,
   MethodProfileId,
+  RelationshipHePanEvidence,
   UncertaintyInput,
 } from '../../domain/algorithm.ts';
-import { DEFAULT_METHOD_PROFILE_ID } from '../../domain/algorithm.ts';
+import { DEFAULT_METHOD_PROFILE_ID, type MethodEvidence } from '../../domain/algorithm.ts';
 import type { MirrorKind, MirrorScope } from '../../domain/mirror-scope.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
-import { isPersonRef, isSelfRef, type SubjectRef } from '../../domain/subject-ref.ts';
+import { isPersonRef, isSelfRef, subjectRefEquals, type SubjectRef } from '../../domain/subject-ref.ts';
 import { canonicalizeNatalInputs } from './canonicalize-natal-inputs.ts';
 import { getMethodEngine } from './engines/registry.ts';
 import type { ResolvedSubject } from './method-engine.ts';
 import { resolveCanonicalMirrorWindow } from './mirror-window.ts';
+import { deriveRelationshipHePanEvidence } from './relationship-hepan-evidence.ts';
 import { type StageResult } from './stage-result.ts';
 
 export interface BuildFeatureSnapshotInput {
@@ -77,12 +79,88 @@ function consentUncertainty(refs: readonly SubjectRef[], space: ShiJingSpace): U
   return out;
 }
 
+function resolveRelationshipPersonForScope(input: BuildFeatureSnapshotInput): StageResult<{
+  readonly ref: Extract<SubjectRef, { kind: 'person' }>;
+  readonly display_name_snapshot: string;
+}> {
+  if (input.mirror_scope.kind !== 'relationship_natal') {
+    return {
+      ok: false,
+      error: {
+        stage: 'build_feature_snapshot',
+        kind: 'stage_invalid_input',
+        detail: 'relationship_natal scope is required',
+      },
+    };
+  }
+  if (
+    input.related_person_refs.length !== 1 ||
+    !subjectRefEquals(input.related_person_refs[0]!, input.mirror_scope.related_person_ref)
+  ) {
+    return {
+      ok: false,
+      error: {
+        stage: 'build_feature_snapshot',
+        kind: 'stage_invalid_input',
+        detail: 'relationship_natal requires exactly one related_person_ref matching mirror_scope.related_person_ref',
+      },
+    };
+  }
+  const ref = input.mirror_scope.related_person_ref;
+  const person = input.space.persons.find((candidate) => candidate.id === ref.id);
+  if (!person) {
+    return {
+      ok: false,
+      error: {
+        stage: 'build_feature_snapshot',
+        kind: 'stage_missing_input',
+        subject_ref: ref,
+        detail: `relationship_natal related person ${ref.id} does not resolve`,
+      },
+    };
+  }
+  if (person.consent_state === 'withheld') {
+    return {
+      ok: false,
+      error: {
+        stage: 'build_feature_snapshot',
+        kind: 'stage_invalid_input',
+        subject_ref: ref,
+        detail: `relationship_natal consent_withheld for ${ref.id}`,
+      },
+    };
+  }
+  return { ok: true, value: { ref, display_name_snapshot: person.display_name } };
+}
+
+function deriveRelationshipEvidenceForScope(input: {
+  readonly build_input: BuildFeatureSnapshotInput;
+  readonly method_evidence: MethodEvidence;
+}): StageResult<RelationshipHePanEvidence | undefined> {
+  if (input.build_input.mirror_scope.kind !== 'relationship_natal') {
+    return { ok: true, value: undefined };
+  }
+  const person = resolveRelationshipPersonForScope(input.build_input);
+  if (!person.ok) return person;
+  return deriveRelationshipHePanEvidence({
+    method_evidence: input.method_evidence,
+    related_person_ref: person.value.ref,
+    display_name_snapshot: person.value.display_name_snapshot,
+    anchor_year: input.build_input.mirror_scope.anchor_year,
+  });
+}
+
 export function buildAstrologyFeatureSnapshot(
   input: BuildFeatureSnapshotInput,
 ): StageResult<AstrologyFeatureSnapshot> {
   const windowResult = resolveCanonicalMirrorWindow(input.mirror_scope);
   if (!windowResult.ok) return windowResult;
   const canonicalWindow = windowResult.value;
+
+  if (input.mirror_scope.kind === 'relationship_natal') {
+    const relationshipPerson = resolveRelationshipPersonForScope(input);
+    if (!relationshipPerson.ok) return relationshipPerson;
+  }
 
   const methodId = input.method_profile_id ?? input.space.settings.method_profile_id ?? DEFAULT_METHOD_PROFILE_ID;
   const engine = getMethodEngine(methodId);
@@ -123,6 +201,13 @@ export function buildAstrologyFeatureSnapshot(
     active_concern_tags: input.active_concern_tags,
   });
   if (!commonResult.ok) return commonResult;
+  const methodEvidence = engine.toMethodEvidence(evidenceResult.value);
+
+  const relationshipEvidenceResult = deriveRelationshipEvidenceForScope({
+    build_input: input,
+    method_evidence: methodEvidence,
+  });
+  if (!relationshipEvidenceResult.ok) return relationshipEvidenceResult;
 
   // Append orchestration-level uncertainty (engine owns astrology-intrinsic ones).
   const uncertainty: UncertaintyInput[] = [
@@ -138,14 +223,20 @@ export function buildAstrologyFeatureSnapshot(
   ) {
     uncertainty.push({ code: 'no_active_concern_tags', severity: 'fail_close' });
   }
-  const common: CommonDrivers = { ...commonResult.value, uncertainty_inputs: uncertainty };
+  const common: CommonDrivers = {
+    ...commonResult.value,
+    ...(relationshipEvidenceResult.value
+      ? { relationship_hepan: relationshipEvidenceResult.value }
+      : {}),
+    uncertainty_inputs: uncertainty,
+  };
 
   const snapshot: AstrologyFeatureSnapshot = {
     method_profile: engine.profile,
     mirror_kind: input.mirror_kind,
     canonical_window: canonicalWindow,
     common,
-    method_evidence: engine.toMethodEvidence(evidenceResult.value),
+    method_evidence: methodEvidence,
   };
   return { ok: true, value: snapshot };
 }
