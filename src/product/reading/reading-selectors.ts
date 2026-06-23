@@ -1,8 +1,15 @@
 // W03 — Reading selectors under the Mirror Architecture v1.
 
 import type { Reading } from '../../domain/reading.ts';
-import type { MirrorKind } from '../../domain/mirror-scope.ts';
-import type { YueJingMirrorOutput } from '../../domain/mirror-output.ts';
+import type {
+  MirrorKind,
+  RelationshipNatalMirrorScope,
+} from '../../domain/mirror-scope.ts';
+import type {
+  MingJingRelationshipMirrorOutput,
+  YueJingMirrorOutput,
+} from '../../domain/mirror-output.ts';
+import type { SubjectRef } from '../../domain/subject-ref.ts';
 
 export interface LatestReadingByMirrorKindInput {
   readonly readings: readonly Reading[];
@@ -15,6 +22,55 @@ export function latestReadingByMirrorKind(
   return input.readings
     .filter((reading) => reading.mirror_kind === input.mirror_kind)
     .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
+}
+
+function newestReading(readings: readonly Reading[]): Reading | undefined {
+  return [...readings].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
+}
+
+function isRelationshipHePanOutput(
+  output: Reading['output'],
+): output is MingJingRelationshipMirrorOutput {
+  return (
+    output.mirror_kind === 'mingjing' &&
+    (output as { readonly output_kind?: unknown }).output_kind === 'relationship_hepan'
+  );
+}
+
+function isPersonRef(ref: SubjectRef): ref is Extract<SubjectRef, { kind: 'person' }> {
+  return typeof ref === 'object' && ref !== null && ref.kind === 'person';
+}
+
+export function latestMingJingNatalReading(
+  readings: readonly Reading[],
+): Reading | undefined {
+  return newestReading(
+    readings.filter(
+      (reading) =>
+        reading.mirror_kind === 'mingjing' &&
+        reading.mirror_scope.kind === 'natal' &&
+        reading.output.mirror_kind === 'mingjing' &&
+        !isRelationshipHePanOutput(reading.output),
+    ),
+  );
+}
+
+export function latestMingJingRelationshipReading(input: {
+  readonly readings: readonly Reading[];
+  readonly related_person_ref: Extract<SubjectRef, { kind: 'person' }>;
+}): Reading | undefined {
+  return newestReading(
+    input.readings.filter((reading) => {
+      if (reading.mirror_kind !== 'mingjing') return false;
+      if (reading.mirror_scope.kind !== 'relationship_natal') return false;
+      if (!isRelationshipHePanOutput(reading.output)) return false;
+      const scope = reading.mirror_scope as RelationshipNatalMirrorScope;
+      if (scope.related_person_ref.id !== input.related_person_ref.id) return false;
+      if (!isPersonRef(reading.related_person_refs[0])) return false;
+      if (reading.related_person_refs[0].id !== input.related_person_ref.id) return false;
+      return reading.output.relationship_subject.related_person_ref.id === input.related_person_ref.id;
+    }),
+  );
 }
 
 export function readingsCitingReading(

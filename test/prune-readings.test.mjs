@@ -10,9 +10,21 @@ import { pruneReadings, DEFAULT_MAX_READINGS_PER_KIND } from '../src/product/rea
 function r(id, kind, hash, day, cited = []) {
   return {
     id, mirror_kind: kind,
+    mirror_scope: { kind: kind === 'mingjing' ? 'natal' : 'daily' },
     created_at: `2026-06-${String(day).padStart(2, '0')}T00:00:00Z`,
     cited_reading_ids: cited,
     inputs_summary: { input_hash: hash },
+  };
+}
+function rel(id, hash, day, personId) {
+  return {
+    ...r(id, 'mingjing', hash, day),
+    mirror_scope: {
+      kind: 'relationship_natal',
+      related_person_ref: { kind: 'person', id: personId },
+      anchor_year: 2026,
+      basis_time_zone: 'Asia/Shanghai',
+    },
   };
 }
 const ids = (list) => list.map((x) => x.id).sort();
@@ -54,6 +66,20 @@ test('cap is independent per mirror_kind, and protected readings exceed the cap'
   const kept = pruneReadings(list, [convo], { max_per_kind: 2 });
   // rijing: newest 2 (r2,r3) + protected r1 = 3; yuejing: both
   assert.deepEqual(ids(kept), ['r1', 'r2', 'r3', 'y1', 'y2']);
+});
+
+test('mingjing cap keeps natal and relationship_natal readings in separate retention buckets', () => {
+  const kept = pruneReadings(
+    [
+      r('natal_old', 'mingjing', 'N1', 1),
+      r('natal_new', 'mingjing', 'N2', 2),
+      rel('rel_old', 'R1', 3, 'p_alice'),
+      rel('rel_new', 'R2', 4, 'p_alice'),
+    ],
+    [],
+    { max_per_kind: 1 },
+  );
+  assert.deepEqual(ids(kept), ['natal_new', 'rel_new']);
 });
 
 test('default cap is generous (history preserved)', () => {

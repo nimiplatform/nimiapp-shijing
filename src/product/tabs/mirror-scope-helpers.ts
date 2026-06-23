@@ -6,8 +6,10 @@ import type {
   DailyMirrorScope,
   LongHorizonMirrorScope,
   NatalMirrorScope,
+  RelationshipNatalMirrorScope,
   Rolling30DayMirrorScope,
 } from '../../domain/mirror-scope.ts';
+import type { SubjectRef } from '../../domain/subject-ref.ts';
 
 const DEFAULT_BASIS_TIME_ZONE = 'Asia/Shanghai';
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -57,6 +59,19 @@ export function natalMirrorScopeForToday(
   basis_time_zone: string = DEFAULT_BASIS_TIME_ZONE,
 ): NatalMirrorScope {
   return { kind: 'natal', anchor_year: now.getUTCFullYear(), basis_time_zone };
+}
+
+export function relationshipNatalMirrorScopeForToday(
+  related_person_ref: Extract<SubjectRef, { kind: 'person' }>,
+  now: Date = new Date(),
+  basis_time_zone: string = DEFAULT_BASIS_TIME_ZONE,
+): RelationshipNatalMirrorScope {
+  return {
+    kind: 'relationship_natal',
+    related_person_ref,
+    anchor_year: now.getUTCFullYear(),
+    basis_time_zone,
+  };
 }
 
 export function consultationMirrorScopeFor(

@@ -20,6 +20,14 @@ export interface PruneReadingsOptions {
 
 export const DEFAULT_MAX_READINGS_PER_KIND = 60;
 
+function retentionBucketKey(reading: Reading): string {
+  const scopeKind = (reading as { readonly mirror_scope?: { readonly kind?: unknown } })
+    .mirror_scope?.kind;
+  return typeof scopeKind === 'string'
+    ? `${reading.mirror_kind}:${scopeKind}`
+    : reading.mirror_kind;
+}
+
 function citedReadingIds(readings: readonly Reading[], conversations: readonly Conversation[]): Set<string> {
   const protectedIds = new Set<string>();
   for (const c of conversations) {
@@ -55,12 +63,15 @@ export function pruneReadings(
     kept.push(r);
   }
 
-  // Pass 2 — cap per mirror_kind (newest first); protected readings always survive.
+  // Pass 2 — cap per mirror kind/scope bucket (newest first); protected readings
+  // always survive. MingJing natal readings and relationship HePan readings are
+  // separate product surfaces and must not evict each other.
   const byKind = new Map<string, Reading[]>();
   for (const r of kept) {
-    const list = byKind.get(r.mirror_kind) ?? [];
+    const key = retentionBucketKey(r);
+    const list = byKind.get(key) ?? [];
     list.push(r);
-    byKind.set(r.mirror_kind, list);
+    byKind.set(key, list);
   }
   const survivors = new Set<string>();
   for (const list of byKind.values()) {

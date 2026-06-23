@@ -697,6 +697,40 @@ export interface ProductCopy {
       readonly stale: string;
       readonly failureTitle: string;
     };
+    readonly relationshipReading: {
+      readonly eyebrow: string;
+      readonly title: string;
+      readonly explanation: string;
+      readonly personLabel: string;
+      readonly generate: string;
+      readonly regenerate: string;
+      readonly generating: string;
+      readonly addPerson: string;
+      readonly noPeople: string;
+      readonly empty: (name: string) => string;
+      readonly emptyFallback: string;
+      readonly stale: string;
+      readonly personFallback: string;
+      readonly subjectLine: (name: string) => string;
+      readonly structureLabels: {
+        readonly baseline_pattern: string;
+        readonly attraction_and_support: string;
+        readonly friction_and_misread: string;
+        readonly communication_rhythm: string;
+        readonly boundary_advice: string;
+      };
+      readonly timingTitle: string;
+      readonly natureLabels: LabelMap<TendencyClass>;
+      readonly dateRange: (start: string, end: string) => string;
+      readonly driverRefs: string;
+      readonly practiceTitle: string;
+      readonly practiceLabels: {
+        readonly communication: string;
+        readonly boundary: string;
+        readonly repair: string;
+      };
+      readonly citation: (refs: string) => string;
+    };
     readonly events: {
       readonly title: string;
       readonly intro: string;
@@ -1607,6 +1641,47 @@ const ZH_COPY: ProductCopy = {
       empty: '基于本命盘与你记录的历史事件，生成核心特点与长期阶段策略。',
       stale: '生辰或历史事件已更新,可重新生成解读。',
       failureTitle: '解读生成未成功',
+    },
+    relationshipReading: {
+      eyebrow: 'AI 解读 · 我与一个关系人物',
+      title: '关系合盘',
+      explanation:
+        '该模块调用 Runtime AI，将两人的确定性命盘结构、十神关系、用神关系与年度窗口转写为关系解读。运行失败时只显示失败状态，不生成替代内容。',
+      personLabel: '关系人物',
+      generate: '生成合盘',
+      regenerate: '重新生成合盘',
+      generating: '正在生成合盘…',
+      addPerson: '添加关系人物',
+      noPeople: '档案里还没有可用于合盘的关系人物。',
+      empty: (name) => `为你和 ${name} 生成一份关系合盘。`,
+      emptyFallback: '选择一个关系人物后生成合盘。',
+      stale: '生辰资料或时间窗口已更新，可重新生成合盘。',
+      personFallback: '所选人物',
+      subjectLine: (name) => `我 + ${name}`,
+      structureLabels: {
+        baseline_pattern: '底层关系模式',
+        attraction_and_support: '吸引与支持',
+        friction_and_misread: '摩擦与误读',
+        communication_rhythm: '沟通节奏',
+        boundary_advice: '边界建议',
+      },
+      timingTitle: '关系时间窗口',
+      natureLabels: {
+        supportive: '助力',
+        steady: '平稳',
+        watch: '观察',
+        blocked: '阻滞',
+        turning: '转折',
+      },
+      dateRange: (start, end) => `${start} 至 ${end}`,
+      driverRefs: '算法依据',
+      practiceTitle: '相处实践',
+      practiceLabels: {
+        communication: '沟通',
+        boundary: '边界',
+        repair: '修复',
+      },
+      citation: (refs) => `引用: ${refs}`,
     },
     events: {
       title: '用过去的事，校准这张盘',
@@ -2546,6 +2621,47 @@ const EN_COPY: ProductCopy = {
       empty: 'Generate the core character and life-stage strategy from this chart and your recorded history.',
       stale: 'Birth data or history changed — you can regenerate the reading.',
       failureTitle: 'Reading could not be generated',
+    },
+    relationshipReading: {
+      eyebrow: 'AI reading · me and one person',
+      title: 'Relationship HePan',
+      explanation:
+        'This module calls Runtime AI to translate both deterministic natal charts, ten-god relation, useful-element relation, and year windows into relationship wording. If runtime fails, the failure state is shown and no substitute content is generated.',
+      personLabel: 'Person',
+      generate: 'Generate HePan',
+      regenerate: 'Regenerate HePan',
+      generating: 'Generating HePan...',
+      addPerson: 'Add person',
+      noPeople: 'No relationship person is available for HePan yet.',
+      empty: (name) => `Generate a relationship HePan for you and ${name}.`,
+      emptyFallback: 'Select a relationship person to generate HePan.',
+      stale: 'Birth data or timing window changed; regenerate the HePan.',
+      personFallback: 'selected person',
+      subjectLine: (name) => `Me + ${name}`,
+      structureLabels: {
+        baseline_pattern: 'Baseline pattern',
+        attraction_and_support: 'Attraction and support',
+        friction_and_misread: 'Friction and misread',
+        communication_rhythm: 'Communication rhythm',
+        boundary_advice: 'Boundary advice',
+      },
+      timingTitle: 'Relationship timing windows',
+      natureLabels: {
+        supportive: 'Supportive',
+        steady: 'Steady',
+        watch: 'Watch',
+        blocked: 'Blocked',
+        turning: 'Turning',
+      },
+      dateRange: (start, end) => `${start} to ${end}`,
+      driverRefs: 'Algorithm evidence',
+      practiceTitle: 'Relationship practices',
+      practiceLabels: {
+        communication: 'Communication',
+        boundary: 'Boundary',
+        repair: 'Repair',
+      },
+      citation: (refs) => `Citation: ${refs}`,
     },
     events: {
       title: 'Calibrate the chart with your past',

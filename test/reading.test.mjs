@@ -11,6 +11,8 @@ import {
 } from '../src/domain/mirror-scope.ts';
 import { validateReading } from '../src/contracts/reading-validator.ts';
 import {
+  latestMingJingNatalReading,
+  latestMingJingRelationshipReading,
   latestReadingByMirrorKind,
   yuejingReadingStartsOn,
 } from '../src/product/reading/reading-selectors.ts';
@@ -249,6 +251,55 @@ test('latestReadingByMirrorKind returns the most recent reading for the kind', (
   assert.equal(
     latestReadingByMirrorKind({ readings: [older, newer], mirror_kind: 'nianjing' })?.id,
     'r_nianjing_new',
+  );
+});
+
+test('MingJing selectors keep natal and relationship readings separate', () => {
+  const natalOlder = validReading({
+    id: 'r_mingjing_natal_old',
+    created_at: '2026-06-04T00:00:00Z',
+    mirror_kind: 'mingjing',
+  });
+  const natalNewer = validReading({
+    id: 'r_mingjing_natal_new',
+    created_at: '2026-06-05T00:00:00Z',
+    mirror_kind: 'mingjing',
+  });
+  const aliceScope = relationshipNatalMirrorScope({
+    related_person_ref: { kind: 'person', id: 'p_alice' },
+  });
+  const aliceRelationship = validReading({
+    id: 'r_mingjing_alice',
+    created_at: '2026-06-06T00:00:00Z',
+    mirror_kind: 'mingjing',
+    mirror_scope: aliceScope,
+  });
+  const bobScope = relationshipNatalMirrorScope({
+    related_person_ref: { kind: 'person', id: 'p_bob' },
+  });
+  const bobRelationship = validReading({
+    id: 'r_mingjing_bob',
+    created_at: '2026-06-07T00:00:00Z',
+    mirror_kind: 'mingjing',
+    mirror_scope: bobScope,
+  });
+
+  const readings = [natalOlder, aliceRelationship, natalNewer, bobRelationship];
+
+  assert.equal(latestMingJingNatalReading(readings)?.id, 'r_mingjing_natal_new');
+  assert.equal(
+    latestMingJingRelationshipReading({
+      readings,
+      related_person_ref: { kind: 'person', id: 'p_alice' },
+    })?.id,
+    'r_mingjing_alice',
+  );
+  assert.equal(
+    latestMingJingRelationshipReading({
+      readings,
+      related_person_ref: { kind: 'person', id: 'p_bob' },
+    })?.id,
+    'r_mingjing_bob',
   );
 });
 

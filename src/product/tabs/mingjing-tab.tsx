@@ -8,30 +8,43 @@
 //      generated on demand and grounded by the chart + recorded history. The
 //      chart numbers are never recomputed by the AI.
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { useProductCopy, type ProductCopy } from '../i18n/copy.ts';
 import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
 import type { ShijingSettingsFocusTarget } from '../settings/settings-page-view.tsx';
 import type { NatalReadinessReason } from '../subjects/natal-readiness.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
-import type { MingJingMirrorOutput } from '../../domain/mirror-output.ts';
+import type {
+  MingJingMirrorOutput,
+  MingJingRelationshipMirrorOutput,
+} from '../../domain/mirror-output.ts';
 import type { ReadingGenerationFailure } from '../../domain/reading.ts';
 import { buildMingJingProjection } from '../astrology/mingjing-projection.ts';
-import { inputsSummaryExpired } from '../astrology/inputs-summary-expiry.ts';
-import { latestReadingByMirrorKind } from '../reading/reading-selectors.ts';
+import {
+  inputsSummaryExpired,
+  inputsSummaryStalenessForSpace,
+} from '../astrology/inputs-summary-expiry.ts';
+import {
+  latestMingJingNatalReading,
+  latestMingJingRelationshipReading,
+} from '../reading/reading-selectors.ts';
 import { generateReadingForStorage } from '../reading/generate-and-store.ts';
 import { newReadingId } from '../ids/index.ts';
 import { ShijingOnboarding } from '../onboarding/shijing-onboarding.tsx';
 import { mingJingReadiness } from './mingjing/mingjing-readiness.ts';
 import { shouldShowMingJingStartupGuide } from './mingjing/mingjing-startup-guide.ts';
-import { natalMirrorScopeForToday } from './mirror-scope-helpers.ts';
+import {
+  natalMirrorScopeForToday,
+  relationshipNatalMirrorScopeForToday,
+} from './mirror-scope-helpers.ts';
 import { MingJingHero } from './mingjing/mingjing-hero.tsx';
 import { MingJingPaipan } from './mingjing/mingjing-paipan.tsx';
 import { MingJingDayun } from './mingjing/mingjing-dayun.tsx';
 import { MingJingLiunian } from './mingjing/mingjing-liunian.tsx';
 import { MingJingEvents } from './mingjing/mingjing-events.tsx';
 import { MingJingReadingView } from './mingjing/mingjing-reading-view.tsx';
+import { MingJingRelationshipReadingView } from './mingjing/mingjing-relationship-reading-view.tsx';
 import { MingJingRectify } from './mingjing/mingjing-rectify.tsx';
 
 function nowIso(): string {
@@ -59,6 +72,11 @@ export function MingJingTab({
 
   const [loading, setLoading] = useState(false);
   const [failure, setFailure] = useState<ReadingGenerationFailure | null>(null);
+  const [relationshipLoading, setRelationshipLoading] = useState(false);
+  const [relationshipFailure, setRelationshipFailure] = useState<ReadingGenerationFailure | null>(null);
+  const [selectedRelationshipPersonId, setSelectedRelationshipPersonId] = useState(
+    () => space.persons[0]?.id ?? '',
+  );
   const [showRectify, setShowRectify] = useState(false);
   const stagesRef = useRef<HTMLDivElement>(null);
   const scrollToStages = () =>
@@ -72,11 +90,37 @@ export function MingJingTab({
     [space, readiness.ok],
   );
 
+  useEffect(() => {
+    if (space.persons.some((person) => person.id === selectedRelationshipPersonId)) return;
+    setSelectedRelationshipPersonId(space.persons[0]?.id ?? '');
+  }, [selectedRelationshipPersonId, space.persons]);
+
+  const selectedRelationshipPersonRef = useMemo(
+    () =>
+      selectedRelationshipPersonId
+        ? { kind: 'person' as const, id: selectedRelationshipPersonId }
+        : null,
+    [selectedRelationshipPersonId],
+  );
+
   const reading = useMemo(
-    () => latestReadingByMirrorKind({ readings: space.readings, mirror_kind: 'mingjing' }),
+    () => latestMingJingNatalReading(space.readings),
     [space.readings],
   );
   const output = (reading?.output ?? null) as MingJingMirrorOutput | null;
+
+  const relationshipReading = useMemo(
+    () =>
+      selectedRelationshipPersonRef
+        ? latestMingJingRelationshipReading({
+            readings: space.readings,
+            related_person_ref: selectedRelationshipPersonRef,
+          })
+        : undefined,
+    [selectedRelationshipPersonRef, space.readings],
+  );
+  const relationshipOutput =
+    (relationshipReading?.output ?? null) as MingJingRelationshipMirrorOutput | null;
 
   // "Stale" = the recorded history changed since this reading, or it aged out.
   const stale = useMemo(() => {
@@ -85,6 +129,18 @@ export function MingJingTab({
     const cited = [...reading.cited_event_memory_refs].sort().join(',');
     return current !== cited || inputsSummaryExpired(reading, new Date());
   }, [reading, space.event_memories]);
+
+  const relationshipStale = useMemo(() => {
+    if (!relationshipReading) return false;
+    return inputsSummaryStalenessForSpace({
+      reading: relationshipReading,
+      space,
+      now: new Date(),
+      expected_mirror_scope: relationshipReading.mirror_scope,
+      expected_concern_tag_refs: [],
+      expected_cited_event_memory_refs: [],
+    }).stale;
+  }, [relationshipReading, space]);
 
   async function handleGenerate() {
     if (!projection || !projection.ok || loading) return;
@@ -106,6 +162,30 @@ export function MingJingTab({
       dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
     } else {
       setFailure(outcome.failure);
+    }
+  }
+
+  async function handleGenerateRelationship() {
+    if (!selectedRelationshipPersonRef || relationshipLoading) return;
+    setRelationshipLoading(true);
+    setRelationshipFailure(null);
+    const outcome = await generateReadingForStorage({
+      id: newReadingId(),
+      created_at: nowIso(),
+      mirror_kind: 'mingjing',
+      mirror_scope: relationshipNatalMirrorScopeForToday(selectedRelationshipPersonRef),
+      related_person_refs: [selectedRelationshipPersonRef],
+      concern_tag_refs: [],
+      cited_event_memory_refs: [],
+      cited_plan_item_refs: [],
+      space,
+      deps: { runtime_ai_client },
+    });
+    setRelationshipLoading(false);
+    if (outcome.ok) {
+      dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+    } else {
+      setRelationshipFailure(outcome.failure);
     }
   }
 
@@ -170,6 +250,21 @@ export function MingJingTab({
               loading={loading}
               failure={failure}
               onGenerate={handleGenerate}
+            />
+            <MingJingRelationshipReadingView
+              persons={space.persons}
+              selectedPersonId={selectedRelationshipPersonId}
+              readingId={relationshipReading?.id ?? null}
+              output={relationshipOutput}
+              stale={relationshipStale}
+              loading={relationshipLoading}
+              failure={relationshipFailure}
+              onSelectPerson={(personId) => {
+                setSelectedRelationshipPersonId(personId);
+                setRelationshipFailure(null);
+              }}
+              onGenerate={handleGenerateRelationship}
+              onOpenPeople={() => onRequestOpenSettings?.('profile')}
             />
           </div>
           {showRectify ? (
