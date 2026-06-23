@@ -110,3 +110,44 @@ shijing:
     - cited_reading_ids_must_be_non_empty
     - cannot_mutate_deterministic_facts
     - cannot_create_parallel_astrology_output_entity
+mingjing:
+  surface: 命镜 AI 解读 over the deterministic natal projection (SJG-ALGO-16)
+  required_fields:
+    - mirror_kind
+    - summary
+    - core
+    - life_stage_strategies
+    - event_validations
+    - cited_event_memory_refs
+    - cited_plan_item_refs
+    - citations
+  core:
+    ai_worded: true
+    required_fields:
+      - personality
+      - strengths
+      - long_term_themes
+      - relationship_pattern
+      - career_inclination
+  life_stage_strategy:
+    required_fields:
+      - phase_label
+      - age_range
+      - dayun_pillar
+      - theme
+      - strategy
+    deterministic_fields: [phase_label, age_range, dayun_pillar]
+    ai_worded_fields: [theme, strategy]
+  event_validation:
+    required_fields:
+      - event_memory_ref
+      - occurred_year
+      - period_nature
+      - note
+    optional_fields:
+      - dayun_pillar
+  rules:
+    - event_validations_are_deterministic_resonance_never_ai_patched
+    - chart_numbers_never_recomputed_by_ai
+    - no_concern_tags_required
+    - cannot_mutate_deterministic_facts

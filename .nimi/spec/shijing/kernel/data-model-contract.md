@@ -194,7 +194,7 @@ Invariants:
 Reading {
   id: string
   created_at: string
-  mirror_kind: "rijing" | "yuejing" | "nianjing" | "shijing"
+  mirror_kind: "rijing" | "yuejing" | "nianjing" | "mingjing" | "shijing"
   mirror_scope: MirrorScope
   primary_subject_ref: "self"
   related_person_refs: SubjectRef[]

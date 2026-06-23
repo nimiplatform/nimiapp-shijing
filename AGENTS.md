@@ -67,7 +67,7 @@ Before making any change:
 | `.nimi/spec/shijing/kernel/data-model-contract.md` | `SJG-DATA-*` | ShiJingSpace, Subject/Person, View, Reading, Conversation, Settings, ShiJingCatalog |
 | `.nimi/spec/shijing/kernel/astrology-contract.md` | `SJG-ASTRO-*` | Astrology Contract v1: kind/scope matrix, output structure, forbidden outputs, uncertainty surface, consultation anchor rules |
 | `.nimi/spec/shijing/kernel/algorithm-contract.md` | `SJG-ALGO-*` | Astrology Algorithm Contract v1: method stack, time windows, canonicalization, DaYun, deterministic feature snapshots, Runtime-AI wording boundary, canonical hashing |
-| `.nimi/spec/shijing/kernel/ia-contract.md` | `SJG-IA-*` | Information architecture (four primary tabs: `今日`, `关注`, `问时镜`, `我`) |
+| `.nimi/spec/shijing/kernel/ia-contract.md` | `SJG-IA-*` | Information architecture (five primary tabs: `日镜`, `月镜`, `年镜`, `命镜`, `时镜`) |
 | `.nimi/spec/shijing/kernel/removed-surfaces-contract.md` | `SJG-REMOVED-*` | Hard removals (Profile, Venture, HuangliDaily, Report, …) |
 
 ### Key Tables
@@ -117,7 +117,10 @@ no data to migrate. Therefore:
 
 ### IA Boundary
 
-- Exactly four primary tabs: `今日`, `关注`, `问时镜`, `我`.
+- Exactly five primary tabs, in widening-horizon order: `日镜` (rijing), `月镜`
+  (yuejing), `年镜` (nianjing), `命镜` (mingjing), `时镜` (shijing). See
+  `ia-contract.md` SJG-IA-01 / SJG-IA-08. `命镜` is the whole-life natal
+  projection surface (SJG-ALGO-16).
 - No History tab. No customer management. No batch import/export. No project
   management vocabulary. See `removed-surfaces-contract.md`.
 

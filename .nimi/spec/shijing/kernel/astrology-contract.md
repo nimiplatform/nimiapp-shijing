@@ -7,6 +7,8 @@
 - `rijing`: daily mirror.
 - `yuejing`: rolling 30-day mirror.
 - `nianjing`: long-horizon phase and inflection mirror.
+- `mingjing`: whole-life natal AI 解读 grounded in the deterministic natal
+  projection (SJG-ALGO-16). Self-anchored; no concern tags required.
 - `shijing`: consultation mirror grounded in cited readings.
 
 ## SJG-ASTRO-02 - Mirror Scopes
@@ -16,6 +18,7 @@
 - `daily`
 - `rolling_30_day`
 - `long_horizon`
+- `natal` (命镜 only; whole-life, anchored by `anchor_year`, not a transit window)
 - `consultation`
 
 Valid kind/scope pairings are listed in
@@ -145,6 +148,8 @@ Invariants:
 - YueJing expires after 7 days or when the rolling 30-day scope changes.
 - NianJing expires after 30 days or when active concern tags / natal inputs
   change.
+- MingJing expires after 180 days or when cited events / natal inputs / response
+  preferences change (the natal chart itself is fixed).
 - ShiJing consultation expires after 7 days for new AI turns.
 
 Expired snapshots are retained on historical readings but must not be reused to
@@ -155,3 +160,30 @@ generate new wording.
 All AI generation for Reading runs through the Nimi runtime via
 `@nimiplatform/sdk/runtime`. Direct HTTP/gRPC calls, hardcoded provider/model
 literals, and fallback paths that mask runtime failure are forbidden.
+
+## SJG-ASTRO-12 - MingJing Output
+
+命镜 AI 解读 (`mirror_kind = mingjing`, `scope = natal`) is grounded in the
+deterministic natal projection (`MingJingChart`, SJG-ALGO-16). Output shape is in
+`tables/mirror-output-contract.yaml`.
+
+It contains:
+
+- `summary`: one-line 命局 overview (AI wording over a deterministic seed);
+- `core`: 命局核心特点 — `personality` (性格底色), `strengths` (优势能力),
+  `long_term_themes` (长期课题), `relationship_pattern` (关系模式),
+  `career_inclination` (事业倾向). All five are AI wording grounded in
+  旺衰/用神/十神/格局;
+- `life_stage_strategies`: 长期阶段策略 — one entry per current/upcoming 大运. Its
+  `phase_label` / `age_range` / `dayun_pillar` are deterministic; `theme` /
+  `strategy` are AI wording (life-stage strategy, never per-day advice);
+- `event_validations`: 历史事件验证 — deterministic resonance of each cited
+  EventMemory onto the 大运/流年 timeline. Never AI-patched.
+
+It must not:
+
+- recompute pillars / DaYun / 格局 / 用神 (those are read-only evidence);
+- assert deterministic fate from a historical event ("注定/必然"); events only
+  calibrate emphasis and build resonance;
+- create an astrology output entity outside `Reading`;
+- emit any SJG-ASTRO-08 forbidden output.

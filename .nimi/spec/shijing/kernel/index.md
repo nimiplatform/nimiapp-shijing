@@ -18,8 +18,9 @@ This directory is the normative authority landing for ShiJing (时镜).
   mirror-window canonicalization, DaYun predicate, the feature snapshot envelope
   (`common` + `method_evidence`), memory policy boundary, canonical hashing, and
   Runtime AI wording boundary.
-- `ia-contract.md` (`SJG-IA-*`): exactly four primary tabs: `日镜`, `月镜`,
-  `年镜`, `时镜`, plus mandatory secondary Settings.
+- `ia-contract.md` (`SJG-IA-*`): exactly five primary tabs: `日镜`, `月镜`,
+  `年镜`, `命镜`, `时镜`, plus mandatory secondary Settings. `命镜` is the
+  whole-life natal projection surface (SJG-IA-08 / SJG-ALGO-16).
 - `removed-surfaces-contract.md` (`SJG-REMOVED-*`): hard removals including
   old View/Focus/Relation/CurrentObservationTarget/catalog surfaces,
   reports, trend charts, luck scores, History, CRM, and project-management

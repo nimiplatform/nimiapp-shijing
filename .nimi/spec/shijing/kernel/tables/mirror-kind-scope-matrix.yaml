@@ -4,32 +4,44 @@ mirror_kinds:
   - rijing
   - yuejing
   - nianjing
+  - mingjing
   - shijing
 mirror_scopes:
   - daily
   - rolling_30_day
   - long_horizon
+  - natal
   - consultation
 matrix:
   rijing:
     daily: allowed
     rolling_30_day: forbidden
     long_horizon: forbidden
+    natal: forbidden
     consultation: forbidden
   yuejing:
     daily: forbidden
     rolling_30_day: allowed
     long_horizon: forbidden
+    natal: forbidden
     consultation: forbidden
   nianjing:
     daily: forbidden
     rolling_30_day: forbidden
     long_horizon: allowed
+    natal: forbidden
+    consultation: forbidden
+  mingjing:
+    daily: forbidden
+    rolling_30_day: forbidden
+    long_horizon: forbidden
+    natal: allowed
     consultation: forbidden
   shijing:
     daily: forbidden
     rolling_30_day: forbidden
     long_horizon: forbidden
+    natal: forbidden
     consultation: allowed
 scope_requirements:
   daily:
@@ -64,6 +76,20 @@ scope_requirements:
       max_local_years: 10
       user_freeform_window: forbidden
       reusable_time_container: forbidden
+  natal:
+    required_fields:
+      - anchor_year
+      - basis_time_zone
+    primary_subject_ref: self
+    note: >-
+      命镜 whole-life natal scope (SJG-ALGO-16). anchor_year is a reference year
+      for the "current"/流年 horizon only, not a transit window; the canonical
+      window is a deterministic 1-year span keyed to anchor_year. Self-anchored;
+      no concern tags required.
+    anchor_year_min: 1900
+    anchor_year_max: 2200
+    user_freeform_window: forbidden
+    reusable_time_container: forbidden
   consultation:
     required_fields:
       - source_reading_ids

@@ -1,4 +1,4 @@
-// SJG-IA-01..07 — IA tab contract tests for the four-mirror IA.
+// SJG-IA-01..08 — IA tab contract tests for the five-mirror IA (命镜 added).
 
 import assert from 'node:assert/strict';
 import test from 'node:test';
@@ -15,26 +15,26 @@ import {
   isForbiddenTabLabel,
 } from '../src/contracts/ia-contract.ts';
 
-test('exactly four primary tabs', () => {
-  assert.equal(SHIJING_PRIMARY_TAB_COUNT, 4);
-  assert.equal(SHIJING_IA_TABS.length, 4);
+test('exactly five primary tabs', () => {
+  assert.equal(SHIJING_PRIMARY_TAB_COUNT, 5);
+  assert.equal(SHIJING_IA_TABS.length, 5);
 });
 
-test('canonical ordered ids are RiJing/YueJing/NianJing/ShiJing', () => {
+test('canonical ordered ids are RiJing/YueJing/NianJing/MingJing/ShiJing', () => {
   assert.deepEqual(
     SHIJING_IA_TABS.map((tab) => tab.id),
-    ['rijing', 'yuejing', 'nianjing', 'shijing'],
+    ['rijing', 'yuejing', 'nianjing', 'mingjing', 'shijing'],
   );
   assert.deepEqual(
     SHIJING_IA_TABS.map((tab) => tab.order),
-    [1, 2, 3, 4],
+    [1, 2, 3, 4, 5],
   );
 });
 
-test('canonical chinese labels are 日镜/月镜/年镜/时镜', () => {
+test('canonical chinese labels are 日镜/月镜/年镜/命镜/时镜', () => {
   assert.deepEqual(
     SHIJING_IA_TABS.map((tab) => tab.chinese_label),
-    ['日镜', '月镜', '年镜', '时镜'],
+    ['日镜', '月镜', '年镜', '命镜', '时镜'],
   );
 });
 

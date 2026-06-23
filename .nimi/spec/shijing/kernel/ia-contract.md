@@ -1,17 +1,23 @@
 # SJG-IA - Information Architecture Contract
 
-## SJG-IA-01 - Exactly Four Primary Tabs
+## SJG-IA-01 - Exactly Five Primary Tabs
 
-The ShiJing renderer exposes exactly four primary tabs, in this order:
+The ShiJing renderer exposes exactly five primary tabs, in this order. The order
+follows a widening 命理 horizon: day → month → decade-horizon → whole-life natal
+→ consultation.
 
 | Order | Tab id | Chinese label | English anchor |
 | --- | --- | --- | --- |
 | 1 | `rijing` | `日镜` | Daily Mirror |
 | 2 | `yuejing` | `月镜` | Monthly Mirror |
 | 3 | `nianjing` | `年镜` | Yearly Mirror |
-| 4 | `shijing` | `时镜` | Consultation Mirror |
+| 4 | `mingjing` | `命镜` | Destiny Mirror |
+| 5 | `shijing` | `时镜` | Consultation Mirror |
 
-No fifth primary tab is admitted.
+No sixth primary tab is admitted. `mingjing` (命镜, order 4) was admitted as a
+deliberate IA redesign in this contract revision; see SJG-IA-08. It is inserted
+after `nianjing` (whole-life natal > decade horizon) and before `shijing`, which
+remains the final consultation surface.
 
 ## SJG-IA-02 - Removed Primary Tabs
 
@@ -102,3 +108,23 @@ standalone View-like workspace, roster editor, or time-window builder.
 Downstream source must expose one ordered IA constant matching this contract.
 Renderer code must consume that contract rather than hardcoding a parallel
 primary tab list.
+
+## SJG-IA-08 - 命镜 Natal Projection Surface
+
+`mingjing` (命镜) is the whole-life natal-chart surface. Unlike the four time
+mirrors, it is anchored to the subject's birth chart rather than a rolling mirror
+window. Its first authority layer is a deterministic natal projection
+(SJG-ALGO-16) rendered directly from the engine — without a Reading or runtime-AI
+wording pass — covering:
+
+- 八字排盘: four pillars · 十神 · 藏干 · 纳音 · 十二长生 · 空亡 · 五行分布;
+- 原局格局: 旺衰 · 格局 · 用神/喜忌 · 合冲刑害破;
+- 大运结构: the full DaYun sequence (every step, not only the current period);
+- 流年关键窗口: salient future-year windows (not a year-by-year ledger).
+
+命镜 is self-anchored (SJG-IA-03) and surfaces the SJG-IA-05 readiness blockers.
+The natal projection requires exact birth precision and a specified calculation
+sex (DaYun, SJG-ALGO-07); otherwise it shows the matching typed blocker and routes
+to the Self profile. The 命镜 AI 解读 reading kind (命局核心特点, 长期阶段策略) and
+历史事件验证 (event overlay on the deterministic DaYun/流年 timeline) are admitted
+separately and never recompute the deterministic projection.

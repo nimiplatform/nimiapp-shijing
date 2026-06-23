@@ -69,6 +69,7 @@ Mirror windows are derived from `MirrorScope`:
 | `daily` | local civil day in `basis_time_zone` |
 | `rolling_30_day` | exactly 30 local dates from `start_date` through `end_date` |
 | `long_horizon` | admitted NianJing window from `tables/mirror-kind-scope-matrix.yaml` |
+| `natal` | 命镜 whole-life scope: a deterministic 1-year window keyed to `anchor_year` (provenance only; the chart's real span is the DaYun sequence in `MingJingChart`, SJG-ALGO-16) |
 | `consultation` | union/summary of cited source reading scopes plus explicit question window when present |
 
 All persisted hashes use ISO-8601 UTC instants derived from the local scope and
@@ -142,7 +143,7 @@ not be parsed by Layer 3.
 ```text
 AstrologyFeatureSnapshot {
   method_profile: MethodProfile
-  mirror_kind: "rijing" | "yuejing" | "nianjing" | "shijing"
+  mirror_kind: "rijing" | "yuejing" | "nianjing" | "mingjing" | "shijing"
   canonical_window: CanonicalMirrorWindow
   common: CommonDrivers
   method_evidence: MethodEvidence
@@ -165,7 +166,7 @@ CanonicalMirrorWindow {
   start_utc: string
   end_utc: string
   basis_time_zone: string
-  scope_kind: "daily" | "rolling_30_day" | "long_horizon" | "consultation"
+  scope_kind: "daily" | "rolling_30_day" | "long_horizon" | "natal" | "consultation"
 }
 
 BaziEvidence {
@@ -484,8 +485,14 @@ Authoritative v1 features (`BaziInterpretation`): 十神 per pillar; 藏干 with
 a bounded band 极弱..极强 with a 0..1 support_ratio; 用神/喜神/忌神; 合冲刑害破 among
 natal branches.
 
-Non-authoritative v1 (computed-but-not-weighted, or omitted): 神煞, 空亡, 格局
-label, 岁运并临 flag. These must not drive tendency in v1.
+Display-authoritative on the 命镜 natal projection only (SJG-ALGO-16), and
+tendency-neutral everywhere: 空亡 (旬空), 格局 label (月令取格), 五行分布. They are
+surfaced for whole-life natal interpretation but must not drive any tendency
+class, phase band, or inflection point, and are not part of the hashed
+`AstrologyFeatureSnapshot` envelope the four time mirrors consume.
+
+Non-authoritative v1 (computed-but-not-weighted, or omitted): 神煞, 岁运并临
+flag. These must not drive tendency in v1.
 
 Strength (扶抑): score each stem and each branch 藏干 by its element relation to the
 day master (生我/同我 support; 我生/我克/克我 drain), weighted by position (月令
@@ -507,3 +514,107 @@ same date) but does not override 用神 favourability.
 
 Correctness invariant: for a fixed transit element that is 财 to the day master, a
 身强 chart yields a favourable tendency and a 身弱 chart an unfavourable one.
+
+## SJG-ALGO-16 - 命镜 Natal Projection (bazi_ziping_v1)
+
+The 命镜 surface (SJG-IA-08) consumes a deterministic natal projection,
+`MingJingChart`, derived by the `bazi_ziping_v1` engine from the self subject's
+NatalCanonicalization. It is a live projection over already-persisted natal inputs
+— NOT a persisted Reading (Reading remains the only persisted astrology output
+entity) and NOT part of the hashed feature-snapshot envelope (SJG-ALGO-08). It
+carries no tendency classes, luck scores, or rankable numeric series.
+
+```text
+MingJingChart {
+  subject_ref: "self"
+  canonicalization_hash: string
+  natal_chart: NatalChartSnapshot          // four pillars + day master (SJG-ALGO-06)
+  interpretation: BaziInterpretation        // 十神/藏干/纳音/十二长生/旺衰/用神/合冲 (SJG-ALGO-15)
+  void: BaziVoid                            // 旬空 of the day pillar + per-pillar 空亡 flags
+  five_elements: FiveElementDistribution    // weighted 五行 distribution (display only)
+  pattern: BaziPattern                      // 月令取格 with 透干/通根/成破格 disposition
+  dayun: DayunStructure                     // direction + 起运 + full period sequence
+  liunian: LiuNianProjection                // salient future-year windows over a bounded horizon
+  birth_precision: "exact"
+}
+
+BaziVoid {
+  xun: string                               // the 旬 the day pillar belongs to (e.g. 甲子)
+  void_branches: EarthBranch[]              // the two 旬空 branches
+  void_positions: ("year"|"month"|"day"|"hour")[]   // natal pillars whose branch is 空亡
+}
+
+BaziPattern {
+  name: string                              // 正官格 / 食神格 / 建禄格 / 阳刃格 / ...
+  ten_god: string                           // 格 ten-god (月令本气/透出之神); empty for 禄刃
+  source: "本气" | "透干" | "禄刃"           // how 月令取格 selected the 格
+  transparent: boolean                      // 格神是否透干
+  rooted: boolean                           // 格神是否通根月令
+  disposition: "成格" | "假成" | "破格"
+  basis: string[]
+}
+
+FiveElementDistribution {
+  weighted: Record<Element, number>         // position-weighted scores (stems + 藏干)
+  count: Record<Element, number>            // raw stem + 藏干 occurrences
+  dominant: Element
+  weakest: Element
+  absent: Element[]                         // 五行缺
+}
+
+DayunStructure {
+  required: true
+  direction: "forward" | "reverse"          // 顺行 / 逆行
+  start_age_years: number                   // 起运
+  periods: DayunPeriodFeature[]             // full sequence (>= 8 steps)
+}
+
+DayunPeriodFeature {
+  pillar: GanzhiPillar
+  start_age: number; end_age: number
+  start_year: number; end_year: number
+  stem_ten_god: string                      // 十神 of the 大运 stem vs day master
+  terrain: string                           // 日主 十二长生 at the 大运 branch
+  nature: TendencyClass                     // 用神 favourability of the 大运 stem element
+  favor: "喜" | "忌" | "平"
+  natal_branch_relations: BaziBranchRelation[]   // 大运支 vs natal branches
+  is_inflection: boolean                    // opens a 转折 (boundary / 冲提纲 / 冲日支)
+  is_current: boolean
+}
+
+LiuNianProjection {
+  horizon: { start_year: number; end_year: number }
+  windows: LiuNianWindow[]                  // salient windows only — NOT every year
+}
+
+LiuNianWindow {
+  start_year: number; end_year: number
+  pillars: { year: number; pillar: GanzhiPillar }[]
+  nature: TendencyClass
+  favor: "喜" | "忌" | "平"
+  salience: "high" | "medium"
+  natal_branch_relations: BaziBranchRelation[]   // 流年支 vs 日支/月令
+  dayun_pillar?: GanzhiPillar               // the 大运 the window sits in
+  basis: string[]
+}
+```
+
+Rules:
+
+- 空亡 (旬空) is taken from the day pillar's 旬 (`getExtraEarthBranches`). A natal
+  pillar is 空亡 when its branch is one of the two void branches.
+- 格局 uses 月令取格: take the month-branch 本气 ten-god; when the 本气 is 比劫,
+  classify 建禄格 (临官) or 阳刃格 (帝旺) by the day master's 十二长生 at the month
+  branch; otherwise prefer a transparent (透干) 中/余气 over a non-transparent 本气.
+  `disposition` is a deterministic 成/假成/破 heuristic from 透干 + 通根 + 月令逢冲.
+- DaYun exposes the FULL sequence (>= 8 periods), not only the current period. Each
+  period's `nature` is the 用神 favourability of its stem element (baziPeriodNature),
+  never a blanket 转折.
+- 流年 windows select only salient years over a bounded horizon (default: the anchor
+  year through anchor + 12 years, clamped to the available DaYun span). Salience =
+  strong 用神 favour/忌 of the year element, or 流年支 冲/合/三合/刑 with the 日支 or
+  月令, or a DaYun boundary year. Non-salient years are omitted; the projection must
+  not degrade into a year-by-year ledger (mirrors the SJG-ALGO-11 forbidden
+  K-line/ledger constraint).
+- The natal projection carries no tendency classes, K-line bars, numeric trend
+  series, luck scores, or rankable numbers as authoritative data.

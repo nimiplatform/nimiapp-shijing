@@ -2,20 +2,23 @@
 // Renderer surfaces must consume SHIJING_IA_TABS instead of hardcoding
 // parallel tab lists.
 
-export type ShijingTabId = 'rijing' | 'yuejing' | 'nianjing' | 'shijing';
+export type ShijingTabId = 'rijing' | 'yuejing' | 'nianjing' | 'mingjing' | 'shijing';
 
 export interface ShijingTabDescriptor {
   readonly id: ShijingTabId;
-  readonly order: 1 | 2 | 3 | 4;
+  readonly order: 1 | 2 | 3 | 4 | 5;
   readonly chinese_label: string;
   readonly english_anchor: string;
 }
 
+// SJG-IA-01 — widening-horizon order: day → month → decade → whole-life natal →
+// consultation. 命镜 (mingjing) is the natal projection surface (SJG-IA-08).
 export const SHIJING_IA_TABS: readonly ShijingTabDescriptor[] = [
   { id: 'rijing', order: 1, chinese_label: '日镜', english_anchor: 'Daily Mirror' },
   { id: 'yuejing', order: 2, chinese_label: '月镜', english_anchor: 'Monthly Mirror' },
   { id: 'nianjing', order: 3, chinese_label: '年镜', english_anchor: 'Yearly Mirror' },
-  { id: 'shijing', order: 4, chinese_label: '时镜', english_anchor: 'Consultation Mirror' },
+  { id: 'mingjing', order: 4, chinese_label: '命镜', english_anchor: 'Destiny Mirror' },
+  { id: 'shijing', order: 5, chinese_label: '时镜', english_anchor: 'Consultation Mirror' },
 ] as const;
 
 export const SHIJING_PRIMARY_TAB_COUNT = SHIJING_IA_TABS.length;
