@@ -18,8 +18,11 @@ import {
   consultationMirrorScope,
   dailyMirrorScope,
   longHorizonMirrorScope,
+  relationshipNatalMirrorScope,
   rolling30DayMirrorScope,
   validInputsSummary,
+  validMingjingOutput,
+  validMingjingRelationshipOutput,
   validNianjingOutput,
   validReading,
   validRijingOutput,
@@ -129,6 +132,111 @@ test('rejects yuejing cells outside the scope start date', () => {
 test('nianjing/long_horizon reading is valid', () => {
   const result = validateReading(validReading({ mirror_kind: 'nianjing' }));
   assert.equal(result.ok, true, JSON.stringify(result));
+});
+
+test('mingjing/relationship_natal reading is valid', () => {
+  const scope = relationshipNatalMirrorScope();
+  const result = validateReading(validReading({ mirror_kind: 'mingjing', mirror_scope: scope }));
+  assert.equal(result.ok, true, JSON.stringify(result));
+});
+
+test('relationship_natal reading requires exactly one matching related person ref', () => {
+  const scope = relationshipNatalMirrorScope();
+  for (const related_person_refs of [[], [{ kind: 'person', id: 'p_other' }]]) {
+    const result = validateReading(
+      validReading({ mirror_kind: 'mingjing', mirror_scope: scope, related_person_refs }),
+    );
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.error.code, 'reading_relationship_natal_related_person_refs_invalid');
+    }
+  }
+});
+
+test('relationship_natal reading rejects concern tags', () => {
+  const scope = relationshipNatalMirrorScope();
+  const result = validateReading(
+    validReading({ mirror_kind: 'mingjing', mirror_scope: scope, concern_tag_refs: ['tag_love'] }),
+  );
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'reading_relationship_natal_concern_tags_must_be_empty');
+  }
+});
+
+test('relationship_natal reading rejects cited readings before generic non-shijing citation failure', () => {
+  const scope = relationshipNatalMirrorScope();
+  const result = validateReading(
+    validReading({ mirror_kind: 'mingjing', mirror_scope: scope, cited_reading_ids: ['r_source'] }),
+  );
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'reading_relationship_natal_cited_readings_must_be_empty');
+  }
+});
+
+test('relationship_natal reading requires relationship_hepan output', () => {
+  const scope = relationshipNatalMirrorScope();
+  const result = validateReading(
+    validReading({ mirror_kind: 'mingjing', mirror_scope: scope, output: validMingjingOutput() }),
+  );
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'reading_relationship_natal_output_kind_invalid');
+  }
+});
+
+test('relationship_hepan output requires relationship_natal scope', () => {
+  const result = validateReading(
+    validReading({ mirror_kind: 'mingjing', output: validMingjingRelationshipOutput() }),
+  );
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'reading_relationship_output_requires_relationship_scope');
+  }
+});
+
+test('relationship_natal reading output subject must match mirror_scope', () => {
+  const scope = relationshipNatalMirrorScope();
+  const cases = [
+    {
+      relationship_subject: {
+        primary_subject_ref: 'self',
+        related_person_ref: { kind: 'person', id: 'p_other' },
+        anchor_year: scope.anchor_year,
+        basis_time_zone: scope.basis_time_zone,
+      },
+    },
+    {
+      relationship_subject: {
+        primary_subject_ref: 'self',
+        related_person_ref: scope.related_person_ref,
+        anchor_year: 2027,
+        basis_time_zone: scope.basis_time_zone,
+      },
+    },
+    {
+      relationship_subject: {
+        primary_subject_ref: 'self',
+        related_person_ref: scope.related_person_ref,
+        anchor_year: scope.anchor_year,
+        basis_time_zone: 'Asia/Tokyo',
+      },
+    },
+  ];
+  for (const override of cases) {
+    const result = validateReading(
+      validReading({
+        mirror_kind: 'mingjing',
+        mirror_scope: scope,
+        output: validMingjingRelationshipOutput(override),
+      }),
+    );
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.error.code, 'reading_relationship_natal_output_subject_mismatch');
+    }
+  }
 });
 
 test('latestReadingByMirrorKind returns the most recent reading for the kind', () => {

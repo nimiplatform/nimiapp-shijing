@@ -1,5 +1,7 @@
 // SJG-DATA-08 + SJG-ASTRO-02 — MirrorScope.
 
+import type { SubjectRef } from './subject-ref.ts';
+
 export type MirrorKind = 'rijing' | 'yuejing' | 'nianjing' | 'mingjing' | 'shijing';
 
 export const MIRROR_KINDS: readonly MirrorKind[] = [
@@ -10,13 +12,20 @@ export const MIRROR_KINDS: readonly MirrorKind[] = [
   'shijing',
 ] as const;
 
-export type MirrorScopeKind = 'daily' | 'rolling_30_day' | 'long_horizon' | 'natal' | 'consultation';
+export type MirrorScopeKind =
+  | 'daily'
+  | 'rolling_30_day'
+  | 'long_horizon'
+  | 'natal'
+  | 'relationship_natal'
+  | 'consultation';
 
 export const MIRROR_SCOPE_KINDS: readonly MirrorScopeKind[] = [
   'daily',
   'rolling_30_day',
   'long_horizon',
   'natal',
+  'relationship_natal',
   'consultation',
 ] as const;
 
@@ -49,6 +58,13 @@ export interface NatalMirrorScope {
   readonly basis_time_zone: string;
 }
 
+export interface RelationshipNatalMirrorScope {
+  readonly kind: 'relationship_natal';
+  readonly related_person_ref: Extract<SubjectRef, { kind: 'person' }>;
+  readonly anchor_year: number;
+  readonly basis_time_zone: string;
+}
+
 export interface ConsultationQuestionWindow {
   readonly start_date: string;
   readonly end_date: string;
@@ -66,6 +82,7 @@ export type MirrorScope =
   | Rolling30DayMirrorScope
   | LongHorizonMirrorScope
   | NatalMirrorScope
+  | RelationshipNatalMirrorScope
   | ConsultationMirrorScope;
 
 export const MIRROR_KIND_SCOPE_MATRIX: {
@@ -76,6 +93,7 @@ export const MIRROR_KIND_SCOPE_MATRIX: {
     rolling_30_day: 'forbidden',
     long_horizon: 'forbidden',
     natal: 'forbidden',
+    relationship_natal: 'forbidden',
     consultation: 'forbidden',
   },
   yuejing: {
@@ -83,6 +101,7 @@ export const MIRROR_KIND_SCOPE_MATRIX: {
     rolling_30_day: 'allowed',
     long_horizon: 'forbidden',
     natal: 'forbidden',
+    relationship_natal: 'forbidden',
     consultation: 'forbidden',
   },
   nianjing: {
@@ -90,6 +109,7 @@ export const MIRROR_KIND_SCOPE_MATRIX: {
     rolling_30_day: 'forbidden',
     long_horizon: 'allowed',
     natal: 'forbidden',
+    relationship_natal: 'forbidden',
     consultation: 'forbidden',
   },
   mingjing: {
@@ -97,6 +117,7 @@ export const MIRROR_KIND_SCOPE_MATRIX: {
     rolling_30_day: 'forbidden',
     long_horizon: 'forbidden',
     natal: 'allowed',
+    relationship_natal: 'allowed',
     consultation: 'forbidden',
   },
   shijing: {
@@ -104,6 +125,7 @@ export const MIRROR_KIND_SCOPE_MATRIX: {
     rolling_30_day: 'forbidden',
     long_horizon: 'forbidden',
     natal: 'forbidden',
+    relationship_natal: 'forbidden',
     consultation: 'allowed',
   },
 };

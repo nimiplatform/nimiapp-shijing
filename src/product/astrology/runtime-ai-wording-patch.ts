@@ -490,10 +490,17 @@ export function applyRuntimeAiWordingPatch(
       assertAllNianjingPatchTargetsResolve(base, patch as NianJingWordingPatch);
       output = applyNianjingPatch(base, patch as NianJingWordingPatch);
       break;
-    case 'mingjing':
-      assertAllMingjingPatchTargetsResolve(base, patch as MingJingWordingPatch);
-      output = applyMingjingPatch(base, patch as MingJingWordingPatch);
+    case 'mingjing': {
+      if ((base as { output_kind?: unknown }).output_kind === 'relationship_hepan') {
+        throw new RuntimeAiWordingPatchValidationError(
+          'mingjing_relationship_hepan_runtime_ai_patch_not_supported',
+        );
+      }
+      const natalBase = base as MingJingMirrorOutput;
+      assertAllMingjingPatchTargetsResolve(natalBase, patch as MingJingWordingPatch);
+      output = applyMingjingPatch(natalBase, patch as MingJingWordingPatch);
       break;
+    }
     case 'shijing':
       output = applyShijingPatch(base, patch as ShiJingWordingPatch);
       break;

@@ -5,6 +5,7 @@ import {
   NIANJING_INFLECTION_KINDS,
   TENDENCY_CLASSES,
   type MingJingMirrorOutput,
+  type MingJingRelationshipMirrorOutput,
   type MirrorCitation,
   type MirrorOutput,
   type NianJingMirrorOutput,
@@ -12,6 +13,11 @@ import {
   type ShiJingMirrorOutput,
   type YueJingMirrorOutput,
 } from '../domain/mirror-output.ts';
+import {
+  NATAL_ANCHOR_YEAR_MAX,
+  NATAL_ANCHOR_YEAR_MIN,
+} from '../domain/mirror-scope.ts';
+import { isValidIanaTimeZone } from './time-window-validation.ts';
 
 const COMMON_FORBIDDEN_OUTPUT_FIELDS: readonly string[] = [
   'score',
@@ -35,6 +41,12 @@ const COMMON_FORBIDDEN_OUTPUT_FIELDS: readonly string[] = [
   'milestone',
   'deadline',
   'priority',
+  'match_score',
+  'match_percentage',
+  'compatibility_score',
+  'compatibility_percentage',
+  'relation_graph',
+  'contact_payload',
 ];
 
 const LOCAL_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -72,7 +84,12 @@ export type MirrorOutputValidationError =
   | { code: 'mirror_output_mingjing_life_stage_strategies_invalid' }
   | { code: 'mirror_output_mingjing_life_stage_strategy_invalid'; index: number; reason: string }
   | { code: 'mirror_output_mingjing_event_validations_invalid' }
-  | { code: 'mirror_output_mingjing_event_validation_invalid'; index: number; reason: string };
+  | { code: 'mirror_output_mingjing_event_validation_invalid'; index: number; reason: string }
+  | { code: 'mirror_output_mingjing_relationship_subject_invalid'; reason: string }
+  | { code: 'mirror_output_mingjing_relationship_structure_invalid'; field: string }
+  | { code: 'mirror_output_mingjing_relationship_timing_invalid' }
+  | { code: 'mirror_output_mingjing_relationship_timing_window_invalid'; index?: number; reason?: string }
+  | { code: 'mirror_output_mingjing_relationship_practice_invalid'; field: string };
 
 export type MirrorOutputValidationResult =
   | { ok: true }
@@ -121,7 +138,18 @@ function isAllowedInflectionKind(value: unknown): boolean {
 }
 
 function isLocalDate(value: unknown): value is string {
-  return typeof value === 'string' && LOCAL_DATE_PATTERN.test(value);
+  if (typeof value !== 'string' || !LOCAL_DATE_PATTERN.test(value)) return false;
+  const [yearText, monthText, dayText] = value.split('-');
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const utcMs = Date.UTC(year, month - 1, day);
+  const d = new Date(utcMs);
+  return (
+    d.getUTCFullYear() === year &&
+    d.getUTCMonth() + 1 === month &&
+    d.getUTCDate() === day
+  );
 }
 
 function validateCitations(
@@ -437,8 +465,187 @@ const MINGJING_CORE_FIELDS: readonly string[] = [
   'career_inclination',
 ];
 
-function validateMingjing(output: MingJingMirrorOutput): MirrorOutputValidationResult {
-  const core = output.core as unknown;
+const MINGJING_RELATIONSHIP_STRUCTURE_FIELDS: readonly string[] = [
+  'baseline_pattern',
+  'attraction_and_support',
+  'friction_and_misread',
+  'communication_rhythm',
+  'boundary_advice',
+];
+
+const MINGJING_RELATIONSHIP_PRACTICE_FIELDS: readonly string[] = [
+  'communication',
+  'boundary',
+  'repair',
+];
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0;
+}
+
+function isValidRelationshipPersonRef(value: unknown): value is { kind: 'person'; id: string } {
+  return (
+    isRecord(value) &&
+    value.kind === 'person' &&
+    typeof value.id === 'string' &&
+    value.id.length > 0
+  );
+}
+
+function validateMingjingRelationship(
+  output: MingJingRelationshipMirrorOutput,
+): MirrorOutputValidationResult {
+  const subject = output.relationship_subject as unknown;
+  if (!isRecord(subject)) {
+    return {
+      ok: false,
+      error: { code: 'mirror_output_mingjing_relationship_subject_invalid', reason: 'not_object' },
+    };
+  }
+  if (subject.primary_subject_ref !== 'self') {
+    return {
+      ok: false,
+      error: {
+        code: 'mirror_output_mingjing_relationship_subject_invalid',
+        reason: 'primary_subject_ref_must_be_self',
+      },
+    };
+  }
+  if (!isValidRelationshipPersonRef(subject.related_person_ref)) {
+    return {
+      ok: false,
+      error: {
+        code: 'mirror_output_mingjing_relationship_subject_invalid',
+        reason: 'related_person_ref_invalid',
+      },
+    };
+  }
+  const anchorYear = subject.anchor_year;
+  if (
+    typeof anchorYear !== 'number' ||
+    !Number.isInteger(anchorYear) ||
+    anchorYear < NATAL_ANCHOR_YEAR_MIN ||
+    anchorYear > NATAL_ANCHOR_YEAR_MAX
+  ) {
+    return {
+      ok: false,
+      error: {
+        code: 'mirror_output_mingjing_relationship_subject_invalid',
+        reason: 'anchor_year_invalid',
+      },
+    };
+  }
+  if (!isValidIanaTimeZone(subject.basis_time_zone)) {
+    return {
+      ok: false,
+      error: {
+        code: 'mirror_output_mingjing_relationship_subject_invalid',
+        reason: 'basis_time_zone_invalid',
+      },
+    };
+  }
+
+  const structure = output.structure as unknown;
+  if (!isRecord(structure)) {
+    return {
+      ok: false,
+      error: { code: 'mirror_output_mingjing_relationship_structure_invalid', field: 'structure' },
+    };
+  }
+  for (const field of MINGJING_RELATIONSHIP_STRUCTURE_FIELDS) {
+    if (!isNonEmptyString(structure[field])) {
+      return {
+        ok: false,
+        error: { code: 'mirror_output_mingjing_relationship_structure_invalid', field },
+      };
+    }
+  }
+
+  if (!Array.isArray(output.timing_windows) || output.timing_windows.length === 0) {
+    return { ok: false, error: { code: 'mirror_output_mingjing_relationship_timing_invalid' } };
+  }
+  for (let i = 0; i < output.timing_windows.length; i += 1) {
+    const window = output.timing_windows[i] as unknown;
+    if (!isRecord(window)) {
+      return {
+        ok: false,
+        error: {
+          code: 'mirror_output_mingjing_relationship_timing_window_invalid',
+          index: i,
+          reason: 'not_object',
+        },
+      };
+    }
+    if (!isLocalDate(window.start_date) || !isLocalDate(window.end_date)) {
+      return {
+        ok: false,
+        error: {
+          code: 'mirror_output_mingjing_relationship_timing_window_invalid',
+          index: i,
+          reason: 'date_invalid',
+        },
+      };
+    }
+    if (!isAllowedTendencyClass(window.nature)) {
+      return {
+        ok: false,
+        error: {
+          code: 'mirror_output_mingjing_relationship_timing_window_invalid',
+          index: i,
+          reason: 'nature_invalid',
+        },
+      };
+    }
+    if (!isStringArray(window.driver_refs) || window.driver_refs.length === 0) {
+      return {
+        ok: false,
+        error: {
+          code: 'mirror_output_mingjing_relationship_timing_window_invalid',
+          index: i,
+          reason: 'driver_refs_invalid',
+        },
+      };
+    }
+    if (!isNonEmptyString(window.summary)) {
+      return {
+        ok: false,
+        error: {
+          code: 'mirror_output_mingjing_relationship_timing_window_invalid',
+          index: i,
+          reason: 'summary_empty',
+        },
+      };
+    }
+  }
+
+  const practice = output.practice as unknown;
+  if (!isRecord(practice)) {
+    return {
+      ok: false,
+      error: { code: 'mirror_output_mingjing_relationship_practice_invalid', field: 'practice' },
+    };
+  }
+  for (const field of MINGJING_RELATIONSHIP_PRACTICE_FIELDS) {
+    if (!isNonEmptyString(practice[field])) {
+      return {
+        ok: false,
+        error: { code: 'mirror_output_mingjing_relationship_practice_invalid', field },
+      };
+    }
+  }
+
+  return { ok: true };
+}
+
+function validateMingjing(
+  output: MingJingMirrorOutput | MingJingRelationshipMirrorOutput,
+): MirrorOutputValidationResult {
+  if ((output as { output_kind?: unknown }).output_kind === 'relationship_hepan') {
+    return validateMingjingRelationship(output as MingJingRelationshipMirrorOutput);
+  }
+
+  const natalOutput = output as MingJingMirrorOutput;
+  const core = natalOutput.core as unknown;
   if (!isRecord(core)) {
     return { ok: false, error: { code: 'mirror_output_mingjing_core_invalid', field: 'core' } };
   }
@@ -448,11 +655,11 @@ function validateMingjing(output: MingJingMirrorOutput): MirrorOutputValidationR
     }
   }
 
-  if (!Array.isArray(output.life_stage_strategies)) {
+  if (!Array.isArray(natalOutput.life_stage_strategies)) {
     return { ok: false, error: { code: 'mirror_output_mingjing_life_stage_strategies_invalid' } };
   }
-  for (let i = 0; i < output.life_stage_strategies.length; i += 1) {
-    const s = output.life_stage_strategies[i] as unknown;
+  for (let i = 0; i < natalOutput.life_stage_strategies.length; i += 1) {
+    const s = natalOutput.life_stage_strategies[i] as unknown;
     if (!isRecord(s)) {
       return { ok: false, error: { code: 'mirror_output_mingjing_life_stage_strategy_invalid', index: i, reason: 'not_object' } };
     }
@@ -466,11 +673,11 @@ function validateMingjing(output: MingJingMirrorOutput): MirrorOutputValidationR
     }
   }
 
-  if (!Array.isArray(output.event_validations)) {
+  if (!Array.isArray(natalOutput.event_validations)) {
     return { ok: false, error: { code: 'mirror_output_mingjing_event_validations_invalid' } };
   }
-  for (let i = 0; i < output.event_validations.length; i += 1) {
-    const v = output.event_validations[i] as unknown;
+  for (let i = 0; i < natalOutput.event_validations.length; i += 1) {
+    const v = natalOutput.event_validations[i] as unknown;
     if (!isRecord(v)) {
       return { ok: false, error: { code: 'mirror_output_mingjing_event_validation_invalid', index: i, reason: 'not_object' } };
     }

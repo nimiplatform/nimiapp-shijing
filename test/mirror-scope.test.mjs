@@ -11,6 +11,7 @@ import {
   consultationMirrorScope,
   dailyMirrorScope,
   longHorizonMirrorScope,
+  relationshipNatalMirrorScope,
   rolling30DayMirrorScope,
 } from './_fixtures.mjs';
 
@@ -65,6 +66,39 @@ test('long_horizon scope rejects reversed range', () => {
 
 test('valid consultation scope passes', () => {
   assert.equal(validateMirrorScope(consultationMirrorScope(['r_01'])).ok, true);
+});
+
+test('valid relationship_natal scope passes', () => {
+  const scope = relationshipNatalMirrorScope({
+    related_person_ref: { kind: 'person', id: 'p_alice' },
+    anchor_year: 2026,
+    basis_time_zone: 'Asia/Shanghai',
+  });
+  assert.equal(validateMirrorScope(scope).ok, true);
+});
+
+test('relationship_natal is allowed only for mingjing', () => {
+  const scope = relationshipNatalMirrorScope();
+  assert.equal(evaluateMirrorKindScope('mingjing', scope), 'allowed');
+  assert.equal(evaluateMirrorKindScope('rijing', scope), 'forbidden');
+});
+
+test('relationship_natal rejects self or empty person ref', () => {
+  for (const related_person_ref of ['self', { kind: 'person', id: '' }]) {
+    const result = validateMirrorScope(relationshipNatalMirrorScope({ related_person_ref }));
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.error.code, 'mirror_scope_relationship_related_person_ref_invalid');
+    }
+  }
+});
+
+test('relationship_natal anchor_year reuses natal bounds error', () => {
+  const result = validateMirrorScope(relationshipNatalMirrorScope({ anchor_year: 1800 }));
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'mirror_scope_natal_anchor_year_invalid');
+  }
 });
 
 test('consultation scope requires non-empty source_reading_ids', () => {

@@ -131,6 +131,25 @@ export function longHorizonMirrorScope(overrides = {}) {
   };
 }
 
+export function natalMirrorScope(overrides = {}) {
+  return {
+    kind: 'natal',
+    anchor_year: 2026,
+    basis_time_zone: 'Asia/Shanghai',
+    ...overrides,
+  };
+}
+
+export function relationshipNatalMirrorScope(overrides = {}) {
+  return {
+    kind: 'relationship_natal',
+    related_person_ref: { kind: 'person', id: 'p_alice' },
+    anchor_year: 2026,
+    basis_time_zone: 'Asia/Shanghai',
+    ...overrides,
+  };
+}
+
 export function consultationMirrorScope(sourceReadingIds = ['r_source_01'], overrides = {}) {
   return {
     kind: 'consultation',
@@ -153,6 +172,14 @@ export function canonicalWindowFor(scope) {
     return {
       start_utc: scope.start_date + 'T00:00:00Z',
       end_utc: scope.end_date + 'T23:59:59Z',
+      basis_time_zone: scope.basis_time_zone,
+      scope_kind: scope.kind,
+    };
+  }
+  if (scope.kind === 'natal' || scope.kind === 'relationship_natal') {
+    return {
+      start_utc: scope.anchor_year + '-01-01T00:00:00Z',
+      end_utc: scope.anchor_year + '-12-31T23:59:59Z',
       basis_time_zone: scope.basis_time_zone,
       scope_kind: scope.kind,
     };
@@ -313,6 +340,73 @@ export function validNianjingOutput(scope = longHorizonMirrorScope(), overrides 
   };
 }
 
+export function validMingjingOutput(overrides = {}) {
+  return {
+    mirror_kind: 'mingjing',
+    summary: 'Natal structure summary.',
+    core: {
+      personality: 'Stable and observant.',
+      strengths: 'Good at sustained attention.',
+      long_term_themes: 'Builds through patient accumulation.',
+      relationship_pattern: 'Needs steady communication.',
+      career_inclination: 'Suited to structured work.',
+    },
+    life_stage_strategies: [
+      {
+        phase_label: 'Jia Zi dayun',
+        age_range: '30-39',
+        dayun_pillar: { stem: 'jia', branch: 'zi' },
+        theme: 'Consolidate the foundation.',
+        strategy: 'Keep commitments visible.',
+      },
+    ],
+    event_validations: [],
+    cited_event_memory_refs: [],
+    cited_plan_item_refs: [],
+    citations: [{ method: 'bazi_ziping_v1', reference: 'mingjing.natal.v1' }],
+    ...overrides,
+  };
+}
+
+export function validMingjingRelationshipOutput(overrides = {}) {
+  return {
+    mirror_kind: 'mingjing',
+    output_kind: 'relationship_hepan',
+    relationship_subject: {
+      primary_subject_ref: 'self',
+      related_person_ref: { kind: 'person', id: 'p_alice' },
+      anchor_year: 2026,
+      basis_time_zone: 'Asia/Shanghai',
+    },
+    summary: 'Relationship structure summary.',
+    structure: {
+      baseline_pattern: 'Both sides need a predictable rhythm.',
+      attraction_and_support: 'Support appears through steady follow-through.',
+      friction_and_misread: 'Misreads arise when timing is rushed.',
+      communication_rhythm: 'Short, explicit check-ins work best.',
+      boundary_advice: 'Keep personal recovery time visible.',
+    },
+    timing_windows: [
+      {
+        start_date: '2026-03-01',
+        end_date: '2026-04-15',
+        nature: 'steady',
+        driver_refs: ['bazi:relationship.window.2026-03'],
+        summary: 'A stable window for clarifying shared expectations.',
+      },
+    ],
+    practice: {
+      communication: 'Name the practical need before the emotion escalates.',
+      boundary: 'Protect separate schedules and do not merge obligations by default.',
+      repair: 'Return to the exact missed expectation and reset it in writing.',
+    },
+    cited_event_memory_refs: [],
+    cited_plan_item_refs: [],
+    citations: [{ method: 'bazi_ziping_v1', reference: 'mingjing.relationship_hepan.v1' }],
+    ...overrides,
+  };
+}
+
 export function validShijingOutput(sourceReadingIds = ['r_source_01'], overrides = {}) {
   return {
     mirror_kind: 'shijing',
@@ -331,6 +425,8 @@ export function validReading(overrides = {}) {
   let scope;
   let output;
   let citedReadingIds = [];
+  let relatedPersonRefs = [];
+  let concernTagRefs = ['tag_love'];
   if (mirrorKind === 'rijing') {
     scope = overrides.mirror_scope ?? dailyMirrorScope();
     output = overrides.output ?? validRijingOutput();
@@ -340,6 +436,23 @@ export function validReading(overrides = {}) {
   } else if (mirrorKind === 'nianjing') {
     scope = overrides.mirror_scope ?? longHorizonMirrorScope();
     output = overrides.output ?? validNianjingOutput(scope);
+  } else if (mirrorKind === 'mingjing') {
+    scope = overrides.mirror_scope ?? natalMirrorScope();
+    if (scope.kind === 'relationship_natal') {
+      output = overrides.output ?? validMingjingRelationshipOutput({
+        relationship_subject: {
+          primary_subject_ref: 'self',
+          related_person_ref: scope.related_person_ref,
+          anchor_year: scope.anchor_year,
+          basis_time_zone: scope.basis_time_zone,
+        },
+      });
+      relatedPersonRefs = [scope.related_person_ref];
+      concernTagRefs = [];
+    } else {
+      output = overrides.output ?? validMingjingOutput();
+      concernTagRefs = [];
+    }
   } else {
     const sourceIds = overrides.cited_reading_ids ?? ['r_source_01'];
     scope = overrides.mirror_scope ?? consultationMirrorScope(sourceIds);
@@ -352,8 +465,8 @@ export function validReading(overrides = {}) {
     mirror_kind: mirrorKind,
     mirror_scope: scope,
     primary_subject_ref: 'self',
-    related_person_refs: [],
-    concern_tag_refs: ['tag_love'],
+    related_person_refs: relatedPersonRefs,
+    concern_tag_refs: concernTagRefs,
     cited_reading_ids: citedReadingIds,
     cited_event_memory_refs: [],
     cited_plan_item_refs: [],

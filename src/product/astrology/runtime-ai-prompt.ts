@@ -5,7 +5,7 @@ import type { ConcernTagSnapshot } from '../../domain/concern-tag.ts';
 import type { EventMemory } from '../../domain/event-memory.ts';
 import type { MirrorContextSnapshot, Reading } from '../../domain/reading.ts';
 import type { MirrorKind } from '../../domain/mirror-scope.ts';
-import type { MirrorOutput } from '../../domain/mirror-output.ts';
+import type { MingJingMirrorOutput, MirrorOutput } from '../../domain/mirror-output.ts';
 import type { ResponsePreferences } from '../../domain/settings.ts';
 
 export interface RuntimeAiPromptRequest {
@@ -196,12 +196,16 @@ function wordingTargetFor(
         summary: output.summary,
         answer: output.answer,
       };
-    case 'mingjing':
+    case 'mingjing': {
+      if ((output as { output_kind?: unknown }).output_kind === 'relationship_hepan') {
+        throw new Error('mingjing_relationship_hepan_runtime_ai_prompt_not_supported');
+      }
+      const natalOutput = output as MingJingMirrorOutput;
       return {
-        mirror_kind: output.mirror_kind,
-        summary: output.summary,
-        core: output.core,
-        life_stage_strategies: output.life_stage_strategies.map((s) => ({
+        mirror_kind: natalOutput.mirror_kind,
+        summary: natalOutput.summary,
+        core: natalOutput.core,
+        life_stage_strategies: natalOutput.life_stage_strategies.map((s) => ({
           phase_label: s.phase_label,
           age_range: s.age_range,
           theme: s.theme,
@@ -209,12 +213,13 @@ function wordingTargetFor(
         })),
         // Read-only deterministic resonance: ground the narrative in the user's
         // real history; do NOT echo this back as output.
-        event_validations: output.event_validations.map((v) => ({
+        event_validations: natalOutput.event_validations.map((v) => ({
           occurred_year: v.occurred_year,
           period_nature: v.period_nature,
           note: v.note,
         })),
       };
+    }
   }
 }
 

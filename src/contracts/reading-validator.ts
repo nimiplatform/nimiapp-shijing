@@ -2,7 +2,7 @@
 
 import type { ConcernTagSnapshot } from '../domain/concern-tag.ts';
 import type { MirrorScope } from '../domain/mirror-scope.ts';
-import type { MirrorOutput } from '../domain/mirror-output.ts';
+import type { MingJingRelationshipMirrorOutput, MirrorOutput } from '../domain/mirror-output.ts';
 import type { Reading } from '../domain/reading.ts';
 import {
   isAdmittedMethodProfileId,
@@ -54,6 +54,12 @@ export type ReadingValidationError =
   | { code: 'reading_yuejing_cell_date_must_match_scope_start_date'; index: number; expected: string; received: string }
   | { code: 'reading_shijing_cited_reading_ids_must_match_scope_source_reading_ids' }
   | { code: 'reading_non_shijing_cited_reading_ids_must_be_empty' }
+  | { code: 'reading_relationship_natal_related_person_refs_invalid' }
+  | { code: 'reading_relationship_natal_concern_tags_must_be_empty' }
+  | { code: 'reading_relationship_natal_cited_readings_must_be_empty' }
+  | { code: 'reading_relationship_natal_output_kind_invalid' }
+  | { code: 'reading_relationship_natal_output_subject_mismatch' }
+  | { code: 'reading_relationship_output_requires_relationship_scope' }
   | { code: 'reading_uncertainty_confidence_invalid'; received: unknown }
   | { code: 'reading_removed_field_present'; field: string };
 
@@ -78,6 +84,12 @@ function mirrorScopesEqual(a: MirrorScope, b: MirrorScope): boolean {
   }
   if (a.kind === 'natal' && b.kind === 'natal') {
     return a.anchor_year === b.anchor_year;
+  }
+  if (a.kind === 'relationship_natal' && b.kind === 'relationship_natal') {
+    return (
+      a.anchor_year === b.anchor_year &&
+      a.related_person_ref.id === b.related_person_ref.id
+    );
   }
   if (a.kind === 'consultation' && b.kind === 'consultation') {
     if (a.source_reading_ids.length !== b.source_reading_ids.length) return false;
@@ -123,6 +135,10 @@ function findRemovedReadingField(reading: Reading): string | null {
     if (READING_OWNER_SCOPED_REMOVED_FIELDS.has(key)) return key;
   }
   return null;
+}
+
+function isRelationshipOutput(output: MirrorOutput): output is MingJingRelationshipMirrorOutput {
+  return output.mirror_kind === 'mingjing' && (output as { output_kind?: unknown }).output_kind === 'relationship_hepan';
 }
 
 export function validateReading(reading: Reading): ReadingValidationResult {
@@ -187,6 +203,29 @@ export function validateReading(reading: Reading): ReadingValidationResult {
     const ref = reading.cited_plan_item_refs[i]!;
     if (typeof ref !== 'string' || ref.length === 0) {
       return { ok: false, error: { code: 'reading_cited_plan_item_ref_empty', index: i } };
+    }
+  }
+  if (reading.mirror_scope.kind === 'relationship_natal') {
+    if (
+      reading.related_person_refs.length !== 1 ||
+      !subjectRefEquals(reading.related_person_refs[0]!, reading.mirror_scope.related_person_ref)
+    ) {
+      return {
+        ok: false,
+        error: { code: 'reading_relationship_natal_related_person_refs_invalid' },
+      };
+    }
+    if (reading.concern_tag_refs.length > 0) {
+      return {
+        ok: false,
+        error: { code: 'reading_relationship_natal_concern_tags_must_be_empty' },
+      };
+    }
+    if (reading.cited_reading_ids.length > 0) {
+      return {
+        ok: false,
+        error: { code: 'reading_relationship_natal_cited_readings_must_be_empty' },
+      };
     }
   }
   if (reading.mirror_kind === 'shijing') {
@@ -310,6 +349,31 @@ export function validateReading(reading: Reading): ReadingValidationResult {
   const outputCheck = validateMirrorOutput(reading.output);
   if (!outputCheck.ok) {
     return { ok: false, error: { code: 'reading_output_invalid', reason: outputCheck.error.code } };
+  }
+  const relationshipOutput = isRelationshipOutput(reading.output);
+  if (reading.mirror_scope.kind === 'relationship_natal') {
+    if (!relationshipOutput) {
+      return {
+        ok: false,
+        error: { code: 'reading_relationship_natal_output_kind_invalid' },
+      };
+    }
+    const subject = reading.output.relationship_subject;
+    if (
+      !subjectRefEquals(subject.related_person_ref, reading.mirror_scope.related_person_ref) ||
+      subject.anchor_year !== reading.mirror_scope.anchor_year ||
+      subject.basis_time_zone !== reading.mirror_scope.basis_time_zone
+    ) {
+      return {
+        ok: false,
+        error: { code: 'reading_relationship_natal_output_subject_mismatch' },
+      };
+    }
+  } else if (relationshipOutput) {
+    return {
+      ok: false,
+      error: { code: 'reading_relationship_output_requires_relationship_scope' },
+    };
   }
   if (
     reading.mirror_kind === 'yuejing' &&

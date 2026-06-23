@@ -27,6 +27,7 @@ export type MirrorScopeValidationError =
   | { code: 'mirror_scope_long_horizon_too_long'; max_years: number }
   | { code: 'mirror_scope_long_horizon_start_after_end' }
   | { code: 'mirror_scope_natal_anchor_year_invalid'; received: unknown }
+  | { code: 'mirror_scope_relationship_related_person_ref_invalid'; received: unknown }
   | { code: 'mirror_scope_consultation_source_reading_ids_empty' }
   | { code: 'mirror_scope_consultation_source_reading_id_empty'; index: number }
   | { code: 'mirror_scope_consultation_question_window_invalid_range' }
@@ -65,6 +66,17 @@ function parseLocalDate(value: unknown): LocalDateParts | null {
 function localDayDelta(a: LocalDateParts, b: LocalDateParts): number {
   const ms = b.utcMs - a.utcMs;
   return Math.round(ms / 86_400_000);
+}
+
+function isValidPersonRef(value: unknown): value is { kind: 'person'; id: string } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    (value as { kind?: unknown }).kind === 'person' &&
+    typeof (value as { id?: unknown }).id === 'string' &&
+    (value as { id: string }).id.length > 0
+  );
 }
 
 export function validateMirrorScope(scope: MirrorScope): MirrorScopeValidationResult {
@@ -175,6 +187,28 @@ export function validateMirrorScope(scope: MirrorScope): MirrorScopeValidationRe
       return {
         ok: false,
         error: { code: 'mirror_scope_natal_anchor_year_invalid', received: scope.anchor_year },
+      };
+    }
+    return { ok: true };
+  }
+  if (scope.kind === 'relationship_natal') {
+    if (
+      !Number.isInteger(scope.anchor_year) ||
+      scope.anchor_year < NATAL_ANCHOR_YEAR_MIN ||
+      scope.anchor_year > NATAL_ANCHOR_YEAR_MAX
+    ) {
+      return {
+        ok: false,
+        error: { code: 'mirror_scope_natal_anchor_year_invalid', received: scope.anchor_year },
+      };
+    }
+    if (!isValidPersonRef(scope.related_person_ref)) {
+      return {
+        ok: false,
+        error: {
+          code: 'mirror_scope_relationship_related_person_ref_invalid',
+          received: scope.related_person_ref,
+        },
       };
     }
     return { ok: true };

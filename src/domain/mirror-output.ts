@@ -153,6 +153,27 @@ export interface MingJingEventValidation {
   readonly note: string; // deterministic templated resonance note
 }
 
+export interface MingJingRelationshipSubject {
+  readonly primary_subject_ref: 'self';
+  readonly related_person_ref: { readonly kind: 'person'; readonly id: string };
+  readonly anchor_year: number;
+  readonly basis_time_zone: string;
+}
+
+export interface RelationshipTimingWindow {
+  readonly start_date: string;
+  readonly end_date: string;
+  readonly nature: TendencyClass;
+  readonly driver_refs: readonly string[];
+  readonly summary: string;
+}
+
+export interface MingJingRelationshipPractice {
+  readonly communication: string;
+  readonly boundary: string;
+  readonly repair: string;
+}
+
 export interface MingJingMirrorOutput {
   readonly mirror_kind: 'mingjing';
   readonly summary: string;
@@ -164,11 +185,31 @@ export interface MingJingMirrorOutput {
   readonly citations: readonly MirrorCitation[];
 }
 
+export interface MingJingRelationshipMirrorOutput {
+  readonly mirror_kind: 'mingjing';
+  readonly output_kind: 'relationship_hepan';
+  readonly relationship_subject: MingJingRelationshipSubject;
+  readonly summary: string;
+  readonly structure: {
+    readonly baseline_pattern: string;
+    readonly attraction_and_support: string;
+    readonly friction_and_misread: string;
+    readonly communication_rhythm: string;
+    readonly boundary_advice: string;
+  };
+  readonly timing_windows: readonly RelationshipTimingWindow[];
+  readonly practice: MingJingRelationshipPractice;
+  readonly cited_event_memory_refs: readonly string[];
+  readonly cited_plan_item_refs: readonly string[];
+  readonly citations: readonly MirrorCitation[];
+}
+
 export type MirrorOutput =
   | RiJingMirrorOutput
   | YueJingMirrorOutput
   | NianJingMirrorOutput
   | MingJingMirrorOutput
+  | MingJingRelationshipMirrorOutput
   | ShiJingMirrorOutput;
 
 export function mirrorOutputKind(output: MirrorOutput): MirrorKind {
