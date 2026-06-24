@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { readI18nSource } from './i18n-source.mjs';
 
 function stripJsComments(src) {
   return src
@@ -20,9 +21,7 @@ const nianjingTabSource = stripJsComments(
 const shellSource = stripJsComments(
   readFileSync(new URL('../src/product/shell/shijing-shell.tsx', import.meta.url), 'utf8'),
 );
-const copySource = stripJsComments(
-  readFileSync(new URL('../src/product/i18n/copy.ts', import.meta.url), 'utf8'),
-);
+const copySource = stripJsComments(readI18nSource());
 
 test('RiJing missing-concern status exposes a direct Settings concerns CTA', () => {
   assert.match(rijingTabSource, /className="shijing-rijing__empty-tags"/);

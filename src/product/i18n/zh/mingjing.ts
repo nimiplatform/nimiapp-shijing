@@ -1,0 +1,324 @@
+// ZH MingJing product copy.
+
+import type { ProductCopy } from '../copy-types.ts';
+import { zhTwelveStageLabel } from '../copy-helpers.ts';
+
+export const ZH_MINGJING_COPY: ProductCopy['mingjing'] = {
+  title: '命镜',
+  eyebrow: '本命盘 · 全局分析',
+  subtitle: '一次性的全局命盘解读,基于八字排盘、原局格局、大运结构与流年关键窗口。',
+  loadingStatus: '正在排布本命盘…',
+  failureTitle: '命盘生成未成功',
+  hero: {
+    eyebrow: '本命 · 命局总览',
+    fixedNote: '命盘终生固定',
+    favorableTitle: '时机有利 · 多依靠',
+    adverseTitle: '时机不利 · 宜节制',
+    currentStage: '当前所处阶段',
+    dayunWord: '大运',
+    notStarted: '尚未起运',
+    seeStages: '看我各阶段的起落 →',
+  },
+  readiness: {
+    title: '生成命镜前需要完善生辰',
+    button: '去完善生辰资料',
+    fallback: '生成前需要先完善生辰资料。',
+    reasons: {
+      subject_missing: '尚未录入本人资料,无法排盘。',
+      natal_inputs_invalid: '生辰资料尚不完整,请先补全。',
+      scaffold_default_natal_inputs: '当前仍是初始占位生辰,请先录入真实出生信息。',
+      birth_precision_unknown: '出生时间精度为不详,无法排出完整命盘。',
+      birth_location_unresolved: '出生地点仍是默认值,请先补全地点与时区。',
+      method_profile_unsupported_for_feature: '当前所选命理方法暂不支持命镜本命盘,请切换到八字子平法后再生成。',
+      mingjing_route_unavailable: '当前命理方法的命镜路线尚未接入,请切换到已实现的命镜路线后再查看。',
+      birth_time_required_for_method: '命镜需要精确到时辰的出生时间,请补全准确出生时刻。',
+      birth_precision_rough_year_for_mirror: '出生时间只到年份,无法排出四柱命盘。',
+      birth_precision_rough_month_for_dayun: '出生时间只到月份,无法推算大运。',
+      calculation_sex_unspecified_for_dayun: '缺少用于推算大运方向的性别,请先补全。',
+    },
+  },
+  paipan: {
+    title: '八字排盘',
+    intro: '四柱、十神、藏干、纳音、十二长生与空亡。',
+    explanation:
+      '四柱记录出生年、月、日、时对应的干支。日柱 / 日主用于标识本人，其余三柱用于呈现不同时间位置的结构信息；下方条目展示十神、纳音、长生、藏干与空亡。',
+    sectionTitle: '你的命盘',
+    sectionIntro:
+      '四柱记录出生年、月、日、时的干支结构。日柱天干是日主标识，其余柱位用于呈现不同时间位置的关系、五行与藏干信息。',
+    roles: { year: '长辈 / 根基', month: '事业 / 社会', day: '自己', hour: '子女 / 晚年' },
+    dayBadge: '这就是你',
+    expand: '展开完整排盘（藏干 · 纳音 · 长生 · 空亡）',
+    collapse: '收起完整排盘',
+    detailTitle: '完整排盘（藏干、纳音、十二长生、空亡）',
+    pillarLabels: { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' },
+    rows: {
+      stem: '天干',
+      branch: '地支',
+      hidden: '藏干',
+      tenGod: '十神',
+      nayin: '纳音',
+      terrain: '长生',
+      voidRow: '空亡',
+    },
+    dayMaster: '日主',
+    self: '本人',
+    voidMark: '空',
+    voidEmpty: '无',
+  },
+  fiveElements: {
+    title: '五行分布',
+    explanation:
+      '柱状高度表示五行在命盘中的相对集中度。该分布不是评分，用于辅助识别元素偏重、相对不足与后续用神 / 忌神判断的背景。',
+    labels: { wood: '木', fire: '火', earth: '土', metal: '金', water: '水' },
+    dominant: '最旺',
+    weakest: '最弱',
+    absentLabel: '五行缺',
+    absentNone: '五行俱全',
+  },
+  geju: {
+    title: '原局格局',
+    explanation:
+      '这里把排盘合成判断：日主旺衰看承受力，格局看做事底色，用神 / 喜忌提示更适合借力或节制的方向，合冲刑害看盘内张力。',
+    strengthLabel: '日主旺衰',
+    supportRatioLabel: '助身比',
+    patternLabel: '格局',
+    sourceLabel: '取格',
+    transparent: '透干',
+    notTransparent: '不透',
+    rooted: '通根',
+    notRooted: '无根',
+    yong: '用神',
+    xi: '喜神',
+    ji: '忌神',
+    tiaohou: '调候',
+    relationsLabel: '合冲刑害破',
+    relationsEmpty: '原局无明显刑冲合害',
+    basisLabel: '依据',
+  },
+  dayun: {
+    title: '大运结构',
+    explanation:
+      '大运以约十年为一段呈现长期阶段背景。命镜保留完整排盘序列；具体年份的细读交给年镜。',
+    sectionTitle: '大运排布',
+    sectionIntro:
+      '每个大运阶段约覆盖十年，颜色表示阶段性质；“你在这里”标记当前所在的长期阶段。',
+    introSegments: ({ currentNatureLabel, highlightAge }) => {
+      const out: { text: string; tone?: 'current' | 'highlight' }[] = [
+        { text: '这里保留完整大运序列，用作专业命盘结构总览。' },
+      ];
+      if (currentNatureLabel) {
+        out.push(
+          { text: '当前所在阶段为' },
+          { text: `${currentNatureLabel}期`, tone: 'current' },
+          { text: '。' },
+        );
+      } else if (highlightAge != null) {
+        out.push(
+          { text: '后续可见' },
+          { text: `${highlightAge} 岁后的助力段`, tone: 'highlight' },
+          { text: '。' },
+        );
+      }
+      out.push({ text: '年镜负责未来年份细读，命镜只做完整排盘与当前阶段展开。' });
+      return out;
+    },
+    highlightLabel: '助力',
+    directionLabels: { forward: '顺行', reverse: '逆行' },
+    startAge: (age) => `${age} 岁起运`,
+    current: '你在这里',
+    currentPrefix: '当前 · ',
+    inflection: '转折',
+    distantTitle: '90岁以后 · 远期排盘',
+    distantDescription: '这是大运周期的技术延展，用于保持命盘完整，不代表寿命判断。',
+    phaseTitle: (index, current) => {
+      const title = `第${index + 1}步大运`;
+      return `${current ? '当前 · ' : ''}${title}`;
+    },
+    terrainLabel: (terrain) => zhTwelveStageLabel(terrain),
+    periodExplanation: (input) => {
+      const tenGodNotes: Record<string, string> = {
+        正官: '正官当令，责任、规则、他人的期待都会加重。',
+        七杀: '七杀当令，外部压力、竞争和突破欲会更明显。',
+        正财: '正财当令，学习如何稳定经营资源、关系和现实秩序。',
+        偏财: '偏财当令，外部机会、人情往来和资源流动会更活跃。',
+        正印: '正印当令，贵人、学习、凭证和系统性保护会更显眼。',
+        偏印: '偏印当令，灵感、转向、独立判断和非标准路径会变多。',
+        食神: '食神当令，表达、产出、照顾感和稳定创造力会被放大。',
+        伤官: '伤官当令，自我表达、反规则意识和技术锋芒会更突出。',
+        比肩: '比肩当令，自主性、同辈竞争和自我边界会被推到前面。',
+        劫财: '劫财当令，合作、分配、竞争和资源争夺会更需要分寸。',
+      };
+      const natureNotes: Record<string, string> = {
+        助力: '这一段更容易借到顺势的力量，适合把资源、能力和稳定关系往前推。',
+        观察: '这一段不适合硬冲，少硬扛、多借力：找到能依靠的人和稳定的结构，比单打独斗更重要。',
+        阻滞: '这一段阻力更重，先守住边界与节奏，少做高风险扩张。',
+        平稳: '这一段波动相对小，适合把基础做扎实，把长期习惯沉下来。',
+        转折: '这一段会带来明显切换，先观察变化从哪里来，再决定要顺势转向还是暂时收束。',
+      };
+      const next = input.nextStartAge ? `熬过这一段，${input.nextStartAge} 岁后会进入下一轮节奏。` : '';
+      const relation = input.relationText ? `${input.relationText}。` : '';
+      const terrainNote = input.terrain === '死'
+        ? '“死”是十二长生的阶段名，表示气机收束、旧模式退场，不是死亡或寿命判断。'
+        : `十二长生阶段为${zhTwelveStageLabel(input.terrain)}。`;
+      return `${tenGodNotes[input.tenGod] ?? `${input.tenGod}当令，这一阶段的主题会围绕它展开。`}${input.current ? '你正在这里，' : ''}${natureNotes[input.nature] ?? '这一段需要按阶段性质来安排用力方式。'}${relation}${next}${terrainNote} 专业上看，这是${input.tenGod}、${zhTwelveStageLabel(input.terrain)}、${input.favor}的组合。`;
+    },
+    cols: {
+      age: '虚岁',
+      years: '年份',
+      pillar: '干支',
+      tenGod: '十神',
+      terrain: '十二长生',
+      nature: '性质',
+    },
+    ageRange: (start, end) => `${start}–${end}岁`,
+    yearRange: (start, end) => `${start}–${end}`,
+  },
+  liunian: {
+    title: '流年关键窗口',
+    intro: '这里不是给每一年打分，而是把未来几年中最需要提前安排的时间段拎出来。',
+    explanation:
+      '颜色表示这一段的整体倾向：适合主动推进、稳步积累、放缓观察、守住边界或处理转折。干支、合冲与用神关系只作为算法依据，不是命运分数。',
+    sectionTitle: '未来需要提前安排的年份段',
+    sectionIntro: '先看这一段适合主动、稳定还是谨慎，再展开查看它为什么被标出来。',
+    detailToggle: '查看算法依据',
+    horizon: (start, end) => `未来窗口 ${start}–${end} 年`,
+    salienceLabels: { high: '优先关注', medium: '留意即可' },
+    favorLabels: { 喜: '顺势证据', 忌: '阻力证据', 平: '中性证据' },
+    windowRange: (start, end) => `${start}–${end} 年`,
+    singleYear: (year) => `${year} 年`,
+    yearsLabel: '涉及年份',
+    evidenceLabel: '为什么被标出来',
+    dayunLabel: '背景大运',
+    relationMore: (count) => `另有 ${count} 项关系`,
+    basisMore: (count) => `另有 ${count} 条依据`,
+    empty: '未来窗口内暂无特别需要关注的流年。',
+  },
+  reading: {
+    eyebrow: 'AI 解读 · 结合你记录的历史',
+    coreTitle: '命局核心特点与长期策略',
+    explanation:
+      '该模块调用 Runtime AI，将确定性命盘、阶段结构与已记录事件转写为结构化解读。运行失败时显示失败状态，不生成替代内容。',
+    coreLabels: {
+      personality: '性格底色',
+      strengths: '优势能力',
+      long_term_themes: '长期课题',
+      relationship_pattern: '关系模式',
+      career_inclination: '事业倾向',
+    },
+    strategiesTitle: '长期阶段策略',
+    strategyTheme: '阶段主题',
+    strategyStrategy: '策略',
+    generate: '生成命镜解读',
+    regenerate: '重新生成解读',
+    generating: '正在生成命镜解读…',
+    empty: '基于本命盘与你记录的历史事件，生成核心特点与长期阶段策略。',
+    stale: '生辰或历史事件已更新,可重新生成解读。',
+    failureTitle: '解读生成未成功',
+  },
+  ziweiRoute: {
+    chartAria: 'Ziwei MingJing chart basis',
+    eyebrow: 'Ziwei Sanhe',
+    chartTitle: 'MingJing chart basis',
+    soulPalace: 'Soul palace',
+    bodyPalace: 'Body palace',
+    fiveElementsClass: 'Five elements class',
+    soulBodyStar: 'Soul / body star',
+    palaces: 'Palaces',
+    anchorPalace: 'Anchor palace',
+    astrolabeAria: 'Ziwei astrolabe',
+  },
+  ziweiReading: {
+    aria: 'Ziwei MingJing reading',
+    eyebrow: 'Ziwei Sanhe',
+    title: 'Natal brief',
+    decadeGuidanceTitle: 'Decade guidance',
+    profileLabels: {
+      life_pattern: 'Life pattern',
+      strengths: 'Strengths',
+      long_term_theme: 'Long-term theme',
+      relationship_pattern: 'Relationship pattern',
+      career_inclination: 'Career inclination',
+    },
+  },
+  relationshipReading: {
+    eyebrow: 'AI 解读 · 我与一个关系人物',
+    title: '关系合盘',
+    explanation:
+      '该模块调用 Runtime AI，将两人的确定性命盘结构、十神关系、用神关系与年度窗口转写为关系解读。运行失败时只显示失败状态，不生成替代内容。',
+    personLabel: '关系人物',
+    generate: '生成合盘',
+    regenerate: '重新生成合盘',
+    generating: '正在生成合盘…',
+    addPerson: '添加关系人物',
+    noPeople: '档案里还没有可用于合盘的关系人物。',
+    empty: (name) => `为你和 ${name} 生成一份关系合盘。`,
+    emptyFallback: '选择一个关系人物后生成合盘。',
+    stale: '生辰资料或时间窗口已更新，可重新生成合盘。',
+    personFallback: '所选人物',
+    subjectLine: (name) => `我 + ${name}`,
+    structureLabels: {
+      baseline_pattern: '底层关系模式',
+      attraction_and_support: '吸引与支持',
+      friction_and_misread: '摩擦与误读',
+      communication_rhythm: '沟通节奏',
+      boundary_advice: '边界建议',
+    },
+    timingTitle: '关系时间窗口',
+    natureLabels: {
+      supportive: '助力',
+      steady: '平稳',
+      watch: '观察',
+      blocked: '阻滞',
+      turning: '转折',
+    },
+    dateRange: (start, end) => `${start} 至 ${end}`,
+    driverRefs: '算法依据',
+    practiceTitle: '相处实践',
+    practiceLabels: {
+      communication: '沟通',
+      boundary: '边界',
+      repair: '修复',
+    },
+    citation: (refs) => `引用: ${refs}`,
+  },
+  events: {
+    title: '用过去的事，校准这张盘',
+    intro: '记录已发生的重要事件（工作、关系、迁移、重大决定等），用于在时间轴上查看其对应的大运与流年位置。',
+    explanation:
+      '历史事件会映射到大运和流年位置，用于检查事件发生时间与命盘阶段之间的对应关系。该记录只影响解释依据，不改写排盘结果。',
+    dateLabel: '发生日期',
+    datePlaceholder: 'yyyy/mm/dd',
+    bodyLabel: '事件',
+    bodyPlaceholder: '例如:换工作、重要关系开始或结束、搬迁、重大决定…',
+    add: '记录事件',
+    invalidHint: '请填写日期与事件内容。',
+    empty: '还没有记录历史事件。记录后即可看到它落在命盘时间轴的位置。',
+    delete: '删除',
+    dayunColumn: '所在大运',
+    liunianColumn: '当年流年',
+    preGenHint: '以下为确定性时间轴定位;生成解读后,AI 会结合这些经历给出更贴合的叙述。',
+  },
+  rectify: {
+    title: '生时校正',
+    intro: '在出生时辰不确定时，可使用已记录事件对候选时辰进行确定性排序。',
+    howItWorks: '时辰会影响起运与大运换运年份。系统逐一试排 12 个候选时辰，并比较候选大运 / 流年与已记录事件的对应关系；校正对象是出生时辰输入，不改写命盘规则。',
+    needMoreEvents: '至少记录 2 件人生大事(换工作、婚恋开始或结束、搬迁、重大决定…)才能反推。',
+    unsupportedCalendar: '生时校正暂支持公历生日。',
+    sexRequired: '需要先填写用于推算大运方向的性别。',
+    confidenceLabel: '置信度',
+    confidenceValues: { high: '高', medium: '中', low: '低' },
+    lowConfidenceCaveat: '候选时辰区分度不高,建议补充更多大事(尤其是转折性的)以提高准确度。',
+    recommended: '推荐',
+    fitLabel: '吻合度',
+    startAge: (age) => `${age} 岁起运`,
+    hourPillarLabel: '时柱',
+    alignedLabel: '对齐的大事',
+    adopt: '采用此生时',
+    entryLive: '对结果存疑？用人生中的大事，反推并校正你的出生时辰 →',
+    entryBlocked: '不知道确切时辰?用人生大事反推 →',
+    earlyZi: '早子时',
+    lateZi: '晚子时',
+    shichenSuffix: '时',
+    close: '收起',
+  },
+};
