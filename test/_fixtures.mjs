@@ -483,6 +483,7 @@ export function validConversation(overrides = {}) {
     id: 'c_01',
     created_at: '2026-05-25T00:00:00Z',
     source_reading_ids: ['r_01'],
+    concern_tag_refs: [],
     turns: [
       {
         id: 't_01',

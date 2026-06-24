@@ -13,6 +13,8 @@ export type ConversationValidationError =
   | { code: 'conversation_created_at_not_iso_utc' }
   | { code: 'conversation_source_reading_ids_empty' }
   | { code: 'conversation_source_reading_id_empty'; index: number }
+  | { code: 'conversation_concern_tag_refs_invalid' }
+  | { code: 'conversation_concern_tag_ref_empty'; index: number }
   | { code: 'conversation_turn_id_empty'; index: number }
   | { code: 'conversation_turn_role_invalid'; index: number; received: unknown }
   | { code: 'conversation_turn_body_empty'; index: number }
@@ -40,6 +42,15 @@ export function validateConversation(conversation: Conversation): ConversationVa
     const id = conversation.source_reading_ids[i]!;
     if (typeof id !== 'string' || id.length === 0) {
       return { ok: false, error: { code: 'conversation_source_reading_id_empty', index: i } };
+    }
+  }
+  if (!Array.isArray(conversation.concern_tag_refs)) {
+    return { ok: false, error: { code: 'conversation_concern_tag_refs_invalid' } };
+  }
+  for (let i = 0; i < conversation.concern_tag_refs.length; i += 1) {
+    const ref = conversation.concern_tag_refs[i]!;
+    if (typeof ref !== 'string' || ref.length === 0) {
+      return { ok: false, error: { code: 'conversation_concern_tag_ref_empty', index: i } };
     }
   }
   const sourceReadingIds = new Set(conversation.source_reading_ids);

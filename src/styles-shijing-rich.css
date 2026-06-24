@@ -162,6 +162,18 @@
   min-width: 0;
 }
 
+.shijing-ask__search-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.shijing-ask__search-input {
+  position: relative;
+  min-width: 0;
+}
+
 .shijing-ask__search-icon {
   position: absolute;
   left: 11px;
@@ -189,6 +201,85 @@
   outline: none;
   border-color: rgba(67, 198, 165, 0.5);
   box-shadow: 0 0 0 3px rgba(67, 198, 165, 0.15);
+}
+
+.shijing-ask__filter {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.shijing-ask .shijing-ask__filter-button {
+  appearance: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.7);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.shijing-ask .shijing-ask__filter-button:hover,
+.shijing-ask .shijing-ask__filter-button[data-active="true"],
+.shijing-ask .shijing-ask__filter-button[aria-expanded="true"] {
+  background: rgba(67, 198, 165, 0.12);
+  border-color: rgba(67, 198, 165, 0.32);
+  color: #1fae91;
+}
+
+.shijing-ask__filter-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.shijing-ask__filter-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 10;
+  min-width: 168px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: 0 18px 40px -16px rgba(15, 23, 38, 0.22);
+}
+
+.shijing-ask .shijing-ask__filter-option {
+  appearance: none;
+  width: 100%;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #334155;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.shijing-ask .shijing-ask__filter-option:hover,
+.shijing-ask .shijing-ask__filter-option[aria-checked="true"] {
+  background: rgba(67, 198, 165, 0.12);
+  color: #1fae91;
+}
+
+.shijing-ask__filter-empty {
+  margin: 6px 8px;
+  color: #94a3b8;
+  font-size: 12px;
 }
 
 /* Empty state — upper-middle of the rail. */
@@ -569,6 +660,97 @@
   cursor: not-allowed;
   background: linear-gradient(135deg, rgba(67, 198, 165, 0.4), rgba(31, 174, 145, 0.4));
   box-shadow: none;
+}
+
+/* ----- GPT-style concern archive tray under the new-question composer ----- */
+
+.shijing-archive {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  margin: -6px 4px 0;
+  padding: 8px 10px 8px 14px;
+  border: 1px solid rgba(67, 198, 165, 0.22);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow: 0 8px 24px -18px rgba(15, 23, 38, 0.18);
+}
+
+.shijing-archive__lead {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.shijing-archive__icon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: #1fae91;
+  background: rgba(67, 198, 165, 0.12);
+}
+
+.shijing-archive__chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.shijing-ask .shijing-archive__chip {
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(67, 198, 165, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.shijing-ask .shijing-archive__chip[data-selected="true"] {
+  background: rgba(67, 198, 165, 0.12);
+  border-color: rgba(67, 198, 165, 0.36);
+}
+
+.shijing-ask .shijing-archive__chip-main {
+  appearance: none;
+  min-height: 28px;
+  padding: 4px 10px 4px 12px;
+  border: 0;
+  background: transparent;
+  color: #1fae91;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shijing-ask .shijing-archive__close {
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid rgba(67, 198, 165, 0.18);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.shijing-ask .shijing-archive__close:hover {
+  color: #0f172a;
+  background: rgba(15, 23, 42, 0.05);
 }
 
 /* ----- 上下文焦点 bar ----- */

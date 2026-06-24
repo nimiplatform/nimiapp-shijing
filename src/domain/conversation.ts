@@ -18,5 +18,6 @@ export interface Conversation {
   readonly id: string;
   readonly created_at: string;
   readonly source_reading_ids: readonly string[];
+  readonly concern_tag_refs: readonly string[];
   readonly turns: readonly ConversationTurn[];
 }

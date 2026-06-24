@@ -42,6 +42,7 @@ export type ShijingSpaceValidationError =
   | { code: 'space_reading_related_person_ref_unresolvable'; reading_id: string; person_id: string }
   | { code: 'space_conversations_duplicate_id'; id: string }
   | { code: 'space_conversation_invalid'; conversation_id: string; reason: string }
+  | { code: 'space_conversation_concern_tag_ref_unresolvable'; conversation_id: string; concern_tag_id: string }
   | { code: 'space_conversation_source_reading_unresolvable'; conversation_id: string; reading_id: string }
   | { code: 'space_conversation_turn_cited_reading_unresolvable'; conversation_id: string; turn_id: string; ref: string }
   | { code: 'space_conversation_turn_cited_event_memory_unresolvable'; conversation_id: string; turn_id: string; ref: string }
@@ -123,7 +124,7 @@ function validateShiJingSpaceUnchecked(input: unknown): ShijingSpaceValidationRe
       return invalidShape(field, 'array');
     }
   }
-  // SJG-DATA-09 / SJG-ALGO-01 — Settings content (method_profile_id admission +
+  // SJG-DATA-11 / SJG-ALGO-01 — Settings content (method_profile_id admission +
   // response-preference enums), not just removed-surface keys.
   const settingsCheck = validateSettings(space.settings);
   if (!settingsCheck.ok) {
@@ -335,6 +336,18 @@ function validateShiJingSpaceUnchecked(input: unknown): ShijingSpaceValidationRe
           reason: check.error.code,
         },
       };
+    }
+    for (const concernTagId of conversation.concern_tag_refs) {
+      if (!concernTagIds.has(concernTagId)) {
+        return {
+          ok: false,
+          error: {
+            code: 'space_conversation_concern_tag_ref_unresolvable',
+            conversation_id: conversation.id,
+            concern_tag_id: concernTagId,
+          },
+        };
+      }
     }
     for (const ref of conversation.source_reading_ids) {
       if (!readingIds.has(ref)) {

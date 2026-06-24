@@ -15,6 +15,15 @@ test('rejects conversation with empty source_reading_ids', () => {
   assert.equal(validateConversation(c).ok, false);
 });
 
+test('rejects conversation with empty concern archive ref', () => {
+  const c = { ...validConversation(), concern_tag_refs: [''] };
+  const result = validateConversation(c);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'conversation_concern_tag_ref_empty');
+  }
+});
+
 test('rejects AI turn that fails to cite any reading', () => {
   const c = validConversation();
   c.turns[1].cited_reading_ids = [];

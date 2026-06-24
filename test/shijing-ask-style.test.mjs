@@ -126,6 +126,22 @@ test('Ask ShiJing inline concern editor expands in flow instead of covering resu
   assert.doesNotMatch(editor, /position:\s*absolute/);
 });
 
+test('Ask ShiJing concern sync effect preserves identical array state', () => {
+  assert.match(shijingTabSource, /function sameStringArray\(/);
+  assert.match(
+    shijingTabSource,
+    /const next = surviving\.length > 0 \? surviving : suggestedArchiveConcernIds;[\s\S]*?return sameStringArray\(ids, next\) \? ids : next;/,
+  );
+  assert.match(
+    shijingTabSource,
+    /setSelectedFilterConcernIds\(\(ids\) => \{[\s\S]*?return sameStringArray\(ids, next\) \? ids : next;/,
+  );
+  assert.match(
+    shijingTabSource,
+    /setDismissedArchiveConcernIds\(\(ids\) => \{[\s\S]*?return sameStringArray\(ids, next\) \? ids : next;/,
+  );
+});
+
 test('Ask ShiJing switches to a chat window once a conversation exists', () => {
   assert.match(shijingTabSource, /const chatActive = !draftingNewQuestion && resultConversation != null/);
   assert.match(
@@ -241,6 +257,46 @@ test('Ask ShiJing history rail search uses a real magnifying glass icon', () => 
   assert.match(searchIcon, /width:\s*14px/);
   assert.match(searchIcon, /height:\s*14px/);
   assert.match(searchIcon, /stroke-width:\s*2/);
+});
+
+test('Ask ShiJing new-question page exposes GPT-style archive chips below the composer', () => {
+  assert.match(shijingTabSource, /const \[selectedArchiveConcernIds, setSelectedArchiveConcernIds\]/);
+  assert.match(shijingTabSource, /function ArchiveTray\(/);
+  assert.match(shijingTabSource, /className="shijing-archive"/);
+  assert.match(shijingTabSource, /copy\.shijing\.archive\.addPrefix/);
+  assert.match(shijingTabSource, /concern_tag_refs: selectedArchiveConcernIds/);
+
+  const archive = cssBlock(shijingStyles, '.shijing-archive');
+  const archiveButton = cssBlock(shijingStyles, '.shijing-ask .shijing-archive__chip');
+  const archiveClose = cssBlock(shijingStyles, '.shijing-ask .shijing-archive__close');
+
+  assert.match(archive, /display:\s*flex/);
+  assert.match(archive, /align-items:\s*center/);
+  assert.match(archive, /border-radius:\s*16px/);
+  assert.match(archiveButton, /display:\s*inline-flex/);
+  assert.match(archiveButton, /border:\s*1px solid/);
+  assert.match(archiveClose, /width:\s*24px/);
+  assert.match(archiveClose, /height:\s*24px/);
+});
+
+test('Ask ShiJing rail has concern filter controls before history sessions', () => {
+  assert.match(shijingTabSource, /const \[filterOpen, setFilterOpen\]/);
+  assert.match(shijingTabSource, /const \[selectedFilterConcernIds, setSelectedFilterConcernIds\]/);
+  assert.match(shijingTabSource, /className="shijing-ask__filter-button"/);
+  assert.match(shijingTabSource, /className="shijing-ask__filter-menu"/);
+  assert.match(shijingTabSource, /conversationMatchesConcernFilter/);
+
+  const searchRow = cssBlock(shijingStyles, '.shijing-ask__search-row');
+  const filterButton = cssBlock(shijingStyles, '.shijing-ask .shijing-ask__filter-button');
+  const filterMenu = cssBlock(shijingStyles, '.shijing-ask__filter-menu');
+  const filterOption = cssBlock(shijingStyles, '.shijing-ask .shijing-ask__filter-option');
+
+  assert.match(searchRow, /display:\s*grid/);
+  assert.match(searchRow, /grid-template-columns:\s*1fr auto/);
+  assert.match(filterButton, /border-radius:\s*50%/);
+  assert.match(filterMenu, /position:\s*absolute/);
+  assert.match(filterOption, /display:\s*flex/);
+  assert.match(filterOption, /justify-content:\s*space-between/);
 });
 
 test('Ask ShiJing conversation thread uses right-user and left-answer chat bubbles', () => {

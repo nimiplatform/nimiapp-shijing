@@ -34,6 +34,7 @@ import { FailureBanner } from './shared/failure-banner.tsx';
 import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
 import type { ConcernTag } from '../../domain/concern-tag.ts';
 import { InlineConcernEditorPopover } from '../concern-tags/inline-concern-editor.tsx';
+import { trimmedConcernLabel } from '../concern-tags/concern-presets.ts';
 import {
   sendConversationFollowUp,
   type ConversationFollowUpFailure,
@@ -77,6 +78,25 @@ function SearchIcon(props: IconProps) {
   );
 }
 
+function FilterIcon(props: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M4 6h16" />
+      <path d="M7 12h10" />
+      <path d="M10 18h4" />
+    </svg>
+  );
+}
+
 function nowIso(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
@@ -84,6 +104,32 @@ function nowIso(): string {
 function firstUserQuestion(conv: Conversation, copy: ProductCopy): string {
   const turn = conv.turns.find((t) => t.role === 'user');
   return turn?.body ?? copy.shijing.unrecordedQuestion;
+}
+
+function concernMatchesQuestion(question: string, tag: ConcernTag): boolean {
+  const q = question.trim().toLocaleLowerCase();
+  if (q.length === 0) return false;
+  const tokens = [
+    tag.label,
+    trimmedConcernLabel(tag),
+    tag.prompt_text,
+    ...tag.parsed_topics,
+  ]
+    .map((item) => item.trim().toLocaleLowerCase())
+    .filter((item) => item.length > 0);
+  return tokens.some((token) => q.includes(token) || token.includes(q));
+}
+
+function conversationMatchesConcernFilter(
+  conversation: Conversation,
+  selectedConcernIds: readonly string[],
+): boolean {
+  if (selectedConcernIds.length === 0) return true;
+  return selectedConcernIds.some((id) => conversation.concern_tag_refs.includes(id));
+}
+
+function sameStringArray(left: readonly string[], right: readonly string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
 function followUpFailureAsReadingFailure(
@@ -170,6 +216,10 @@ export function ShiJingTab(_props: ShiJingTabProps) {
   const [search, setSearch] = useState('');
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [draftingNewQuestion, setDraftingNewQuestion] = useState(false);
+  const [selectedArchiveConcernIds, setSelectedArchiveConcernIds] = useState<string[]>([]);
+  const [dismissedArchiveConcernIds, setDismissedArchiveConcernIds] = useState<string[]>([]);
+  const [selectedFilterConcernIds, setSelectedFilterConcernIds] = useState<string[]>([]);
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -207,6 +257,43 @@ export function ShiJingTab(_props: ShiJingTabProps) {
     [importedIds, state.snapshot.readings],
   );
 
+  const activeConcernTags = useMemo(
+    () =>
+      state.snapshot.concern_tags
+        .filter((t) => t.status === 'active')
+        .sort((a, b) => a.sort_order - b.sort_order),
+    [state.snapshot.concern_tags],
+  );
+  const activeConcernIds = useMemo(
+    () => new Set(activeConcernTags.map((tag) => tag.id)),
+    [activeConcernTags],
+  );
+  const suggestedArchiveConcernIds = useMemo(
+    () =>
+      activeConcernTags
+        .filter((tag) => !dismissedArchiveConcernIds.includes(tag.id))
+        .filter((tag) => concernMatchesQuestion(question, tag))
+        .map((tag) => tag.id)
+        .slice(0, 2),
+    [activeConcernTags, dismissedArchiveConcernIds, question],
+  );
+
+  useEffect(() => {
+    setSelectedArchiveConcernIds((ids) => {
+      const surviving = ids.filter((id) => activeConcernIds.has(id));
+      const next = surviving.length > 0 ? surviving : suggestedArchiveConcernIds;
+      return sameStringArray(ids, next) ? ids : next;
+    });
+    setSelectedFilterConcernIds((ids) => {
+      const next = ids.filter((id) => activeConcernIds.has(id));
+      return sameStringArray(ids, next) ? ids : next;
+    });
+    setDismissedArchiveConcernIds((ids) => {
+      const next = ids.filter((id) => activeConcernIds.has(id));
+      return sameStringArray(ids, next) ? ids : next;
+    });
+  }, [activeConcernIds, suggestedArchiveConcernIds]);
+
   // History rail, newest first.
   const conversations = useMemo(
     () => [...state.snapshot.conversations].sort((a, b) => b.created_at.localeCompare(a.created_at)),
@@ -214,9 +301,11 @@ export function ShiJingTab(_props: ShiJingTabProps) {
   );
   const filteredConversations = useMemo(() => {
     const q = search.trim();
-    if (q.length === 0) return conversations;
-    return conversations.filter((c) => firstUserQuestion(c, copy).includes(q));
-  }, [conversations, search, copy]);
+    return conversations.filter((c) => {
+      const matchesSearch = q.length === 0 || firstUserQuestion(c, copy).includes(q);
+      return matchesSearch && conversationMatchesConcernFilter(c, selectedFilterConcernIds);
+    });
+  }, [conversations, search, copy, selectedFilterConcernIds]);
 
   const newestConversation = conversations[0] ?? null;
   const selectedConversation = selectedConversationId
@@ -269,15 +358,16 @@ export function ShiJingTab(_props: ShiJingTabProps) {
     setLoading(true);
     setFailure(null);
     const id = newReadingId();
+    const activeConcernTagIds = activeConcernTags.map((t) => t.id);
+    const readingConcernTagIds =
+      selectedArchiveConcernIds.length > 0 ? selectedArchiveConcernIds : activeConcernTagIds;
     const outcome = await generateReadingForStorage({
       id,
       created_at: nowIso(),
       mirror_kind: 'shijing',
       mirror_scope: consultationMirrorScopeFor(sourceReadingIds),
       related_person_refs: [],
-      concern_tag_refs: state.snapshot.concern_tags
-        .filter((t) => t.status === 'active')
-        .map((t) => t.id),
+      concern_tag_refs: readingConcernTagIds,
       cited_reading_ids: sourceReadingIds,
       ...(seedMemoryIds.length > 0 ? { cited_event_memory_refs: seedMemoryIds } : {}),
       ...(seedPlanIds.length > 0 ? { cited_plan_item_refs: seedPlanIds } : {}),
@@ -298,6 +388,7 @@ export function ShiJingTab(_props: ShiJingTabProps) {
       id: convId,
       created_at: nowIso(),
       source_reading_ids: sourceReadingIds,
+      concern_tag_refs: selectedArchiveConcernIds,
       turns: [
         {
           id: newConversationTurnId(),
@@ -325,6 +416,8 @@ export function ShiJingTab(_props: ShiJingTabProps) {
     };
     dispatch({ type: 'snapshot/replace', snapshot: nextSpace });
     setQuestion('');
+    setSelectedArchiveConcernIds([]);
+    setDismissedArchiveConcernIds([]);
     setSelectedConversationId(convId);
     setDraftingNewQuestion(false);
     dispatch({ type: 'shijing/clear-import-bus' });
@@ -354,13 +447,42 @@ export function ShiJingTab(_props: ShiJingTabProps) {
       : copy.shijing.generate;
   const chatActive = !draftingNewQuestion && resultConversation != null && importedIds.length === 0 && seedCount === 0;
   const composerPlaceholder = chatActive ? '' : copy.shijing.composerPlaceholder;
+  const archiveTrayTags = useMemo(() => {
+    const selected = activeConcernTags.filter((tag) => selectedArchiveConcernIds.includes(tag.id));
+    if (selected.length > 0) return selected;
+    const matched = activeConcernTags.filter((tag) => concernMatchesQuestion(question, tag));
+    const candidates = matched.length > 0 ? matched : activeConcernTags;
+    return candidates
+      .filter((tag) => !dismissedArchiveConcernIds.includes(tag.id))
+      .slice(0, 3);
+  }, [activeConcernTags, dismissedArchiveConcernIds, question, selectedArchiveConcernIds]);
 
   function startNewQuestion() {
     setDraftingNewQuestion(true);
     setSelectedConversationId(null);
     setQuestion('');
+    setSelectedArchiveConcernIds([]);
+    setDismissedArchiveConcernIds([]);
     setFailure(null);
     setTimeout(() => composerRef.current?.focus(), 0);
+  }
+
+  function toggleArchiveConcern(id: string) {
+    setDismissedArchiveConcernIds((ids) => ids.filter((item) => item !== id));
+    setSelectedArchiveConcernIds((ids) =>
+      ids.includes(id) ? ids.filter((item) => item !== id) : [id],
+    );
+  }
+
+  function removeArchiveConcern(id: string) {
+    setSelectedArchiveConcernIds((ids) => ids.filter((item) => item !== id));
+    setDismissedArchiveConcernIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
+  }
+
+  function toggleFilterConcern(id: string) {
+    setSelectedFilterConcernIds((ids) =>
+      ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
+    );
   }
 
   function renderComposer() {
@@ -463,14 +585,78 @@ export function ShiJingTab(_props: ShiJingTabProps) {
               {copy.shijing.newQuestion}
             </button>
             <div className="shijing-ask__search">
-              <SearchIcon className="shijing-ask__search-icon" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.currentTarget.value)}
-                placeholder={copy.shijing.searchPlaceholder}
-                aria-label={copy.shijing.searchAria}
-              />
+              <div className="shijing-ask__search-row">
+                <div className="shijing-ask__search-input">
+                  <SearchIcon className="shijing-ask__search-icon" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.currentTarget.value)}
+                    placeholder={copy.shijing.searchPlaceholder}
+                    aria-label={copy.shijing.searchAria}
+                  />
+                </div>
+                <span className="shijing-ask__filter">
+                  <Tooltip
+                    content={
+                      selectedFilterConcernIds.length > 0
+                        ? copy.shijing.archive.filterButtonActive(selectedFilterConcernIds.length)
+                        : copy.shijing.archive.filterButton
+                    }
+                    placement="top"
+                  >
+                    <button
+                      type="button"
+                      className="shijing-ask__filter-button"
+                      aria-label={
+                        selectedFilterConcernIds.length > 0
+                          ? copy.shijing.archive.filterButtonActive(selectedFilterConcernIds.length)
+                          : copy.shijing.archive.filterButton
+                      }
+                      aria-expanded={filterOpen}
+                      aria-haspopup="menu"
+                      data-active={selectedFilterConcernIds.length > 0 ? 'true' : 'false'}
+                      onClick={() => setFilterOpen((open) => !open)}
+                    >
+                      <FilterIcon className="shijing-ask__filter-icon" />
+                    </button>
+                  </Tooltip>
+                  {filterOpen ? (
+                    <div className="shijing-ask__filter-menu" role="menu" aria-label={copy.shijing.archive.filterMenuAria}>
+                      <button
+                        type="button"
+                        className="shijing-ask__filter-option"
+                        role="menuitemcheckbox"
+                        aria-checked={selectedFilterConcernIds.length === 0}
+                        onClick={() => setSelectedFilterConcernIds([])}
+                      >
+                        <span>{copy.shijing.archive.filterAll}</span>
+                        <span aria-hidden>{selectedFilterConcernIds.length === 0 ? 'x' : ''}</span>
+                      </button>
+                      {activeConcernTags.length === 0 ? (
+                        <p className="shijing-ask__filter-empty">{copy.shijing.archive.filterEmpty}</p>
+                      ) : (
+                        activeConcernTags.map((tag) => {
+                          const selected = selectedFilterConcernIds.includes(tag.id);
+                          return (
+                            <button
+                              key={tag.id}
+                              type="button"
+                              className="shijing-ask__filter-option"
+                              role="menuitemcheckbox"
+                              aria-checked={selected}
+                              onClick={() => toggleFilterConcern(tag.id)}
+                            >
+                              <span>{trimmedConcernLabel(tag)}</span>
+                              <span aria-hidden>{selected ? 'x' : ''}</span>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  ) : null}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -533,6 +719,13 @@ export function ShiJingTab(_props: ShiJingTabProps) {
             <>
               {renderComposer()}
 
+          <ArchiveTray
+            tags={archiveTrayTags}
+            selectedIds={selectedArchiveConcernIds}
+            onToggle={toggleArchiveConcern}
+            onRemove={removeArchiveConcern}
+          />
+
           {failure ? <FailureBanner failure={failure} /> : null}
 
           <ContextFocusBar tags={state.snapshot.concern_tags} />
@@ -564,6 +757,51 @@ export function ShiJingTab(_props: ShiJingTabProps) {
             </>
           )}
         </div>
+      </div>
+    </section>
+  );
+}
+
+function ArchiveTray(props: {
+  readonly tags: readonly ConcernTag[];
+  readonly selectedIds: readonly string[];
+  readonly onToggle: (id: string) => void;
+  readonly onRemove: (id: string) => void;
+}) {
+  const copy = useProductCopy();
+  if (props.tags.length === 0) return null;
+  return (
+    <section className="shijing-archive" aria-label={copy.shijing.archive.aria}>
+      <div className="shijing-archive__lead">
+        <span className="shijing-archive__icon" aria-hidden>
+          +
+        </span>
+        <span className="shijing-archive__label">{copy.shijing.archive.addPrefix}</span>
+      </div>
+      <div className="shijing-archive__chips">
+        {props.tags.map((tag) => {
+          const selected = props.selectedIds.includes(tag.id);
+          const label = trimmedConcernLabel(tag);
+          return (
+            <span key={tag.id} className="shijing-archive__chip" data-selected={selected ? 'true' : 'false'}>
+              <button
+                type="button"
+                className="shijing-archive__chip-main"
+                onClick={() => props.onToggle(tag.id)}
+              >
+                {label}
+              </button>
+              <button
+                type="button"
+                className="shijing-archive__close"
+                aria-label={copy.shijing.archive.removeAria(label)}
+                onClick={() => props.onRemove(tag.id)}
+              >
+                x
+              </button>
+            </span>
+          );
+        })}
       </div>
     </section>
   );

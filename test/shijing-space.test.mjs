@@ -225,10 +225,24 @@ test('conversation source_reading must resolve to existing reading', () => {
   }
 });
 
+test('conversation concern archive refs must resolve to existing concern tags', () => {
+  const reading = validReading({ id: 'r_a', concern_tag_refs: [] });
+  const conv = validConversation({
+    source_reading_ids: ['r_a'],
+    concern_tag_refs: ['tag_missing'],
+  });
+  conv.turns[1].cited_reading_ids = ['r_a'];
+  const result = validateShiJingSpace(baseSpace({ readings: [reading], conversations: [conv] }));
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'space_conversation_concern_tag_ref_unresolvable');
+  }
+});
+
 test('conversation ai turn must cite reading from source_reading_ids', () => {
   const tag = validConcernTag('tag_love');
   const reading = validReading({ id: 'r_a' });
-  const conv = validConversation({ source_reading_ids: ['r_a'] });
+  const conv = validConversation({ source_reading_ids: ['r_a'], concern_tag_refs: ['tag_love'] });
   conv.turns[1].cited_reading_ids = ['r_a'];
   const result = validateShiJingSpace(
     baseSpace({ concern_tags: [tag], readings: [reading], conversations: [conv] }),
@@ -245,7 +259,7 @@ test('valid space with persons, concern tags, memories, plans, readings, convers
   });
   const plan = validPlanItem('p_plan_01', { concern_tag_refs: ['tag_love'] });
   const reading = validReading({ id: 'r_a' });
-  const conv = validConversation({ source_reading_ids: ['r_a'] });
+  const conv = validConversation({ source_reading_ids: ['r_a'], concern_tag_refs: ['tag_love'] });
   conv.turns[1].cited_reading_ids = ['r_a'];
   const result = validateShiJingSpace(
     baseSpace({
