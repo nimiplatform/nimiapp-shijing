@@ -170,10 +170,11 @@ literals, and fallback paths that mask runtime failure are forbidden.
 ## SJG-ASTRO-12 - MingJing Output
 
 命镜 AI 解读 (`mirror_kind = mingjing`, `scope = natal`) is grounded in the
-deterministic natal projection (`MingJingChart`, SJG-ALGO-16). Output shape is in
-`tables/mirror-output-contract.yaml`.
+selected MingJing route from SJG-ALGO-18. Output shape is in
+`tables/mirror-output-contract.yaml`. Runtime AI may word admitted prose fields
+only after deterministic route evidence exists.
 
-It contains:
+The BaZi route (`bazi_ziping_v1`) contains:
 
 - `summary`: one-line 命局 overview (AI wording over a deterministic seed);
 - `core`: 命局核心特点 — `personality` (性格底色), `strengths` (优势能力),
@@ -193,6 +194,24 @@ It must not:
   calibrate emphasis and build resonance;
 - create an astrology output entity outside `Reading`;
 - emit any SJG-ASTRO-08 forbidden output.
+
+The Ziwei route (`ziwei_sanhe_v1`) contains `output_kind =
+ziwei_natal_brief`:
+
+- `chart_basis`: deterministic 命宫 / 身宫 / 五行局 / 命主身主 / palace-count and
+  四化 references from `ZiweiEvidence`;
+- `profile`: AI wording over deterministic Ziwei natal evidence;
+- `decade_guidance`: one entry per admitted decadal palace range selected by
+  the route seed. Its age range, palace name/branch, and major stars are
+  deterministic; theme and strategy are AI wording.
+
+It must not:
+
+- compute or mutate palaces, stars, 四化, 大限 ranges, or route support through
+  Runtime AI;
+- output relationship HePan, compatibility scores, match percentages, relation
+  graphs, or trend curves;
+- degrade into a year-by-year ledger or rankable numeric series.
 
 ## SJG-ASTRO-13 - MingJing Relationship HePan Output
 

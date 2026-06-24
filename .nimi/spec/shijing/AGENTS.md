@@ -31,6 +31,7 @@
       data-model-contract.md
       astrology-contract.md
       algorithm-contract.md
+      algorithm-feature-snapshot-shape.md
       ia-contract.md
       removed-surfaces-contract.md
       tables/

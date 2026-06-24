@@ -16,6 +16,7 @@ This file is a reading guide. Normative ShiJing authority lives in
 | [kernel/data-model-contract.md](kernel/data-model-contract.md) | `SJG-DATA-*` data entities and invariants |
 | [kernel/astrology-contract.md](kernel/astrology-contract.md) | `SJG-ASTRO-*` mirror reading contracts |
 | [kernel/algorithm-contract.md](kernel/algorithm-contract.md) | `SJG-ALGO-*` deterministic pipeline and Runtime AI boundary |
+| [kernel/algorithm-feature-snapshot-shape.md](kernel/algorithm-feature-snapshot-shape.md) | SJG-ALGO-08 feature snapshot field-level shape appendix |
 | [kernel/ia-contract.md](kernel/ia-contract.md) | `SJG-IA-*` four-mirror IA |
 | [kernel/removed-surfaces-contract.md](kernel/removed-surfaces-contract.md) | `SJG-REMOVED-*` hard removals |
 | [kernel/tables/concern-tag-catalog.yaml](kernel/tables/concern-tag-catalog.yaml) | Built-in concern tags and tag rules |

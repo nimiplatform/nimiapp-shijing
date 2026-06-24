@@ -21,6 +21,8 @@ This directory is the normative authority landing for ShiJing (时镜).
   (`common` + `method_evidence`), memory policy boundary, canonical hashing, and
   Runtime AI wording boundary, feature-method support matrix, plus
   Relationship HePan deterministic evidence.
+- `algorithm-feature-snapshot-shape.md`: normative SJG-ALGO-08 field-level
+  shape appendix for `AstrologyFeatureSnapshot`; no independent rule id.
 - `ia-contract.md` (`SJG-IA-*`): exactly five primary tabs: `日镜`, `月镜`,
   `年镜`, `命镜`, `时镜`, plus mandatory secondary Settings. `命镜` is the
   whole-life natal projection surface (SJG-IA-08 / SJG-ALGO-16) and owns the

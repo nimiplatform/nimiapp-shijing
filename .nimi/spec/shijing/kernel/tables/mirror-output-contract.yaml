@@ -1,5 +1,5 @@
 contract: SJG-ASTRO-03
-version: 2
+version: 3
 common:
   merge_rule: common_required_fields_are_required_on_every_mirror_output
   required_fields:
@@ -151,6 +151,56 @@ mingjing:
     - chart_numbers_never_recomputed_by_ai
     - no_concern_tags_required
     - cannot_mutate_deterministic_facts
+mingjing_ziwei_natal_brief:
+  surface: MingJing Ziwei natal-only AI brief over deterministic ZiweiEvidence
+  required_fields:
+    - mirror_kind
+    - output_kind
+    - summary
+    - chart_basis
+    - profile
+    - decade_guidance
+    - cited_event_memory_refs
+    - cited_plan_item_refs
+    - citations
+  output_kind: ziwei_natal_brief
+  chart_basis:
+    deterministic: true
+    required_fields:
+      - soul_palace_branch
+      - soul_palace_name
+      - body_palace_name
+      - five_elements_class
+      - soul_star
+      - body_star
+      - palace_count
+      - sihua_refs
+  profile:
+    ai_worded: true
+    required_fields:
+      - life_pattern
+      - strengths
+      - long_term_theme
+      - relationship_pattern
+      - career_inclination
+  decade_guidance:
+    min_items: 1
+    item:
+      required_fields:
+        - age_range
+        - palace_name
+        - palace_branch
+        - major_stars
+        - theme
+        - strategy
+      deterministic_fields: [age_range, palace_name, palace_branch, major_stars]
+      ai_worded_fields: [theme, strategy]
+  rules:
+    - ziwei_palace_star_and_decadal_ranges_are_deterministic
+    - runtime_ai_words_profile_and_guidance_only
+    - no_relationship_hepan
+    - no_match_scores
+    - no_trend_curves
 mingjing_relationship_hepan:
   surface: MingJing relationship HePan over deterministic self-plus-person evidence
   required_fields:
