@@ -211,6 +211,21 @@
   box-shadow: 0 0 0 3px var(--sjp-accent-soft);
 }
 
+.shijing-settings-page--styled .shijing-settings-page__surface-nav-item[aria-current='location'] {
+  width: calc(100% + 12px);
+  margin-left: -6px;
+  margin-right: -6px;
+  padding-left: 18px;
+  padding-right: 18px;
+  color: var(--sjp-accent-hover);
+  background: var(--sjp-accent-soft);
+  box-shadow: none;
+}
+
+.shijing-settings-page--styled .shijing-settings-page__surface-nav-item[aria-current='location']:focus-visible {
+  box-shadow: none;
+}
+
 .shijing-settings-page--styled .sjp-card[id^="settings-"] {
   scroll-margin-top: 0;
   outline: none;

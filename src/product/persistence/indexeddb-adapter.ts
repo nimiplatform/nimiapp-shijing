@@ -13,9 +13,9 @@ import type {
 
 export const SHIJING_INDEXEDDB_DATABASE = 'shijing-app';
 export const SHIJING_INDEXEDDB_STORE = 'shijing-space';
-// v2: SJG-FEATURE-v2 envelope refactor (common + method_evidence). Pre-release
-// hard cut — the upgrade drops any store written under the old snapshot shape.
-export const SHIJING_INDEXEDDB_VERSION = 2;
+// v3: Conversation concern_tag_refs lens admission. Storage stays in the
+// same object store; invalid snapshots still fail closed at validate/load.
+export const SHIJING_INDEXEDDB_VERSION = 3;
 
 function getIndexedDB(): IDBFactory | null {
   return typeof globalThis !== 'undefined' && 'indexedDB' in globalThis
@@ -36,12 +36,9 @@ function openDatabase(): Promise<IDBDatabase> {
     const request = idb.open(SHIJING_INDEXEDDB_DATABASE, SHIJING_INDEXEDDB_VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
-      // Hard cut: drop a store persisted under the old feature-snapshot shape
-      // and recreate empty. No migration is owed (pre-release).
-      if (db.objectStoreNames.contains(SHIJING_INDEXEDDB_STORE)) {
-        db.deleteObjectStore(SHIJING_INDEXEDDB_STORE);
+      if (!db.objectStoreNames.contains(SHIJING_INDEXEDDB_STORE)) {
+        db.createObjectStore(SHIJING_INDEXEDDB_STORE);
       }
-      db.createObjectStore(SHIJING_INDEXEDDB_STORE);
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error ?? new Error('IndexedDB open failed'));

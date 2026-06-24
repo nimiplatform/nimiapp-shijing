@@ -5,7 +5,7 @@
 // page, which renders that page's surfaces. The `.shijing-settings` wrapper
 // keeps the existing surface/editor styling (h3 / button / recover) intact.
 
-import { useCallback, useEffect, useRef, type TouchEvent, type WheelEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type TouchEvent, type WheelEvent } from 'react';
 import { PageDetailLayout } from '@nimiplatform/kit/ui';
 import {
   SHIJING_SETTINGS_PAGES,
@@ -49,6 +49,9 @@ export function SettingsPageView({
   const settingsScrollRef = useRef<HTMLDivElement | null>(null);
   const settingsNavRef = useRef<HTMLElement | null>(null);
   const touchScrollRef = useRef<{ y: number; scrollTop: number } | null>(null);
+  const [activeSettingsModuleId, setActiveSettingsModuleId] = useState<string | null>(
+    'settings-ui-language',
+  );
   const page =
     SHIJING_SETTINGS_PAGES.find((candidate) => candidate.id === pageId) ??
     SHIJING_SETTINGS_PAGES[0];
@@ -92,17 +95,48 @@ export function SettingsPageView({
         ]
       : [];
 
+  useEffect(() => {
+    setActiveSettingsModuleId(settingsModuleNavItems[0]?.targetId ?? null);
+  }, [page.id]);
+
+  const updateActiveSettingsModule = useCallback(() => {
+    const nav = settingsNavRef.current;
+    if (!nav || settingsModuleNavItems.length === 0) return;
+
+    const navTop = nav.getBoundingClientRect().top;
+    let nextActiveTargetId = settingsModuleNavItems[0]?.targetId ?? null;
+
+    for (const item of settingsModuleNavItems) {
+      const target = document.getElementById(item.targetId);
+      if (!(target instanceof HTMLElement)) continue;
+
+      const targetTop = target.getBoundingClientRect().top;
+      if (targetTop <= navTop + 8) {
+        nextActiveTargetId = item.targetId;
+      }
+    }
+
+    setActiveSettingsModuleId((previous) =>
+      previous === nextActiveTargetId ? previous : nextActiveTargetId,
+    );
+  }, [settingsModuleNavItems]);
+
   const scrollToSettingsModule = useCallback((targetId: string) => {
     const scrollContainer = settingsScrollRef.current;
     const nav = settingsNavRef.current;
     const target = document.getElementById(targetId);
     if (!(target instanceof HTMLElement) || !scrollContainer || !nav) return;
 
+    setActiveSettingsModuleId(targetId);
     const targetRect = target.getBoundingClientRect();
     const navRect = nav.getBoundingClientRect();
     const nextTop = scrollContainer.scrollTop + targetRect.top - navRect.top;
     scrollContainer.scrollTo({ top: nextTop, behavior: 'smooth' });
   }, []);
+
+  const handleSettingsContentScroll = useCallback(() => {
+    updateActiveSettingsModule();
+  }, [updateActiveSettingsModule]);
 
   const handleSettingsBodyWheel = useCallback((event: WheelEvent<HTMLDivElement>) => {
     const scrollContainer = settingsScrollRef.current;
@@ -148,7 +182,11 @@ export function SettingsPageView({
 
   const settingsContent =
     settingsModuleNavItems.length > 0 ? (
-      <div ref={settingsScrollRef} className="shijing-settings shijing-settings-page__content-scroll">
+      <div
+        ref={settingsScrollRef}
+        className="shijing-settings shijing-settings-page__content-scroll"
+        onScroll={handleSettingsContentScroll}
+      >
         {page.surfaces.map((surface) => (
           <SettingsSurfaceSection key={surface} surface={surface} focusTarget={focusTarget} />
         ))}
@@ -250,20 +288,25 @@ export function SettingsPageView({
               aria-label={copy.settings.subnavAriaLabel}
             >
               <ol className="shijing-settings-page__surface-nav-list">
-                {settingsModuleNavItems.map((item) => (
-                  <li key={item.targetId}>
-                    <button
-                      type="button"
-                      className="shijing-settings-page__surface-nav-item"
-                      aria-controls={item.targetId}
-                      onClick={() => {
-                        scrollToSettingsModule(item.targetId);
-                      }}
-                    >
-                      {item.label}
-                    </button>
-                  </li>
-                ))}
+                {settingsModuleNavItems.map((item) => {
+                  const active = item.targetId === activeSettingsModuleId;
+                  return (
+                    <li key={item.targetId}>
+                      <button
+                        type="button"
+                        className="shijing-settings-page__surface-nav-item"
+                        aria-controls={item.targetId}
+                        aria-current={active ? 'location' : undefined}
+                        data-active={active ? 'true' : undefined}
+                        onClick={() => {
+                          scrollToSettingsModule(item.targetId);
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    </li>
+                  );
+                })}
               </ol>
             </nav>
             {settingsContent}

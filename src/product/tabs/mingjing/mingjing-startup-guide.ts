@@ -1,16 +1,11 @@
 import type { ShiJingSpace } from '../../../domain/shijing-space.ts';
-import { isScaffoldNatalInputs } from '../../subjects/scaffold-natal-inputs.ts';
+import { hasCompletedMingJingStartupIntake } from '../../onboarding/startup-intake.ts';
+
+export { hasCompletedMingJingStartupIntake } from '../../onboarding/startup-intake.ts';
 
 export interface MingJingStartupGuideDecisionInput {
   readonly space: ShiJingSpace;
   readonly startupGuideDismissed: boolean;
-}
-
-export function hasCompletedMingJingStartupIntake(space: ShiJingSpace): boolean {
-  return (
-    !isScaffoldNatalInputs(space.self_subject.natal_inputs) &&
-    space.concern_tags.length > 0
-  );
 }
 
 export function shouldShowMingJingStartupGuide(

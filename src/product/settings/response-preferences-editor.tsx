@@ -20,13 +20,12 @@ import { ShijingAiModelConfigSection } from '../../shell/ai/shijing-ai-model-con
 export function ResponsePreferencesEditor() {
   const { state, dispatch } = useShijingStore();
   const copy = useProductCopy();
-  const initial = state.snapshot.settings.response_preferences;
-  const [draft, setDraft] = useState<ResponsePreferences>(initial);
+  const currentPreferences = state.snapshot.settings.response_preferences;
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
-  function save() {
-    const outcome = commitResponsePreferences(state.snapshot, draft);
+  function commitDraft(nextDraft: ResponsePreferences) {
+    const outcome = commitResponsePreferences(state.snapshot, nextDraft);
     if (!outcome.ok) {
       setErrorCode(outcome.error.code);
       setSavedAt(null);
@@ -61,19 +60,13 @@ export function ResponsePreferencesEditor() {
           </div>
         </div>
 
-        <form
-          className="sjp-grid"
-          onSubmit={(e) => {
-            e.preventDefault();
-            save();
-          }}
-        >
+        <div className="sjp-grid">
           <div className="sjp-field">
             <label className="sjp-label" htmlFor="resp-tone">{copy.responsePreferences.tone}</label>
             <SjpSelect
               id="resp-tone"
-              value={draft.tone}
-              onValueChange={(v) => setDraft({ ...draft, tone: v as ResponseTone })}
+              value={currentPreferences.tone}
+              onValueChange={(v) => commitDraft({ ...currentPreferences, tone: v as ResponseTone })}
               options={RESPONSE_TONES.map((t) => ({ value: t, label: copy.responseToneLabels[t] }))}
             />
           </div>
@@ -82,8 +75,8 @@ export function ResponsePreferencesEditor() {
             <label className="sjp-label" htmlFor="resp-length">{copy.responsePreferences.length}</label>
             <SjpSelect
               id="resp-length"
-              value={draft.length}
-              onValueChange={(v) => setDraft({ ...draft, length: v as ResponseLength })}
+              value={currentPreferences.length}
+              onValueChange={(v) => commitDraft({ ...currentPreferences, length: v as ResponseLength })}
               options={RESPONSE_LENGTHS.map((l) => ({ value: l, label: copy.responseLengthLabels[l] }))}
             />
           </div>
@@ -92,8 +85,8 @@ export function ResponsePreferencesEditor() {
             <label className="sjp-label" htmlFor="resp-language">{copy.responsePreferences.aiLanguage}</label>
             <SjpSelect
               id="resp-language"
-              value={draft.language}
-              onValueChange={(v) => setDraft({ ...draft, language: v })}
+              value={currentPreferences.language}
+              onValueChange={(v) => commitDraft({ ...currentPreferences, language: v })}
               options={RESPONSE_LANGUAGES.map((l) => ({
                 value: l,
                 label: copy.responseLanguageLabels[l],
@@ -110,27 +103,11 @@ export function ResponsePreferencesEditor() {
               id="resp-extra"
               className="sjp-textarea"
               placeholder={copy.responsePreferences.extraPlaceholder}
-              value={draft.extra_instructions ?? ''}
-              onChange={(e) => setDraft({ ...draft, extra_instructions: e.currentTarget.value })}
+              value={currentPreferences.extra_instructions ?? ''}
+              onChange={(e) =>
+                commitDraft({ ...currentPreferences, extra_instructions: e.currentTarget.value })
+              }
             />
-          </div>
-
-          <div className="sjp-actions">
-            <button type="submit" className="sjp-btn sjp-btn--primary">
-              <svg
-                className="sjp-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-              {copy.responsePreferences.saveButton}
-            </button>
           </div>
 
           {errorCode ? (
@@ -143,7 +120,7 @@ export function ResponsePreferencesEditor() {
               {copy.responsePreferences.savedAt(savedAt)}
             </p>
           ) : null}
-        </form>
+        </div>
       </section>
       <ShijingAiModelConfigSection />
     </>

@@ -1,8 +1,10 @@
 // W04 — persistence adapter tests under Mirror Architecture v1.
 
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
+import { SHIJING_INDEXEDDB_VERSION } from '../src/product/persistence/indexeddb-adapter.ts';
 import { InMemoryPersistenceAdapter } from '../src/product/persistence/in-memory-adapter.ts';
 import {
   createDebouncedSaver,
@@ -16,6 +18,32 @@ import {
   validReading,
   validShiJingSpace,
 } from './_fixtures.mjs';
+
+const TAURI_MAIN_SOURCE = readFileSync(
+  new URL('../src-tauri/src/main.rs', import.meta.url),
+  'utf8',
+);
+const INDEXEDDB_ADAPTER_SOURCE = readFileSync(
+  new URL('../src/product/persistence/indexeddb-adapter.ts', import.meta.url),
+  'utf8',
+);
+
+test('local persistence keeps the stable ShiJingSpace file while scanning recent storage aliases', () => {
+  assert.equal(SHIJING_INDEXEDDB_VERSION, 3);
+  assert.match(TAURI_MAIN_SOURCE, /const SHIJING_SPACE_FILE: &str = "shijing-space\.json";/);
+  assert.match(TAURI_MAIN_SOURCE, /const SHIJING_SPACE_FILE_CANDIDATES: \[&str; 3\]/);
+  assert.match(TAURI_MAIN_SOURCE, /"shijing-space\.v3\.json"/);
+  assert.match(TAURI_MAIN_SOURCE, /"shijing-space\.v2\.json"/);
+});
+
+test('IndexedDB generation upgrade preserves existing user-data store', () => {
+  assert.equal(SHIJING_INDEXEDDB_VERSION, 3);
+  assert.doesNotMatch(INDEXEDDB_ADAPTER_SOURCE, /\.deleteObjectStore\(/);
+  assert.match(
+    INDEXEDDB_ADAPTER_SOURCE,
+    /if \(!db\.objectStoreNames\.contains\(SHIJING_INDEXEDDB_STORE\)\) \{\s*db\.createObjectStore\(SHIJING_INDEXEDDB_STORE\);/s,
+  );
+});
 
 test('in-memory adapter round-trips a valid mirror-architecture ShiJingSpace', async () => {
   const adapter = new InMemoryPersistenceAdapter();

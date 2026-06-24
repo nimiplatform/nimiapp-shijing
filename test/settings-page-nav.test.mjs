@@ -74,6 +74,9 @@ function cssBlockInAtRule(atRule, selector) {
 
 test('settings detail page renders a module nav for the settings sub-page', () => {
   assert.match(settingsPageSource, /settingsModuleNavItems/);
+  assert.match(settingsPageSource, /useState/);
+  assert.match(settingsPageSource, /activeSettingsModuleId/);
+  assert.match(settingsPageSource, /setActiveSettingsModuleId/);
   assert.match(settingsPageSource, /settingsScrollRef/);
   assert.match(settingsPageSource, /settingsNavRef/);
   assert.match(settingsPageSource, /touchScrollRef/);
@@ -91,6 +94,12 @@ test('settings detail page renders a module nav for the settings sub-page', () =
   assert.match(settingsPageSource, /type="button"/);
   assert.match(settingsPageSource, /aria-controls=\{item\.targetId\}/);
   assert.match(settingsPageSource, /scrollToSettingsModule\(item\.targetId\)/);
+  assert.match(settingsPageSource, /updateActiveSettingsModule/);
+  assert.match(settingsPageSource, /onScroll=\{handleSettingsContentScroll\}/);
+  assert.match(settingsPageSource, /setActiveSettingsModuleId\(targetId\)/);
+  assert.match(settingsPageSource, /const active = item\.targetId === activeSettingsModuleId/);
+  assert.match(settingsPageSource, /aria-current=\{active \? 'location' : undefined\}/);
+  assert.match(settingsPageSource, /data-active=\{active \? 'true' : undefined\}/);
   assert.match(settingsPageSource, /const targetRect = target\.getBoundingClientRect\(\)/);
   assert.match(settingsPageSource, /const navRect = nav\.getBoundingClientRect\(\)/);
   assert.match(settingsPageSource, /scrollContainer\.scrollTop \+ targetRect\.top - navRect\.top/);
@@ -115,6 +124,26 @@ test('settings cards expose stable module anchors for left navigation', () => {
   assert.match(settingsSurfacesSource, /id="settings-diagnostics"/);
 });
 
+test('response preferences save immediately without an explicit save action', () => {
+  assert.match(responsePreferencesSource, /const currentPreferences = state\.snapshot\.settings\.response_preferences/);
+  assert.match(responsePreferencesSource, /function commitDraft\(nextDraft: ResponsePreferences\)/);
+  assert.match(responsePreferencesSource, /commitResponsePreferences\(state\.snapshot,\s*nextDraft\)/);
+  assert.match(responsePreferencesSource, /value=\{currentPreferences\.tone\}/);
+  assert.match(responsePreferencesSource, /value=\{currentPreferences\.length\}/);
+  assert.match(responsePreferencesSource, /value=\{currentPreferences\.language\}/);
+  assert.match(responsePreferencesSource, /value=\{currentPreferences\.extra_instructions \?\? ''\}/);
+  assert.match(responsePreferencesSource, /commitDraft\(\{\s*\.\.\.currentPreferences,\s*tone:/);
+  assert.match(responsePreferencesSource, /commitDraft\(\{\s*\.\.\.currentPreferences,\s*length:/);
+  assert.match(responsePreferencesSource, /commitDraft\(\{\s*\.\.\.currentPreferences,\s*language:/);
+  assert.match(responsePreferencesSource, /commitDraft\(\{\s*\.\.\.currentPreferences,\s*extra_instructions:/);
+  assert.doesNotMatch(responsePreferencesSource, /const \[draft/);
+  assert.doesNotMatch(responsePreferencesSource, /function save\(/);
+  assert.doesNotMatch(responsePreferencesSource, /onSubmit=/);
+  assert.doesNotMatch(responsePreferencesSource, /type="submit"/);
+  assert.doesNotMatch(responsePreferencesSource, /copy\.responsePreferences\.saveButton/);
+  assert.doesNotMatch(responsePreferencesSource, /className="sjp-actions"/);
+});
+
 test('settings sub-pages use the same content width as NianJing', () => {
   const nianjingBase = cssBlockFromSource(mirrorV1Styles, '.shijing-tab');
   const layout = cssBlock('.shijing-settings-page--styled .nimi-page-detail-layout');
@@ -133,6 +162,12 @@ test('settings module nav pins the page chrome while only the module pane scroll
   const nav = cssBlock('.shijing-settings-page--styled .shijing-settings-page__surface-nav');
   const content = cssBlock('.shijing-settings-page--styled .shijing-settings-page__content-scroll');
   const item = cssBlock('.shijing-settings-page--styled .shijing-settings-page__surface-nav-item');
+  const activeItem = cssBlock(
+    ".shijing-settings-page--styled .shijing-settings-page__surface-nav-item[aria-current='location']",
+  );
+  const activeFocusItem = cssBlock(
+    ".shijing-settings-page--styled .shijing-settings-page__surface-nav-item[aria-current='location']:focus-visible",
+  );
   const target = cssBlock(
     '.shijing-settings-page--styled .sjp-card[id^="settings-"]',
   );
@@ -165,6 +200,16 @@ test('settings module nav pins the page chrome while only the module pane scroll
   assert.match(item, /background:\s*transparent/);
   assert.match(item, /cursor:\s*pointer/);
   assert.match(item, /text-align:\s*left/);
+  assert.match(activeItem, /color:\s*var\(--sjp-accent-hover\)/);
+  assert.match(activeItem, /background:\s*var\(--sjp-accent-soft\)/);
+  assert.match(activeItem, /width:\s*calc\(100% \+ 12px\)/);
+  assert.match(activeItem, /margin-left:\s*-6px/);
+  assert.match(activeItem, /margin-right:\s*-6px/);
+  assert.match(activeItem, /padding-left:\s*18px/);
+  assert.match(activeItem, /padding-right:\s*18px/);
+  assert.match(activeItem, /box-shadow:\s*none/);
+  assert.doesNotMatch(activeItem, /inset 0 0 0 1px/);
+  assert.match(activeFocusItem, /box-shadow:\s*none/);
   assert.match(target, /scroll-margin-top:\s*0/);
   assert.match(mobileBody, /grid-template-columns:\s*1fr/);
   assert.match(mobileNav, /position:\s*relative/);

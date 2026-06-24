@@ -91,7 +91,11 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
     void loadInitialSnapshot(client).then((outcome) => {
       if (cancelled) return;
       if (outcome.status.kind === 'loaded' && outcome.snapshot) {
-        rawDispatch({ type: 'snapshot/replace', snapshot: outcome.snapshot });
+        rawDispatch({
+          type: 'snapshot/replace',
+          snapshot: outcome.snapshot,
+          default_tab_policy: 'derive',
+        });
         lastSavedRef.current = outcome.snapshot;
       } else if (outcome.status.kind === 'loaded') {
         lastSavedRef.current = props.snapshot;

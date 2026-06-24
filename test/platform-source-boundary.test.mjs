@@ -3,6 +3,10 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const viteConfig = readFileSync(new URL('../vite.config.ts', import.meta.url), 'utf8');
+const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+const tauriConfig = JSON.parse(
+  readFileSync(new URL('../src-tauri/tauri.conf.json', import.meta.url), 'utf8'),
+);
 const styles = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
 
 function blockAfter(label) {
@@ -23,4 +27,11 @@ test('dev resolver treats local Nimi SDK and Kit source as the only platform con
   assert.doesNotMatch(blockAfter('include'), /@nimiplatform\/(?:sdk|kit)/);
   assert.match(styles, /@source "\.\.\/\.\.\/\.\.\/nimi\/kit\/\*\*\/\*\.\{ts,tsx\}";/);
   assert.doesNotMatch(styles, /@nimiplatform\/kit\/dist/);
+});
+
+test('tauri dev shell loads the exact IPv4 Vite endpoint that dev:renderer binds', () => {
+  const devRenderer = packageJson.scripts['dev:renderer'];
+  assert.match(devRenderer, /vite --host 127\.0\.0\.1 --port 1430 --strictPort/);
+  assert.equal(tauriConfig.build.beforeDevCommand, 'pnpm run dev:renderer');
+  assert.equal(tauriConfig.build.devUrl, 'http://127.0.0.1:1430');
 });

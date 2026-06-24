@@ -19,6 +19,11 @@ struct ShiJingStorageDirs {
 }
 
 const SHIJING_SPACE_FILE: &str = "shijing-space.json";
+const SHIJING_SPACE_FILE_CANDIDATES: [&str; 3] = [
+    SHIJING_SPACE_FILE,
+    "shijing-space.v3.json",
+    "shijing-space.v2.json",
+];
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -33,19 +38,35 @@ struct ShiJingSpaceSavePayload {
     snapshot_json: String,
 }
 
+fn shijing_space_path_for(
+    storage_root: &str,
+    file_name: &str,
+) -> Result<std::path::PathBuf, String> {
+    runtime_app_storage::scoped_storage_child(storage_root, "shijing data root", file_name)
+}
+
 fn shijing_space_path(storage_root: &str) -> Result<std::path::PathBuf, String> {
-    runtime_app_storage::scoped_storage_child(storage_root, "shijing data root", SHIJING_SPACE_FILE)
+    shijing_space_path_for(storage_root, SHIJING_SPACE_FILE)
+}
+
+fn shijing_space_candidate_paths(storage_root: &str) -> Result<Vec<std::path::PathBuf>, String> {
+    SHIJING_SPACE_FILE_CANDIDATES
+        .iter()
+        .map(|file_name| shijing_space_path_for(storage_root, file_name))
+        .collect()
 }
 
 #[tauri::command]
 fn shijing_space_load(payload: ShiJingSpaceStorageRootPayload) -> Result<Option<String>, String> {
-    let path = shijing_space_path(&payload.storage_root)?;
-    if !path.exists() {
-        return Ok(None);
+    for path in shijing_space_candidate_paths(&payload.storage_root)? {
+        if !path.exists() {
+            continue;
+        }
+        return std::fs::read_to_string(&path)
+            .map(Some)
+            .map_err(|error| format!("read shijing space failed ({}): {error}", path.display()));
     }
-    std::fs::read_to_string(&path)
-        .map(Some)
-        .map_err(|error| format!("read shijing space failed ({}): {error}", path.display()))
+    Ok(None)
 }
 
 #[tauri::command]
@@ -85,12 +106,14 @@ fn shijing_space_save(payload: ShiJingSpaceSavePayload) -> Result<(), String> {
 
 #[tauri::command]
 fn shijing_space_clear(payload: ShiJingSpaceStorageRootPayload) -> Result<(), String> {
-    let path = shijing_space_path(&payload.storage_root)?;
-    if !path.exists() {
-        return Ok(());
+    for path in shijing_space_candidate_paths(&payload.storage_root)? {
+        if !path.exists() {
+            continue;
+        }
+        std::fs::remove_file(&path)
+            .map_err(|error| format!("clear shijing space failed ({}): {error}", path.display()))?;
     }
-    std::fs::remove_file(&path)
-        .map_err(|error| format!("clear shijing space failed ({}): {error}", path.display()))
+    Ok(())
 }
 
 #[tauri::command]

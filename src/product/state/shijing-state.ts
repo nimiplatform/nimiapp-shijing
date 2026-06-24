@@ -20,6 +20,7 @@ import {
   SHIJING_IA_TABS,
   type ShijingTabId,
 } from '../../contracts/ia-contract.ts';
+import { defaultPrimaryTabForSpace } from '../onboarding/startup-intake.ts';
 
 export const ALL_TAB_IDS: readonly ShijingTabId[] = SHIJING_IA_TABS.map((tab) => tab.id);
 
@@ -29,6 +30,7 @@ export type SnapshotStatus =
 
 export interface ShijingViewState {
   readonly active_tab: ShijingTabId;
+  readonly active_tab_selection: 'default' | 'user';
   readonly snapshot: ShiJingSpace;
   readonly snapshot_status: SnapshotStatus;
   readonly pending_shijing_source_reading_ids: readonly string[];
@@ -44,7 +46,11 @@ export interface ShijingViewState {
 
 export type ShijingAction =
   | { type: 'tab/activate'; tab: ShijingTabId }
-  | { type: 'snapshot/replace'; snapshot: ShiJingSpace }
+  | {
+      type: 'snapshot/replace';
+      snapshot: ShiJingSpace;
+      default_tab_policy?: 'derive' | 'preserve';
+    }
   | { type: 'shijing/import-source-reading'; reading_id: string }
   | { type: 'shijing/clear-import-bus' }
   | { type: 'shijing/remove-source-reading'; reading_id: string }
@@ -61,7 +67,8 @@ function snapshotStatusFor(snapshot: ShiJingSpace): SnapshotStatus {
 
 export function createInitialState(snapshot: ShiJingSpace): ShijingViewState {
   return {
-    active_tab: SHIJING_IA_TABS[0]!.id,
+    active_tab: defaultPrimaryTabForSpace(snapshot),
+    active_tab_selection: 'default',
     snapshot,
     snapshot_status: snapshotStatusFor(snapshot),
     pending_shijing_source_reading_ids: [],
@@ -74,11 +81,15 @@ export function shijingReducer(state: ShijingViewState, action: ShijingAction): 
   switch (action.type) {
     case 'tab/activate':
       if (!ALL_TAB_IDS.includes(action.tab)) return state;
-      if (state.active_tab === action.tab) return state;
-      return { ...state, active_tab: action.tab };
+      if (state.active_tab === action.tab && state.active_tab_selection === 'user') return state;
+      return { ...state, active_tab: action.tab, active_tab_selection: 'user' };
     case 'snapshot/replace':
       return {
         ...state,
+        active_tab:
+          action.default_tab_policy === 'derive' && state.active_tab_selection === 'default'
+            ? defaultPrimaryTabForSpace(action.snapshot)
+            : state.active_tab,
         snapshot: action.snapshot,
         snapshot_status: snapshotStatusFor(action.snapshot),
         // If a pending source reading was deleted from the snapshot,
