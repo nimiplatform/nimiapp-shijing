@@ -5,20 +5,16 @@
 // (旺衰 ←→ 阶段, BaZi only), the tendency pills + confidence line, and a
 // 寄语 closing note. The full narrative (今日基调 + 今日事件解析) stays folded
 // behind 展开完整解读 so the surface reads as a single takeaway, not a wall
-// of text. An icon-only refresh control is pinned to the top-right corner.
+// of text. The primary generate / refresh control lives in MirrorPageHeader.
 
 import { useState } from 'react';
-import { Tooltip } from '@nimiplatform/kit/ui';
 
-import { ChevronDownIcon, HeartIcon, RefreshIcon } from './rijing-icons.tsx';
+import { ChevronDownIcon, HeartIcon } from './rijing-icons.tsx';
 import type { RiJingHeroContent } from './rijing-derive.ts';
 import { useProductCopy } from '../../i18n/copy.ts';
 
 export interface RiJingHeroProps {
   readonly content: RiJingHeroContent;
-  readonly refreshDisabled: boolean;
-  readonly refreshAriaLabel: string;
-  readonly onRefresh: () => void;
   readonly emptyAction?: {
     readonly label: string;
     readonly onClick: () => void;
@@ -39,18 +35,6 @@ export function RiJingHero(props: RiJingHeroProps) {
       className={`shijing-rijing__hero${content.hasReading ? '' : ' shijing-rijing__hero--empty'}`}
       aria-labelledby="shijing-rijing__hero-headline"
     >
-      <Tooltip content={props.refreshAriaLabel} placement="left">
-        <button
-          type="button"
-          className="shijing-rijing__hero-refresh"
-          onClick={props.onRefresh}
-          disabled={props.refreshDisabled}
-          aria-label={props.refreshAriaLabel}
-        >
-          <RefreshIcon />
-        </button>
-      </Tooltip>
-
       <div className="shijing-rijing__hero-eyebrow" aria-hidden>
         <span className="shijing-rijing__hero-eyebrow-dash" />
         <span>{content.eyebrow}</span>

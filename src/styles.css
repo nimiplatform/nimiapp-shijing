@@ -8,6 +8,7 @@
  * load after. These must precede `@import 'tailwindcss'` because CSS imports
  * are only valid before normal rules. */
 @import './styles-mirror-v1.css';
+@import './styles-mirror-header.css';
 @import './styles-rijing-rich.css';
 @import './styles-yuejing-rich.css';
 @import './styles-nianjing-rich.css';

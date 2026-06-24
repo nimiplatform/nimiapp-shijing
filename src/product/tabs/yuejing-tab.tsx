@@ -68,6 +68,8 @@ import {
 import { CitationDrawer } from './shared/citation-drawer.tsx';
 import { ImportToShiJingButton } from './shared/import-to-shijing-button.tsx';
 import { FailureBanner } from './shared/failure-banner.tsx';
+import { MirrorPageHeader } from './shared/mirror-page-header.tsx';
+import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
 import {
   YUEJING_MONTH_TENDENCY_CLASSES,
   YUEJING_TENDENCY_SEVERITY,
@@ -259,7 +261,11 @@ function nextMissingYuejingDate(input: {
 
 // ===== Top-level component ==========================================
 
-export function YueJingTab() {
+export interface YueJingTabProps {
+  readonly onRequestOpenSettings?: (page?: ShijingSettingsPageId) => void;
+}
+
+export function YueJingTab(props: YueJingTabProps) {
   const {
     state,
     replace_snapshot,
@@ -480,6 +486,14 @@ export function YueJingTab() {
     if (removed) return 'removed';
     return 'none';
   }, [reading, activeTagIds, activeTagIdSet]);
+  const generatedAgo = latestReading?.created_at
+    ? relativeTimeShort(latestReading.created_at)
+    : null;
+  const generateLabel = nextGenerationDate === null
+    ? '已完成'
+    : nextGenerationDate === today
+      ? '生成 30 日'
+      : '继续生成';
 
   return (
     <section
@@ -487,15 +501,24 @@ export function YueJingTab() {
       data-mirror-kind="yuejing"
       aria-label={MIRROR_KIND_LABELS.yuejing}
     >
-      <YueJingHeaderStrip
-        generating={loading}
-        canGenerate={activeTagIds.length > 0 && nextGenerationDate !== null}
-        generateLabel={nextGenerationDate === null ? '已完成' : nextGenerationDate === today ? '生成 30 日' : '继续生成'}
-        readingId={latestReading?.id ?? null}
-        readingCreatedAt={latestReading?.created_at ?? null}
-        onGenerate={() => {
-          void handleGenerate(nextGenerationDate ?? today);
-        }}
+      <MirrorPageHeader
+        title={MIRROR_KIND_LABELS.yuejing}
+        meta={generatedAgo ? <>上次生成 {generatedAgo}</> : undefined}
+        actions={(
+          <>
+            {latestReading?.id ? <ImportToShiJingButton readingId={latestReading.id} /> : null}
+            <button
+              type="button"
+              className="shijing-yuejing__generate"
+              disabled={loading || activeTagIds.length === 0 || nextGenerationDate === null}
+              onClick={() => {
+                void handleGenerate(nextGenerationDate ?? today);
+              }}
+            >
+              {loading ? '生成中…' : generateLabel}
+            </button>
+          </>
+        )}
       />
 
       {/* Inline status row above the calendar — a thin hint banner
@@ -506,9 +529,23 @@ export function YueJingTab() {
           请先在「设置 → 本人」中填写出生信息,月镜会据此自动推算。
         </p>
       ) : activeTagIds.length === 0 ? (
-        <p role="status" className="shijing-yuejing__notice">
-          请先在下方「关注标签」中添加并激活至少一个关注,月镜会自动着色。
-        </p>
+        <div
+          role="status"
+          aria-live="polite"
+          className="shijing-yuejing__notice shijing-yuejing__notice--action"
+        >
+          <span>
+            <strong>还没有激活关注</strong>
+            月镜需要至少一个关注作为镜片，才会自动生成 30 日倾向。
+          </span>
+          <button
+            type="button"
+            className="shijing-yuejing__notice-action"
+            onClick={() => props.onRequestOpenSettings?.('concerns')}
+          >
+            去设置关注
+          </button>
+        </div>
       ) : null}
       {tabState.kind === 'loading' ? (
         <p role="status" className="shijing-yuejing__notice">
@@ -605,43 +642,7 @@ export function YueJingTab() {
   );
 }
 
-// ===== 1) Header strip ==============================================
-
-interface YueJingHeaderStripProps {
-  readonly generating: boolean;
-  readonly canGenerate: boolean;
-  readonly generateLabel: string;
-  readonly readingId: string | null;
-  readonly readingCreatedAt: string | null;
-  readonly onGenerate: () => void;
-}
-
-function YueJingHeaderStrip(props: YueJingHeaderStripProps) {
-  const ago = props.readingCreatedAt ? relativeTimeShort(props.readingCreatedAt) : null;
-  return (
-    <header className="shijing-yuejing__strip">
-      <div className="shijing-yuejing__strip-titles">
-        <h1>{MIRROR_KIND_LABELS.yuejing}</h1>
-      </div>
-      <div className="shijing-yuejing__strip-actions">
-        <div className="shijing-yuejing__strip-buttons">
-          {props.readingId ? <ImportToShiJingButton readingId={props.readingId} /> : null}
-          <button
-            type="button"
-            className="shijing-yuejing__generate"
-            disabled={props.generating || !props.canGenerate}
-            onClick={props.onGenerate}
-          >
-            {props.generating ? '生成中…' : props.generateLabel}
-          </button>
-        </div>
-        {ago ? <small className="shijing-yuejing__ago">上次生成 {ago}</small> : null}
-      </div>
-    </header>
-  );
-}
-
-// ===== 2) Today hero ================================================
+// ===== 1) Today hero ================================================
 
 function YueJingTodayHero(props: {
   readonly date: string;

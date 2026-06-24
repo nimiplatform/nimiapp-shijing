@@ -62,9 +62,16 @@ import {
 import { CitationDrawer } from './shared/citation-drawer.tsx';
 import { ImportToShiJingButton } from './shared/import-to-shijing-button.tsx';
 import { FailureBanner } from './shared/failure-banner.tsx';
+import { MirrorPageHeader } from './shared/mirror-page-header.tsx';
 import { NianJingEventRecorder } from './nianjing/nianjing-event-recorder.tsx';
 import { nianjingFreshnessView } from './nianjing/nianjing-staleness.ts';
 import { buildNianJingDirectDisplayOutput } from './nianjing/nianjing-direct-output.ts';
+import {
+  buildNianJingYearModules,
+  nianjingYearSegmentFlex,
+  type NianJingYearCell,
+  type NianJingYearModule,
+} from './nianjing/nianjing-year-modules.ts';
 import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
 
 // ===== Pure helpers (no React) =======================================
@@ -286,6 +293,16 @@ function formatDateDots(iso: string): string {
   return iso.replaceAll('-', '.');
 }
 
+function bandDurationLabel(band: NianJingPhaseBand): string {
+  const days = Math.max(1, Math.round((dateToMs(band.end_date) - dateToMs(band.start_date)) / 86_400_000));
+  if (days >= 330) {
+    const years = Math.max(1, Math.round(days / 365));
+    return years === 1 ? '约 1 年' : `约 ${years} 年`;
+  }
+  if (days >= 60) return `约 ${Math.round(days / 30)} 个月`;
+  return `约 ${days} 天`;
+}
+
 // User-facing explanations for each inflection kind. Rendered in the
 // right-side drawer when the user clicks a marker — surfaces what the
 // marker means in plain language without requiring the user to know
@@ -476,6 +493,16 @@ export function NianJingTab(props: NianJingTabProps) {
     (!loading && activeTagIds.length > 0 && !output && directDisplay && !directDisplay.ok
       ? directDisplay.failure
       : null);
+  const importableReadingId = freshness.can_import_to_consultation ? reading?.id ?? null : null;
+  const generatedAgo = reading?.created_at ? relativeTimeShort(reading.created_at) : null;
+  const generatedAgoPrefix = viewingPrevious ? '上一版生成' : '上次生成';
+  const actionLabel = loading
+    ? '生成中...'
+    : importableReadingId
+      ? '更新可引用版本'
+      : output
+        ? '保存可引用版本'
+        : '生成长程相位';
 
   return (
     <section
@@ -483,24 +510,53 @@ export function NianJingTab(props: NianJingTabProps) {
       data-mirror-kind="nianjing"
       aria-label={MIRROR_KIND_LABELS.nianjing}
     >
-      <NianJingHeaderStrip
-        generating={loading}
-        canGenerate={activeTagIds.length > 0}
-        readingId={
-          freshness.can_import_to_consultation ? reading?.id ?? null : null
-        }
-        readingCreatedAt={reading?.created_at ?? null}
-        onGenerate={handleGenerate}
-        hasDisplayOutput={output !== null}
-        hasPreviousReading={hasPreviousReading}
-        viewingPrevious={viewingPrevious}
-        onToggleVersion={() => setViewingPrevious((v) => !v)}
+      <MirrorPageHeader
+        title={MIRROR_KIND_LABELS.nianjing}
+        meta={generatedAgo ? <>{generatedAgoPrefix} {generatedAgo}</> : undefined}
+        actions={(
+          <>
+            {importableReadingId ? <ImportToShiJingButton readingId={importableReadingId} /> : null}
+            <button
+              type="button"
+              className="shijing-nianjing__generate"
+              disabled={loading || activeTagIds.length === 0}
+              onClick={handleGenerate}
+            >
+              <span className="shijing-nianjing__generate-icon" aria-hidden />
+              {actionLabel}
+            </button>
+          </>
+        )}
+        footer={hasPreviousReading ? (
+          <button
+            type="button"
+            className="shijing-nianjing__version-toggle"
+            onClick={() => setViewingPrevious((v) => !v)}
+            aria-pressed={viewingPrevious}
+          >
+            {viewingPrevious ? '回到最新版 →' : '← 还原上一版'}
+          </button>
+        ) : undefined}
       />
 
       {activeTagIds.length === 0 ? (
-        <p role="status" className="shijing-nianjing__notice">
-          请先在下方「关注标签」中添加并激活至少一个关注。
-        </p>
+        <div
+          role="status"
+          aria-live="polite"
+          className="shijing-nianjing__notice shijing-nianjing__notice--action"
+        >
+          <span>
+            <strong>还没有激活关注</strong>
+            年镜需要至少一个关注作为长程相位的镜片。
+          </span>
+          <button
+            type="button"
+            className="shijing-nianjing__notice-action"
+            onClick={() => props.onRequestOpenSettings?.('concerns')}
+          >
+            去设置关注
+          </button>
+        </div>
       ) : null}
       {loading ? (
         <p role="status" className="shijing-nianjing__notice">正在生成长程相位…</p>
@@ -534,71 +590,7 @@ export function NianJingTab(props: NianJingTabProps) {
   );
 }
 
-// ===== 1) Header strip ==============================================
-
-interface NianJingHeaderStripProps {
-  readonly generating: boolean;
-  readonly canGenerate: boolean;
-  readonly readingId: string | null;
-  readonly readingCreatedAt: string | null;
-  readonly onGenerate: () => void;
-  readonly hasDisplayOutput: boolean;
-  readonly hasPreviousReading: boolean;
-  readonly viewingPrevious: boolean;
-  readonly onToggleVersion: () => void;
-}
-
-function NianJingHeaderStrip(props: NianJingHeaderStripProps) {
-  const ago = props.readingCreatedAt ? relativeTimeShort(props.readingCreatedAt) : null;
-  const agoPrefix = props.viewingPrevious ? '上一版生成' : '上次生成';
-  const actionLabel = props.generating
-    ? '生成中...'
-    : props.readingId
-      ? '更新可引用版本'
-      : props.hasDisplayOutput
-        ? '保存可引用版本'
-        : '生成长程相位';
-  return (
-    <header className="shijing-nianjing__strip">
-      <div className="shijing-nianjing__strip-titles">
-        <h1>{MIRROR_KIND_LABELS.nianjing}</h1>
-      </div>
-      <div className="shijing-nianjing__strip-actions">
-        <div className="shijing-nianjing__strip-buttons">
-          {props.readingId ? <ImportToShiJingButton readingId={props.readingId} /> : null}
-          <button
-            type="button"
-            className="shijing-nianjing__generate"
-            disabled={props.generating || !props.canGenerate}
-            onClick={props.onGenerate}
-          >
-            <span className="shijing-nianjing__generate-icon" aria-hidden />
-            {actionLabel}
-          </button>
-        </div>
-        <div className="shijing-nianjing__strip-footer">
-          {ago ? (
-            <small className="shijing-nianjing__ago">
-              {agoPrefix} {ago}
-            </small>
-          ) : null}
-          {props.hasPreviousReading ? (
-            <button
-              type="button"
-              className="shijing-nianjing__version-toggle"
-              onClick={props.onToggleVersion}
-              aria-pressed={props.viewingPrevious}
-            >
-              {props.viewingPrevious ? '回到最新版 →' : '← 还原上一版'}
-            </button>
-          ) : null}
-        </div>
-      </div>
-    </header>
-  );
-}
-
-// ===== 2) Ready view (hero + filter row + timeline + footer) =========
+// ===== 1) Ready view (hero + filter row + timeline + footer) =========
 
 interface LaneViewModel {
   readonly tag: ConcernTag;
@@ -672,6 +664,19 @@ function NianJingReadyView(props: NianJingReadyViewProps) {
         : null,
     [props.activeTags, props.filterTagId],
   );
+  const yearOverviewTags = useMemo(
+    () => (focusedTag ? [focusedTag] : props.activeTags),
+    [focusedTag, props.activeTags],
+  );
+  const yearModules = useMemo(
+    () =>
+      buildNianJingYearModules({
+        output: props.output,
+        active_concern_tags: yearOverviewTags,
+        today,
+      }),
+    [props.output, yearOverviewTags, today],
+  );
   const horizonStartMs = dateToMs(props.output.horizon.start_date);
   const horizonEndMs = dateToMs(props.output.horizon.end_date);
   const horizonSpan = Math.max(1, horizonEndMs - horizonStartMs);
@@ -706,6 +711,12 @@ function NianJingReadyView(props: NianJingReadyViewProps) {
         activeTags={props.activeTags}
         filterTagId={props.filterTagId}
         onFilterChange={props.onFilterChange}
+      />
+
+      <NianJingYearOverview
+        modules={yearModules}
+        activeTags={yearOverviewTags}
+        onSelectDetail={props.onSelectDetail}
       />
 
       <NianJingTimeline
@@ -1107,7 +1118,164 @@ function FilterPill(props: {
   );
 }
 
-// ===== 5) Long-horizon timeline =====================================
+// ===== 5) Annual module overview ====================================
+
+function cellPrimaryLabel(cell: NianJingYearCell): string {
+  return cell.primary_nature ? TENDENCY_CLASS_LABELS[cell.primary_nature] : '—';
+}
+
+function NianJingYearOverview(props: {
+  readonly modules: readonly NianJingYearModule[];
+  readonly activeTags: readonly ConcernTag[];
+  readonly onSelectDetail: (selection: SelectedDetail) => void;
+}) {
+  const tagsById = useMemo(
+    () => new Map(props.activeTags.map((tag) => [tag.id, tag])),
+    [props.activeTags],
+  );
+
+  if (props.modules.length === 0 || props.activeTags.length === 0) {
+    return null;
+  }
+
+  return (
+    <article
+      className="shijing-nianjing__year-overview"
+      aria-label="年镜年度模块总览"
+    >
+      <header className="shijing-nianjing__year-overview-head">
+        <h2>年度总览</h2>
+        <span>按关注主题展开</span>
+      </header>
+      <div className="shijing-nianjing__year-grid">
+        <div className="shijing-nianjing__year-labels" aria-hidden>
+          <span className="shijing-nianjing__year-label-head">关注</span>
+          {props.activeTags.map((tag) => (
+            <span className="shijing-nianjing__year-row-label" key={tag.id}>
+              {trimmedConcernLabel(tag)}
+            </span>
+          ))}
+        </div>
+        {props.modules.map((module) => (
+          <div
+            className="shijing-nianjing__year-column"
+            data-current={module.is_current_year ? 'true' : undefined}
+            key={module.year}
+          >
+            <span className="shijing-nianjing__year-head">
+              {module.is_current_year ? (
+                <small className="shijing-nianjing__year-now">现在</small>
+              ) : null}
+              {module.year}
+            </span>
+            {module.cells.map((cell) => (
+              <NianJingYearCellView
+                key={cell.concern_tag_ref}
+                cell={cell}
+                tag={tagsById.get(cell.concern_tag_ref) ?? null}
+                onSelectDetail={props.onSelectDetail}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+    </article>
+  );
+}
+
+function NianJingYearCellView(props: {
+  readonly cell: NianJingYearCell;
+  readonly tag: ConcernTag | null;
+  readonly onSelectDetail: (selection: SelectedDetail) => void;
+}) {
+  const primaryLabel = cellPrimaryLabel(props.cell);
+  const ariaLabel = `${props.cell.year} ${props.cell.label} ${primaryLabel}`;
+  const primarySegment = props.cell.primary_segment;
+  const primaryTooltip = primarySegment
+    ? `${formatDateDots(primarySegment.start_date)} → ${formatDateDots(primarySegment.end_date)} · ${primaryLabel}`
+    : ariaLabel;
+
+  return (
+    <div
+      className="shijing-nianjing__year-cell"
+      data-nature={props.cell.primary_nature ?? 'empty'}
+      data-current={props.cell.is_current_year ? 'true' : undefined}
+      aria-label={ariaLabel}
+    >
+      {primarySegment ? (
+        <Tooltip content={primaryTooltip} placement="top">
+          <button
+            type="button"
+            className="shijing-nianjing__year-cell-main"
+            aria-label={`${props.cell.year} ${props.cell.label} ${primaryLabel}阶段`}
+            onClick={() => {
+              if (!props.tag) return;
+              props.onSelectDetail({
+                kind: 'band',
+                band: primarySegment.band,
+                tag: props.tag,
+              });
+            }}
+          >
+            <span className="shijing-nianjing__year-cell-label">{primaryLabel}</span>
+          </button>
+        </Tooltip>
+      ) : (
+        <span className="shijing-nianjing__year-cell-main" aria-hidden>
+          <span className="shijing-nianjing__year-cell-label">{primaryLabel}</span>
+        </span>
+      )}
+      {props.cell.segments.length > 1 ? (
+        <div className="shijing-nianjing__year-cell-stripe" aria-hidden>
+          {props.cell.segments.map((segment) => (
+            <span
+              key={`${segment.start_date}-${segment.end_date}-${segment.nature}`}
+              className="shijing-nianjing__year-cell-stripe-segment"
+              data-nature={segment.nature}
+              data-current={segment.is_current ? 'true' : undefined}
+              style={{ flex: nianjingYearSegmentFlex(segment) }}
+            />
+          ))}
+        </div>
+      ) : null}
+      {props.cell.inflections.length > 0 ? (
+        <div
+          className="shijing-nianjing__year-markers"
+          aria-label={`${props.cell.year} ${props.cell.label} 拐点`}
+        >
+          {props.cell.inflections.map((inflection, i) => {
+            const kindLabel = INFLECTION_KIND_LABELS[inflection.kind];
+            const tooltip = `${formatDateDots(inflection.date)} · ${kindLabel}`;
+            return (
+              <Tooltip
+                key={`${inflection.date}-${inflection.kind}-${i}`}
+                content={tooltip}
+                placement="top"
+              >
+                <button
+                  type="button"
+                  className="shijing-nianjing__year-marker"
+                  data-kind={inflection.kind}
+                  aria-label={`${props.cell.year} ${props.cell.label} ${kindLabel}`}
+                  onClick={() => {
+                    if (!props.tag) return;
+                    props.onSelectDetail({
+                      kind: 'inflection',
+                      inflection,
+                      tag: props.tag,
+                    });
+                  }}
+                />
+              </Tooltip>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// ===== 6) Long-horizon timeline =====================================
 
 interface NianJingTimelineProps {
   readonly lanes: readonly LaneViewModel[];
@@ -1344,6 +1512,7 @@ function renderBandContent(
   const concernLabel = trimmedConcernLabel(tag);
   const guidance = NATURE_GUIDANCE[band.nature];
   const subst = (s: string): string => substituteConcernPlaceholder(s, concernLabel);
+  const durationLabel = bandDurationLabel(band);
 
   return (
     <>
@@ -1371,13 +1540,15 @@ function renderBandContent(
         </p>
       </header>
 
-      <section className="shijing-nianjing__band-detail-card shijing-nianjing__band-detail-meaning">
-        <h3>这一阶段代表什么?</h3>
+      <section className="shijing-nianjing__band-detail-story">
+        <span className="shijing-nianjing__band-detail-kicker">阶段主线</span>
         <p>{subst(guidance.meaning)}</p>
       </section>
 
-      <section className="shijing-nianjing__band-detail-keywords">
-        <h4>关键词</h4>
+      <section className="shijing-nianjing__band-detail-signals" aria-label="这一阶段的信号">
+        <span className="shijing-nianjing__band-detail-signal-lead">
+          {durationLabel}里最值得记住的信号
+        </span>
         <ul className="shijing-nianjing__band-detail-keyword-pills">
           {guidance.keywords.map((kw) => (
             <li key={kw}>{kw}</li>
@@ -1385,19 +1556,16 @@ function renderBandContent(
         </ul>
       </section>
 
-      <section className="shijing-nianjing__band-detail-card shijing-nianjing__band-detail-suggestions">
-        <h4>
-          <span className="shijing-nianjing__band-detail-h4-dot" aria-hidden />
-          适合做
-        </h4>
-        <ul>
+      <section className="shijing-nianjing__band-detail-guidance">
+        <h3>把这段时间用在这里</h3>
+        <ol className="shijing-nianjing__band-detail-guidance-list">
           {guidance.suggestions.map((item, i) => (
             <li key={item.title}>
               <span
-                className="shijing-nianjing__band-detail-item-num"
+                className="shijing-nianjing__band-detail-guidance-index"
                 aria-hidden
               >
-                {i + 1}
+                {String(i + 1).padStart(2, '0')}
               </span>
               <div>
                 <strong>{subst(item.title)}</strong>
@@ -1405,53 +1573,27 @@ function renderBandContent(
               </div>
             </li>
           ))}
-        </ul>
-      </section>
-
-      <section className="shijing-nianjing__band-detail-card shijing-nianjing__band-detail-cautions">
-        <h4>
-          <span
-            className="shijing-nianjing__band-detail-h4-dot"
-            data-tone="caution"
-            aria-hidden
-          />
-          提醒
-        </h4>
-        <ul>
+        </ol>
+        <div className="shijing-nianjing__band-detail-guardrails">
+          <span className="shijing-nianjing__band-detail-guardrails-label">
+            需要守住的边界
+          </span>
           {guidance.cautions.map((item) => (
-            <li key={item.title}>
-              <span
-                className="shijing-nianjing__band-detail-caution-icon"
-                aria-hidden
-              >
-                !
-              </span>
-              <div>
-                <strong>{subst(item.title)}</strong>
-                <p>{subst(item.description)}</p>
-              </div>
-            </li>
+            <p key={item.title}>
+              <strong>{subst(item.title)}</strong>
+              <span>{subst(item.description)}</span>
+            </p>
           ))}
-        </ul>
+        </div>
       </section>
 
-      <footer className="shijing-nianjing__band-detail-footer">
-        <div className="shijing-nianjing__band-detail-footer-row">
-          <span className="shijing-nianjing__band-detail-footer-label">
-            时间范围
-          </span>
-          <span className="shijing-nianjing__band-detail-footer-value">
-            {formatDateDots(band.start_date)} → {formatDateDots(band.end_date)}
-          </span>
-        </div>
-        <div className="shijing-nianjing__band-detail-footer-row">
-          <span className="shijing-nianjing__band-detail-footer-label">
-            生成依据
-          </span>
-          <span className="shijing-nianjing__band-detail-footer-value">
-            基于当前关注主题「{concernLabel}」与年镜长程相位变化生成。
-          </span>
-        </div>
+      <footer className="shijing-nianjing__band-detail-footnotes">
+        <span>
+          时间 {formatDateDots(band.start_date)} → {formatDateDots(band.end_date)}
+        </span>
+        <span>
+          依据 当前关注「{concernLabel}」与年镜长程相位变化
+        </span>
       </footer>
 
       <NianJingEventRecorder

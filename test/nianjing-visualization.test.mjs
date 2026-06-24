@@ -34,6 +34,27 @@ function stripJsComments(src) {
     .replace(/^[ \t]*\/\/.*$/gm, '');
 }
 
+function stripCssComments(source) {
+  return source.replace(/\/\*[\s\S]*?\*\//g, '');
+}
+
+function cssBlockFromSource(source, selector) {
+  const blocks = [];
+  for (const match of source.matchAll(/([^{}]+)\{([^{}]*)\}/gu)) {
+    const selectorList = match[1].split(',').map((item) => item.trim());
+    if (selectorList.includes(selector)) {
+      blocks.push(match[2]);
+    }
+  }
+  return blocks.join('\n');
+}
+
+function cssBlock(source, selector) {
+  const block = cssBlockFromSource(source, selector);
+  assert.notEqual(block, '', `Missing CSS selector: ${selector}`);
+  return block;
+}
+
 test('NianJing tab executable source contains no forbidden authoritative visualization tokens', () => {
   const raw = readFileSync(new URL('../src/product/tabs/nianjing-tab.tsx', import.meta.url), 'utf8');
   const src = stripJsComments(raw);
@@ -44,6 +65,79 @@ test('NianJing tab executable source contains no forbidden authoritative visuali
       `nianjing-tab.tsx executable code must not contain ${pattern}; found a match`,
     );
   }
+});
+
+test('NianJing phase drawer reads as a narrative guidance flow instead of modular template cards', () => {
+  const source = readFileSync(new URL('../src/product/tabs/nianjing-tab.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /className="shijing-nianjing__band-detail-story"/);
+  assert.match(source, /className="shijing-nianjing__band-detail-signals"/);
+  assert.match(source, /className="shijing-nianjing__band-detail-guidance"/);
+  assert.match(source, /className="shijing-nianjing__band-detail-footnotes"/);
+  assert.doesNotMatch(
+    source,
+    /shijing-nianjing__band-detail-card shijing-nianjing__band-detail-(meaning|suggestions|cautions)/,
+  );
+  assert.doesNotMatch(source, />这一阶段代表什么\?</);
+  assert.doesNotMatch(source, />适合做</);
+});
+
+test('NianJing phase drawer styles use a continuous reading surface', () => {
+  const css = stripCssComments(
+    readFileSync(new URL('../src/styles-nianjing-rich.css', import.meta.url), 'utf8'),
+  );
+  const drawer = cssBlock(css, '.shijing-nianjing__inflection-drawer[data-kind="band"]');
+  const story = cssBlock(css, '.shijing-nianjing__band-detail-story');
+  const guidance = cssBlock(css, '.shijing-nianjing__band-detail-guidance');
+
+  assert.match(drawer, /gap:\s*18px/);
+  assert.match(story, /padding:\s*2px 4px 0/);
+  assert.match(story, /border-left:\s*2px solid/);
+  assert.match(guidance, /grid-template-columns:\s*1fr/);
+  assert.doesNotMatch(guidance, /border-radius:\s*18px/);
+});
+
+test('NianJing tab renders annual modules as a derived overview before the detailed timeline', () => {
+  const source = readFileSync(new URL('../src/product/tabs/nianjing-tab.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /buildNianJingYearModules/);
+  assert.match(source, /<NianJingYearOverview/);
+  assert.match(source, /className="shijing-nianjing__year-overview"/);
+  assert.match(source, /className="shijing-nianjing__year-column"/);
+  assert.match(source, /className="shijing-nianjing__year-cell"/);
+  assert.match(source, /className="shijing-nianjing__year-cell-main"/);
+  assert.match(source, /className="shijing-nianjing__year-cell-stripe-segment"/);
+  assert.doesNotMatch(
+    source,
+    /className="shijing-nianjing__year-cell-segment"/,
+    'annual overview should not render each clipped phase as a primary button',
+  );
+  assert.match(source, /className="shijing-nianjing__year-marker"/);
+});
+
+test('NianJing annual module CSS is a horizontal year matrix, not a score chart', () => {
+  const css = stripCssComments(
+    readFileSync(new URL('../src/styles-nianjing-rich.css', import.meta.url), 'utf8'),
+  );
+  const overview = cssBlock(css, '.shijing-nianjing__year-overview');
+  const grid = cssBlock(css, '.shijing-nianjing__year-grid');
+  const column = cssBlock(css, '.shijing-nianjing__year-column');
+  const cell = cssBlock(css, '.shijing-nianjing__year-cell');
+  const main = cssBlock(css, '.shijing-nianjing__year-cell-main');
+  const stripeSegment = cssBlock(css, '.shijing-nianjing__year-cell-stripe-segment');
+  const marker = cssBlock(css, '.shijing-nianjing__year-marker');
+
+  assert.match(overview, /overflow-x:\s*auto/);
+  assert.match(grid, /grid-auto-flow:\s*column/);
+  assert.match(column, /grid-template-rows:/);
+  assert.match(cell, /min-height:\s*72px/);
+  assert.match(main, /position:\s*absolute/);
+  assert.match(main, /inset:\s*0/);
+  assert.match(main, /min-width:\s*0/);
+  assert.match(stripeSegment, /flex:/);
+  assert.match(marker, /border-radius:\s*999px/);
+  assert.match(marker, /min-width:\s*0/);
+  assert.match(marker, /display:\s*block/);
 });
 
 test('NianJing CSS lane classes are present', () => {

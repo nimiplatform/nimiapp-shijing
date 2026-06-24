@@ -214,7 +214,7 @@ function renderActiveTab(
     case 'rijing':
       return <RiJingTab onRequestOpenSettings={onRequestOpenSettings} />;
     case 'yuejing':
-      return <YueJingTab />;
+      return <YueJingTab onRequestOpenSettings={onRequestOpenSettings} />;
     case 'nianjing':
       return <NianJingTab onRequestOpenSettings={onRequestOpenSettings} />;
     case 'mingjing':

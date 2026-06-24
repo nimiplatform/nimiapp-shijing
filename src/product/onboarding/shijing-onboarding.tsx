@@ -25,7 +25,6 @@ export function ShijingOnboarding(props: ShijingOnboardingProps) {
   const selfReady = selfReadiness.ok;
   const concernReady = activeConcernCount > 0;
   const complete = selfReady && concernReady;
-  const nextPanel: OnboardingPanel = selfReady ? 'concerns' : 'profile';
   const progressText = complete
     ? copy.onboarding.done
     : selfReady
@@ -88,15 +87,6 @@ export function ShijingOnboarding(props: ShijingOnboardingProps) {
             </li>
           </ol>
           <div className="shijing-onboarding__actions">
-            {!complete ? (
-              <button
-                type="button"
-                className="shijing-onboarding__next"
-                onClick={() => setActivePanel(nextPanel)}
-              >
-                {selfReady ? copy.onboarding.continueConcerns : copy.onboarding.continueProfile}
-              </button>
-            ) : null}
             <button
               type="button"
               className="shijing-onboarding__confirm"

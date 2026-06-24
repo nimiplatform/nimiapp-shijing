@@ -1,0 +1,72 @@
+/* Shared month-style page header for RiJing / YueJing / NianJing.
+ * MingJing and ShiJing intentionally keep distinct header structures. */
+
+.shijing-mirror-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 16px;
+}
+
+.shijing-mirror-header__titles {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-width: 0;
+}
+
+.shijing-mirror-header__titles h1 {
+  margin: 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-mirror-header__meta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--shijing-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.shijing-mirror-header__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.shijing-mirror-header__buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shijing-mirror-header__footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+@media (max-width: 760px) {
+  .shijing-mirror-header {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-mirror-header__actions {
+    align-items: flex-start;
+  }
+
+  .shijing-mirror-header__footer {
+    justify-content: flex-start;
+  }
+}

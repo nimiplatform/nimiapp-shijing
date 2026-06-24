@@ -57,7 +57,7 @@ test('onboarding active step uses the Nimi primary green border token', () => {
   assert.match(activeStep, /border-color:\s*var\(--nimi-action-primary-bg\)/);
 });
 
-test('onboarding entry button stays green and compact without an extra CTA oval', () => {
+test('onboarding entry button is green only when enabled and compact without an extra CTA oval', () => {
   const confirmButton = cssBlock('.shijing-onboarding__confirm');
   const tabConfirmButton = cssBlock('.shijing-tab .shijing-onboarding__confirm');
   const confirmButtonHover = cssBlock('.shijing-onboarding__confirm:hover:not(:disabled)');
@@ -74,7 +74,9 @@ test('onboarding entry button stays green and compact without an extra CTA oval'
   assert.match(tabConfirmButton, /padding:\s*0 20px/);
   assert.match(confirmButtonHover, /background-color:\s*var\(--rijing-accent-hover\)/);
   assert.match(confirmButtonHover, /opacity:\s*1/);
-  assert.match(disabledButton, /background:\s*var\(--shijing-brand-primary\)/);
+  assert.match(disabledButton, /background:\s*color-mix\(in srgb,\s*var\(--shijing-text-muted\)\s+18%,\s*#fff\)/);
+  assert.match(disabledButton, /border:\s*1px solid color-mix\(in srgb,\s*var\(--shijing-text-muted\)\s+24%,\s*transparent\)/);
+  assert.match(disabledButton, /color:\s*color-mix\(in srgb,\s*var\(--shijing-text-muted\)\s+74%,\s*#fff\)/);
   assert.match(disabledButton, /opacity:\s*1/);
   assert.match(disabledButton, /box-shadow:\s*none/);
   assert.match(completeActionDock, /padding:\s*0/);
@@ -84,14 +86,28 @@ test('onboarding entry button stays green and compact without an extra CTA oval'
   assert.match(completeActionDock, /box-shadow:\s*none/);
 });
 
-test('onboarding disabled entry buttons keep a high-contrast surface under the tab button cascade', () => {
+test('onboarding disabled entry buttons stay unlit under the tab button cascade', () => {
   const desktopDisabled = cssBlock('.shijing-tab .shijing-onboarding__confirm:disabled');
   const mobileDisabled = cssBlock('.shijing-tab .shijing-onboarding__mobile-confirm:disabled');
 
-  assert.match(desktopDisabled, /background:\s*var\(--shijing-brand-primary\)/);
-  assert.match(desktopDisabled, /color:\s*#fff/);
-  assert.match(mobileDisabled, /background:\s*var\(--shijing-brand-primary\)/);
-  assert.match(mobileDisabled, /color:\s*#fff/);
+  for (const block of [desktopDisabled, mobileDisabled]) {
+    assert.match(block, /background:\s*color-mix\(in srgb,\s*var\(--shijing-text-muted\)\s+18%,\s*#fff\)/);
+    assert.match(block, /border:\s*1px solid color-mix\(in srgb,\s*var\(--shijing-text-muted\)\s+24%,\s*transparent\)/);
+    assert.match(block, /color:\s*color-mix\(in srgb,\s*var\(--shijing-text-muted\)\s+74%,\s*#fff\)/);
+    assert.doesNotMatch(block, /var\(--shijing-brand-primary\)/);
+  }
+});
+
+test('onboarding desktop actions expose only the MingJing entry CTA', () => {
+  const source = readFileSync(
+    new URL('../src/product/onboarding/shijing-onboarding.tsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.doesNotMatch(source, /shijing-onboarding__next/);
+  assert.doesNotMatch(source, /continueProfile/);
+  assert.doesNotMatch(source, /continueConcerns/);
+  assert.match(source, /className="shijing-onboarding__confirm"/);
 });
 
 test('onboarding complete entry button keeps an opaque fill inside the wide CTA dock on hover', () => {

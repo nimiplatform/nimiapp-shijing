@@ -64,32 +64,8 @@
   --rijing-card-border: rgba(23, 32, 42, 0.06);
   --rijing-card-shadow: 0 1px 2px rgba(23, 32, 42, 0.03),
     0 8px 22px -14px rgba(23, 32, 42, 0.16);
-}
 
-.shijing-rijing__header {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.shijing-rijing__title {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.shijing-rijing__title h1 {
-  margin: 0;
-  line-height: 1.1;
-}
-
-.shijing-rijing__date {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 13.5px;
-  color: var(--shijing-text-secondary);
+  gap: 18px;
 }
 
 .shijing-rijing__date-main {
@@ -101,13 +77,84 @@
   color: var(--shijing-text-muted);
 }
 
+/* ----- Header actions --------------------------------------------- */
+
+.shijing-rijing .shijing-import-to-consultation {
+  margin-top: 0;
+  font-size: 14px;
+  padding: 9px 18px;
+  border-radius: 999px;
+}
+
+.shijing-rijing .shijing-rijing__generate {
+  background: var(--rijing-accent);
+  color: #fff;
+  border: 0;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px -4px rgba(78, 204, 163, 0.45);
+  cursor: pointer;
+}
+
+.shijing-rijing .shijing-rijing__generate:hover:not(:disabled) {
+  background: var(--rijing-accent-hover);
+}
+
+.shijing-rijing .shijing-rijing__generate:disabled {
+  background: var(--shijing-text-disabled);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
 .shijing-rijing__empty-tags {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
   color: var(--shijing-text-secondary);
   font-size: 13px;
-  padding: 12px 14px;
+  padding: 16px 18px;
+  border-radius: var(--shijing-radius-lg);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--rijing-accent) 15%, transparent), rgba(255, 255, 255, 0.78));
+  border: 1px solid color-mix(in srgb, var(--rijing-accent) 32%, transparent);
+  box-shadow: 0 16px 40px rgba(80, 146, 125, 0.12);
+}
+
+.shijing-rijing__empty-tags p {
+  margin: 4px 0 0;
+}
+
+.shijing-rijing__empty-tags-title {
+  display: block;
+  color: var(--shijing-text-primary);
+  font-size: 15px;
+}
+
+.shijing-rijing__empty-tags-action {
+  appearance: none;
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--rijing-accent) 48%, transparent);
   border-radius: var(--shijing-radius-md);
-  background: color-mix(in srgb, var(--rijing-accent) 6%, transparent);
-  border: 1px solid color-mix(in srgb, var(--rijing-accent) 18%, transparent);
+  background: color-mix(in srgb, var(--rijing-accent) 16%, white);
+  color: var(--shijing-text-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shijing-rijing__empty-tags-action:hover {
+  background: color-mix(in srgb, var(--rijing-accent) 26%, white);
+  border-color: color-mix(in srgb, var(--rijing-accent) 64%, transparent);
+}
+
+.shijing-rijing__empty-tags-action:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--rijing-accent) 58%, transparent);
+  outline-offset: 3px;
 }
 
 /* ----- Startup onboarding ---------------------------------------- */
@@ -202,9 +249,9 @@
 }
 
 .shijing-onboarding__confirm,
-.shijing-onboarding__next,
 .shijing-onboarding__mobile-confirm {
   appearance: none;
+  box-sizing: border-box;
   border: 0;
   border-radius: 999px;
   cursor: pointer;
@@ -258,9 +305,10 @@
 .shijing-onboarding__mobile-confirm:disabled,
 .shijing-tab .shijing-onboarding__confirm:disabled,
 .shijing-tab .shijing-onboarding__mobile-confirm:disabled {
-  background: var(--shijing-brand-primary);
-  background-color: var(--shijing-brand-primary);
-  color: #fff;
+  background: color-mix(in srgb, var(--shijing-text-muted) 18%, #fff);
+  background-color: color-mix(in srgb, var(--shijing-text-muted) 18%, #fff);
+  border: 1px solid color-mix(in srgb, var(--shijing-text-muted) 24%, transparent);
+  color: color-mix(in srgb, var(--shijing-text-muted) 74%, #fff);
   cursor: not-allowed;
   opacity: 1;
   box-shadow: none;
@@ -360,21 +408,6 @@
 
 .shijing-onboarding__actions:has(.shijing-onboarding__confirm:not(:disabled)) .shijing-onboarding__confirm {
   width: 100%;
-}
-
-.shijing-onboarding__next {
-  min-height: 42px;
-  padding: 0 18px;
-  border: 1px solid color-mix(in srgb, var(--rijing-accent) 35%, transparent);
-  background: color-mix(in srgb, var(--rijing-accent) 12%, #fff);
-  color: var(--rijing-accent-hover);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.shijing-onboarding__next:hover {
-  background: color-mix(in srgb, var(--rijing-accent) 18%, #fff);
-  transform: translateY(-1px);
 }
 
 .shijing-onboarding__workbench {
@@ -526,45 +559,6 @@
 
 .shijing-rijing__hero--empty {
   opacity: 0.96;
-}
-
-.shijing-tab .shijing-rijing__hero-refresh {
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  appearance: none;
-  background: var(--nimi-surface-card, rgba(255, 255, 255, 0.7));
-  border: 1px solid var(--shijing-border-subtle);
-  color: var(--shijing-text-muted);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease, transform 320ms ease;
-}
-
-.shijing-tab .shijing-rijing__hero-refresh:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--rijing-accent) 12%, transparent);
-  border-color: color-mix(in srgb, var(--rijing-accent) 24%, transparent);
-  color: var(--rijing-accent);
-}
-
-.shijing-tab .shijing-rijing__hero-refresh:active:not(:disabled) {
-  transform: rotate(180deg);
-}
-
-.shijing-tab .shijing-rijing__hero-refresh:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.shijing-rijing__hero-refresh svg {
-  width: 16px;
-  height: 16px;
 }
 
 .shijing-rijing__hero-eyebrow {
@@ -1653,19 +1647,6 @@
   color: var(--rijing-ink-faint);
 }
 
-.shijing-rijing__actions-footer {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.shijing-rijing .shijing-import-to-consultation {
-  margin-top: 0;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 9px 17px;
-  border-radius: 10px;
-}
-
 /* ----- 推演依据与数据说明 ----- */
 
 .shijing-rijing .shijing-rijing__data {
@@ -2051,7 +2032,12 @@
     display: none;
   }
 
-  .shijing-onboarding__next {
+  .shijing-rijing__empty-tags {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .shijing-rijing__empty-tags-action {
     width: 100%;
   }
 

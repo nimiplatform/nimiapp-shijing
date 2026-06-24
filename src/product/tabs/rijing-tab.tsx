@@ -4,14 +4,14 @@
 // one takeaway; depth is folded behind explicit toggles so the surface no
 // longer lays every detail out flat:
 //
-//   Header             — "日镜" title + inline date / weekday
+//   Header             — "日镜" title + inline date / weekday + primary controls
 //   RiJingHero         — 今日总览: conclusion + energy meter + tendency /
 //                        confidence, with the full 解读 (今日基调 + 今日事件解析)
 //                        folded behind 展开完整解读
 //   RiJingProjections  — 今日关注分镜: lens filter + collapsible concern rows
 //   RiJingEventInput   — 今日参照: today's reference events (inline edit /
 //                        delete) + composer → upsertEventMemory
-//   RiJingActions      — 今日行动: 做一件事 / 说一句话 + 导入到时镜咨询
+//   RiJingActions      — 今日行动: 做一件事 / 说一句话
 //   RiJingDataSection  — 推演依据与数据说明: evidence chips + an expandable data
 //                        panel that folds in the 资料完整度 readiness signal
 
@@ -38,6 +38,8 @@ import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
 import type { ShijingSettingsFocusTarget } from '../settings/settings-page-view.tsx';
 import type { PersistenceLifecycleStatus } from '../state/persistence-bridge.ts';
 import { FailureBanner } from './shared/failure-banner.tsx';
+import { ImportToShiJingButton } from './shared/import-to-shijing-button.tsx';
+import { MirrorPageHeader } from './shared/mirror-page-header.tsx';
 import {
   deriveRiJingActions,
   deriveRiJingDataPanel,
@@ -327,6 +329,14 @@ export function RiJingTab(props: RiJingTabProps) {
           : tabState.kind === 'failure'
             ? copy.rijing.refreshAria.regenerate
             : copy.rijing.refreshAria.refresh;
+  const refreshButtonLabel = loading
+    ? copy.rijing.refreshAria.loading
+    : tabState.kind === 'failure'
+      ? copy.rijing.refreshAria.regenerate
+      : currentReading
+        ? copy.rijing.refreshAria.refresh
+        : copy.rijing.emptyActions.ready_to_generate;
+  const importableReadingId = tabState.kind === 'ready' ? tabState.reading.id : null;
 
   const projections =
     tabState.kind === 'ready' && tabState.reading.output.mirror_kind === 'rijing'
@@ -339,21 +349,49 @@ export function RiJingTab(props: RiJingTabProps) {
       data-mirror-kind="rijing"
       aria-label={copy.mirrorKindLabels.rijing}
     >
-      <header className="shijing-rijing__header">
-        <div className="shijing-rijing__title">
-          <h1 id="shijing-rijing-heading">{copy.mirrorKindLabels.rijing}</h1>
-          <span className="shijing-rijing__date" aria-hidden>
+      <MirrorPageHeader
+        title={copy.mirrorKindLabels.rijing}
+        headingId="shijing-rijing-heading"
+        metaAriaHidden
+        meta={(
+          <>
             <span className="shijing-rijing__date-main">{dateLabel.date}</span>
             <span className="shijing-rijing__date-sep" aria-hidden>·</span>
             <span>{dateLabel.weekday}</span>
-          </span>
-        </div>
-      </header>
+          </>
+        )}
+        actions={(
+          <>
+            {importableReadingId ? <ImportToShiJingButton readingId={importableReadingId} /> : null}
+            <button
+              type="button"
+              className="shijing-rijing__generate"
+              disabled={refreshDisabled}
+              onClick={handleGenerate}
+              aria-label={refreshAriaLabel}
+            >
+              {refreshButtonLabel}
+            </button>
+          </>
+        )}
+      />
 
       {activeTagIds.length === 0 ? (
-        <p className="shijing-rijing__empty-tags" role="status">
-          {copy.rijing.emptyTagsStatus}
-        </p>
+        <div className="shijing-rijing__empty-tags" role="status" aria-live="polite">
+          <div>
+            <strong className="shijing-rijing__empty-tags-title">
+              {copy.rijing.emptyTagsTitle}
+            </strong>
+            <p>{copy.rijing.emptyTagsStatus}</p>
+          </div>
+          <button
+            type="button"
+            className="shijing-rijing__empty-tags-action"
+            onClick={() => props.onRequestOpenSettings?.('concerns')}
+          >
+            {copy.rijing.emptyTagsAction}
+          </button>
+        </div>
       ) : null}
 
       {tabState.kind === 'loading' ? (
@@ -364,9 +402,6 @@ export function RiJingTab(props: RiJingTabProps) {
       ) : null}
       <RiJingHero
         content={hero}
-        refreshDisabled={refreshDisabled}
-        refreshAriaLabel={refreshAriaLabel}
-        onRefresh={handleGenerate}
         emptyAction={heroEmptyAction}
       />
 
@@ -376,7 +411,6 @@ export function RiJingTab(props: RiJingTabProps) {
 
       <RiJingActions
         items={actions}
-        importReadingId={tabState.kind === 'ready' ? tabState.reading.id : undefined}
       />
 
       <RiJingDataSection

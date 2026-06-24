@@ -2,18 +2,15 @@
 //
 // Two calm cards: 今天做一件事 (one concrete move) and 今天说一句话 (one thing
 // worth saying), each pulled verbatim from a projection recommendation and
-// footnoted with the concern it came from. A right-aligned 「导入到时镜咨询」
-// action lets the user carry the day into a 时镜 consultation. Content comes
-// from `deriveRiJingActions`; no items → the section is not rendered.
+// footnoted with the concern it came from. Content comes from
+// `deriveRiJingActions`; no items → the section is not rendered.
 
 import { ChatIcon, PencilIcon } from './rijing-icons.tsx';
-import { ImportToShiJingButton } from '../shared/import-to-shijing-button.tsx';
 import type { RiJingActionItem, RiJingActionSlot } from './rijing-derive.ts';
 import { useProductCopy } from '../../i18n/copy.ts';
 
 export interface RiJingActionsProps {
   readonly items: readonly RiJingActionItem[];
-  readonly importReadingId?: string;
 }
 
 function IconForSlot({ slot }: { slot: RiJingActionSlot }) {
@@ -48,11 +45,6 @@ export function RiJingActions(props: RiJingActionsProps) {
           </li>
         ))}
       </ul>
-      {props.importReadingId ? (
-        <div className="shijing-rijing__actions-footer">
-          <ImportToShiJingButton readingId={props.importReadingId} />
-        </div>
-      ) : null}
     </section>
   );
 }

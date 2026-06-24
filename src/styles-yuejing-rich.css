@@ -71,7 +71,6 @@
 
 /* The mirror-v1 baseline wraps every direct article/section in a card.
  * The rich layout draws its own framing per block, so reset that. */
-.shijing-yuejing > .shijing-yuejing__strip,
 .shijing-yuejing > .shijing-yuejing__hero,
 .shijing-yuejing > .shijing-yuejing__filter-row,
 .shijing-yuejing > .shijing-yuejing__calendar,
@@ -83,46 +82,7 @@
   box-shadow: none;
 }
 
-/* ----- 1) Header strip ------------------------------------------- */
-
-.shijing-yuejing__strip {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: end;
-  gap: 16px;
-}
-
-.shijing-yuejing__strip-titles h1 {
-  font-size: 32px;
-  letter-spacing: 0.04em;
-  margin: 0 0 6px;
-}
-
-.shijing-yuejing__meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--shijing-text-secondary);
-  margin: 0;
-}
-
-.shijing-yuejing__meta [aria-hidden] {
-  color: var(--shijing-text-muted);
-}
-
-.shijing-yuejing__strip-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-}
-
-.shijing-yuejing__strip-buttons {
-  display: flex;
-  gap: 10px;
-}
+/* ----- 1) Header actions ----------------------------------------- */
 
 /* The shared import button is `.shijing-import-to-consultation`; let it
  * adopt the pill shape used by the YueJing header. */
@@ -153,11 +113,6 @@
   box-shadow: none;
 }
 
-.shijing-yuejing__ago {
-  color: var(--shijing-text-muted);
-  font-size: 12px;
-}
-
 /* ----- 2) Generic notice / stale banners ------------------------- */
 
 .shijing-yuejing__notice {
@@ -170,6 +125,59 @@
   color: var(--shijing-text-secondary);
   text-align: center;
   box-shadow: var(--yuejing-glass-shadow);
+}
+
+.shijing-yuejing__notice--action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  text-align: left;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--yuejing-supportive) 13%, transparent), rgba(255, 255, 255, 0.82));
+  border-color: color-mix(in srgb, var(--yuejing-supportive) 30%, transparent);
+}
+
+.shijing-yuejing__notice--action strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--shijing-text-primary);
+  font-size: 15px;
+}
+
+.shijing-yuejing__notice-action {
+  appearance: none;
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--yuejing-supportive) 46%, transparent);
+  border-radius: var(--shijing-radius-md);
+  background: color-mix(in srgb, var(--yuejing-supportive) 15%, white);
+  color: var(--shijing-text-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shijing-yuejing__notice-action:hover {
+  background: color-mix(in srgb, var(--yuejing-supportive) 25%, white);
+  border-color: color-mix(in srgb, var(--yuejing-supportive) 62%, transparent);
+}
+
+.shijing-yuejing__notice-action:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--yuejing-supportive) 58%, transparent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .shijing-yuejing__notice--action {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .shijing-yuejing__notice-action {
+    width: 100%;
+  }
 }
 
 .shijing-yuejing__stale {
@@ -2493,8 +2501,6 @@
 /* ----- 9) Responsive --------------------------------------------- */
 
 @media (max-width: 720px) {
-  .shijing-yuejing__strip { grid-template-columns: 1fr; }
-  .shijing-yuejing__strip-actions { align-items: flex-start; }
   .shijing-yuejing > .shijing-yuejing__hero { grid-template-columns: minmax(0, 1fr); padding: 20px; }
   .shijing-yuejing__hero-tendency strong { font-size: 40px; }
   .shijing-yuejing__filter-row { border-radius: var(--shijing-radius-lg); padding: 12px 14px; }
