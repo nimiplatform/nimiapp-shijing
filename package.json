@@ -19,11 +19,14 @@
     "build:shell": "tauri build",
     "lint": "pnpm run i18n:check && pnpm run i18n:audit && pnpm run typecheck && eslint . --max-warnings 0 && (cd src-tauri && cargo check)",
     "test": "node --test test/*.test.mjs test/golden/*.test.mjs",
-    "check": "pnpm run typecheck && pnpm run test && pnpm run lint",
+    "check": "pnpm run check:ai-context-budget && pnpm run check:ai-structure-budget && pnpm run typecheck && pnpm run test && pnpm run lint",
+    "check:ai-context-budget": "pnpm nimicoding:validate-ai-governance --profile shijing --scope context-budget",
+    "check:ai-structure-budget": "pnpm nimicoding:validate-ai-governance --profile shijing --scope structure-budget",
     "i18n:check": "node scripts/i18n-check.mjs",
     "i18n:audit": "node scripts/i18n-audit.mjs",
     "nimicoding": "nimicoding",
-    "nimicoding:doctor": "nimicoding doctor"
+    "nimicoding:doctor": "nimicoding doctor",
+    "nimicoding:validate-ai-governance": "pnpm exec nimicoding validate-ai-governance"
   },
   "dependencies": {
     "@nimiplatform/kit": "link:../../nimi/kit",
