@@ -12,7 +12,15 @@ const interpretationSource = readFileSync(
   new URL('../src/product/tabs/yuejing-month-interpretation.ts', import.meta.url),
   'utf8',
 );
-const monthPanelSurface = `${tabSource}\n${interpretationSource}`;
+const monthPanelSource = readFileSync(
+  new URL('../src/product/tabs/yuejing/yuejing-month-panel.tsx', import.meta.url),
+  'utf8',
+);
+const monthPanelCopySource = readFileSync(
+  new URL('../src/product/tabs/yuejing/yuejing-copy.ts', import.meta.url),
+  'utf8',
+);
+const monthPanelSurface = `${tabSource}\n${interpretationSource}\n${monthPanelSource}\n${monthPanelCopySource}`;
 
 test('YueJing 30-day drawer exposes the actionable interpretation sections', () => {
   // The numbered sections of the redesigned「30 日解读」panel
@@ -34,12 +42,12 @@ test('YueJing 30-day drawer exposes the actionable interpretation sections', () 
   }
 
   assert.match(
-    tabSource,
+    monthPanelSource,
     /<details\s+className="shijing-yuejing__month-evidence"/,
     'generation basis must stay collapsible',
   );
 });
 
 test('YueJing 30-day drawer copy avoids absolute prediction wording', () => {
-  assert.doesNotMatch(tabSource, /必然|一定|注定/);
+  assert.doesNotMatch(monthPanelSurface, /必然|一定|注定/);
 });

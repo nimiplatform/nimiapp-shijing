@@ -11,8 +11,7 @@
 // and example prompt chips. Every AI answer still displays its cited
 // readings (design-system: ShiJing) and the generation依据 drawer.
 
-import { useEffect, useMemo, useRef, useState, type FormEvent, type SVGProps } from 'react';
-import { Tooltip } from '@nimiplatform/kit/ui';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { ShiJingMirrorOutput } from '../../domain/mirror-output.ts';
 import type { ReadingGenerationFailure } from '../../domain/reading.ts';
 import type { Conversation, ConversationTurn } from '../../domain/conversation.ts';
@@ -26,182 +25,26 @@ import {
 } from '../ids/index.ts';
 import { latestReadingByMirrorKind } from '../reading/reading-selectors.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
-import { useProductCopy, type ProductCopy } from '../i18n/copy.ts';
+import { useProductCopy } from '../i18n/copy.ts';
 import { consultationMirrorScopeFor } from './mirror-scope-helpers.ts';
 import { resolveShiJingSourceReadingIds } from './shijing-source-readings.ts';
 import { CitationDrawer } from './shared/citation-drawer.tsx';
 import { FailureBanner } from './shared/failure-banner.tsx';
 import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
-import type { ConcernTag } from '../../domain/concern-tag.ts';
-import { InlineConcernEditorPopover } from '../concern-tags/inline-concern-editor.tsx';
-import { trimmedConcernLabel } from '../concern-tags/concern-presets.ts';
+import { sendConversationFollowUp } from '../conversations/conversation-follow-up.ts';
+import { ArchiveTray, ContextFocusBar, ConversationThread } from './shijing/shijing-context-widgets.tsx';
+import { ShiJingComposer } from './shijing/shijing-composer.tsx';
+import { ShiJingHistoryRail } from './shijing/shijing-history-rail.tsx';
 import {
-  sendConversationFollowUp,
-  type ConversationFollowUpFailure,
-} from '../conversations/conversation-follow-up.ts';
-
-type IconProps = SVGProps<SVGSVGElement>;
-
-function ArrowUpIcon(props: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      {...props}
-    >
-      <path d="M12 18V6" />
-      <path d="M7 11l5-5 5 5" />
-    </svg>
-  );
-}
-
-function SearchIcon(props: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      {...props}
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m16 16 4 4" />
-    </svg>
-  );
-}
-
-function FilterIcon(props: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      {...props}
-    >
-      <path d="M4 6h16" />
-      <path d="M7 12h10" />
-      <path d="M10 18h4" />
-    </svg>
-  );
-}
-
-function nowIso(): string {
-  return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
-}
-
-function firstUserQuestion(conv: Conversation, copy: ProductCopy): string {
-  const turn = conv.turns.find((t) => t.role === 'user');
-  return turn?.body ?? copy.shijing.unrecordedQuestion;
-}
-
-function concernMatchesQuestion(question: string, tag: ConcernTag): boolean {
-  const q = question.trim().toLocaleLowerCase();
-  if (q.length === 0) return false;
-  const tokens = [
-    tag.label,
-    trimmedConcernLabel(tag),
-    tag.prompt_text,
-    ...tag.parsed_topics,
-  ]
-    .map((item) => item.trim().toLocaleLowerCase())
-    .filter((item) => item.length > 0);
-  return tokens.some((token) => q.includes(token) || token.includes(q));
-}
-
-function conversationMatchesConcernFilter(
-  conversation: Conversation,
-  selectedConcernIds: readonly string[],
-): boolean {
-  if (selectedConcernIds.length === 0) return true;
-  return selectedConcernIds.some((id) => conversation.concern_tag_refs.includes(id));
-}
-
-function sameStringArray(left: readonly string[], right: readonly string[]): boolean {
-  return left.length === right.length && left.every((value, index) => value === right[index]);
-}
-
-function followUpFailureAsReadingFailure(
-  failure: ConversationFollowUpFailure,
-  sourceReadingIds: readonly string[],
-): ReadingGenerationFailure {
-  if (failure.kind === 'chat_bridge_failed') {
-    return {
-      kind: 'runtime_ai_failed',
-      mirror_kind: 'shijing',
-      mirror_scope: consultationMirrorScopeFor(sourceReadingIds),
-      detail: failure.detail,
-    };
-  }
-  return {
-    kind: 'pipeline_stage_failed',
-    mirror_kind: 'shijing',
-    mirror_scope: consultationMirrorScopeFor(sourceReadingIds),
-    stage: `conversation_follow_up.${failure.kind}`,
-    detail: failure.detail,
-  };
-}
-
-// History entry timestamp: today → `HH:mm`, otherwise → `M月D日`.
-function sessionTimeLabel(iso: string, copy: ProductCopy): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(iso);
-  if (!m) return iso;
-  const todayIso = new Date().toISOString().slice(0, 10);
-  const dateIso = `${m[1]}-${m[2]}-${m[3]}`;
-  if (dateIso === todayIso) return `${m[4]}:${m[5]}`;
-  return copy.shijing.sessionDateLabel(Number(m[2]), Number(m[3]));
-}
-
-interface SessionGroup {
-  readonly label: string;
-  readonly items: readonly Conversation[];
-}
-
-// Pure presentation grouping of the history rail into 今天 / 本周 / 更早.
-// No data is mutated; ordering relies on the desc-sorted input.
-function groupConversations(
-  convs: readonly Conversation[],
-  copy: ProductCopy,
-): readonly SessionGroup[] {
-  const now = new Date();
-  const todayIso = now.toISOString().slice(0, 10);
-  const weekAgoMs = now.getTime() - 7 * 24 * 60 * 60 * 1000;
-  const today: Conversation[] = [];
-  const week: Conversation[] = [];
-  const earlier: Conversation[] = [];
-  for (const c of convs) {
-    const dateIso = c.created_at.slice(0, 10);
-    if (dateIso === todayIso) today.push(c);
-    else if (Date.parse(c.created_at) >= weekAgoMs) week.push(c);
-    else earlier.push(c);
-  }
-  return [
-    { label: copy.shijing.sessionGroups.today, items: today },
-    { label: copy.shijing.sessionGroups.week, items: week },
-    { label: copy.shijing.sessionGroups.earlier, items: earlier },
-  ].filter((g) => g.items.length > 0);
-}
-
-// A record seeded into the consultation via 去时镜问这条 — either a past
-// EventMemory or a future PlanItem, flattened to a common shape for the
-// seed-context card.
-interface SeedItem {
-  readonly kind: 'memory' | 'plan';
-  readonly id: string;
-  readonly date: string;
-  readonly body: string;
-}
+  concernMatchesQuestion,
+  conversationMatchesConcernFilter,
+  firstUserQuestion,
+  followUpFailureAsReadingFailure,
+  groupConversations,
+  nowIso,
+  sameStringArray,
+  type SeedItem,
+} from './shijing/shijing-session-model.ts';
 
 export interface ShiJingTabProps {
   readonly onRequestOpenSettings?: (page?: ShijingSettingsPageId) => void;
@@ -479,83 +322,17 @@ export function ShiJingTab(_props: ShiJingTabProps) {
     setDismissedArchiveConcernIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
   }
 
-  function toggleFilterConcern(id: string) {
-    setSelectedFilterConcernIds((ids) =>
-      ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
+  function clearSeedItem(item: SeedItem) {
+    dispatch(
+      item.kind === 'plan'
+        ? { type: 'shijing/clear-seed-plan', plan_id: item.id }
+        : { type: 'shijing/clear-seed-memory', memory_id: item.id },
     );
   }
 
-  function renderComposer() {
-    return (
-      <form
-        className="shijing-ask__composer"
-        data-chat-composer={chatActive ? 'true' : 'false'}
-        onSubmit={handleAsk}
-        aria-label={copy.shijing.composerAria}
-      >
-        <h2 className="shijing-ask__composer-title">{copy.shijing.composerTitle}</h2>
-
-        {seedItems.length > 0 ? (
-          <div className="shijing-ask__seed" aria-label={copy.shijing.seedAria}>
-            <span className="shijing-ask__seed-label">{copy.shijing.seedLabel}</span>
-            <ul className="shijing-ask__seed-list">
-              {seedItems.map((item) => (
-                <li key={`${item.kind}-${item.id}`} className="shijing-ask__seed-chip" data-kind={item.kind}>
-                  <span className="shijing-ask__seed-tag">
-                    {item.kind === 'plan' ? copy.shijing.seedKindPlan : copy.shijing.seedKindMemory}
-                  </span>
-                  <span className="shijing-ask__seed-date">{item.date}</span>
-                  <span className="shijing-ask__seed-body">{item.body}</span>
-                  <button
-                    type="button"
-                    className="shijing-ask__seed-remove"
-                    aria-label={copy.shijing.seedRemoveAria}
-                    onClick={() =>
-                      dispatch(
-                        item.kind === 'plan'
-                          ? { type: 'shijing/clear-seed-plan', plan_id: item.id }
-                          : { type: 'shijing/clear-seed-memory', memory_id: item.id },
-                      )
-                    }
-                  >
-                    x
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-
-        <textarea
-          ref={composerRef}
-          className="shijing-ask__textarea"
-          rows={2}
-          value={question}
-          onChange={(e) => setQuestion(e.currentTarget.value)}
-          placeholder={composerPlaceholder}
-          aria-label={copy.shijing.questionAria}
-        />
-
-        <div className="shijing-ask__toolbar">
-          <div className="shijing-ask__actions">
-            <div className="shijing-ask__submit-wrap">
-              {!canAsk && askReason ? (
-                <span className="shijing-ask__submit-reason">{askReason}</span>
-              ) : null}
-              <Tooltip content={askReason || submitTitle} placement="top">
-                <button
-                  type="submit"
-                  className="shijing-ask__submit"
-                  disabled={!canAsk}
-                >
-                  <ArrowUpIcon className="shijing-ask__submit-icon" />
-                  <span className="shijing-ask__submit-text">{submitLabel}</span>
-                </button>
-              </Tooltip>
-            </div>
-          </div>
-        </div>
-      </form>
+  function toggleFilterConcern(id: string) {
+    setSelectedFilterConcernIds((ids) =>
+      ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
     );
   }
 
@@ -572,134 +349,25 @@ export function ShiJingTab(_props: ShiJingTabProps) {
       </header>
 
       <div className="shijing-ask__layout">
-        <aside className="shijing-ask__rail" aria-label={copy.shijing.railAria}>
-          <div className="shijing-ask__rail-head">
-            <button
-              type="button"
-              className="shijing-ask__new-question"
-              aria-label={copy.shijing.newQuestionAria}
-              aria-current={draftingNewQuestion ? 'true' : undefined}
-              onClick={startNewQuestion}
-            >
-              <span aria-hidden>+</span>
-              {copy.shijing.newQuestion}
-            </button>
-            <div className="shijing-ask__search">
-              <div className="shijing-ask__search-row">
-                <div className="shijing-ask__search-input">
-                  <SearchIcon className="shijing-ask__search-icon" />
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.currentTarget.value)}
-                    placeholder={copy.shijing.searchPlaceholder}
-                    aria-label={copy.shijing.searchAria}
-                  />
-                </div>
-                <span className="shijing-ask__filter">
-                  <Tooltip
-                    content={
-                      selectedFilterConcernIds.length > 0
-                        ? copy.shijing.archive.filterButtonActive(selectedFilterConcernIds.length)
-                        : copy.shijing.archive.filterButton
-                    }
-                    placement="top"
-                  >
-                    <button
-                      type="button"
-                      className="shijing-ask__filter-button"
-                      aria-label={
-                        selectedFilterConcernIds.length > 0
-                          ? copy.shijing.archive.filterButtonActive(selectedFilterConcernIds.length)
-                          : copy.shijing.archive.filterButton
-                      }
-                      aria-expanded={filterOpen}
-                      aria-haspopup="menu"
-                      data-active={selectedFilterConcernIds.length > 0 ? 'true' : 'false'}
-                      onClick={() => setFilterOpen((open) => !open)}
-                    >
-                      <FilterIcon className="shijing-ask__filter-icon" />
-                    </button>
-                  </Tooltip>
-                  {filterOpen ? (
-                    <div className="shijing-ask__filter-menu" role="menu" aria-label={copy.shijing.archive.filterMenuAria}>
-                      <button
-                        type="button"
-                        className="shijing-ask__filter-option"
-                        role="menuitemcheckbox"
-                        aria-checked={selectedFilterConcernIds.length === 0}
-                        onClick={() => setSelectedFilterConcernIds([])}
-                      >
-                        <span>{copy.shijing.archive.filterAll}</span>
-                        <span aria-hidden>{selectedFilterConcernIds.length === 0 ? 'x' : ''}</span>
-                      </button>
-                      {activeConcernTags.length === 0 ? (
-                        <p className="shijing-ask__filter-empty">{copy.shijing.archive.filterEmpty}</p>
-                      ) : (
-                        activeConcernTags.map((tag) => {
-                          const selected = selectedFilterConcernIds.includes(tag.id);
-                          return (
-                            <button
-                              key={tag.id}
-                              type="button"
-                              className="shijing-ask__filter-option"
-                              role="menuitemcheckbox"
-                              aria-checked={selected}
-                              onClick={() => toggleFilterConcern(tag.id)}
-                            >
-                              <span>{trimmedConcernLabel(tag)}</span>
-                              <span aria-hidden>{selected ? 'x' : ''}</span>
-                            </button>
-                          );
-                        })
-                      )}
-                    </div>
-                  ) : null}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {sessionGroups.length === 0 ? (
-            <div className="shijing-ask__rail-empty">
-              <span className="shijing-ask__rail-empty-icon" aria-hidden>
-                ✦
-              </span>
-              <p className="shijing-ask__rail-empty-title">
-                {conversations.length === 0 ? copy.shijing.emptyHistory : copy.shijing.emptySearch}
-              </p>
-              <p className="shijing-ask__rail-empty-desc">{copy.shijing.emptyHistoryDescription}</p>
-            </div>
-          ) : (
-            <div className="shijing-ask__sessions">
-              {sessionGroups.map((group) => (
-                <div key={group.label} className="shijing-ask__session-group">
-                  <p className="shijing-ask__session-group-label">{group.label}</p>
-                  <ul>
-                    {group.items.map((conv) => (
-                      <li key={conv.id}>
-                        <button
-                          type="button"
-                          className="shijing-ask__session"
-                          aria-current={conv === resultConversation ? 'true' : undefined}
-                          onClick={() => {
-                            setDraftingNewQuestion(false);
-                            setSelectedConversationId(conv.id);
-                          }}
-                        >
-                          <span className="shijing-ask__session-q">{firstUserQuestion(conv, copy)}</span>
-                          <span className="shijing-ask__session-time">
-                            {sessionTimeLabel(conv.created_at, copy)}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          )}
-        </aside>
+        <ShiJingHistoryRail
+          search={search}
+          filterOpen={filterOpen}
+          selectedFilterConcernIds={selectedFilterConcernIds}
+          activeConcernTags={activeConcernTags}
+          sessionGroups={sessionGroups}
+          conversationsLength={conversations.length}
+          resultConversation={resultConversation}
+          draftingNewQuestion={draftingNewQuestion}
+          onSearchChange={setSearch}
+          onToggleFilterOpen={() => setFilterOpen((open) => !open)}
+          onClearFilter={() => setSelectedFilterConcernIds([])}
+          onToggleFilterConcern={toggleFilterConcern}
+          onStartNewQuestion={startNewQuestion}
+          onSelectConversation={(id) => {
+            setDraftingNewQuestion(false);
+            setSelectedConversationId(id);
+          }}
+        />
 
         <div className="shijing-ask__main" data-chat-active={chatActive ? 'true' : 'false'}>
           {chatActive ? (
@@ -713,11 +381,37 @@ export function ShiJingTab(_props: ShiJingTabProps) {
                   ) : null}
                 </article>
               ) : null}
-              {renderComposer()}
+              <ShiJingComposer
+                chatActive={chatActive}
+                seedItems={seedItems}
+                question={question}
+                composerPlaceholder={composerPlaceholder}
+                canAsk={canAsk}
+                askReason={askReason}
+                submitTitle={submitTitle}
+                submitLabel={submitLabel}
+                textareaRef={composerRef}
+                onSubmit={handleAsk}
+                onQuestionChange={setQuestion}
+                onClearSeed={clearSeedItem}
+              />
             </>
           ) : (
             <>
-              {renderComposer()}
+              <ShiJingComposer
+                chatActive={chatActive}
+                seedItems={seedItems}
+                question={question}
+                composerPlaceholder={composerPlaceholder}
+                canAsk={canAsk}
+                askReason={askReason}
+                submitTitle={submitTitle}
+                submitLabel={submitLabel}
+                textareaRef={composerRef}
+                onSubmit={handleAsk}
+                onQuestionChange={setQuestion}
+                onClearSeed={clearSeedItem}
+              />
 
           <ArchiveTray
             tags={archiveTrayTags}
@@ -759,126 +453,5 @@ export function ShiJingTab(_props: ShiJingTabProps) {
         </div>
       </div>
     </section>
-  );
-}
-
-function ArchiveTray(props: {
-  readonly tags: readonly ConcernTag[];
-  readonly selectedIds: readonly string[];
-  readonly onToggle: (id: string) => void;
-  readonly onRemove: (id: string) => void;
-}) {
-  const copy = useProductCopy();
-  if (props.tags.length === 0) return null;
-  return (
-    <section className="shijing-archive" aria-label={copy.shijing.archive.aria}>
-      <div className="shijing-archive__lead">
-        <span className="shijing-archive__icon" aria-hidden>
-          +
-        </span>
-        <span className="shijing-archive__label">{copy.shijing.archive.addPrefix}</span>
-      </div>
-      <div className="shijing-archive__chips">
-        {props.tags.map((tag) => {
-          const selected = props.selectedIds.includes(tag.id);
-          const label = trimmedConcernLabel(tag);
-          return (
-            <span key={tag.id} className="shijing-archive__chip" data-selected={selected ? 'true' : 'false'}>
-              <button
-                type="button"
-                className="shijing-archive__chip-main"
-                onClick={() => props.onToggle(tag.id)}
-              >
-                {label}
-              </button>
-              <button
-                type="button"
-                className="shijing-archive__close"
-                aria-label={copy.shijing.archive.removeAria(label)}
-                onClick={() => props.onRemove(tag.id)}
-              >
-                x
-              </button>
-            </span>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-// Context focus bar for the consultation surface. It surfaces the active
-// concern tags that will shape this reading and opens the same compact
-// inline concern editor used by the time-window mirrors.
-function ContextFocusBar(props: {
-  readonly tags: readonly ConcernTag[];
-}) {
-  const copy = useProductCopy();
-  const [editorOpen, setEditorOpen] = useState(false);
-  const active = props.tags.filter((t) => t.status === 'active');
-  return (
-    <section className="shijing-ctx" aria-label={copy.shijing.context.aria}>
-      <div className="shijing-ctx__lead">
-        <span className="shijing-ctx__icon" aria-hidden>
-          ✦
-        </span>
-        <div className="shijing-ctx__text">
-          <p className="shijing-ctx__title">{copy.shijing.context.title}</p>
-          <p className="shijing-ctx__desc">{copy.shijing.context.description}</p>
-        </div>
-      </div>
-      <div className="shijing-ctx__focus">
-        <ul className="shijing-ctx__chips">
-          {active.length === 0 ? (
-            <li className="shijing-ctx__empty">{copy.shijing.context.empty}</li>
-          ) : (
-            active.map((t) => (
-              <li key={t.id} className="shijing-ctx__chip">
-                {t.label}
-              </li>
-            ))
-          )}
-        </ul>
-        <span className="shijing-ctx__editor-anchor">
-          <button
-            type="button"
-            className="shijing-ctx__manage"
-            aria-expanded={editorOpen}
-            aria-haspopup="dialog"
-            onClick={() => setEditorOpen((open) => !open)}
-          >
-            ✎ {copy.shijing.context.manage}
-          </button>
-          {editorOpen ? (
-            <InlineConcernEditorPopover
-              classNamePrefix="shijing-ctx-editor"
-              ariaLabel={copy.shijing.context.manage}
-              title={copy.shijing.context.manage}
-              subtitle={copy.shijing.context.editorSubtitle}
-              onClose={() => setEditorOpen(false)}
-            />
-          ) : null}
-        </span>
-      </div>
-    </section>
-  );
-}
-
-function ConversationThread(props: { readonly conversation: Conversation }) {
-  const copy = useProductCopy();
-  return (
-    <ol className="shijing-ask__thread">
-      {props.conversation.turns.map((turn) => (
-        <li key={turn.id} className="shijing-ask__turn" data-role={turn.role}>
-          <span className="shijing-ask__turn-role">{copy.conversationRoleLabels[turn.role]}</span>
-          <p className="shijing-ask__turn-body">{turn.body}</p>
-          {turn.cited_reading_ids.length > 0 ? (
-            <small className="shijing-ask__turn-cite">
-              {copy.shijing.citedReadings(turn.cited_reading_ids.length)}
-            </small>
-          ) : null}
-        </li>
-      ))}
-    </ol>
   );
 }

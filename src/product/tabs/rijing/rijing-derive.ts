@@ -17,14 +17,20 @@ import type {
 import type { DailyMirrorScope } from '../../../domain/mirror-scope.ts';
 import type { EventMemory } from '../../../domain/event-memory.ts';
 import type {
-  FiveElement,
   ShijingStageLabel,
   StrengthBand,
 } from '../../../domain/algorithm.ts';
 import { STRENGTH_BANDS } from '../../../domain/algorithm.ts';
 import { getProductCopy, type ProductCopy } from '../../i18n/copy.ts';
-import { deriveMethodEvidenceChips, type MethodEvidenceChip } from '../shared/method-evidence-chips.ts';
-import { BRANCH_HANZI, ELEMENT_HANZI, STEM_HANZI } from '../mingjing/ganzhi-hanzi.ts';
+export {
+  deriveEvidenceChips,
+  deriveRiJingDataPanel,
+  type RiJingBaziPanel,
+  type RiJingDataElement,
+  type RiJingDataPanel,
+  type RiJingDataPillar,
+  type RijingEvidenceChip,
+} from './rijing-data-panel.ts';
 
 export interface RiJingLeaning {
   readonly label: string;
@@ -431,18 +437,6 @@ export function deriveRecentMemories(
 
 // ----- evidence chips -----
 
-export type RijingEvidenceChip = MethodEvidenceChip;
-
-export function deriveEvidenceChips(
-  reading: Reading | undefined,
-  copy: ProductCopy = DEFAULT_COPY,
-): readonly RijingEvidenceChip[] {
-  if (!reading) {
-    return [{ group: copy.rijing.evidence.emptyChipGroup, value: copy.rijing.evidence.emptyChipValue }];
-  }
-  return deriveMethodEvidenceChips(reading);
-}
-
 // ----- data panel (推演依据与数据说明, expanded) -----
 //
 // The collapsed bar shows the method evidence chips; the expanded panel adds a
@@ -450,94 +444,6 @@ export function deriveEvidenceChips(
 // pulled from `method_evidence` — cards are omitted when their inputs are
 // absent rather than filled with placeholders.
 
-export interface RiJingDataElement {
-  readonly element: FiveElement;
-  readonly char: string;
-}
-
-export interface RiJingDataPillar {
-  readonly position: 'year' | 'month' | 'day' | 'hour';
-  readonly stem: string;
-  readonly branch: string;
-  readonly emphasis: boolean;
-}
-
-export interface RiJingBaziPanel {
-  readonly strength?: {
-    readonly band: StrengthBand;
-    readonly index: number;
-    readonly total: number;
-  };
-  readonly yong: readonly RiJingDataElement[];
-  readonly pillars: readonly RiJingDataPillar[];
-  readonly completeness: { readonly filled: number; readonly total: number };
-  readonly stage?: ShijingStageLabel;
-}
-
-export interface RiJingDataPanel {
-  readonly chips: readonly RijingEvidenceChip[];
-  readonly bazi?: RiJingBaziPanel;
-}
-
 // Day pillar first (the 日主 / self pillar, emphasised), then the rest in
 // chronological order. Absent pillars are skipped.
-const DATA_PILLAR_ORDER: readonly ('year' | 'month' | 'day' | 'hour')[] = [
-  'day',
-  'year',
-  'month',
-  'hour',
-];
-
-export function deriveRiJingDataPanel(
-  reading: Reading | undefined,
-  copy: ProductCopy = DEFAULT_COPY,
-): RiJingDataPanel {
-  const chips = deriveEvidenceChips(reading, copy);
-  if (!reading) return { chips };
-  const fs = reading.inputs_summary.feature_snapshot;
-  const me = fs.method_evidence;
-  if (me.method_id !== 'bazi_ziping_v1') return { chips };
-
-  const self = me.bazi.self_subject;
-  const chart = self.natal_chart;
-  const interpretation = self.interpretation;
-  const total = 4;
-  const pillarByPosition = {
-    year: chart.year_pillar,
-    month: chart.month_pillar,
-    day: chart.day_pillar,
-    hour: chart.hour_pillar,
-  } as const;
-  const pillars: RiJingDataPillar[] = [];
-  for (const position of DATA_PILLAR_ORDER) {
-    const pillar = pillarByPosition[position];
-    if (!pillar) continue;
-    pillars.push({
-      position,
-      stem: STEM_HANZI[pillar.stem],
-      branch: BRANCH_HANZI[pillar.branch],
-      emphasis: position === 'day',
-    });
-  }
-  const stage = fs.common.stage_drivers[0]?.stage_label;
-  const bazi: RiJingBaziPanel = {
-    ...(interpretation
-      ? {
-          strength: {
-            band: interpretation.strength.band,
-            index: STRENGTH_BANDS.indexOf(interpretation.strength.band),
-            total: STRENGTH_BANDS.length,
-          },
-        }
-      : {}),
-    yong: interpretation
-      ? interpretation.yong_shen.yong.map((element) => ({ element, char: ELEMENT_HANZI[element] }))
-      : [],
-    pillars,
-    completeness: { filled: total - chart.missing_pillars.length, total },
-    ...(stage ? { stage } : {}),
-  };
-  return { chips, bazi };
-}
-
 export type { RiJingConcernProjection };
