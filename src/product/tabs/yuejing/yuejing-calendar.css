@@ -1,0 +1,316 @@
+.shijing-yuejing__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.shijing-yuejing__day {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--shijing-surface-card-quiet);
+  border: 1px solid var(--shijing-border-subtle);
+  border-left: 3px solid var(--shijing-text-disabled);
+  border-radius: var(--shijing-radius-md);
+  font-size: 12px;
+}
+
+.shijing-yuejing__day[data-day-kind="today"] {
+  border-color: var(--shijing-brand-primary);
+  background: var(--shijing-brand-soft);
+}
+
+.shijing-yuejing__day[data-tendency="supportive"] { border-left-color: var(--shijing-status-success); }
+.shijing-yuejing__day[data-tendency="watch"]      { border-left-color: var(--shijing-status-warning); }
+.shijing-yuejing__day[data-tendency="blocked"]    { border-left-color: var(--shijing-status-danger); }
+.shijing-yuejing__day[data-tendency="turning"]    { border-left-color: var(--shijing-status-info); }
+
+.shijing-yuejing__day-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.shijing-yuejing__day-head strong { font-size: 13px; }
+.shijing-yuejing__day-head small  { color: var(--shijing-text-muted); }
+
+.shijing-yuejing__day ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shijing-yuejing__day ul li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 6px;
+  background: var(--shijing-surface-card);
+  border-radius: 4px;
+  border-left: 2px solid var(--shijing-text-disabled);
+}
+
+.shijing-yuejing__day ul li[data-tendency="supportive"] { border-left-color: var(--shijing-status-success); }
+.shijing-yuejing__day ul li[data-tendency="watch"]      { border-left-color: var(--shijing-status-warning); }
+.shijing-yuejing__day ul li[data-tendency="blocked"]    { border-left-color: var(--shijing-status-danger); }
+.shijing-yuejing__day ul li[data-tendency="turning"]    { border-left-color: var(--shijing-status-info); }
+
+.shijing-yuejing__day-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.shijing-yuejing__day-entry textarea {
+  font: inherit;
+  font-size: 11px;
+  min-height: 40px;
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: 4px;
+  padding: 4px 6px;
+  resize: vertical;
+}
+
+.shijing-yuejing__day-entry button {
+  align-self: flex-end;
+  font-size: 11px !important;
+  padding: 3px 8px !important;
+}
+
+/* ----- 5) Calendar grid ------------------------------------------ */
+
+.shijing-yuejing__calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  background: var(--yuejing-glass-bg);
+  backdrop-filter: var(--yuejing-glass-blur);
+  -webkit-backdrop-filter: var(--yuejing-glass-blur);
+  border: 1px solid var(--yuejing-glass-border);
+  border-radius: var(--shijing-radius-2xl, 20px);
+  box-shadow: var(--yuejing-glass-shadow);
+}
+
+.shijing-yuejing__weekday-row {
+  list-style: none;
+  margin: 0;
+  padding: 0 4px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-yuejing__weekday-row li {
+  text-align: center;
+}
+
+.shijing-yuejing .shijing-yuejing__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-top: 0;
+}
+
+.shijing-yuejing__blank {
+  min-height: 104px;
+  border-radius: var(--shijing-radius-xl, 16px);
+  border: 1px dashed rgba(15, 23, 38, 0.08);
+  background: transparent;
+  opacity: 0.55;
+}
+
+/* The mirror-v1 baseline adds a left rule + padded card per day; the
+ * rich design uses tinted blocks instead, so reset. */
+.shijing-yuejing .shijing-yuejing__day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  border: 0;
+  border-left: 0;
+  border-radius: var(--shijing-radius-xl, 16px);
+  padding: 0;
+  font-size: 13px;
+  gap: 0;
+}
+
+/* Each day-face is a saturated tendency block with a subtle white
+ * sheen sweeping in from the top-left, plus a soft drop shadow so it
+ * floats on the aurora background. Numbers, weekday label, and the
+ * tendency chip ride on top in white. */
+.shijing-yuejing .shijing-yuejing__day-face {
+  appearance: none;
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  text-align: left;
+  width: 100%;
+  min-height: 104px;
+  padding: 10px 12px;
+  border-radius: var(--shijing-radius-xl, 16px);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    var(--yuejing-steady-soft);
+  border: 0;
+  cursor: pointer;
+  color: #fff;
+  font: inherit;
+  box-shadow: 0 4px 14px -8px rgba(15, 23, 38, 0.18);
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+
+.shijing-yuejing__day[data-tendency="supportive"] .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 55%), var(--yuejing-supportive-soft); }
+.shijing-yuejing__day[data-tendency="steady"]     .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 55%), var(--yuejing-steady-soft); }
+.shijing-yuejing__day[data-tendency="watch"]      .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 55%), var(--yuejing-watch-soft); }
+.shijing-yuejing__day[data-tendency="blocked"]    .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 55%), var(--yuejing-blocked-soft); }
+.shijing-yuejing__day[data-tendency="turning"]    .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 55%), var(--yuejing-turning-soft); }
+
+/* Today cell — pull saturation up so the ring reads as "this is now"
+ * and the white numeral pops harder than on neighbouring days. */
+.shijing-yuejing__day[data-day-kind="today"] .shijing-yuejing__day-face {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--yuejing-supportive) 78%, white);
+  box-shadow: 0 0 0 2px var(--yuejing-supportive), 0 6px 18px -8px rgba(78, 204, 163, 0.45);
+}
+.shijing-yuejing__day[data-day-kind="today"][data-tendency="steady"]     .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 55%), color-mix(in srgb, var(--yuejing-steady)     78%, white); box-shadow: 0 0 0 2px var(--yuejing-steady),     0 6px 18px -8px rgba(125, 163, 201, 0.45); }
+.shijing-yuejing__day[data-day-kind="today"][data-tendency="watch"]      .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 55%), color-mix(in srgb, var(--yuejing-watch)      78%, white); box-shadow: 0 0 0 2px var(--yuejing-watch),      0 6px 18px -8px rgba(224, 164, 88, 0.45); }
+.shijing-yuejing__day[data-day-kind="today"][data-tendency="blocked"]    .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 55%), color-mix(in srgb, var(--yuejing-blocked)    78%, white); box-shadow: 0 0 0 2px var(--yuejing-blocked),    0 6px 18px -8px rgba(217, 106, 106, 0.45); }
+.shijing-yuejing__day[data-day-kind="today"][data-tendency="turning"]    .shijing-yuejing__day-face { background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 55%), color-mix(in srgb, var(--yuejing-turning)    78%, white); box-shadow: 0 0 0 2px var(--yuejing-turning),    0 6px 18px -8px rgba(139, 124, 214, 0.45); }
+
+/* Empty / placeholder cells — rendered before a reading is generated.
+ * Neutral translucent white card with dark text instead of tendency
+ * tint + white text, so the user can tell at a glance which dates are
+ * "data pending" vs "data filled". The today cell still keeps its
+ * green ring as an anchor. */
+.shijing-yuejing__day[data-tendency="empty"] .shijing-yuejing__day-face {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0) 55%),
+    rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 4px 14px -10px rgba(15, 23, 38, 0.10);
+}
+.shijing-yuejing__day[data-tendency="empty"] .shijing-yuejing__day-weekday {
+  color: var(--shijing-text-secondary);
+  opacity: 0.9;
+}
+.shijing-yuejing__day[data-tendency="empty"] .shijing-yuejing__day-number {
+  color: var(--shijing-text-primary);
+  text-shadow: none;
+  opacity: 0.88;
+}
+.shijing-yuejing__day[data-tendency="empty"] .shijing-yuejing__day-month-marker {
+  color: var(--shijing-text-muted);
+}
+.shijing-yuejing__day[data-day-kind="today"][data-tendency="empty"] .shijing-yuejing__day-face {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--yuejing-supportive) 16%, white);
+  box-shadow: 0 0 0 2px var(--yuejing-supportive), 0 6px 18px -10px rgba(78, 204, 163, 0.30);
+}
+.shijing-yuejing__day[data-day-kind="today"][data-tendency="empty"] .shijing-yuejing__day-number {
+  color: var(--shijing-text-primary);
+}
+
+.shijing-yuejing__day-face:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px -10px rgba(15, 23, 38, 0.24);
+  filter: brightness(0.93) saturate(1.1);
+}
+.shijing-yuejing__day[data-day-kind="today"] .shijing-yuejing__day-face:hover {
+  transform: translateY(-1px);
+}
+
+/* Past days fade toward the aurora background so the eye is drawn to
+ * today and the future window. The white numeral stays legible. */
+.shijing-yuejing__day[data-day-kind="past"] .shijing-yuejing__day-face {
+  opacity: 0.82;
+}
+
+.shijing-yuejing__day[data-selected="true"] .shijing-yuejing__day-face {
+  outline: 0;
+  box-shadow: var(--shijing-focus-ring), 0 8px 24px -10px rgba(15, 23, 38, 0.22);
+}
+
+.shijing-yuejing__day-weekday {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.82);
+  grid-row: 1;
+  letter-spacing: 0.04em;
+}
+
+.shijing-yuejing__day-month-marker {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.78);
+  margin-top: 2px;
+  grid-row: 1;
+  justify-self: start;
+}
+
+.shijing-yuejing__day-number {
+  grid-row: 2;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 34px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1;
+  align-self: center;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(15, 23, 38, 0.08);
+}
+
+.shijing-yuejing__day-tendency {
+  grid-row: 3;
+  font-size: 11px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.22);
+  padding: 2px 9px;
+  border-radius: 999px;
+  align-self: end;
+  justify-self: start;
+  font-weight: 500;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.shijing-yuejing__day-today-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--shijing-text-primary);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-weight: 600;
+  z-index: 1;
+  box-shadow: 0 1px 4px rgba(15, 23, 38, 0.10);
+}
+
+.shijing-yuejing__day-edit-mark {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--shijing-text-secondary);
+  border-radius: 999px;
+  z-index: 1;
+  box-shadow: 0 1px 3px rgba(15, 23, 38, 0.08);
+}

@@ -1,0 +1,391 @@
+/* ----- 7) Inflection right-side drawer --------------------------- */
+/* Visual treatment matches YueJing's right-side day panel: flush to
+ * the viewport edge (no radius, only a left border), nearly-opaque
+ * white glass over a light white-wash backdrop. The whole composition
+ * reads as "the page got pushed aside" rather than "a card floats
+ * on top". */
+
+.shijing-nianjing__inflection-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(4px) saturate(105%);
+  -webkit-backdrop-filter: blur(4px) saturate(105%);
+  cursor: pointer;
+  animation: shijing-nianjing__backdrop-in 160ms ease both;
+}
+
+@keyframes shijing-nianjing__backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.shijing-nianjing__inflection-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(440px, 100vw);
+  z-index: 201;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border-left: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: -22px 0 56px -28px rgba(15, 23, 38, 0.22);
+  overflow-y: auto;
+  padding: 32px 30px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  animation: shijing-nianjing__drawer-slide-in 220ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* Band variant: very soft mint-to-white gradient so the whole panel
+ * reads as a calm, breathable "guidance space" rather than a
+ * dialog. The mint tint fades by ~30% so the lower sections (white
+ * cards, footer) sit cleanly on near-white. */
+.shijing-nianjing__inflection-drawer[data-kind="band"] {
+  background:
+    linear-gradient(180deg,
+      rgba(231, 246, 237, 0.96) 0%,
+      rgba(245, 251, 248, 0.96) 24%,
+      rgba(255, 255, 255, 0.96) 60%
+    );
+  gap: 18px;
+}
+
+@keyframes shijing-nianjing__drawer-slide-in {
+  from { transform: translateX(24px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* Close button sits absolute in the upper-right corner so the header
+ * content can occupy the full content width below it. */
+.shijing-nianjing .shijing-nianjing__inflection-close {
+  appearance: none;
+  position: absolute;
+  top: 26px;
+  right: 26px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.shijing-nianjing .shijing-nianjing__inflection-close:hover {
+  background: rgba(15, 23, 38, 0.06);
+  color: var(--shijing-text-primary);
+}
+
+.shijing-nianjing__inflection-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 44px; /* clear room for the absolute close button */
+}
+
+.shijing-nianjing__inflection-head strong {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+}
+
+.shijing-nianjing__inflection-head small {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--shijing-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.shijing-nianjing__inflection-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shijing-nianjing__inflection-section > h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.shijing-nianjing__inflection-section > p {
+  margin: 0;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 38, 0.06);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 38, 0.04);
+  font-size: 13.5px;
+  color: var(--shijing-text-primary);
+  line-height: 1.7;
+}
+
+/* ----- 8) Band detail drawer content ------------------------------ */
+/* Rich "结论 → 解释 → 行动建议 → 提醒" layout shown when a phase band
+ * is opened. Shares the drawer shell with inflection markers; only
+ * the body content differs (see `data-kind="band"` on the drawer). */
+
+.shijing-nianjing__band-detail-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 44px; /* clear room for the absolute close button */
+}
+
+.shijing-nianjing__band-detail-title {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+.shijing-nianjing__band-detail-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shijing-nianjing__band-detail-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  background: color-mix(in srgb, var(--nianjing-supportive) 16%, white);
+  color: color-mix(in srgb, var(--nianjing-supportive) 60%, #0e3a2a);
+  border: 1px solid color-mix(in srgb, var(--nianjing-supportive) 26%, transparent);
+}
+
+/* The nature pill picks up the band's tendency color so the user can
+ * confirm at a glance which phase they're reading. */
+.shijing-nianjing__band-detail-pill[data-nature="supportive"] {
+  background: color-mix(in srgb, var(--nianjing-supportive) 18%, white);
+  color: color-mix(in srgb, var(--nianjing-supportive) 65%, #0e3a2a);
+  border-color: color-mix(in srgb, var(--nianjing-supportive) 30%, transparent);
+}
+.shijing-nianjing__band-detail-pill[data-nature="steady"] {
+  background: color-mix(in srgb, var(--nianjing-steady) 18%, white);
+  color: color-mix(in srgb, var(--nianjing-steady) 70%, #0f2b40);
+  border-color: color-mix(in srgb, var(--nianjing-steady) 30%, transparent);
+}
+.shijing-nianjing__band-detail-pill[data-nature="watch"] {
+  background: color-mix(in srgb, var(--nianjing-watch) 18%, white);
+  color: color-mix(in srgb, var(--nianjing-watch) 70%, #3d2410);
+  border-color: color-mix(in srgb, var(--nianjing-watch) 30%, transparent);
+}
+.shijing-nianjing__band-detail-pill[data-nature="blocked"] {
+  background: color-mix(in srgb, var(--nianjing-blocked) 18%, white);
+  color: color-mix(in srgb, var(--nianjing-blocked) 70%, #3a1010);
+  border-color: color-mix(in srgb, var(--nianjing-blocked) 30%, transparent);
+}
+.shijing-nianjing__band-detail-pill[data-nature="turning"] {
+  background: color-mix(in srgb, var(--nianjing-turning) 18%, white);
+  color: color-mix(in srgb, var(--nianjing-turning) 70%, #1f1640);
+  border-color: color-mix(in srgb, var(--nianjing-turning) 30%, transparent);
+}
+
+.shijing-nianjing__band-detail-oneline {
+  margin: 4px 0 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--shijing-text-primary);
+  line-height: 1.6;
+}
+
+.shijing-nianjing__band-detail-oneline-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--shijing-brand-primary);
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Main reading body: one continuous stage interpretation instead of
+ * separate answer-card blocks. */
+.shijing-nianjing__band-detail-story {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 2px 4px 0;
+  border-left: 2px solid color-mix(in srgb, var(--nianjing-supportive) 44%, transparent);
+}
+
+.shijing-nianjing__band-detail-kicker {
+  color: color-mix(in srgb, var(--nianjing-supportive) 70%, #0e3a2a);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding-left: 14px;
+}
+
+.shijing-nianjing__band-detail-story p {
+  margin: 0;
+  padding-left: 14px;
+  color: var(--shijing-text-primary);
+  font-size: 14px;
+  line-height: 1.78;
+}
+
+.shijing-nianjing__band-detail-signals {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 4px;
+}
+
+.shijing-nianjing__band-detail-signal-lead {
+  color: var(--shijing-text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.shijing-nianjing .shijing-nianjing__band-detail-keyword-pills {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shijing-nianjing .shijing-nianjing__band-detail-keyword-pills li {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--nianjing-supportive) 14%, white);
+  color: color-mix(in srgb, var(--nianjing-supportive) 70%, #0e3a2a);
+  border: 1px solid color-mix(in srgb, var(--nianjing-supportive) 22%, transparent);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.shijing-nianjing__band-detail-guidance {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  padding: 18px 20px 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.50));
+  border: 1px solid rgba(78, 204, 163, 0.18);
+  border-radius: 22px;
+  box-shadow: 0 12px 30px -26px rgba(15, 23, 38, 0.28);
+}
+
+.shijing-nianjing__band-detail-guidance h3 {
+  margin: 0;
+  color: var(--shijing-text-primary);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.shijing-nianjing .shijing-nianjing__band-detail-guidance-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 15px;
+}
+
+.shijing-nianjing .shijing-nianjing__band-detail-guidance-list li {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 12px;
+  align-items: start;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.shijing-nianjing__band-detail-guidance-index {
+  color: color-mix(in srgb, var(--nianjing-supportive) 72%, #0e3a2a);
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.shijing-nianjing__band-detail-guidance-list li > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.shijing-nianjing__band-detail-guidance-list li strong {
+  color: var(--shijing-text-primary);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.shijing-nianjing__band-detail-guidance-list li p {
+  margin: 0;
+  color: var(--shijing-text-secondary);
+  font-size: 12.5px;
+  line-height: 1.68;
+}
+
+.shijing-nianjing__band-detail-guardrails {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--nianjing-watch) 20%, transparent);
+}
+
+.shijing-nianjing__band-detail-guardrails-label {
+  color: color-mix(in srgb, var(--nianjing-watch) 72%, #3d2410);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+}
+
+.shijing-nianjing__band-detail-guardrails p {
+  margin: 0;
+  display: grid;
+  gap: 2px;
+  color: var(--shijing-text-secondary);
+  font-size: 12.5px;
+  line-height: 1.62;
+}
+
+.shijing-nianjing__band-detail-guardrails strong {
+  color: var(--shijing-text-primary);
+  font-size: 13px;
+}
+
+.shijing-nianjing__band-detail-footnotes {
+  display: grid;
+  gap: 6px;
+  padding: 2px 4px 0;
+  color: var(--shijing-text-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}

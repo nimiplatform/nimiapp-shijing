@@ -1,0 +1,215 @@
+/* ── 流年关键窗口 ───────────────────────────────────────────────────────── */
+
+.shijing-liunian__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 16px;
+}
+
+.shijing-liunian__card {
+  padding: 20px 20px 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(23, 32, 42, 0.06);
+  border-top: 5px solid var(--mj-nature, var(--shijing-border-default));
+  box-shadow: 0 14px 36px rgba(27, 39, 56, 0.06);
+}
+
+.shijing-liunian__card[data-nature='supportive'] { --mj-nature: var(--mj-supportive); }
+.shijing-liunian__card[data-nature='blocked'] { --mj-nature: var(--mj-blocked); }
+.shijing-liunian__card[data-nature='watch'] { --mj-nature: var(--mj-watch); }
+.shijing-liunian__card[data-nature='steady'] { --mj-nature: var(--mj-steady); }
+.shijing-liunian__card[data-nature='turning'] { --mj-nature: var(--mj-turning); }
+
+.shijing-liunian__card-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px 10px;
+  margin-bottom: 12px;
+}
+
+.shijing-liunian__range {
+  min-width: 0;
+  font-size: 23px;
+  font-weight: 750;
+  line-height: 1.1;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-liunian__badge {
+  justify-self: end;
+  min-height: 28px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mj-nature, var(--mingjing-accent)) 14%, rgba(255, 255, 255, 0.76));
+  border: 1px solid color-mix(in srgb, var(--mj-nature, var(--mingjing-accent)) 20%, rgba(255, 255, 255, 0.58));
+  color: color-mix(in srgb, var(--mj-nature, var(--mingjing-accent)) 78%, var(--shijing-text-primary));
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.shijing-liunian__salience {
+  grid-column: 1 / -1;
+  width: fit-content;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--mingjing-glass-thin-bg);
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-liunian__salience[data-salience='high'] {
+  background: color-mix(in srgb, var(--mingjing-accent) 16%, transparent);
+  color: var(--mingjing-accent-hover);
+}
+
+.shijing-liunian__plain {
+  margin: 0 0 16px;
+  font-size: 15px;
+  font-weight: 520;
+  line-height: 1.65;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-liunian__years-wrap {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.shijing-liunian__label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-liunian__years {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 7px;
+}
+
+.shijing-liunian__years li {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--mj-nature, var(--mingjing-accent)) 10%, rgba(255, 255, 255, 0.58));
+  border: 1px solid var(--mingjing-glass-thin-border);
+}
+
+.shijing-liunian__year { font-size: 11px; color: var(--shijing-text-muted); }
+.shijing-liunian__ganzhi { font-size: 15px; font-weight: 600; color: var(--shijing-text-primary); }
+
+.shijing-liunian__details {
+  border-top: 1px dashed color-mix(in srgb, var(--mj-nature, var(--shijing-border-default)) 25%, rgba(23, 32, 42, 0.08));
+  padding-top: 10px;
+}
+
+.shijing-liunian__details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--mj-nature, var(--mingjing-accent)) 70%, var(--shijing-text-secondary));
+}
+
+.shijing-liunian__details > summary::-webkit-details-marker { display: none; }
+
+.shijing-liunian__details > summary::after {
+  content: '›';
+  font-size: 17px;
+  line-height: 1;
+  transform: rotate(90deg);
+  transition: transform 160ms ease;
+}
+
+.shijing-liunian__details[open] > summary::after {
+  transform: rotate(-90deg);
+}
+
+.shijing-liunian__evidence {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-liunian__evidence-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-liunian__evidence-head strong {
+  font-weight: 750;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-liunian__evidence-head strong[data-favor='喜'] {
+  color: var(--mj-supportive);
+}
+
+.shijing-liunian__evidence-head strong[data-favor='忌'] {
+  color: var(--mj-blocked);
+}
+
+.shijing-liunian__dayun { font-size: 12px; color: var(--shijing-text-muted); }
+
+.shijing-liunian__relations {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.shijing-liunian__relations li {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.48);
+  border: 1px solid var(--mingjing-glass-thin-border);
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-liunian__relations-more {
+  color: color-mix(in srgb, var(--mingjing-accent-hover) 76%, var(--shijing-text-muted));
+}
+
+.shijing-liunian__basis {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-liunian__basis-more {
+  color: color-mix(in srgb, var(--mingjing-accent-hover) 76%, var(--shijing-text-muted));
+}
+
+.shijing-liunian__empty { margin: 0; color: var(--shijing-text-muted); }

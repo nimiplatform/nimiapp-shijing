@@ -1,0 +1,185 @@
+/* ----- 3) Current-phase hero ------------------------------------- */
+
+/* Two-class selector matches the parent reset's specificity (0,2,0).
+ * Source order then puts this hero rule's padding / background /
+ * shadow above the reset — without this bump, the reset's
+ * `padding: 0` clobbers our generous 30px 56px and the title hugs
+ * the card edge. */
+.shijing-nianjing > .shijing-nianjing__hero {
+  position: relative;
+  display: grid;
+  /* Fixed-width right column keeps the chip pane from touching the
+   * card's right padding edge — its size is the column, not "whatever
+   * fills the remaining space". The LHS gets all leftover room and
+   * the big serif title is never compressed. */
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 32px;
+  /* `align-items: center` vertically anchors the title and the chip
+   * pane on the same baseline; combined with min-height below, this
+   * stops the card from collapsing into a "status bar" when content
+   * is short. */
+  align-items: center;
+  min-height: 160px;
+  padding: 26px 56px;
+  border-radius: 28px;
+  color: #fff;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--nianjing-steady) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(125, 163, 201, 0.55);
+}
+
+.shijing-nianjing__hero[data-nature="supportive"] {
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--nianjing-supportive) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(78, 204, 163, 0.55);
+}
+.shijing-nianjing__hero[data-nature="watch"] {
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--nianjing-watch) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(224, 164, 88, 0.55);
+}
+.shijing-nianjing__hero[data-nature="blocked"] {
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--nianjing-blocked) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(217, 106, 106, 0.55);
+}
+.shijing-nianjing__hero[data-nature="turning"] {
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--nianjing-turning) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(139, 124, 214, 0.55);
+}
+
+/* Three-layer headline: eyebrow → big title + date → body, with
+ * explicit vertical breathing room between each layer so nothing
+ * crowds the title or hugs the card edges. */
+.shijing-nianjing__hero-headline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.shijing-nianjing__hero-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.shijing-nianjing__hero-nature {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.shijing-nianjing__hero-nature strong {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 56px;
+  line-height: 1;
+  color: #fff;
+  letter-spacing: 0.06em;
+  text-shadow: 0 2px 4px rgba(15, 23, 38, 0.08);
+}
+
+.shijing-nianjing__hero-nature small {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+
+/* Body text is intentionally lighter than the title/eyebrow alpha so
+ * it reads as supporting copy, not as a second headline. Margin-top
+ * carves out a clear gap from the big title without collapsing into
+ * the body's own line-height. */
+.shijing-nianjing__hero-body {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.7;
+  max-width: 38ch;
+  font-weight: 400;
+}
+
+/* The per-concern chips pane on the right side of the hero. The
+ * pane sits inside a fixed-width grid column (see __hero above) so it
+ * has predictable left/right breathing room from the card edge —
+ * `align-self: center` plus the card's min-height keeps it
+ * vertically centered against the big title on the left. */
+.shijing-nianjing .shijing-nianjing__hero-rows {
+  list-style: none;
+  margin: 0;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 2px 12px -6px rgba(15, 23, 38, 0.10);
+  align-self: center;
+  width: 100%;
+}
+
+.shijing-nianjing .shijing-nianjing__hero-rows li {
+  display: grid;
+  grid-template-columns: 72px auto 1fr;
+  align-items: center;
+  column-gap: 14px;
+  font-size: 14px;
+  color: #fff;
+  list-style: none;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.shijing-nianjing__hero-row-label {
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shijing-nianjing__hero-row-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.shijing-nianjing__hero-row-chip-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--nianjing-steady);
+}
+
+.shijing-nianjing__hero-row-chip[data-nature="supportive"] .shijing-nianjing__hero-row-chip-dot { background: var(--nianjing-supportive); }
+.shijing-nianjing__hero-row-chip[data-nature="steady"]     .shijing-nianjing__hero-row-chip-dot { background: var(--nianjing-steady); }
+.shijing-nianjing__hero-row-chip[data-nature="watch"]      .shijing-nianjing__hero-row-chip-dot { background: var(--nianjing-watch); }
+.shijing-nianjing__hero-row-chip[data-nature="blocked"]    .shijing-nianjing__hero-row-chip-dot { background: var(--nianjing-blocked); }
+.shijing-nianjing__hero-row-chip[data-nature="turning"]    .shijing-nianjing__hero-row-chip-dot { background: var(--nianjing-turning); }
+
+.shijing-nianjing__hero-row-detail {
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 13.5px;
+  letter-spacing: 0.02em;
+  justify-self: start;
+}

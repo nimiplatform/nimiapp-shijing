@@ -1,17 +1,24 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { readCssBundle, sharedPrimitiveCssFiles, shijingAskCssFiles } from './css-bundles.mjs';
 
 const shijingStyles = stripCssComments(
-  readFileSync(new URL('../src/styles-shijing-rich.css', import.meta.url), 'utf8'),
+  readCssBundle(shijingAskCssFiles),
 );
-const nianjingStyles = stripCssComments(
-  readFileSync(new URL('../src/styles-nianjing-rich.css', import.meta.url), 'utf8'),
+const sharedSurfaceStyles = stripCssComments(
+  readCssBundle(sharedPrimitiveCssFiles),
 );
-const shijingTabSource = readFileSync(
-  new URL('../src/product/tabs/shijing-tab.tsx', import.meta.url),
-  'utf8',
-);
+const shijingTabSource = [
+  '../src/product/tabs/shijing-tab.tsx',
+  '../src/product/tabs/shijing/shijing-icons.tsx',
+  '../src/product/tabs/shijing/shijing-session-model.ts',
+  '../src/product/tabs/shijing/shijing-composer.tsx',
+  '../src/product/tabs/shijing/shijing-history-rail.tsx',
+  '../src/product/tabs/shijing/shijing-context-widgets.tsx',
+]
+  .map((file) => readFileSync(new URL(file, import.meta.url), 'utf8'))
+  .join('\n');
 
 function stripCssComments(source) {
   return source.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -35,28 +42,33 @@ function cssBlock(source, selector) {
 }
 
 test('Ask ShiJing shell uses the same aurora background as NianJing', () => {
-  const askShell = cssBlock(shijingStyles, '.shijing-shell[data-active-tab="shijing"]');
-  const nianjingShell = cssBlock(nianjingStyles, '.shijing-shell[data-active-tab="nianjing"]');
+  const askShell = cssBlock(sharedSurfaceStyles, '.shijing-shell[data-active-tab="shijing"]');
+  const nianjingShell = cssBlock(sharedSurfaceStyles, '.shijing-shell[data-active-tab="nianjing"]');
+  const sharedRoot = cssBlock(sharedSurfaceStyles, ':root');
+
+  assert.match(askShell, /background:\s*var\(--shijing-shared-aurora-bg\)/);
+  assert.match(nianjingShell, /background:\s*var\(--shijing-shared-aurora-bg\)/);
 
   for (const token of [
     'radial-gradient(42% 36% at 6% 4%, rgba(167, 243, 208, 0.55), transparent 70%)',
     'radial-gradient(40% 38% at 94% 92%, rgba(252, 231, 243, 0.50), transparent 70%)',
     'linear-gradient(135deg, #e7f5ee 0%, #eef0f7 100%)',
   ]) {
-    assert.ok(nianjingShell.includes(token), `NianJing background fixture missing ${token}`);
-    assert.ok(askShell.includes(token), `Ask ShiJing background missing ${token}`);
+    assert.ok(sharedRoot.includes(token), `shared aurora token missing ${token}`);
   }
 });
 
 test('Ask ShiJing topbar and main area match NianJing transparent chrome', () => {
-  const askTopbar = cssBlock(shijingStyles, '.shijing-shell[data-active-tab="shijing"] .shijing-topbar');
-  const askMain = cssBlock(shijingStyles, '.shijing-shell__main:has(> .shijing-ask)');
+  const askTopbar = cssBlock(sharedSurfaceStyles, '.shijing-shell[data-active-tab="shijing"] .shijing-topbar');
+  const askMain = cssBlock(sharedSurfaceStyles, '.shijing-shell__main:has(> .shijing-ask)');
+  const askLocalMain = cssBlock(shijingStyles, '.shijing-shell__main:has(> .shijing-ask)');
 
   assert.match(askTopbar, /background:\s*transparent/);
   assert.match(askTopbar, /backdrop-filter:\s*none/);
   assert.match(askTopbar, /-webkit-backdrop-filter:\s*none/);
-  assert.match(askTopbar, /border-bottom-color:\s*rgba\(255, 255, 255, 0\.45\)/);
+  assert.match(askTopbar, /border-bottom-color:\s*var\(--shijing-surface-topbar-border\)/);
   assert.match(askMain, /background:\s*transparent/);
+  assert.match(askLocalMain, /padding-top:\s*12px/);
 });
 
 test('Ask ShiJing cards use the same light glass system as NianJing', () => {
@@ -66,10 +78,10 @@ test('Ask ShiJing cards use the same light glass system as NianJing', () => {
   const contextBar = cssBlock(shijingStyles, '.shijing-ctx');
   const result = cssBlock(shijingStyles, '.shijing-ask .shijing-ask__result');
 
-  assert.match(root, /--shijing-ask-glass-bg:\s*rgba\(255, 255, 255, 0\.55\)/);
-  assert.match(root, /--shijing-ask-glass-border:\s*rgba\(255, 255, 255, 0\.55\)/);
-  assert.match(root, /--shijing-ask-glass-blur:\s*blur\(16px\) saturate\(140%\)/);
-  assert.match(root, /--shijing-ask-glass-shadow:\s*0 8px 28px -16px rgba\(15, 23, 38, 0\.12\)/);
+  assert.match(root, /--shijing-ask-glass-bg:\s*var\(--shijing-shared-glass-bg\)/);
+  assert.match(root, /--shijing-ask-glass-border:\s*var\(--shijing-shared-glass-border\)/);
+  assert.match(root, /--shijing-ask-glass-blur:\s*var\(--shijing-shared-glass-blur\)/);
+  assert.match(root, /--shijing-ask-glass-shadow:\s*var\(--shijing-shared-glass-shadow\)/);
 
   for (const block of [rail, composer, contextBar, result]) {
     assert.match(block, /background:\s*var\(--shijing-ask-glass-bg\)/);
@@ -149,12 +161,12 @@ test('Ask ShiJing switches to a chat window once a conversation exists', () => {
     /data-chat-active=\{chatActive \? 'true' : 'false'\}/,
   );
 
-  const chatBranch = /chatActive \? \([\s\S]*?className="shijing-ask__result"[\s\S]*?renderComposer\(\)[\s\S]*?\) : \(/.exec(
+  const chatBranch = /chatActive \? \([\s\S]*?className="shijing-ask__result"[\s\S]*?<ShiJingComposer[\s\S]*?\) : \(/.exec(
     shijingTabSource,
   )?.[0] ?? '';
   assert.notEqual(chatBranch, '', 'chat-active branch must render history before the composer');
   assert.ok(
-    chatBranch.indexOf('className="shijing-ask__result"') < chatBranch.indexOf('renderComposer()'),
+    chatBranch.indexOf('className="shijing-ask__result"') < chatBranch.indexOf('<ShiJingComposer'),
     'conversation history must be above the bottom composer in chat-active mode',
   );
 
@@ -187,7 +199,8 @@ test('Ask ShiJing hides composer placeholder inside an active chat thread', () =
     shijingTabSource,
     /const composerPlaceholder = chatActive \? '' : copy\.shijing\.composerPlaceholder/,
   );
-  assert.match(shijingTabSource, /placeholder=\{composerPlaceholder\}/);
+  assert.match(shijingTabSource, /composerPlaceholder=\{composerPlaceholder\}/);
+  assert.match(shijingTabSource, /placeholder=\{props\.composerPlaceholder\}/);
   assert.doesNotMatch(shijingTabSource, /placeholder=\{copy\.shijing\.composerPlaceholder\}/);
 });
 

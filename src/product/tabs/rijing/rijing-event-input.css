@@ -1,0 +1,265 @@
+/* ----- 今日参照 event-input ----- */
+
+.shijing-rijing__event-input {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px 26px;
+  border-radius: var(--shijing-radius-2xl);
+  font-family: var(--rijing-font-sans);
+  background: var(--rijing-card-bg);
+  border: 1px solid var(--rijing-card-border);
+  box-shadow: var(--rijing-card-shadow);
+  backdrop-filter: blur(var(--rijing-blur)) saturate(120%);
+  -webkit-backdrop-filter: blur(var(--rijing-blur)) saturate(120%);
+}
+
+.shijing-rijing__event-input-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shijing-rijing .shijing-rijing__event-input-title {
+  margin: 0;
+  font-family: var(--rijing-font-sans);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--rijing-ink-strong);
+}
+
+.shijing-rijing .shijing-rijing__event-input-intro {
+  margin: 0;
+  font-family: var(--rijing-font-sans);
+  color: var(--rijing-ink-soft);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.shijing-tab .shijing-rijing__event-input-textarea {
+  width: 100%;
+  min-height: 92px;
+  padding: 14px 16px;
+  font-family: var(--rijing-font-sans);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--rijing-ink-strong);
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(23, 32, 42, 0.08);
+  border-radius: var(--shijing-radius-lg);
+  resize: vertical;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.shijing-tab .shijing-rijing__event-input-textarea::placeholder {
+  color: var(--rijing-ink-faint);
+  font-size: 13px;
+}
+
+.shijing-tab .shijing-rijing__event-input-textarea:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(23, 32, 42, 0.16);
+  box-shadow: 0 0 0 3px rgba(23, 32, 42, 0.05);
+}
+
+.shijing-rijing__event-input-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.shijing-rijing__event-input-hint-slot {
+  flex: 1;
+  min-width: 0;
+}
+
+.shijing-rijing__event-input-hint {
+  font-family: var(--rijing-font-sans);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.shijing-rijing__event-input-hint--warn { color: var(--shijing-status-warning); }
+.shijing-rijing__event-input-hint--ok { color: var(--rijing-accent-hover); }
+
+.shijing-tab .shijing-rijing__event-input-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 18px;
+  height: 38px;
+  background: var(--rijing-accent);
+  color: #fff;
+  border: 0;
+  border-radius: 10px;
+  font-family: var(--rijing-font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  margin-left: auto;
+  transition: background 0.18s ease, opacity 0.18s ease;
+}
+
+.shijing-tab .shijing-rijing__event-input-submit:hover:not(:disabled) {
+  background: var(--rijing-accent-hover);
+}
+
+.shijing-tab .shijing-rijing__event-input-submit:disabled {
+  background: var(--nimi-surface-active, rgba(148, 163, 184, 0.16));
+  color: var(--shijing-text-muted);
+  cursor: not-allowed;
+}
+
+/* reference-event list */
+
+.shijing-rijing .shijing-rijing__refs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-rijing__ref {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 15px;
+  background: var(--nimi-surface-card, rgba(255, 255, 255, 0.7));
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-md);
+  position: relative;
+}
+
+.shijing-rijing__ref-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--rijing-accent);
+  flex: none;
+}
+
+.shijing-rijing__ref-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  color: var(--shijing-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.shijing-rijing__ref-badge {
+  font-size: 11px;
+  color: var(--rijing-accent-ink);
+  font-weight: 500;
+  flex: none;
+}
+
+.shijing-rijing__ref-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.shijing-rijing__ref:hover .shijing-rijing__ref-actions,
+.shijing-rijing__ref:focus-within .shijing-rijing__ref-actions {
+  opacity: 1;
+}
+
+.shijing-tab .shijing-rijing__ref-action {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--shijing-text-muted);
+  border-radius: 8px;
+}
+
+.shijing-tab .shijing-rijing__ref-action:hover {
+  color: var(--rijing-accent);
+  background: color-mix(in srgb, var(--rijing-accent) 10%, transparent);
+}
+
+.shijing-tab .shijing-rijing__ref-action:last-child:hover {
+  color: var(--shijing-status-danger);
+  background: color-mix(in srgb, var(--shijing-status-danger) 10%, transparent);
+}
+
+.shijing-rijing__ref-action svg {
+  width: 15px;
+  height: 15px;
+}
+
+.shijing-rijing__ref--editing {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.shijing-tab .shijing-rijing__ref-textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--shijing-text-primary);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid color-mix(in srgb, var(--rijing-accent) 18%, var(--shijing-border-subtle));
+  border-radius: 10px;
+  resize: vertical;
+}
+
+.shijing-tab .shijing-rijing__ref-textarea:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--rijing-accent) 40%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rijing-accent) 14%, transparent);
+}
+
+.shijing-rijing__ref-edit-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shijing-tab .shijing-rijing__ref-edit-save,
+.shijing-tab .shijing-rijing__ref-edit-cancel {
+  appearance: none;
+  border: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  min-height: 30px;
+}
+
+.shijing-tab .shijing-rijing__ref-edit-save {
+  background: var(--rijing-accent);
+  color: #fff;
+}
+
+.shijing-tab .shijing-rijing__ref-edit-cancel {
+  background: transparent;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-tab .shijing-rijing__ref-edit-cancel:hover {
+  color: var(--shijing-text-primary);
+  background: color-mix(in srgb, var(--shijing-text-primary) 6%, transparent);
+}
+
+.shijing-rijing .shijing-rijing__ref-error {
+  margin: 4px 0 0;
+  color: var(--shijing-status-danger);
+  font-size: 12px;
+}

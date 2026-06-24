@@ -1,0 +1,119 @@
+/* ----- 6) Right-side day-detail panel ---------------------------- */
+/* Replaces the old in-grid drawer with a viewport-level slide-in
+ * panel. The backdrop blurs the rest of the page so the panel reads
+ * as a focused workspace; the panel itself uses a heavier glass
+ * background so it floats above the (already-blurred) backdrop. */
+
+.shijing-yuejing__panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(4px) saturate(105%);
+  -webkit-backdrop-filter: blur(4px) saturate(105%);
+  animation: shijing-yuejing__panel-fade-in 160ms ease both;
+}
+
+/* Panel reads as a nearly-solid white workspace with a faint aurora
+ * bleed picked up by `saturate(160%)` from whatever's behind the
+ * (already-blurred) backdrop. Width sits at 440px to match the
+ * mockup; the date title sits at the top with the × button absolute-
+ * positioned in the upper-right corner. */
+.shijing-yuejing__panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(440px, 100vw);
+  z-index: 201;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border-left: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: -22px 0 56px -28px rgba(15, 23, 38, 0.22);
+  overflow-y: auto;
+  padding: 32px 30px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  animation: shijing-yuejing__panel-slide-in 220ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes shijing-yuejing__panel-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes shijing-yuejing__panel-slide-in {
+  from { transform: translateX(24px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.shijing-yuejing .shijing-yuejing__panel-close {
+  appearance: none;
+  position: absolute;
+  top: 26px;
+  right: 26px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-close svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-close:hover {
+  background: var(--shijing-hover-surface);
+  color: var(--shijing-text-primary);
+}
+
+/* Date header — big serif title + small weekday/kind subtitle. Sits
+ * inline at the top of the panel with the × button absolute-
+ * positioned in the upper-right corner. */
+.shijing-yuejing__panel-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 44px; /* clear room for the × button */
+}
+
+.shijing-yuejing__panel-head strong {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+}
+
+.shijing-yuejing__panel-head small {
+  font-size: 13px;
+  color: var(--shijing-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.shijing-yuejing__panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shijing-yuejing__panel-section > h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+}

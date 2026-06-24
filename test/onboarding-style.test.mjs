@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { readCssBundle, rijingCssFiles, settingsCssFiles } from './css-bundles.mjs';
 
-const rijingStyles = readFileSync(new URL('../src/styles-rijing-rich.css', import.meta.url), 'utf8');
-const personalDataStyles = readFileSync(new URL('../src/styles-personal-data.css', import.meta.url), 'utf8');
+const rijingStyles = readCssBundle(rijingCssFiles);
+const personalDataStyles = readCssBundle(settingsCssFiles);
 
 function cssBlockFromSource(source, selector) {
   const blocks = [];
@@ -161,7 +162,7 @@ test('onboarding inline self-editor cancel action stays ghost inside the tab but
 });
 
 test('onboarding editor cards keep their card frames instead of clearing sjp-card surfaces', () => {
-  assertNoGenericOnboardingCardReset(rijingStyles, 'styles-rijing-rich.css');
+  assertNoGenericOnboardingCardReset(rijingStyles, 'rijing feature CSS bundle');
   assertNoGenericOnboardingCardReset(personalDataStyles, 'styles-personal-data.css');
 
   const selfEditorReset = cssBlockFromSource(
@@ -179,7 +180,7 @@ test('onboarding editor cards keep their card frames instead of clearing sjp-car
   );
 
   for (const [sourceName, reset] of [
-    ['styles-rijing-rich.css', selfEditorReset],
+    ['rijing feature CSS bundle', selfEditorReset],
     ['styles-personal-data.css', personalDataSelfEditorReset],
   ]) {
     assert.doesNotMatch(reset, /padding:\s*0/, `${sourceName} must not clear inline self-editor padding`);

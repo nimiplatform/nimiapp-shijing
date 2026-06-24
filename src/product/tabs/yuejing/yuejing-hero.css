@@ -1,0 +1,228 @@
+/* ----- 3) Today hero card ---------------------------------------- */
+
+/* Hero is rendered as a near-uniform tendency color with a soft white
+ * highlight sweeping from the top-left so it feels glossy without
+ * darkening at the bottom-right. Box-shadows pick up the tendency hue
+ * for a halo effect against the aurora background. */
+/* Hero card — mirrored from `src/product/tabs/nianjing/nianjing-hero.css` so YueJing's
+ * today-overview reads as the same visual family as NianJing's
+ * current-phase overview. Two-class selector matches the parent
+ * reset's specificity (0,2,0); source order then ensures this rule's
+ * padding / background / shadow override the reset's `padding: 0`. */
+.shijing-yuejing > .shijing-yuejing__hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 390px);
+  gap: 32px;
+  align-items: center;
+  min-height: 160px;
+  padding: 26px 56px;
+  border-radius: 28px;
+  color: #fff;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--yuejing-supportive) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(78, 204, 163, 0.55);
+}
+
+.shijing-yuejing__hero[data-tendency="steady"] {
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--yuejing-steady) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(125, 163, 201, 0.55);
+}
+.shijing-yuejing__hero[data-tendency="watch"] {
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--yuejing-watch) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(224, 164, 88, 0.55);
+}
+.shijing-yuejing__hero[data-tendency="blocked"] {
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--yuejing-blocked) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(217, 106, 106, 0.55);
+}
+.shijing-yuejing__hero[data-tendency="turning"] {
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    color-mix(in srgb, var(--yuejing-turning) 88%, white);
+  box-shadow: 0 14px 36px -16px rgba(139, 124, 214, 0.55);
+}
+
+/* Three-layer headline: eyebrow → big title + date → body, with
+ * explicit vertical breathing room. Matches NianJing. */
+.shijing-yuejing__hero-headline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.shijing-yuejing__hero-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.shijing-yuejing__hero-tendency {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.shijing-yuejing__hero-tendency strong {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 56px;
+  line-height: 1;
+  color: #fff;
+  letter-spacing: 0.06em;
+  text-shadow: 0 2px 4px rgba(15, 23, 38, 0.08);
+}
+
+.shijing-yuejing__hero-tendency small {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+
+.shijing-yuejing__hero-body {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.7;
+  max-width: 38ch;
+  font-weight: 400;
+}
+
+/* The per-concern chip rows on the right side of the hero. The hero
+ * keeps only the compact status bars; full prose opens in the
+ * right-side detail panel. */
+.shijing-yuejing .shijing-yuejing__hero-rows {
+  list-style: none;
+  margin: 0;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 2px 12px -6px rgba(15, 23, 38, 0.10);
+  align-self: center;
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.shijing-yuejing .shijing-yuejing__hero-rows li {
+  display: grid;
+  grid-template-columns: minmax(58px, 1fr) auto;
+  align-items: center;
+  column-gap: 14px;
+  min-width: 0;
+  font-size: 14px;
+  color: #fff;
+  list-style: none;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.shijing-yuejing__hero-row-label {
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shijing-yuejing__hero-row-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  flex-shrink: 0;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.shijing-yuejing__hero-row-chip-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--yuejing-steady);
+}
+
+.shijing-yuejing__hero-row-chip[data-tendency="supportive"] .shijing-yuejing__hero-row-chip-dot { background: var(--yuejing-supportive); }
+.shijing-yuejing__hero-row-chip[data-tendency="steady"]     .shijing-yuejing__hero-row-chip-dot { background: var(--yuejing-steady); }
+.shijing-yuejing__hero-row-chip[data-tendency="watch"]      .shijing-yuejing__hero-row-chip-dot { background: var(--yuejing-watch); }
+.shijing-yuejing__hero-row-chip[data-tendency="blocked"]    .shijing-yuejing__hero-row-chip-dot { background: var(--yuejing-blocked); }
+.shijing-yuejing__hero-row-chip[data-tendency="turning"]    .shijing-yuejing__hero-row-chip-dot { background: var(--yuejing-turning); }
+
+/* "待生成" — tag activated after the reading was generated, no
+ * projection yet. Muted chip + hollow dot so the row reads as
+ * "data pending" rather than as a real tendency. */
+.shijing-yuejing__hero-row-chip[data-tendency="pending"] {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.78);
+}
+.shijing-yuejing__hero-row-chip[data-tendency="pending"] .shijing-yuejing__hero-row-chip-dot {
+  background: transparent;
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  width: 8px;
+  height: 8px;
+}
+.shijing-yuejing__hero-rows li[data-pending="true"] .shijing-yuejing__hero-row-label {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.shijing-yuejing .shijing-yuejing__hero-action-row {
+  grid-template-columns: 1fr;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.shijing-yuejing .shijing-yuejing__hero-detail-button {
+  appearance: none;
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.shijing-yuejing .shijing-yuejing__hero-detail-button:hover {
+  background: rgba(255, 255, 255, 0.26);
+  border-color: rgba(255, 255, 255, 0.52);
+  transform: translateY(-1px);
+}
+
+.shijing-yuejing .shijing-yuejing__hero-detail-button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.82);
+  outline-offset: 3px;
+}

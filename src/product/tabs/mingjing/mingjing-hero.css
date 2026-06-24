@@ -1,0 +1,311 @@
+/* ── Hero ───────────────────────────────────────────────────────────────── */
+
+.shijing-mingjing__hero {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0 2px 0;
+}
+
+.shijing-mingjing .shijing-mingjing__title {
+  margin: 0 0 6px;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: normal;
+  letter-spacing: 0.04em;
+  color: var(--shijing-text-primary);
+}
+
+/* ── 命局总览 Hero (green card) ──────────────────────────────────────────── */
+
+.shijing-mingjing .shijing-mj-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(340px, 0.9fr);
+  gap: clamp(22px, 3.6vw, 40px);
+  padding: clamp(24px, 3vw, 32px) clamp(28px, 4.2vw, 48px);
+  border-radius: 18px;
+  color: #fff;
+  background: #86be9c;
+  box-shadow:
+    0 22px 46px -28px rgba(40, 78, 58, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.shijing-mingjing .shijing-mj-hero__glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.10), transparent 58%);
+}
+
+.shijing-mingjing .shijing-mj-hero__main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shijing-mingjing .shijing-mj-hero__eyebrow {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.shijing-mingjing .shijing-mj-hero__title {
+  margin: 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 66px;
+  font-weight: 650;
+  line-height: 1.05;
+  letter-spacing: 0;
+  color: #fff;
+}
+
+.shijing-mingjing .shijing-mj-hero__summary {
+  margin: 2px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.shijing-mingjing .shijing-mj-hero__dot { opacity: 0.5; }
+
+.shijing-mingjing .shijing-mj-hero__persona {
+  margin: 6px 0 0;
+  max-width: 46ch;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.shijing-mingjing .shijing-mj-hero__panel {
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.13);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.shijing-mingjing .shijing-mj-hero__favor-title {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.shijing-mingjing .shijing-mj-hero__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.shijing-mingjing .shijing-mj-hero__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 9px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 650;
+  color: #fff;
+  background: var(--mj-chip-bg, rgba(255, 255, 255, 0.18));
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.shijing-mingjing .shijing-mj-hero__chip[data-element='wood'] { --mj-chip-bg: rgba(120, 197, 151, 0.44); }
+.shijing-mingjing .shijing-mj-hero__chip[data-element='fire'] { --mj-chip-bg: rgba(232, 138, 112, 0.48); }
+.shijing-mingjing .shijing-mj-hero__chip[data-element='earth'] { --mj-chip-bg: rgba(216, 178, 112, 0.48); }
+.shijing-mingjing .shijing-mj-hero__chip[data-element='metal'] { --mj-chip-bg: rgba(226, 206, 150, 0.46); }
+.shijing-mingjing .shijing-mj-hero__chip[data-element='water'] { --mj-chip-bg: rgba(122, 170, 206, 0.48); }
+
+.shijing-mingjing .shijing-mj-hero__chip--muted { opacity: 0.78; filter: saturate(0.65); }
+.shijing-mingjing .shijing-mj-hero__chip-empty { color: rgba(255, 255, 255, 0.6); font-size: 15px; }
+
+.shijing-mingjing .shijing-mj-hero__favor-hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.shijing-mingjing .shijing-mj-hero__favor--adverse {
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.shijing-mingjing .shijing-mj-hero__stage {
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.shijing-mingjing .shijing-mj-hero__stage-label {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.shijing-mingjing .shijing-mj-hero__stage-value {
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shijing-mingjing .shijing-mj-hero__stage-pillar {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.shijing-mingjing .shijing-mj-hero__stage-text {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.shijing-mingjing .shijing-mj-hero__stage-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.shijing-mingjing .shijing-mj-hero__stage-value--empty { font-size: 13px; color: rgba(255, 255, 255, 0.78); }
+
+.shijing-mingjing .shijing-mj-hero__cta {
+  appearance: none;
+  cursor: pointer;
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #2f5d46;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.shijing-mingjing .shijing-mj-hero__cta:hover { background: #fff; }
+.shijing-mingjing .shijing-mj-hero__cta:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+}
+
+/* ── footer CTA (生时校正 entry) ─────────────────────────────────────────── */
+
+.shijing-mingjing .shijing-mj-footer-cta {
+  appearance: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 100%;
+  margin-top: 4px;
+  padding: 16px 20px;
+  border-radius: 18px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--mingjing-ink-soft);
+  background: var(--mingjing-card-quiet-bg);
+  border: 1px solid var(--mingjing-card-border);
+}
+
+.shijing-mingjing .shijing-mj-footer-cta:hover {
+  color: var(--mingjing-accent-hover);
+  border-color: color-mix(in srgb, var(--mingjing-accent) 34%, transparent);
+}
+
+.shijing-mingjing .shijing-mj-footer-cta:focus-visible {
+  outline: none;
+  box-shadow: var(--shijing-focus-ring);
+}
+
+/* ── Readiness / failure ────────────────────────────────────────────────── */
+
+.shijing-mingjing__readiness,
+.shijing-mingjing__failure {
+  align-self: flex-start;
+  max-width: 520px;
+  margin-top: 8px;
+  padding: 24px 26px;
+  background: var(--mingjing-glass-thick-bg);
+  border: 1px solid var(--mingjing-glass-thick-border);
+  border-radius: var(--shijing-radius-2xl);
+  box-shadow: var(--mingjing-elev-raised);
+  backdrop-filter: blur(var(--mingjing-blur-chrome)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--mingjing-blur-chrome)) saturate(140%);
+}
+
+.shijing-mingjing__readiness-title {
+  margin: 0 0 8px;
+  font-size: 17px;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-mingjing__readiness-body {
+  margin: 0 0 18px;
+  color: var(--shijing-text-secondary);
+  line-height: 1.6;
+}
+
+.shijing-mingjing__readiness-btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--mingjing-accent);
+}
+
+.shijing-mingjing__readiness-btn:hover {
+  background: var(--mingjing-accent-hover);
+}
+
+.shijing-mingjing__readiness-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shijing-focus-ring);
+}
+
+.shijing-mingjing__failure {
+  border-color: color-mix(in srgb, var(--shijing-status-danger) 40%, var(--shijing-border-default));
+}
+
+.shijing-mingjing__failure h2 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  color: var(--shijing-status-danger);
+}
+
+.shijing-mingjing__failure p {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+  word-break: break-word;
+}

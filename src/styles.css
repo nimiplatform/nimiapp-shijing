@@ -2,21 +2,66 @@
 @import "@nimiplatform/kit/ui/themes/light.css";
 @import "@nimiplatform/kit/ui/themes/dark.css";
 @import "@nimiplatform/kit/ui/themes/nimi-accent.css";
-
-/* Split product stylesheets. mirror-v1 carries the baseline shell/tabs/
- * settings rules; the per-mirror + personal-data sheets override it and so must
- * load after. These must precede `@import 'tailwindcss'` because CSS imports
- * are only valid before normal rules. */
-@import './styles-mirror-v1.css';
-@import './styles-mirror-header.css';
-@import './styles-rijing-rich.css';
-@import './styles-yuejing-rich.css';
-@import './styles-nianjing-rich.css';
-@import './styles-mingjing-rich.css';
-@import './styles-shijing-rich.css';
-@import './styles-personal-data.css';
-
 @import 'tailwindcss';
+
+@layer shijing.tokens, shijing.shell, shijing.primitives, shijing.features, shijing.settings;
+
+/* Product stylesheets intentionally stay unlayered while Kit, Tailwind, and
+ * app globals are not layer-scoped together. Partial layering lowers product
+ * layout priority; import order is the active cascade contract here. */
+@import './styles-mirror-v1.css';
+@import './product/tabs/shared/mirror-runtime.css';
+@import './product/settings/settings-legacy.css';
+@import './styles-mirror-header.css';
+@import './product/tabs/shared/mirror-primitives.css';
+@import './product/tabs/rijing/rijing-shell.css';
+@import './product/tabs/rijing/rijing-onboarding.css';
+@import './product/tabs/rijing/rijing-hero.css';
+@import './product/tabs/rijing/rijing-projections.css';
+@import './product/tabs/rijing/rijing-event-input.css';
+@import './product/tabs/rijing/rijing-actions.css';
+@import './product/tabs/rijing/rijing-evidence.css';
+@import './product/tabs/rijing/rijing-responsive.css';
+@import './product/tabs/yuejing/yuejing-shell.css';
+@import './product/tabs/yuejing/yuejing-hero.css';
+@import './product/tabs/yuejing/yuejing-filters.css';
+@import './product/tabs/yuejing/yuejing-calendar.css';
+@import './product/tabs/yuejing/yuejing-panel-shell.css';
+@import './product/tabs/yuejing/yuejing-month-mainline.css';
+@import './product/tabs/yuejing/yuejing-month-windows.css';
+@import './product/tabs/yuejing/yuejing-month-timeline.css';
+@import './product/tabs/yuejing/yuejing-month-concerns.css';
+@import './product/tabs/yuejing/yuejing-month-closing.css';
+@import './product/tabs/yuejing/yuejing-day-panel.css';
+@import './product/tabs/yuejing/yuejing-concerns.css';
+@import './product/tabs/nianjing/nianjing-shell.css';
+@import './product/tabs/nianjing/nianjing-hero.css';
+@import './product/tabs/nianjing/nianjing-filters.css';
+@import './product/tabs/nianjing/nianjing-year-overview.css';
+@import './product/tabs/nianjing/nianjing-phase-list.css';
+@import './product/tabs/nianjing/nianjing-timeline-base.css';
+@import './product/tabs/nianjing/nianjing-timeline.css';
+@import './product/tabs/nianjing/nianjing-drawer.css';
+@import './product/tabs/nianjing/nianjing-recorder.css';
+@import './product/tabs/mingjing/mingjing-shell.css';
+@import './product/tabs/mingjing/mingjing-hero.css';
+@import './product/tabs/mingjing/mingjing-panels.css';
+@import './product/tabs/mingjing/mingjing-paipan.css';
+@import './product/tabs/mingjing/mingjing-geju.css';
+@import './product/tabs/mingjing/mingjing-dayun.css';
+@import './product/tabs/mingjing/mingjing-liunian.css';
+@import './product/tabs/mingjing/mingjing-events.css';
+@import './product/tabs/mingjing/mingjing-reading.css';
+@import './product/tabs/mingjing/mingjing-rectify.css';
+@import './product/tabs/mingjing/mingjing-responsive.css';
+@import './product/tabs/shijing/shijing-ask-shell.css';
+@import './product/tabs/shijing/shijing-ask-hero.css';
+@import './product/tabs/shijing/shijing-ask-rail.css';
+@import './product/tabs/shijing/shijing-ask-composer.css';
+@import './product/tabs/shijing/shijing-ask-context.css';
+@import './product/tabs/shijing/shijing-ask-thread.css';
+@import './product/tabs/shijing/shijing-concern-bar.css';
+@import './styles-personal-data.css';
 
 /* Tailwind 4 only scans `src/**` by default. The kit's auth + ui components
  * emit Tailwind utility classes; without explicit @source entries, those

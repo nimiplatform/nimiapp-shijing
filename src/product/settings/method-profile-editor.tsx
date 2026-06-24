@@ -11,12 +11,14 @@ import { METHOD_LABELS } from '../reading/reading-format.ts';
 import { SjpSelect } from '../components/sjp-select.tsx';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { useProductCopy } from '../i18n/copy.ts';
+import { deriveMethodProfileCapabilityRows } from './method-profile-capabilities.ts';
 import { commitMethodProfile } from './method-profile-state.ts';
 
 export function MethodProfileEditor() {
   const { state, dispatch } = useShijingStore();
   const copy = useProductCopy();
   const current = state.snapshot.settings.method_profile_id ?? DEFAULT_METHOD_PROFILE_ID;
+  const capabilityRows = deriveMethodProfileCapabilityRows();
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
   function onChange(value: string) {
@@ -66,6 +68,86 @@ export function MethodProfileEditor() {
             {copy.methodProfile.switchedAt(savedAt)}
           </p>
         ) : null}
+        <div className="sjp-field sjp-field--full">
+          <div className="sjp-method-capabilities" aria-label={copy.methodProfile.capabilities.title}>
+            <div>
+              <h3 className="sjp-subpanel-title">{copy.methodProfile.capabilities.title}</h3>
+              <p className="sjp-note">{copy.methodProfile.capabilities.description}</p>
+            </div>
+            <div className="sjp-method-capability-list">
+              {capabilityRows.map((row) => {
+                const currentMethod = row.method_profile_id === current;
+                return (
+                  <article
+                    key={row.method_profile_id}
+                    className="sjp-method-capability"
+                    data-method-profile-id={row.method_profile_id}
+                    data-current={currentMethod ? 'true' : undefined}
+                  >
+                    <div className="sjp-method-capability__head">
+                      <strong>{row.method_label}</strong>
+                      {currentMethod ? (
+                        <span className="sjp-tag">{copy.methodProfile.capabilities.current}</span>
+                      ) : null}
+                    </div>
+                    <div className="sjp-method-capability__section">
+                      <span className="sjp-method-capability__section-title">
+                        {copy.methodProfile.capabilities.algorithmNeutralTitle}
+                      </span>
+                      <ul className="sjp-method-capability__chips">
+                        {row.algorithm_neutral_features.map((feature) => (
+                          <li
+                            key={feature.id}
+                            className="sjp-method-capability__chip"
+                            data-supported={feature.supported ? 'true' : 'false'}
+                          >
+                            <span>{copy.methodProfile.capabilities.featureLabels[feature.id]}</span>
+                            <small>
+                              {feature.supported
+                                ? copy.methodProfile.capabilities.supported
+                                : copy.methodProfile.capabilities.unavailable}
+                            </small>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div
+                      className="sjp-method-capability__route"
+                      data-mingjing-route-status={row.mingjing_route.status}
+                    >
+                      <span className="sjp-method-capability__section-title">
+                        {copy.methodProfile.capabilities.mingjingRouteTitle}
+                      </span>
+                      {row.mingjing_route.supported_features.length > 0 ? (
+                        <ul className="sjp-method-capability__chips">
+                          {row.mingjing_route.supported_features.map((feature) => (
+                            <li
+                              key={feature}
+                              className="sjp-method-capability__chip"
+                              data-supported="true"
+                            >
+                              <span>{copy.methodProfile.capabilities.routeFeatureLabels[feature]}</span>
+                              <small>{copy.methodProfile.capabilities.supported}</small>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="sjp-note sjp-note--warn">
+                          {copy.methodProfile.capabilities.noRouteFeatures}
+                        </p>
+                      )}
+                      {row.mingjing_route.fail_close_detail ? (
+                        <p className="sjp-note sjp-note--warn">
+                          {copy.methodProfile.capabilities.failClosePrefix}: <code>{row.mingjing_route.fail_close_detail}</code>
+                        </p>
+                      ) : null}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

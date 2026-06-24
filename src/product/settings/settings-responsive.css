@@ -1,0 +1,45 @@
+/* Responsive settings layout adjustments. */
+
+
+@media (max-width: 960px) {
+  .shijing-settings-page--styled .shijing-settings-page__body {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .shijing-settings-page--styled .shijing-settings-page__surface-nav {
+    position: relative;
+    top: auto;
+    overflow-x: auto;
+    padding: 8px;
+  }
+
+  .shijing-settings-page--styled .shijing-settings-page__surface-nav-list {
+    flex-direction: row;
+    min-width: max-content;
+  }
+
+  .shijing-settings-page--styled .shijing-settings-page__surface-nav-item {
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 680px) {
+  .shijing-settings-page--styled .sjp-grid {
+    grid-template-columns: 1fr;
+  }
+  /* On narrow screens drop the core grid to two columns: 性别 takes the full
+     first row, leaving 出生日期 · 出生时间 paired on the second. */
+  .shijing-settings-page--styled .sjp-profile__core {
+    grid-template-columns: 1fr 1fr;
+  }
+  .shijing-settings-page--styled .sjp-stat--lead {
+    grid-column: 1 / -1;
+  }
+  .shijing-settings-page--styled .sjp-card {
+    padding: 26px 20px;
+  }
+  .shijing-settings-page--styled .nimi-page-detail-layout__title {
+    font-size: 36px;
+  }
+}

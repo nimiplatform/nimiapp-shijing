@@ -1,0 +1,84 @@
+/* ============================================================
+ * Shared compact concern-tag focus bar — used by 日镜 / 月镜 / 年镜
+ * (the 时镜 consultation surface uses the read-only `.shijing-ctx`
+ * bar instead). Full management lives in Settings → 关注.
+ * ============================================================ */
+
+.shijing-tab > section.shijing-concern-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: var(--shijing-radius-xl);
+}
+
+.shijing-concern-bar__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-concern-bar__count {
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+  margin-right: 2px;
+}
+
+.shijing-concern-bar__empty {
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-concern-bar__pills {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+}
+
+.shijing-concern-bar .shijing-concern-bar__pill {
+  appearance: none;
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+  border: 1px solid var(--shijing-border-default);
+  background: var(--shijing-surface-card-quiet);
+  color: var(--shijing-text-muted);
+}
+
+.shijing-concern-bar .shijing-concern-bar__pill[data-status="active"] {
+  background: var(--shijing-brand-soft);
+  border-color: color-mix(in srgb, var(--shijing-brand-primary) 32%, transparent);
+  color: var(--shijing-brand-primary);
+  font-weight: 600;
+}
+
+.shijing-concern-bar .shijing-concern-bar__pill:hover:not(:disabled) {
+  border-color: var(--shijing-brand-primary);
+}
+
+.shijing-concern-bar .shijing-concern-bar__pill:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.shijing-concern-bar .shijing-concern-bar__manage {
+  appearance: none;
+  margin-left: auto;
+  background: transparent;
+  border: 0;
+  padding: 4px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--shijing-brand-primary);
+  cursor: pointer;
+}
+
+.shijing-concern-bar .shijing-concern-bar__manage:hover {
+  text-decoration: underline;
+}

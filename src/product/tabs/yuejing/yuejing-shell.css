@@ -1,0 +1,161 @@
+/* =====================================================================
+ * YueJing rich tab — header strip + today hero + weekday-aligned 30-day
+ * calendar + inline day drawer + compact concern pill bar.
+ *
+ * Scoped under `.shijing-yuejing` so it overrides the baseline rules in
+ * `styles-mirror-v1.css` for the YueJing surface only. Other mirrors
+ * keep the v1 layout.
+ *
+ * Palette aligns with SJG-DSY-01 mirror chart tendency tokens. The
+ * surrounding panels are intentionally glass-morphic so the underlying
+ * aurora background reads through; day cells carry the tendency color
+ * at full saturation with white serif numerals.
+ * ===================================================================== */
+
+.shijing-yuejing {
+  --yuejing-supportive: #4ECCA3;
+  --yuejing-steady:     #7DA3C9;
+  --yuejing-watch:      #E0A458;
+  --yuejing-blocked:    #D96A6A;
+  --yuejing-turning:    #8B7CD6;
+
+  /* Day-cell fills sit between fully-saturated brand colors and white
+   * so the white serif numeral on top stays readable on every
+   * tendency. Tuned at 62% for green/orange/red/purple (good contrast)
+   * and slightly higher for steady-blue which would otherwise wash
+   * out the numeral. */
+  --yuejing-supportive-soft: color-mix(in srgb, var(--yuejing-supportive) 62%, white);
+  --yuejing-steady-soft:     color-mix(in srgb, var(--yuejing-steady)     68%, white);
+  --yuejing-watch-soft:      color-mix(in srgb, var(--yuejing-watch)      62%, white);
+  --yuejing-blocked-soft:    color-mix(in srgb, var(--yuejing-blocked)    62%, white);
+  --yuejing-turning-soft:    color-mix(in srgb, var(--yuejing-turning)    62%, white);
+
+  /* Shared glass surface tokens for the surrounding panels. */
+  --yuejing-glass-bg: var(--shijing-shared-glass-bg);
+  --yuejing-glass-border: var(--shijing-shared-glass-border);
+  --yuejing-glass-blur: var(--shijing-shared-glass-blur);
+  --yuejing-glass-shadow: var(--shijing-shared-glass-shadow);
+
+  gap: 18px;
+}
+
+/* The mirror-v1 baseline wraps every direct article/section in a card.
+ * The rich layout draws its own framing per block, so reset that. */
+.shijing-yuejing > .shijing-yuejing__hero,
+.shijing-yuejing > .shijing-yuejing__filter-row,
+.shijing-yuejing > .shijing-yuejing__calendar,
+.shijing-yuejing > .shijing-yuejing__concern-bar,
+.shijing-yuejing > .shijing-yuejing__details {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+/* ----- 1) Header actions ----------------------------------------- */
+
+/* The shared import button is `.shijing-import-to-consultation`; let it
+ * adopt the pill shape used by the YueJing header. */
+.shijing-yuejing .shijing-import-to-consultation {
+  margin-top: 0;
+  font-size: 14px;
+  padding: 9px 18px;
+  border-radius: 999px;
+}
+
+.shijing-yuejing .shijing-yuejing__generate {
+  background: var(--yuejing-supportive);
+  color: #fff;
+  border: 0;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px -4px rgba(78, 204, 163, 0.45);
+}
+
+.shijing-yuejing .shijing-yuejing__generate:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--yuejing-supportive) 90%, black);
+}
+
+.shijing-yuejing .shijing-yuejing__generate:disabled {
+  background: var(--shijing-text-disabled);
+  box-shadow: none;
+}
+
+/* ----- 2) Generic notice / stale banners ------------------------- */
+
+.shijing-yuejing__notice {
+  background: var(--yuejing-glass-bg);
+  backdrop-filter: var(--yuejing-glass-blur);
+  -webkit-backdrop-filter: var(--yuejing-glass-blur);
+  border: 1px solid var(--yuejing-glass-border);
+  border-radius: var(--shijing-radius-lg);
+  padding: 14px 18px;
+  color: var(--shijing-text-secondary);
+  text-align: center;
+  box-shadow: var(--yuejing-glass-shadow);
+}
+
+.shijing-yuejing__notice--action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  text-align: left;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--yuejing-supportive) 13%, transparent), rgba(255, 255, 255, 0.82));
+  border-color: color-mix(in srgb, var(--yuejing-supportive) 30%, transparent);
+}
+
+.shijing-yuejing__notice--action strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--shijing-text-primary);
+  font-size: 15px;
+}
+
+.shijing-yuejing__notice-action {
+  appearance: none;
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--yuejing-supportive) 46%, transparent);
+  border-radius: var(--shijing-radius-md);
+  background: color-mix(in srgb, var(--yuejing-supportive) 15%, white);
+  color: var(--shijing-text-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shijing-yuejing__notice-action:hover {
+  background: color-mix(in srgb, var(--yuejing-supportive) 25%, white);
+  border-color: color-mix(in srgb, var(--yuejing-supportive) 62%, transparent);
+}
+
+.shijing-yuejing__notice-action:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--yuejing-supportive) 58%, transparent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .shijing-yuejing__notice--action {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .shijing-yuejing__notice-action {
+    width: 100%;
+  }
+}
+
+.shijing-yuejing__stale {
+  background: color-mix(in srgb, var(--yuejing-watch) 14%, transparent);
+  color: var(--shijing-status-warning);
+  padding: 10px 14px;
+  border-radius: var(--shijing-radius-md);
+  border-left: 3px solid var(--yuejing-watch);
+  font-size: 13px;
+  margin: 0;
+}

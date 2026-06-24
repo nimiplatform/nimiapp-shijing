@@ -1,0 +1,226 @@
+@media (max-width: 860px) {
+  .shijing-mingjing .shijing-mj-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-mingjing .shijing-mj-hero__title {
+    font-size: 50px;
+  }
+
+  .shijing-paipan__head {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .shijing-paipan__title {
+    font-size: 17px;
+  }
+
+  .shijing-paipan__intro {
+    font-size: 13px;
+    line-height: 1.75;
+  }
+
+  .shijing-paipan__structure-badge {
+    min-height: 24px;
+    font-size: 11.5px;
+  }
+
+  .shijing-paipan__pillar-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .shijing-paipan__pillar-card {
+    min-height: 0;
+  }
+
+  .shijing-paipan__glyphs {
+    font-size: 34px;
+  }
+
+  .shijing-liunian__list {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-mingjing-five {
+    min-height: 230px;
+    padding: 24px 22px 26px;
+  }
+
+  .shijing-mingjing-five__head {
+    grid-template-columns: auto auto;
+    justify-content: start;
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 8px;
+  }
+
+  .shijing-mingjing-five__head .shijing-mingjing-info__button {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .shijing-mingjing-five__summary {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+    text-align: left;
+    max-width: none;
+    font-size: 17px;
+  }
+
+  .shijing-mingjing-five__bars {
+    overflow-x: auto;
+    grid-template-columns: repeat(5, minmax(64px, 1fr));
+    gap: 14px;
+    height: 132px;
+    padding-inline: 0;
+  }
+
+  .shijing-mingjing-five__label {
+    font-size: 24px;
+  }
+
+  .shijing-mingjing-five__count {
+    font-size: 17px;
+  }
+
+  .shijing-dayun__row-toggle {
+    grid-template-columns: minmax(64px, auto) minmax(0, 1fr);
+    align-items: start;
+    gap: 14px 18px;
+  }
+
+  .shijing-dayun__matrix-head {
+    display: none;
+  }
+
+  .shijing-dayun__row-title {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-dayun__term-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .shijing-dayun__row-nature {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .shijing-dayun__chevron {
+    grid-column: 2;
+    justify-self: end;
+    margin-top: -36px;
+  }
+
+  .shijing-mj-relationship__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-mj-relationship__controls .shijing-mj-reading__generate,
+  .shijing-mj-relationship__manage {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .shijing-mj-relationship__window-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 720px) {
+  .shijing-mingjing {
+    padding: 24px 14px 36px;
+  }
+
+  .shijing-mingjing-paipan {
+    padding: 28px 20px 30px;
+    border-radius: 22px;
+  }
+
+  .shijing-mj-reading__head {
+    flex-direction: column;
+  }
+
+  .shijing-paipan__toggle {
+    min-height: 34px;
+    max-width: 100%;
+    padding-inline: 14px;
+    font-size: 12.5px;
+  }
+
+  .shijing-paipan__detail {
+    padding-top: 18px;
+  }
+
+  .shijing-paipan__summary-chip {
+    width: 100%;
+    min-height: 30px;
+    justify-content: flex-start;
+  }
+
+  .shijing-mingjing-five__value {
+    width: 46px;
+    max-height: 86px;
+  }
+
+  .shijing-mingjing-five__label {
+    font-size: 18px;
+  }
+
+  .shijing-paipan__pillar-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-paipan__pillar-card {
+    min-height: 0;
+  }
+
+  .shijing-dayun__row-toggle {
+    grid-template-columns: minmax(54px, auto) minmax(0, 1fr);
+    min-height: 0;
+    padding: 16px;
+    gap: 10px 14px;
+  }
+
+  .shijing-dayun__term-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .shijing-dayun__row-nature {
+    grid-column: 2;
+    justify-self: start;
+    min-height: 34px;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+
+  .shijing-dayun__chevron {
+    grid-column: 2;
+    justify-self: end;
+    margin-top: -34px;
+  }
+
+  .shijing-dayun__explanation {
+    margin: 0 20px 22px;
+    padding-top: 18px;
+  }
+
+  .shijing-dayun__explanation p {
+    font-size: 15px;
+  }
+
+  .shijing-dayun__distant-copy {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .shijing-dayun__distant-group {
+    padding-inline: 2px;
+  }
+
+  .shijing-mingjing .shijing-mingjing__title { font-size: 32px; }
+}

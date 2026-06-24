@@ -1,0 +1,272 @@
+/* Shared ShiJing settings form, input, select, note, subpanel, and collapse primitives. */
+
+.shijing-settings-page--styled .sjp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 20px;
+}
+
+/* three-up row, e.g. 纬度 / 经度 / IANA 时区 in the birth-location sub-panel */
+.shijing-settings-page--styled .sjp-grid--triple {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.shijing-settings-page--styled .sjp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.shijing-settings-page--styled .sjp-field--full {
+  grid-column: 1 / -1;
+}
+
+.shijing-settings-page--styled .sjp-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sjp-fg-2);
+  letter-spacing: 0.01em;
+}
+
+.shijing-settings-page--styled .sjp-opt {
+  color: var(--sjp-fg-4);
+  font-weight: 400;
+}
+
+.shijing-settings-page--styled .sjp-input,
+.shijing-settings-page--styled .sjp-textarea {
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--sjp-fg-1);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--sjp-border-subtle);
+  border-radius: var(--sjp-radius-md);
+  padding: 12px 14px;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 160ms, box-shadow 160ms, background 160ms;
+}
+
+/* single-line controls land at ~46px tall (44–48 range) for a calmer rhythm */
+.shijing-settings-page--styled .sjp-input {
+  min-height: 46px;
+}
+
+.shijing-settings-page--styled .sjp-input::placeholder,
+.shijing-settings-page--styled .sjp-textarea::placeholder {
+  color: var(--sjp-fg-4);
+}
+
+.shijing-settings-page--styled .sjp-input:hover,
+.shijing-settings-page--styled .sjp-textarea:hover {
+  border-color: var(--sjp-border-strong);
+}
+
+.shijing-settings-page--styled .sjp-input:focus,
+.shijing-settings-page--styled .sjp-textarea:focus {
+  border-color: var(--sjp-accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px var(--sjp-accent-soft);
+}
+
+.shijing-settings-page--styled .sjp-textarea {
+  resize: vertical;
+  min-height: 88px;
+  line-height: 1.6;
+}
+
+.shijing-settings-page--styled .sjp-input--mono {
+  font-family: var(--sjp-font-mono);
+  letter-spacing: 0.01em;
+}
+
+/* nimi-kit DatePicker trigger — align its readonly field with the surrounding
+ * .sjp-input fields (radius / padding / surface / focus ring). The calendar
+ * popover is portaled to <body> and keeps the kit's own styling. */
+.shijing-settings-page--styled .sjp-datepicker {
+  width: 100%;
+}
+
+.shijing-settings-page--styled .sjp-datepicker input {
+  border-radius: var(--sjp-radius-md);
+  border-color: var(--sjp-border-subtle);
+  background: rgba(255, 255, 255, 0.85);
+  padding: 12px 40px 12px 14px;
+  min-height: 46px;
+  box-sizing: border-box;
+  font-size: 14px;
+  font-family: var(--sjp-font-mono);
+  letter-spacing: 0.01em;
+  color: var(--sjp-fg-1);
+  transition: border-color 160ms, box-shadow 160ms, background 160ms;
+}
+
+.shijing-settings-page--styled .sjp-datepicker input:hover {
+  border-color: var(--sjp-border-strong);
+}
+
+.shijing-settings-page--styled .sjp-datepicker input:focus {
+  border-color: var(--sjp-accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px var(--sjp-accent-soft);
+}
+
+/* nimi-kit SelectField trigger — align the Radix dropdown trigger with the
+ * surrounding .sjp-input fields (radius / padding / surface / focus ring). The
+ * dropdown panel is portaled to <body> and keeps the kit's own nimi styling, so
+ * every ShiJing dropdown opens the same way. */
+.shijing-settings-page--styled .sjp-select-trigger {
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--sjp-fg-1);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--sjp-border-subtle);
+  border-radius: var(--sjp-radius-md);
+  padding: 12px 14px;
+  min-height: 0;
+  width: 100%;
+  cursor: pointer;
+  transition: border-color 160ms, box-shadow 160ms, background 160ms;
+}
+
+.shijing-settings-page--styled .sjp-select-trigger:hover {
+  border-color: var(--sjp-border-strong);
+}
+
+.shijing-settings-page--styled .sjp-select-trigger:focus,
+.shijing-settings-page--styled .sjp-select-trigger[data-state="open"] {
+  border-color: var(--sjp-accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px var(--sjp-accent-soft);
+}
+
+/* ── Nested sub-panel ──────────────────────────────────────── */
+.shijing-settings-page--styled .sjp-subpanel {
+  grid-column: 1 / -1;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid var(--sjp-border-subtle);
+  border-radius: var(--sjp-radius-lg);
+  padding: 22px 24px;
+}
+
+.shijing-settings-page--styled .sjp-subpanel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--sjp-fg-3);
+}
+
+.shijing-settings-page--styled .sjp-subpanel-title::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--sjp-accent);
+}
+
+/* When a subpanel-title is used as a standalone divider row inside the form
+ * grid (not as the heading of a nested .sjp-subpanel), the grid row-gap already
+ * supplies the spacing — drop the heading's own bottom margin. */
+.shijing-settings-page--styled .sjp-field > .sjp-subpanel-title {
+  margin-bottom: 0;
+}
+
+/* ── ID chip ───────────────────────────────────────────────── */
+.shijing-settings-page--styled .sjp-idchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  font-family: var(--sjp-font-mono);
+  font-size: 13px;
+  color: var(--sjp-fg-2);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--sjp-border-subtle);
+  border-radius: var(--sjp-radius-sm);
+  padding: 9px 12px;
+  word-break: break-all;
+}
+
+/* ── Note ──────────────────────────────────────────────────── */
+.shijing-settings-page--styled .sjp-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 13px;
+  color: var(--sjp-fg-3);
+  line-height: 1.6;
+  padding: 11px 14px;
+  background: rgba(78, 204, 163, 0.07);
+  border: 1px solid rgba(78, 204, 163, 0.2);
+  border-radius: var(--sjp-radius-md);
+}
+
+/* caution variant — e.g. the daylight-saving-time reminder */
+.shijing-settings-page--styled .sjp-note--warn {
+  color: var(--sjp-fg-2);
+  background: rgba(245, 158, 11, 0.09);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.shijing-settings-page--styled .sjp-note--warn strong {
+  color: #b45309;
+  font-weight: 600;
+}
+
+/* native datetime-local picker aligned to the .sjp-input treatment */
+.shijing-settings-page--styled input[type="datetime-local"].sjp-input {
+  font-family: var(--sjp-font-mono);
+  letter-spacing: 0.01em;
+}
+/* ── Collapsible (地点与时区校准) ───────────────────────────── */
+.shijing-settings-page--styled .sjp-collapse {
+  border: 1px solid var(--sjp-border-subtle);
+  border-radius: var(--sjp-radius-lg);
+  background: rgba(255, 255, 255, 0.45);
+  overflow: hidden;
+}
+
+.shijing-settings-page--styled .sjp-collapse__summary {
+  appearance: none;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 18px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--sjp-fg-2);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.shijing-settings-page--styled .sjp-collapse__summary:hover {
+  color: var(--sjp-fg-1);
+}
+
+.shijing-settings-page--styled .sjp-collapse__chevron {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--sjp-fg-3);
+  transition: transform 160ms ease;
+}
+
+.shijing-settings-page--styled .sjp-collapse[data-open="true"] .sjp-collapse__chevron {
+  transform: rotate(180deg);
+}
+
+.shijing-settings-page--styled .sjp-collapse__body {
+  padding: 0 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

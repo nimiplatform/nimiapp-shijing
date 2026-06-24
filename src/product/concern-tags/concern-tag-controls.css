@@ -1,0 +1,138 @@
+/* Settings concern-tag controls. */
+
+/* ── Concern manager (关注的事) ─────────────────────────────
+ * Mirrors the 年镜 / 月镜「管理关注」popover: an 已激活 group followed by
+ * a 可添加 group, each a list of label + subtitle rows with an action. */
+.shijing-settings-page--styled .sjp-concern-group {
+  margin: 0 0 18px;
+}
+
+.shijing-settings-page--styled .sjp-concern-group__title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--sjp-fg-3);
+}
+
+.shijing-settings-page--styled .sjp-concern-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shijing-settings-page--styled .sjp-concern-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px 12px 16px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--sjp-border-subtle);
+  border-radius: var(--sjp-radius-lg);
+}
+
+.shijing-settings-page--styled .sjp-concern-row[data-status="suggestion"] {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.shijing-settings-page--styled .sjp-concern-row__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.shijing-settings-page--styled .sjp-concern-row__text strong {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--sjp-fg-1);
+  letter-spacing: 0.02em;
+}
+
+.shijing-settings-page--styled .sjp-concern-row__text small {
+  font-size: 12px;
+  color: var(--sjp-fg-3);
+}
+
+.shijing-settings-page--styled .sjp-concern-row__mentions [data-resolved="false"] {
+  color: #b45309;
+}
+
+.shijing-settings-page--styled .sjp-concern-row__actions {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shijing-settings-page--styled .sjp-concern-row__action {
+  flex-shrink: 0;
+  appearance: none;
+  font: inherit;
+  font-size: 13px;
+  border-radius: var(--sjp-radius-full);
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: border-color 160ms, color 160ms, background 160ms, opacity 160ms;
+}
+
+.shijing-settings-page--styled .sjp-concern-row__action--delete {
+  color: var(--sjp-fg-3);
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.shijing-settings-page--styled .sjp-concern-row__action--delete:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.shijing-settings-page--styled .sjp-concern-row__action--remove {
+  color: var(--sjp-fg-2);
+  background: #fff;
+  border: 1px solid var(--sjp-border-subtle);
+}
+
+.shijing-settings-page--styled .sjp-concern-row__action--remove:hover {
+  border-color: var(--sjp-accent);
+  color: var(--sjp-accent-hover);
+  background: var(--sjp-accent-soft);
+}
+
+.shijing-settings-page--styled .sjp-concern-row__action--add {
+  color: #fff;
+  background: var(--sjp-accent);
+  border: 1px solid var(--sjp-accent);
+  font-weight: 500;
+}
+
+.shijing-settings-page--styled .sjp-concern-row__action--add:hover:not(:disabled) {
+  background: var(--sjp-accent-hover);
+  border-color: var(--sjp-accent-hover);
+}
+
+.shijing-settings-page--styled .sjp-concern-row__action--add:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Inline add row (input + button) ───────────────────────── */
+.shijing-settings-page--styled .sjp-inline-add {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.shijing-settings-page--styled .sjp-inline-add .sjp-input {
+  flex: 1 1 auto;
+}
+
+.shijing-settings-page--styled .sjp-inline-add .sjp-btn {
+  flex-shrink: 0;
+}

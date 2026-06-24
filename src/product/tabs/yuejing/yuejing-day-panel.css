@@ -1,0 +1,371 @@
+/* ----- 6a) 当日倾向 tendency cards ----- */
+
+.shijing-yuejing .shijing-yuejing__panel-tendencies {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-tendencies li {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 38, 0.06);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 38, 0.04);
+}
+
+/* Round concern-themed icon on the left of each tendency row. The
+ * background color comes from the per-concern palette set via the
+ * inline `style` prop on the icon span; this rule controls shape /
+ * size only. */
+.shijing-yuejing__panel-tend-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.shijing-yuejing__panel-tend-icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.shijing-yuejing__panel-tend-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.shijing-yuejing__panel-tend-text strong {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.shijing-yuejing__panel-tend-text p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--shijing-text-secondary);
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shijing-yuejing__panel-tend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--shijing-text-disabled) 16%, transparent);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--shijing-text-primary);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.shijing-yuejing__panel-tend-chip[data-tendency="supportive"] { background: color-mix(in srgb, var(--yuejing-supportive) 18%, transparent); }
+.shijing-yuejing__panel-tend-chip[data-tendency="steady"]     { background: color-mix(in srgb, var(--yuejing-steady)     18%, transparent); }
+.shijing-yuejing__panel-tend-chip[data-tendency="watch"]      { background: color-mix(in srgb, var(--yuejing-watch)      18%, transparent); }
+.shijing-yuejing__panel-tend-chip[data-tendency="blocked"]    { background: color-mix(in srgb, var(--yuejing-blocked)    18%, transparent); }
+.shijing-yuejing__panel-tend-chip[data-tendency="turning"]    { background: color-mix(in srgb, var(--yuejing-turning)    18%, transparent); }
+
+.shijing-yuejing__panel-tend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--shijing-text-disabled);
+}
+
+.shijing-yuejing__panel-tend-chip[data-tendency="supportive"] .shijing-yuejing__panel-tend-dot { background: var(--yuejing-supportive); }
+.shijing-yuejing__panel-tend-chip[data-tendency="steady"]     .shijing-yuejing__panel-tend-dot { background: var(--yuejing-steady); }
+.shijing-yuejing__panel-tend-chip[data-tendency="watch"]      .shijing-yuejing__panel-tend-dot { background: var(--yuejing-watch); }
+.shijing-yuejing__panel-tend-chip[data-tendency="blocked"]    .shijing-yuejing__panel-tend-dot { background: var(--yuejing-blocked); }
+.shijing-yuejing__panel-tend-chip[data-tendency="turning"]    .shijing-yuejing__panel-tend-dot { background: var(--yuejing-turning); }
+
+/* (Old `__panel-tend-body` retired — body text now flows from
+ * `__panel-tend-text p` inside the grid layout.) */
+
+/* ----- 6b) Entry input ----- */
+
+.shijing-yuejing .shijing-yuejing__panel-entry {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 120px;
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 38, 0.08);
+  border-radius: 14px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--shijing-text-primary);
+  resize: vertical;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-entry::placeholder {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-yuejing .shijing-yuejing__panel-entry:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--yuejing-supportive) 45%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--yuejing-supportive) 18%, transparent);
+}
+
+.shijing-yuejing__panel-entry-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+/* Save button — dark forest-green pill with a pencil icon, matching
+ * the SJG-DSY-01 panel mockup. Distinct from the bright supportive
+ * green used on the「生成 30 日」action so the panel's CTA reads as
+ * "commit this entry" rather than "rerun the algorithm". */
+.shijing-yuejing .shijing-yuejing__panel-save {
+  appearance: none;
+  background: color-mix(in srgb, var(--yuejing-supportive) 55%, #1f3d2d);
+  color: #fff;
+  border: 0;
+  padding: 9px 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 4px 14px -6px rgba(31, 61, 45, 0.4);
+}
+
+.shijing-yuejing .shijing-yuejing__panel-save svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-save:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--yuejing-supportive) 45%, #1f3d2d);
+}
+
+.shijing-yuejing .shijing-yuejing__panel-save:disabled {
+  background: rgba(15, 23, 38, 0.18);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ----- 6c) Records list / empty state ----- */
+
+.shijing-yuejing .shijing-yuejing__panel-records {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-records li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px 10px 14px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+  line-height: 1.55;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-records li[data-editing] {
+  grid-template-columns: 1fr;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.shijing-yuejing__panel-record-body {
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-width: 0;
+  align-self: center;
+}
+
+.shijing-yuejing__panel-record-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+  /* Hide actions by default and reveal them on row hover or
+   * keyboard focus so the records list reads cleanly until the
+   * user actually wants to mutate a row. */
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.shijing-yuejing__panel-records li:hover .shijing-yuejing__panel-record-actions,
+.shijing-yuejing__panel-records li:focus-within .shijing-yuejing__panel-record-actions {
+  opacity: 1;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-actions button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--shijing-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-actions button svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-actions button:hover,
+.shijing-yuejing .shijing-yuejing__panel-record-actions button:focus-visible {
+  outline: none;
+  background: var(--shijing-hover-surface);
+  color: var(--shijing-text-primary);
+}
+
+/* ----- inline edit form ----- */
+
+.shijing-yuejing .shijing-yuejing__panel-record-edit {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 64px;
+  padding: 8px 10px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 38, 0.12);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--shijing-text-primary);
+  resize: vertical;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-edit:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--yuejing-supportive) 50%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--yuejing-supportive) 16%, transparent);
+}
+
+.shijing-yuejing__panel-record-edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-cancel,
+.shijing-yuejing .shijing-yuejing__panel-record-confirm {
+  appearance: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-cancel {
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  border: 1px solid rgba(15, 23, 38, 0.14);
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-cancel:hover {
+  background: var(--shijing-hover-surface);
+  color: var(--shijing-text-primary);
+  border-color: rgba(15, 23, 38, 0.22);
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-confirm {
+  background: color-mix(in srgb, var(--yuejing-supportive) 55%, #1f3d2d);
+  color: #ffffff;
+  border: 0;
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-confirm:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--yuejing-supportive) 45%, #1f3d2d);
+}
+
+.shijing-yuejing .shijing-yuejing__panel-record-confirm:disabled {
+  background: rgba(15, 23, 38, 0.12);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: not-allowed;
+}
+
+.shijing-yuejing__panel-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--shijing-text-muted);
+  font-style: italic;
+}
+
+/* Centered icon-in-circle + caption for the 「已记录」empty state,
+ * matching the SJG-DSY-01 panel mockup. */
+.shijing-yuejing__panel-records-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 0 12px;
+}
+
+.shijing-yuejing__panel-records-empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(15, 23, 38, 0.06);
+  color: var(--shijing-text-muted);
+}
+
+.shijing-yuejing__panel-records-empty-icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.shijing-yuejing__panel-records-empty p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--shijing-text-muted);
+  letter-spacing: 0.02em;
+}

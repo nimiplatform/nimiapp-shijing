@@ -1,0 +1,399 @@
+/* ----- 6) Long-horizon timeline card ----------------------------- */
+
+.shijing-nianjing .shijing-nianjing__timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 24px 16px;
+  background: var(--nianjing-glass-bg);
+  backdrop-filter: var(--nianjing-glass-blur);
+  -webkit-backdrop-filter: var(--nianjing-glass-blur);
+  border: 1px solid var(--nianjing-glass-border);
+  border-radius: var(--shijing-radius-2xl, 20px);
+  box-shadow: var(--nianjing-glass-shadow);
+  margin-bottom: 0;
+}
+
+.shijing-nianjing__lanes-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Year axis: replace the v1 flex-row of two end labels with absolutely
+ * positioned year ticks. */
+.shijing-nianjing .shijing-nianjing__axis {
+  position: relative;
+  display: block;
+  height: 24px;
+  padding-bottom: 0;
+  border-bottom: 0;
+  /* Reserve the left lane-label column so axis ticks align with the
+   * track area below. */
+  margin-left: 110px;
+}
+
+.shijing-nianjing__axis-tick {
+  position: absolute;
+  top: 4px;
+  transform: translateX(-50%);
+  font-size: 11.5px;
+  color: var(--shijing-text-muted);
+  white-space: nowrap;
+}
+
+.shijing-nianjing__now-tag {
+  position: absolute;
+  top: -2px;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: var(--shijing-status-success);
+  background: color-mix(in srgb, var(--nianjing-supportive) 16%, white);
+  border: 1px solid color-mix(in srgb, var(--nianjing-supportive) 35%, transparent);
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  z-index: 4;
+  box-shadow: 0 1px 3px rgba(15, 23, 38, 0.08);
+}
+
+/* Override the v1 lane layout to give more room for the band detail
+ * line and a richer label column. */
+.shijing-nianjing .shijing-nianjing__lane {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 14px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.shijing-nianjing__lane-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.shijing-nianjing__lane-label strong {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.04em;
+}
+
+.shijing-nianjing__lane-label small {
+  font-size: 11.5px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-nianjing .shijing-nianjing__lane-track {
+  position: relative;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 14px;
+  border: 0;
+  overflow: visible;
+}
+
+/* Bands sit inside the lane track as filled rounded blocks, each
+ * carrying a two-line label (tendency name + a short detail). */
+/* Band fill matches the YueJing day-cell formula exactly: a 22%-white
+ * sheen from the top-left over the soft tendency color. The soft
+ * variant (color-mix 62-68% with white) keeps the band more pastel,
+ * matching the calmer reading of the YueJing calendar. White label
+ * text + the existing text-shadow keep readability on every nature.
+ *
+ * Bands are <button>s so they open the detail drawer when clicked —
+ * `appearance: none` + `border: 0` + `font: inherit` strip the native
+ * button chrome so the visual reads identically to the previous
+ * <span> rendering. */
+.shijing-nianjing .shijing-nianjing__band {
+  appearance: none;
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border: 0;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--nianjing-text-on-band);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    var(--nianjing-steady-soft);
+  overflow: hidden;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px -3px rgba(15, 23, 38, 0.18);
+  transition: filter 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.shijing-nianjing .shijing-nianjing__band:hover {
+  filter: brightness(1.06) saturate(1.06);
+  box-shadow: 0 4px 12px -4px rgba(15, 23, 38, 0.25);
+  transform: translateY(-1px);
+}
+
+.shijing-nianjing .shijing-nianjing__band:focus-visible {
+  outline: none;
+  box-shadow: var(--shijing-focus-ring), 0 2px 6px -3px rgba(15, 23, 38, 0.18);
+}
+
+.shijing-nianjing .shijing-nianjing__band[data-nature="supportive"] {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    var(--nianjing-supportive-soft);
+}
+.shijing-nianjing .shijing-nianjing__band[data-nature="steady"] {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    var(--nianjing-steady-soft);
+}
+.shijing-nianjing .shijing-nianjing__band[data-nature="watch"] {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    var(--nianjing-watch-soft);
+}
+.shijing-nianjing .shijing-nianjing__band[data-nature="blocked"] {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    var(--nianjing-blocked-soft);
+}
+.shijing-nianjing .shijing-nianjing__band[data-nature="turning"] {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 55%),
+    var(--nianjing-turning-soft);
+}
+
+.shijing-nianjing .shijing-nianjing__band-label {
+  white-space: nowrap;
+  padding: 0;
+  font-weight: 600;
+  font-size: 13px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18);
+}
+
+.shijing-nianjing__band-detail {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.94);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Inflection markers: switch from v1's 2px vertical line to a circle
+ * pinned at the top edge of each lane. Kind drives fill style. */
+/* Markers are now buttons. Reset the baseline `.shijing-tab button`
+ * (filled brand-color pill) to nothing — we paint our own circle —
+ * and add hover / focus affordances so the click target reads as
+ * interactive. */
+.shijing-nianjing .shijing-nianjing__marker {
+  appearance: none;
+  position: absolute;
+  top: -7px;
+  bottom: auto;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border-radius: 50%;
+  transform: translateX(-7px);
+  background: var(--shijing-text-primary);
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 38, 0.28);
+  z-index: 3;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.shijing-nianjing .shijing-nianjing__marker:hover {
+  transform: translateX(-7px) scale(1.25);
+  box-shadow: 0 2px 6px rgba(15, 23, 38, 0.35);
+}
+
+.shijing-nianjing .shijing-nianjing__marker:focus-visible {
+  outline: none;
+  box-shadow: var(--shijing-focus-ring), 0 1px 3px rgba(15, 23, 38, 0.28);
+}
+
+.shijing-nianjing .shijing-nianjing__marker[data-kind="dayun_boundary"] {
+  background: var(--shijing-text-primary);
+  border-color: #ffffff;
+}
+
+.shijing-nianjing .shijing-nianjing__marker[data-kind="annual_transition"] {
+  background: #ffffff;
+  border-color: var(--shijing-text-primary);
+}
+
+.shijing-nianjing .shijing-nianjing__marker[data-kind="monthly_transition"] {
+  background: var(--nianjing-watch);
+  border-color: #ffffff;
+}
+
+.shijing-nianjing .shijing-nianjing__marker[data-kind="marker_cluster"] {
+  background:
+    radial-gradient(circle, var(--shijing-text-primary) 28%, transparent 32%),
+    #ffffff;
+  border-color: var(--shijing-text-primary);
+}
+
+/* Hover swap: every pixel that was BLACK (text-primary) becomes WHITE,
+ * every pixel that was WHITE becomes the brand green. The previous
+ * generic `:hover` rule (scale + shadow) keeps applying alongside
+ * these per-kind background / border overrides. */
+.shijing-nianjing .shijing-nianjing__marker[data-kind="dayun_boundary"]:hover {
+  background: #ffffff;
+  border-color: var(--shijing-brand-primary);
+}
+
+.shijing-nianjing .shijing-nianjing__marker[data-kind="annual_transition"]:hover {
+  background: var(--shijing-brand-primary);
+  border-color: #ffffff;
+}
+
+.shijing-nianjing .shijing-nianjing__marker[data-kind="marker_cluster"]:hover {
+  background:
+    radial-gradient(circle, #ffffff 28%, transparent 32%),
+    var(--shijing-brand-primary);
+  border-color: #ffffff;
+}
+
+/* The vertical "now" line spans every lane in the timeline. Positioned
+ * via a CSS variable set on the wrapper so the same offset drives the
+ * axis "现在" badge above. */
+.shijing-nianjing__nowline {
+  position: absolute;
+  top: 24px;             /* clears the axis row */
+  bottom: 0;
+  width: 0;
+  border-left: 2px dashed var(--nianjing-supportive);
+  pointer-events: none;
+  z-index: 1;
+  /* Account for the lane-label column (96px) + gap (14px). */
+  transform: translateX(-1px);
+}
+
+/* Bottom legend strip inside the timeline card. */
+/* Two-class selector so we beat baseline `.shijing-tab ul`
+ * (specificity 0,1,1) which would otherwise force flex-direction:
+ * column and stack the marker legend vertically. */
+.shijing-nianjing .shijing-nianjing__timeline-legend {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 8px 6px 0;
+  border-top: 1px solid color-mix(in srgb, var(--shijing-border-subtle) 80%, transparent);
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 18px;
+  font-size: 12px;
+  color: var(--shijing-text-secondary);
+  align-items: center;
+}
+
+.shijing-nianjing__timeline-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+}
+
+.shijing-nianjing__legend-marker {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--shijing-text-primary);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px var(--shijing-border-default);
+}
+
+.shijing-nianjing__legend-marker[data-kind="dayun_boundary"] {
+  background: var(--shijing-text-primary);
+}
+.shijing-nianjing__legend-marker[data-kind="annual_transition"] {
+  background: #ffffff;
+  border-color: var(--shijing-text-primary);
+  box-shadow: none;
+}
+.shijing-nianjing__legend-marker[data-kind="marker_cluster"] {
+  background:
+    radial-gradient(circle, var(--shijing-text-primary) 28%, transparent 32%),
+    #ffffff;
+  border-color: var(--shijing-text-primary);
+  box-shadow: none;
+}
+
+.shijing-nianjing__legend-now {
+  margin-left: auto;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-nianjing__legend-now-line {
+  display: inline-block;
+  width: 28px;
+  height: 0;
+  border-top: 2px dashed var(--nianjing-supportive);
+}
+
+/* ----- 6) Summary + drawer footer ------------------------------- */
+
+.shijing-nianjing__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px;
+  background: var(--nianjing-glass-bg);
+  backdrop-filter: var(--nianjing-glass-blur);
+  -webkit-backdrop-filter: var(--nianjing-glass-blur);
+  border: 1px solid var(--nianjing-glass-border);
+  border-radius: var(--shijing-radius-xl, 16px);
+  box-shadow: var(--nianjing-glass-shadow);
+}
+
+.shijing-nianjing__footer summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--shijing-text-secondary);
+  font-weight: 500;
+}
+
+.shijing-nianjing__footer-summary {
+  color: var(--shijing-text-primary);
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ----- Responsive ------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .shijing-nianjing__hero {
+    grid-template-columns: 1fr;
+    padding: 22px 22px;
+  }
+  .shijing-nianjing .shijing-nianjing__axis {
+    margin-left: 0;
+  }
+  .shijing-nianjing .shijing-nianjing__lane {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .shijing-nianjing__nowline {
+    /* In stacked layout the lane-label column is gone, so the dashed
+     * now-line should sit flush with the lane edge. */
+    transform: translateX(-1px);
+  }
+}

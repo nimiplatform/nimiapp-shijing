@@ -1,0 +1,285 @@
+/* ----- Account menu (compact dropdown anchored below the avatar) ----- */
+
+.shijing-account-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 200px;
+}
+
+/* The kit ActionMenu defaults to a translucent "glass" surface
+ * (rgba(255,255,255,0.45) + blur), which is hard to read over the mirror
+ * content. Force an opaque card surface so the items stay legible. */
+.shijing-account-menu .nimi-action-menu {
+  background-color: var(--shijing-surface-card);
+  backdrop-filter: none;
+  border-color: var(--shijing-border-default);
+  box-shadow: var(--shijing-shadow-2);
+}
+
+.shijing-account-menu .nimi-action-menu__item {
+  color: var(--shijing-text-primary);
+}
+
+/* ----- Settings detail page (full-surface, opened from the menu) ----- */
+
+.shijing-settings-page {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow: auto;
+  background: var(--shijing-surface-canvas);
+}
+
+.shijing-settings-page__back {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 4px 0;
+  font: inherit;
+  font-size: 14px;
+  color: var(--shijing-text-muted);
+  cursor: pointer;
+}
+
+.shijing-settings-page__back:hover {
+  color: var(--shijing-brand-primary);
+}
+
+/* The detail page reuses the `.shijing-settings` surface/editor styling. As
+ * a full page (rather than a narrow rail) each surface reads as a card. The
+ * personal-data settings pages ship their own card treatment (see
+ * styles-personal-data.css, keyed off `--styled`), so they opt out of this generic
+ * section chrome. */
+.shijing-settings-page:not(.shijing-settings-page--styled) .shijing-settings > section {
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-lg);
+  box-shadow: var(--shijing-shadow-1);
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.shijing-settings h3 {
+  margin: 14px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--shijing-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.shijing-settings p {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-settings section {
+  margin-bottom: 12px;
+}
+
+.shijing-settings button {
+  appearance: none;
+  background: var(--shijing-surface-card-quiet);
+  color: var(--shijing-text-primary);
+  border: 1px solid var(--shijing-border-default);
+  padding: 6px 12px;
+  border-radius: var(--shijing-radius-md);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.shijing-settings button:hover {
+  background: var(--shijing-brand-soft);
+  border-color: var(--shijing-brand-primary);
+}
+
+.shijing-settings__recover {
+  background: color-mix(in srgb, var(--shijing-status-danger) 8%, transparent) !important;
+  color: var(--shijing-status-danger) !important;
+  border-color: color-mix(in srgb, var(--shijing-status-danger) 30%, var(--shijing-border-default)) !important;
+}
+
+.shijing-settings h4 {
+  margin: 12px 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--shijing-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ----- W-c03 editor forms ----- */
+
+.shijing-self-editor,
+.shijing-person-editor,
+.shijing-memory-editor,
+.shijing-plan-editor,
+.shijing-response-prefs-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.shijing-self-editor label,
+.shijing-person-editor label,
+.shijing-memory-editor label,
+.shijing-plan-editor label,
+.shijing-response-prefs-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-self-editor input[type="text"],
+.shijing-self-editor select,
+.shijing-self-editor textarea,
+.shijing-person-editor input[type="text"],
+.shijing-person-editor select,
+.shijing-person-editor textarea,
+.shijing-memory-editor input[type="text"],
+.shijing-memory-editor select,
+.shijing-memory-editor textarea,
+.shijing-plan-editor input[type="text"],
+.shijing-plan-editor select,
+.shijing-plan-editor textarea,
+.shijing-response-prefs-editor input[type="text"],
+.shijing-response-prefs-editor select,
+.shijing-response-prefs-editor textarea {
+  font: inherit;
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+  background: var(--shijing-surface-card);
+  border: 1px solid var(--shijing-border-default);
+  border-radius: var(--shijing-radius-md);
+  padding: 6px 8px;
+}
+
+.shijing-self-editor textarea,
+.shijing-person-editor textarea,
+.shijing-memory-editor textarea,
+.shijing-plan-editor textarea,
+.shijing-response-prefs-editor textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+.shijing-self-editor fieldset,
+.shijing-person-editor fieldset,
+.shijing-memory-editor fieldset,
+.shijing-plan-editor fieldset {
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-md);
+  padding: 8px 12px;
+  margin: 0;
+}
+
+.shijing-self-editor fieldset legend,
+.shijing-person-editor fieldset legend,
+.shijing-memory-editor fieldset legend,
+.shijing-plan-editor fieldset legend {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--shijing-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 4px;
+}
+
+.shijing-self-editor button,
+.shijing-person-editor button,
+.shijing-memory-editor button,
+.shijing-plan-editor button,
+.shijing-response-prefs-editor button {
+  align-self: flex-start;
+  background: var(--shijing-brand-primary) !important;
+  color: #fff !important;
+  border: 0 !important;
+  padding: 6px 12px;
+  border-radius: var(--shijing-radius-md);
+  cursor: pointer;
+}
+
+.shijing-self-editor button:disabled,
+.shijing-person-editor button:disabled,
+.shijing-memory-editor button:disabled,
+.shijing-plan-editor button:disabled,
+.shijing-response-prefs-editor button:disabled {
+  background: var(--shijing-text-disabled) !important;
+  cursor: not-allowed;
+}
+
+.shijing-person-editor ul,
+.shijing-memory-editor ul,
+.shijing-plan-editor ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shijing-person-editor ul li,
+.shijing-memory-editor ul li,
+.shijing-plan-editor ul li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--shijing-surface-card-quiet);
+  border-radius: var(--shijing-radius-md);
+  border: 1px solid var(--shijing-border-subtle);
+  font-size: 12px;
+}
+
+.shijing-person-editor [role="alert"],
+.shijing-memory-editor [role="alert"],
+.shijing-plan-editor [role="alert"],
+.shijing-self-editor [role="alert"],
+.shijing-response-prefs-editor [role="alert"] {
+  color: var(--shijing-status-danger);
+  font-size: 12px;
+}
+
+.shijing-person-editor [role="status"],
+.shijing-self-editor [role="status"],
+.shijing-response-prefs-editor [role="status"] {
+  color: var(--shijing-status-success);
+  font-size: 12px;
+}
+
+.shijing-concern-tags__preview {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--shijing-text-muted);
+  line-height: 1.5;
+}
+
+.shijing-concern-tags__intro {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--shijing-text-muted);
+  line-height: 1.6;
+}
+
+.shijing-editor-empty {
+  margin: 4px 0 12px;
+  padding: 12px 14px;
+  border: 1px dashed var(--shijing-border, rgba(0, 0, 0, 0.12));
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--shijing-text-muted);
+  line-height: 1.6;
+}

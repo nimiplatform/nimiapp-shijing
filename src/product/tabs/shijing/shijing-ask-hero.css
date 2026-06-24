@@ -1,0 +1,54 @@
+/* ----- Hero (170–200px, centered) ----- */
+
+.shijing-ask__hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0;
+  min-height: 116px;
+  padding: 0;
+}
+
+/* Very faint mirror glow behind the hero — never competes with the card. */
+.shijing-ask__hero::before {
+  content: '';
+  display: none;
+  position: absolute;
+  inset: -40px 0 auto 0;
+  height: 220px;
+  background: radial-gradient(60% 120% at 70% 0%, rgba(67, 198, 165, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.shijing-ask__hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.shijing-ask .shijing-ask__title {
+  margin: 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 46px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #0f172a;
+}
+
+.shijing-ask__title-dot {
+  color: #1fae91;
+  font-size: 0.42em;
+  vertical-align: super;
+  margin-left: 4px;
+}
+
+.shijing-ask__subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* ----- Two-column layout ----- */

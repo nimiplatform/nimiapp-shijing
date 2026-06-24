@@ -1,0 +1,287 @@
+/* ----- 推演依据与数据说明 ----- */
+
+.shijing-rijing .shijing-rijing__data {
+  background: var(--rijing-glass-regular-bg);
+  border: 1px solid var(--rijing-glass-regular-border);
+  border-radius: var(--shijing-radius-lg);
+  box-shadow: var(--rijing-elev-base);
+  backdrop-filter: blur(var(--rijing-blur)) saturate(135%);
+  -webkit-backdrop-filter: blur(var(--rijing-blur)) saturate(135%);
+  overflow: hidden;
+  padding: 0;
+}
+
+.shijing-tab .shijing-rijing__data-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 24px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--shijing-text-primary);
+  text-align: left;
+  font: inherit;
+  flex-wrap: wrap;
+}
+
+.shijing-rijing__data-bar--static {
+  cursor: default;
+}
+
+.shijing-rijing__data-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--rijing-accent);
+  flex: none;
+}
+
+.shijing-rijing__data-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.shijing-rijing__data-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--shijing-text-secondary);
+  flex: none;
+}
+
+.shijing-rijing__data-chips {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-rijing__data-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.shijing-rijing__data-chip-label {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-rijing__data-chip-value {
+  color: var(--shijing-text-secondary);
+  font-weight: 600;
+}
+
+.shijing-rijing__data-chevron {
+  flex: none;
+  color: var(--shijing-text-muted);
+  display: inline-flex;
+  transition: transform 220ms ease;
+}
+
+.shijing-rijing__data-chevron[data-open="true"] {
+  transform: rotate(180deg);
+}
+
+.shijing-rijing__data-chevron svg {
+  width: 16px;
+  height: 16px;
+}
+
+.shijing-rijing__data-panel {
+  padding: 4px 24px 26px;
+  animation: sj-fade 0.2s ease both;
+}
+
+.shijing-rijing__data-divider {
+  height: 1px;
+  background: var(--shijing-border-subtle);
+  margin: 0 0 22px;
+}
+
+.shijing-rijing__data-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.shijing-rijing__data-card {
+  background: var(--nimi-surface-card, rgba(255, 255, 255, 0.7));
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-md);
+  padding: 16px;
+}
+
+.shijing-rijing__data-card-label {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--shijing-text-muted);
+  margin-bottom: 12px;
+}
+
+.shijing-rijing__data-strength {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--shijing-text-primary);
+  margin-bottom: 12px;
+}
+
+.shijing-rijing__data-segments {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 7px;
+}
+
+.shijing-rijing__data-segment {
+  flex: 1;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--nimi-surface-active, rgba(148, 163, 184, 0.16));
+}
+
+.shijing-rijing__data-segment[data-active="true"] {
+  background: var(--rijing-accent);
+}
+
+.shijing-rijing__data-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-rijing__data-elements {
+  display: flex;
+  gap: 8px;
+}
+
+.shijing-rijing__data-element {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 0;
+  flex: 1;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--rijing-element) 16%, transparent);
+}
+
+.shijing-rijing__data-element[data-element="wood"]  { --rijing-element: #6aa05a; --rijing-element-ink: #3f7a3a; }
+.shijing-rijing__data-element[data-element="fire"]  { --rijing-element: #e8836b; --rijing-element-ink: #c2553c; }
+.shijing-rijing__data-element[data-element="earth"] { --rijing-element: #c79a5b; --rijing-element-ink: #9a6f33; }
+.shijing-rijing__data-element[data-element="metal"] { --rijing-element: #b9bcc4; --rijing-element-ink: #7c828f; }
+.shijing-rijing__data-element[data-element="water"] { --rijing-element: #6aa6c9; --rijing-element-ink: #3b7fa6; }
+
+.shijing-rijing__data-element-char {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  color: var(--rijing-element-ink, var(--shijing-text-primary));
+}
+
+.shijing-rijing__data-element-nature {
+  font-size: 10px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-rijing__data-pillars {
+  display: flex;
+  gap: 8px;
+}
+
+.shijing-rijing__data-pillar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 10px;
+  background: var(--nimi-surface-active, rgba(148, 163, 184, 0.14));
+}
+
+.shijing-rijing__data-pillar[data-emphasis="true"] {
+  background: color-mix(in srgb, var(--rijing-accent) 16%, transparent);
+}
+
+.shijing-rijing__data-pillar-char {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-rijing__data-pillar[data-emphasis="true"] .shijing-rijing__data-pillar-char {
+  color: var(--shijing-text-primary);
+}
+
+.shijing-rijing__data-pillar-pos {
+  font-size: 10px;
+  margin-top: 4px;
+  font-weight: 600;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-rijing__data-pillar[data-emphasis="true"] .shijing-rijing__data-pillar-pos {
+  color: var(--rijing-accent-ink);
+}
+
+.shijing-rijing__data-dots {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.shijing-rijing__data-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  background: var(--nimi-surface-active, rgba(148, 163, 184, 0.2));
+}
+
+.shijing-rijing__data-dot[data-filled="true"] {
+  background: var(--rijing-accent);
+}
+
+.shijing-rijing__data-completeness {
+  font-size: 12.5px;
+  color: var(--shijing-text-secondary);
+  margin-bottom: 8px;
+}
+
+.shijing-rijing__data-completeness b {
+  font-weight: 600;
+}
+
+.shijing-rijing__data-stage-pill {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--rijing-accent) 14%, transparent);
+  color: var(--rijing-accent-ink);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.shijing-tab .shijing-rijing__data-complete {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--rijing-accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.shijing-tab .shijing-rijing__data-complete:hover {
+  color: var(--rijing-accent-hover);
+}
+
+/* ----- Responsive ----- */

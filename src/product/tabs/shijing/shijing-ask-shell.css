@@ -1,0 +1,32 @@
+.shijing-shijing__latest {
+  background: var(--shijing-brand-soft);
+  border-color: color-mix(in srgb, var(--shijing-brand-primary) 30%, var(--shijing-border-subtle));
+}
+
+.shijing-shijing form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-shijing form label input[type="checkbox"] {
+  margin-right: 6px;
+}
+
+.shijing-shell__main:has(> .shijing-ask) {
+  padding-top: 12px;
+}
+
+.shijing-tab.shijing-ask {
+  --shijing-ask-glass-bg: var(--shijing-shared-glass-bg);
+  --shijing-ask-glass-border: var(--shijing-shared-glass-border);
+  --shijing-ask-glass-blur: var(--shijing-shared-glass-blur);
+  --shijing-ask-glass-shadow: var(--shijing-shared-glass-shadow);
+
+  max-width: 1200px;
+  gap: 18px;
+  padding-top: 0;
+  padding-bottom: 24px;
+}

@@ -1,0 +1,26 @@
+.shijing-nianjing__phase-bands,
+.shijing-nianjing__inflections {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-nianjing__phase-bands li,
+.shijing-nianjing__inflections li {
+  padding: 10px 14px;
+  border-radius: var(--shijing-radius-md);
+  background: var(--shijing-surface-card-quiet);
+  border: 1px solid var(--shijing-border-subtle);
+  border-left: 3px solid var(--shijing-text-disabled);
+  font-size: 13px;
+}
+
+.shijing-nianjing__phase-bands li[data-nature="supportive"] { border-left-color: var(--shijing-status-success); }
+.shijing-nianjing__phase-bands li[data-nature="watch"]      { border-left-color: var(--shijing-status-warning); }
+.shijing-nianjing__phase-bands li[data-nature="blocked"]    { border-left-color: var(--shijing-status-danger); }
+.shijing-nianjing__phase-bands li[data-nature="turning"]    { border-left-color: var(--shijing-status-info); }
+
+.shijing-nianjing__phase-bands li p { font-size: 13px; margin: 4px 0 0; color: var(--shijing-text-secondary); }
+.shijing-nianjing__phase-bands li small { color: var(--shijing-text-muted); }

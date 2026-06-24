@@ -1,0 +1,386 @@
+/* ── 大运结构 ───────────────────────────────────────────────────────────── */
+
+.shijing-dayun__row[data-nature='supportive'] { --mj-nature: var(--mj-supportive); }
+.shijing-dayun__row[data-nature='blocked'] { --mj-nature: var(--mj-blocked); }
+.shijing-dayun__row[data-nature='watch'] { --mj-nature: var(--mj-watch); }
+.shijing-dayun__row[data-nature='steady'] { --mj-nature: var(--mj-steady); }
+.shijing-dayun__row[data-nature='turning'] { --mj-nature: var(--mj-turning); }
+
+.shijing-dayun__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-dayun__matrix-head {
+  display: grid;
+  grid-template-columns: minmax(72px, auto) minmax(0, 1fr) minmax(104px, auto) auto;
+  align-items: center;
+  gap: 18px;
+  margin: 0 0 8px;
+  padding: 0 28px 0 32px;
+  color: #91a0b7;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shijing-dayun__row {
+  overflow: hidden;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(110, 128, 153, 0.14);
+  border-left: 4px solid var(--mj-nature, var(--shijing-border-default));
+  box-shadow: 0 8px 20px rgba(72, 92, 124, 0.05);
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.shijing-dayun__row[data-current] {
+  border-color: color-mix(in srgb, var(--mingjing-accent) 42%, transparent);
+  border-left-color: var(--mingjing-accent);
+}
+
+.shijing-dayun__row[data-expanded] {
+  background: rgba(255, 255, 255, 0.84);
+  border-color: color-mix(in srgb, var(--mingjing-accent) 36%, rgba(110, 128, 153, 0.14));
+  box-shadow: 0 18px 36px rgba(57, 122, 102, 0.12);
+}
+
+.shijing-dayun__row:hover {
+  background: rgba(247, 252, 249, 0.94);
+  border-color: color-mix(in srgb, var(--mj-nature, var(--mingjing-accent)) 32%, rgba(110, 128, 153, 0.14));
+  border-left-color: var(--mj-nature, var(--mingjing-accent));
+  box-shadow: 0 14px 28px rgba(57, 122, 102, 0.11);
+  transform: translateY(-1px);
+}
+
+.shijing-dayun__row-toggle {
+  width: 100%;
+  min-height: 76px;
+  padding: 14px 28px 14px 32px;
+  display: grid;
+  grid-template-columns: minmax(72px, auto) minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 18px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.88);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.shijing-dayun__row > .shijing-dayun__row-toggle {
+  background: rgba(255, 255, 255, 0.88);
+  color: inherit;
+}
+
+.shijing-dayun__row[data-expanded] .shijing-dayun__row-toggle {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.shijing-dayun__row:hover .shijing-dayun__row-toggle {
+  background: rgba(242, 250, 246, 0.96);
+}
+
+.shijing-dayun__row-toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--mingjing-accent) 70%, #fff);
+  outline-offset: -6px;
+  border-radius: 16px;
+}
+
+.shijing-dayun__identity {
+  min-width: 0;
+}
+
+.shijing-dayun__pillar {
+  display: block;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 31px;
+  font-weight: 750;
+  line-height: 1.1;
+  color: var(--mj-el, var(--shijing-text-primary));
+}
+
+.shijing-dayun__row-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shijing-dayun__row-title {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(120px, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.shijing-dayun__stage-title {
+  font-weight: 750;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-dayun__technical {
+  font-weight: 600;
+  color: #8c9ab0;
+}
+
+.shijing-dayun__term-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.shijing-dayun__term {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #53627a;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.shijing-dayun__term small {
+  color: #9aa6b8;
+  font-size: 10.5px;
+  font-weight: 650;
+}
+
+.shijing-dayun__row-nature {
+  justify-self: end;
+  white-space: nowrap;
+  min-height: 34px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 750;
+  border-radius: 999px;
+  color: var(--mj-nature, var(--shijing-text-secondary));
+  background: color-mix(in srgb, var(--mj-nature, var(--mingjing-accent)) 14%, rgba(255, 255, 255, 0.72));
+}
+
+.shijing-dayun__nature-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.shijing-dayun__chevron {
+  width: 18px;
+  color: #b7c1d2;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.shijing-dayun__explanation {
+  margin: 0 28px 22px 32px;
+  padding-top: 18px;
+  border-top: 1px solid color-mix(in srgb, var(--mingjing-accent) 28%, transparent);
+}
+
+.shijing-dayun__explanation p {
+  margin: 0;
+  max-width: 1040px;
+  color: #68778c;
+  font-size: 15px;
+  font-weight: 520;
+  line-height: 1.78;
+}
+
+.shijing-dayun__distant-shell {
+  list-style: none;
+  margin: 10px 0 2px;
+}
+
+.shijing-dayun__distant-group {
+  padding: 12px 16px;
+  border-top: 1px dashed rgba(105, 125, 153, 0.22);
+}
+
+.shijing-dayun__distant-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #7a879a;
+  font-size: 12.5px;
+  line-height: 1.6;
+  list-style: none;
+  cursor: pointer;
+}
+
+.shijing-dayun__distant-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.shijing-dayun__distant-copy {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.shijing-dayun__distant-copy strong {
+  flex: 0 0 auto;
+  color: #53627a;
+  font-weight: 750;
+}
+
+.shijing-dayun__distant-chevron {
+  flex: 0 0 auto;
+  color: #aeb8c8;
+  font-size: 18px;
+  font-weight: 750;
+  transition: transform 160ms ease;
+}
+
+.shijing-dayun__distant-group[open] .shijing-dayun__distant-chevron {
+  transform: rotate(90deg);
+}
+
+.shijing-dayun__distant-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-dayun__row[data-distant] {
+  background: rgba(255, 255, 255, 0.64);
+}
+
+/* ── 大运结构 · 导语 + 阶段时间轴 ──────────────────────────────────────────── */
+
+.shijing-dayun__intro {
+  margin: 6px 0 0;
+  max-width: 72ch;
+  font-size: 14.5px;
+  line-height: 1.85;
+  color: var(--mingjing-ink-soft);
+}
+
+.shijing-dayun__intro-mark {
+  font-weight: 750;
+}
+
+.shijing-dayun__intro-mark[data-nature='supportive'] { --mj-nature: var(--mj-supportive); }
+.shijing-dayun__intro-mark[data-nature='blocked'] { --mj-nature: var(--mj-blocked); }
+.shijing-dayun__intro-mark[data-nature='watch'] { --mj-nature: var(--mj-watch); }
+.shijing-dayun__intro-mark[data-nature='steady'] { --mj-nature: var(--mj-steady); }
+.shijing-dayun__intro-mark[data-nature='turning'] { --mj-nature: var(--mj-turning); }
+
+.shijing-dayun__intro-mark[data-tone='current'] {
+  color: var(--mj-nature, var(--mj-watch));
+}
+
+.shijing-dayun__intro-mark[data-tone='highlight'] {
+  color: color-mix(in srgb, var(--mingjing-accent-hover) 88%, var(--mingjing-ink-strong));
+}
+
+.shijing-dayun__timeline {
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 20px 0 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: clamp(6px, 1.1vw, 12px);
+}
+
+.shijing-dayun__seg[data-nature='supportive'] { --mj-nature: var(--mj-supportive); }
+.shijing-dayun__seg[data-nature='blocked'] { --mj-nature: var(--mj-blocked); }
+.shijing-dayun__seg[data-nature='watch'] { --mj-nature: var(--mj-watch); }
+.shijing-dayun__seg[data-nature='steady'] { --mj-nature: var(--mj-steady); }
+.shijing-dayun__seg[data-nature='turning'] { --mj-nature: var(--mj-turning); }
+
+.shijing-dayun__seg {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 9px;
+}
+
+.shijing-dayun__seg-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 62px;
+  padding: 10px 8px;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--mj-nature, var(--shijing-border-default)) 34%, #fff);
+  border: 1px solid color-mix(in srgb, var(--mj-nature, var(--shijing-border-default)) 42%, transparent);
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.shijing-dayun__seg-label {
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--mj-nature, var(--mingjing-ink-strong)) 66%, var(--mingjing-ink-strong));
+}
+
+.shijing-dayun__seg-age {
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--mingjing-ink-faint);
+}
+
+.shijing-dayun__seg[data-highlight] .shijing-dayun__seg-bar {
+  background: color-mix(in srgb, var(--mj-nature) 48%, #fff);
+  border-color: color-mix(in srgb, var(--mj-nature) 56%, transparent);
+}
+
+.shijing-dayun__seg[data-highlight] .shijing-dayun__seg-label {
+  color: color-mix(in srgb, var(--mj-nature) 82%, var(--mingjing-ink-strong));
+}
+
+.shijing-dayun__seg[data-current] .shijing-dayun__seg-bar {
+  border-color: var(--mingjing-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mingjing-accent) 62%, transparent),
+    0 6px 16px rgba(57, 122, 102, 0.18);
+}
+
+.shijing-dayun__seg-here {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  z-index: 2;
+  transform: translateX(-50%);
+  padding: 2px 11px;
+  border-radius: 999px;
+  background: var(--mingjing-accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+  box-shadow: 0 5px 12px rgba(57, 122, 102, 0.3);
+}
+
+@media (max-width: 560px) {
+  .shijing-dayun__timeline {
+    grid-auto-columns: minmax(58px, 1fr);
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+
+  .shijing-dayun__seg-label { font-size: 13.5px; }
+  .shijing-dayun__seg-age { font-size: 11.5px; }
+}

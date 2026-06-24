@@ -1,0 +1,141 @@
+.shijing-rijing__summary {
+  font-weight: 600;
+  font-size: 17px;
+}
+
+.shijing-rijing__overview {
+  color: var(--shijing-text-secondary);
+}
+
+/* =====================================================================
+ * RiJing rich tab — progressive-disclosure layout: 今日总览 hero (energy
+ * meter + collapsible 完整解读), 今日关注分镜 (lens filter + collapsible
+ * frames), 今日参照 (reference list + composer), 今日行动 (do / say +
+ * import), and the collapsible 推演依据 data panel.
+ *
+ * Tokens reference the Nimi primary action color directly so the tab
+ * reads as an extension of the kit theme. No yellow warning blocks;
+ * readiness folds into the data panel as a calm completeness signal.
+ * ===================================================================== */
+
+.shijing-rijing {
+  /* Nimi-kit accent + supporting tints, scoped to the rijing tab. */
+  --rijing-accent: var(--nimi-action-primary-bg, #4ECCA3);
+  --rijing-accent-hover: var(--nimi-action-primary-bg-hover, #3DBB96);
+  --rijing-accent-ink: var(--nimi-accent-ink, #157a5b);
+  --rijing-glass-thick-bg: var(--nimi-material-glass-thick-bg, rgba(255, 255, 255, 0.70));
+  --rijing-glass-thick-border: var(--nimi-material-glass-thick-border, rgba(226, 232, 240, 0.40));
+  --rijing-glass-regular-bg: var(--nimi-material-glass-regular-bg, rgba(255, 255, 255, 0.45));
+  --rijing-glass-regular-border: var(--nimi-material-glass-regular-border, rgba(226, 232, 240, 0.30));
+  --rijing-glass-thin-bg: var(--nimi-material-glass-thin-bg, rgba(255, 255, 255, 0.25));
+  --rijing-glass-thin-border: var(--nimi-material-glass-thin-border, rgba(226, 232, 240, 0.20));
+  --rijing-blur: var(--nimi-backdrop-blur-regular, 18px);
+  --rijing-blur-chrome: var(--nimi-backdrop-blur-chrome, 28px);
+  --rijing-elev-base: var(--nimi-elevation-base, 0 6px 18px rgba(15, 23, 42, 0.08));
+  --rijing-elev-raised: var(--nimi-elevation-raised, 0 12px 28px rgba(15, 23, 42, 0.12));
+
+  /* Modern sans-serif stack for body modules (今日参照 / 今日行动).
+   * Never falls back to a serif face. */
+  --rijing-font-sans: "PingFang SC", "HarmonyOS Sans SC", "HarmonyOS Sans",
+    "Noto Sans SC", "Inter", "Microsoft YaHei", system-ui, sans-serif;
+  /* Calm text tones — never pure black. */
+  --rijing-ink-strong: #17202a;
+  --rijing-ink-soft: rgba(23, 32, 42, 0.58);
+  --rijing-ink-faint: rgba(23, 32, 42, 0.42);
+  /* Unified white translucent card + very light shadow. */
+  --rijing-card-bg: rgba(255, 255, 255, 0.62);
+  --rijing-card-border: rgba(23, 32, 42, 0.06);
+  --rijing-card-shadow: 0 1px 2px rgba(23, 32, 42, 0.03),
+    0 8px 22px -14px rgba(23, 32, 42, 0.16);
+
+  gap: 18px;
+}
+
+.shijing-rijing__date-main {
+  color: var(--shijing-text-primary);
+  font-weight: 500;
+}
+
+.shijing-rijing__date-sep {
+  color: var(--shijing-text-muted);
+}
+
+/* ----- Header actions --------------------------------------------- */
+
+.shijing-rijing .shijing-import-to-consultation {
+  margin-top: 0;
+  font-size: 14px;
+  padding: 9px 18px;
+  border-radius: 999px;
+}
+
+.shijing-rijing .shijing-rijing__generate {
+  background: var(--rijing-accent);
+  color: #fff;
+  border: 0;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px -4px rgba(78, 204, 163, 0.45);
+  cursor: pointer;
+}
+
+.shijing-rijing .shijing-rijing__generate:hover:not(:disabled) {
+  background: var(--rijing-accent-hover);
+}
+
+.shijing-rijing .shijing-rijing__generate:disabled {
+  background: var(--shijing-text-disabled);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.shijing-rijing__empty-tags {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  color: var(--shijing-text-secondary);
+  font-size: 13px;
+  padding: 16px 18px;
+  border-radius: var(--shijing-radius-lg);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--rijing-accent) 15%, transparent), rgba(255, 255, 255, 0.78));
+  border: 1px solid color-mix(in srgb, var(--rijing-accent) 32%, transparent);
+  box-shadow: 0 16px 40px rgba(80, 146, 125, 0.12);
+}
+
+.shijing-rijing__empty-tags p {
+  margin: 4px 0 0;
+}
+
+.shijing-rijing__empty-tags-title {
+  display: block;
+  color: var(--shijing-text-primary);
+  font-size: 15px;
+}
+
+.shijing-rijing__empty-tags-action {
+  appearance: none;
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--rijing-accent) 48%, transparent);
+  border-radius: var(--shijing-radius-md);
+  background: color-mix(in srgb, var(--rijing-accent) 16%, white);
+  color: var(--shijing-text-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shijing-rijing__empty-tags-action:hover {
+  background: color-mix(in srgb, var(--rijing-accent) 26%, white);
+  border-color: color-mix(in srgb, var(--rijing-accent) 64%, transparent);
+}
+
+.shijing-rijing__empty-tags-action:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--rijing-accent) 58%, transparent);
+  outline-offset: 3px;
+}

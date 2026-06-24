@@ -1,0 +1,174 @@
+/* Shared visual primitives for ShiJing surfaces.
+ *
+ * This file owns cross-surface chrome and controls that must remain identical
+ * across mirrors. Per-surface rich styles should keep only local layout,
+ * domain-specific modules, and deliberate visual deviations. */
+
+:root {
+  --shijing-shared-aurora-bg:
+    radial-gradient(42% 36% at 6% 4%, rgba(167, 243, 208, 0.55), transparent 70%),
+    radial-gradient(40% 38% at 94% 92%, rgba(252, 231, 243, 0.50), transparent 70%),
+    linear-gradient(135deg, #e7f5ee 0%, #eef0f7 100%);
+  --shijing-surface-topbar-border: rgba(255, 255, 255, 0.45);
+  --shijing-shared-glass-bg: rgba(255, 255, 255, 0.55);
+  --shijing-shared-glass-border: rgba(255, 255, 255, 0.55);
+  --shijing-shared-glass-blur: blur(16px) saturate(140%);
+  --shijing-shared-glass-shadow: 0 8px 28px -16px rgba(15, 23, 38, 0.12);
+}
+
+.shijing-shell[data-active-tab="rijing"],
+.shijing-shell[data-active-tab="yuejing"],
+.shijing-shell[data-active-tab="nianjing"],
+.shijing-shell[data-active-tab="shijing"] {
+  background: var(--shijing-shared-aurora-bg);
+}
+
+.shijing-shell[data-active-tab="rijing"] .shijing-topbar,
+.shijing-shell[data-active-tab="yuejing"] .shijing-topbar,
+.shijing-shell[data-active-tab="nianjing"] .shijing-topbar,
+.shijing-shell[data-active-tab="mingjing"] .shijing-topbar,
+.shijing-shell[data-active-tab="shijing"] .shijing-topbar {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom-color: var(--shijing-surface-topbar-border);
+}
+
+.shijing-shell__main:has(> .shijing-rijing),
+.shijing-shell__main:has(> .shijing-yuejing),
+.shijing-shell__main:has(> .shijing-nianjing),
+.shijing-shell__main:has(> .shijing-mingjing),
+.shijing-shell__main:has(> .shijing-ask) {
+  background: transparent;
+}
+
+.shijing-yuejing__editor-count,
+.shijing-nianjing__editor-count,
+.shijing-rijing-concern-editor__count,
+.shijing-ctx-editor__count {
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-yuejing__editor-subtitle,
+.shijing-nianjing__editor-subtitle,
+.shijing-rijing-concern-editor__subtitle,
+.shijing-ctx-editor__subtitle {
+  font-size: 12px;
+  color: var(--shijing-text-secondary);
+  line-height: 1.55;
+  margin: 0 0 2px;
+}
+
+.shijing-yuejing .shijing-yuejing__editor-section ul,
+.shijing-nianjing .shijing-nianjing__editor-section ul,
+.shijing-rijing .shijing-rijing-concern-editor__section ul,
+.shijing-ask .shijing-ctx-editor__section ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shijing-yuejing .shijing-yuejing__editor-section li,
+.shijing-nianjing .shijing-nianjing__editor-section li,
+.shijing-rijing .shijing-rijing-concern-editor__section li,
+.shijing-ask .shijing-ctx-editor__section li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 12px;
+}
+
+.shijing-yuejing__editor-row-text,
+.shijing-nianjing__editor-row-text,
+.shijing-rijing-concern-editor__row-text,
+.shijing-ctx-editor__row-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.shijing-yuejing__editor-row-text small,
+.shijing-nianjing__editor-row-text small,
+.shijing-rijing-concern-editor__row-text small,
+.shijing-ctx-editor__row-text small {
+  font-size: 11.5px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-yuejing .shijing-yuejing__editor-remove,
+.shijing-nianjing .shijing-nianjing__editor-remove,
+.shijing-rijing .shijing-rijing-concern-editor__remove,
+.shijing-ask .shijing-ctx-editor__remove {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--shijing-border-default);
+  color: var(--shijing-text-secondary);
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+  flex: 0 0 auto;
+}
+
+.shijing-yuejing .shijing-yuejing__editor-remove:hover,
+.shijing-nianjing .shijing-nianjing__editor-remove:hover,
+.shijing-rijing .shijing-rijing-concern-editor__remove:hover,
+.shijing-ask .shijing-ctx-editor__remove:hover {
+  background: var(--shijing-hover-surface);
+  border-color: var(--shijing-border-default);
+  color: var(--shijing-text-primary);
+}
+
+.shijing-yuejing .shijing-yuejing__editor-custom input,
+.shijing-nianjing .shijing-nianjing__editor-custom input,
+.shijing-rijing .shijing-rijing-concern-editor__custom input,
+.shijing-ask .shijing-ctx-editor__custom input {
+  flex: 1;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+  padding: 4px 0;
+  min-width: 0;
+}
+
+.shijing-yuejing .shijing-yuejing__editor-custom input::placeholder,
+.shijing-nianjing .shijing-nianjing__editor-custom input::placeholder,
+.shijing-rijing .shijing-rijing-concern-editor__custom input::placeholder,
+.shijing-ask .shijing-ctx-editor__custom input::placeholder {
+  color: var(--shijing-text-muted);
+}
+
+.shijing-yuejing .shijing-yuejing__editor-custom input:focus,
+.shijing-nianjing .shijing-nianjing__editor-custom input:focus,
+.shijing-rijing .shijing-rijing-concern-editor__custom input:focus,
+.shijing-ask .shijing-ctx-editor__custom input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Shared legacy mirror head primitive kept out of mirror-v1 so shell CSS does not own concrete mirror details. */
+
+.shijing-rijing__head,
+.shijing-yuejing__head,
+.shijing-nianjing__head,
+.shijing-shijing__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}

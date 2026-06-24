@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { readCssBundle, rijingCssFiles, sharedPrimitiveCssFiles } from './css-bundles.mjs';
 
 const rijingStyles = stripCssComments(
-  readFileSync(new URL('../src/styles-rijing-rich.css', import.meta.url), 'utf8'),
+  readCssBundle(rijingCssFiles),
+);
+const sharedSurfaceStyles = stripCssComments(
+  readCssBundle(sharedPrimitiveCssFiles),
 );
 
 function stripJsComments(src) {
@@ -84,7 +88,7 @@ test('RiJing concern frames expose the inline concern editor beside lens pills',
   const manage = cssBlock(rijingStyles, '.shijing-tab .shijing-rijing__lens-manage');
   const anchor = cssBlock(rijingStyles, '.shijing-rijing__editor-anchor');
   const editor = cssBlock(rijingStyles, '.shijing-rijing-concern-editor');
-  const editorList = cssBlock(rijingStyles, '.shijing-rijing .shijing-rijing-concern-editor__section ul');
+  const editorList = cssBlock(sharedSurfaceStyles, '.shijing-rijing .shijing-rijing-concern-editor__section ul');
   const custom = cssBlock(rijingStyles, '.shijing-rijing-concern-editor__custom');
 
   assert.match(lens, /align-items:\s*center/);

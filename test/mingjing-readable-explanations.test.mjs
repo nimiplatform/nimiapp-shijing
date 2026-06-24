@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { mingjingCssFiles, readCssBundle } from './css-bundles.mjs';
+import { readI18nSource } from './i18n-source.mjs';
 
 const componentFiles = [
   '../src/product/tabs/mingjing/mingjing-paipan.tsx',
@@ -11,6 +13,8 @@ const componentFiles = [
   '../src/product/tabs/mingjing/mingjing-relationship-reading-view.tsx',
   '../src/product/tabs/mingjing/mingjing-rectify.tsx',
 ];
+
+const i18nCopySource = readI18nSource();
 
 test('MingJing technical modules keep explanations behind title info controls', () => {
   for (const file of componentFiles) {
@@ -41,25 +45,21 @@ test('MingJing full-paipan detail uses the compact technical title', () => {
     new URL('../src/product/tabs/mingjing/mingjing-paipan.tsx', import.meta.url),
     'utf8',
   );
-  const copy = readFileSync(new URL('../src/product/i18n/copy.ts', import.meta.url), 'utf8');
-
   assert.match(source, /shijing-paipan__detail-title">\{m\.detailTitle\}/);
   assert.doesNotMatch(source, /MingJingInfo label=\{`\$\{m\.detailTitle\}说明`\}/);
   assert.doesNotMatch(source, /shijing-paipan__detail-head/);
-  assert.doesNotMatch(copy, /供懂行的人核对|for expert review/u);
+  assert.doesNotMatch(i18nCopySource, /供懂行的人核对|for expert review/u);
 });
 
 test('MingJing info controls have dedicated visual styling', () => {
-  const source = readFileSync(new URL('../src/styles-mingjing-rich.css', import.meta.url), 'utf8');
+  const source = readCssBundle(mingjingCssFiles);
 
   assert.match(source, /\.shijing-mingjing-info__button/);
   assert.match(source, /\.shijing-mingjing-info__bubble/);
 });
 
 test('MingJing explanations avoid instructional or score-like phrasing', () => {
-  const source = readFileSync(new URL('../src/product/i18n/copy.ts', import.meta.url), 'utf8');
-
-  assert.doesNotMatch(source, /先不用|逐字查术语|对得越准|当作每年的分数|你现在所在|你自己/u);
+  assert.doesNotMatch(i18nCopySource, /先不用|逐字查术语|对得越准|当作每年的分数|你现在所在|你自己/u);
 });
 
 test('MingJing liunian cards lead with plain-language guidance and collapse evidence', () => {
@@ -67,8 +67,6 @@ test('MingJing liunian cards lead with plain-language guidance and collapse evid
     new URL('../src/product/tabs/mingjing/mingjing-liunian.tsx', import.meta.url),
     'utf8',
   );
-  const copy = readFileSync(new URL('../src/product/i18n/copy.ts', import.meta.url), 'utf8');
-
   assert.match(source, /useMingJingNarrative/u);
   assert.match(source, /windowBadge\(window\)/u);
   assert.match(source, /windowNarrative\(window\)/u);
@@ -78,10 +76,10 @@ test('MingJing liunian cards lead with plain-language guidance and collapse evid
   assert.match(source, /\{l\.detailToggle\}/u);
   assert.doesNotMatch(source, /shijing-liunian__nature/u);
 
-  assert.match(copy, /这里不是给每一年打分/u);
-  assert.match(copy, /适合主动推进、稳步积累、放缓观察、守住边界或处理转折/u);
-  assert.match(copy, /查看算法依据/u);
-  assert.match(copy, /为什么被标出来/u);
+  assert.match(i18nCopySource, /这里不是给每一年打分/u);
+  assert.match(i18nCopySource, /适合主动推进、稳步积累、放缓观察、守住边界或处理转折/u);
+  assert.match(i18nCopySource, /查看算法依据/u);
+  assert.match(i18nCopySource, /为什么被标出来/u);
 });
 
 test('MingJing dayun explains twelve-stage terms that users may misread', () => {
@@ -89,12 +87,10 @@ test('MingJing dayun explains twelve-stage terms that users may misread', () => 
     new URL('../src/product/tabs/mingjing/mingjing-dayun.tsx', import.meta.url),
     'utf8',
   );
-  const copy = readFileSync(new URL('../src/product/i18n/copy.ts', import.meta.url), 'utf8');
-
   assert.match(source, /d\.terrainLabel\(period\.terrain\)/u);
-  assert.match(copy, /terrain:\s*'十二长生'/u);
-  assert.match(copy, /terrainLabel:\s*\(terrain\)\s*=>/u);
-  assert.match(copy, /死:\s*'死（收束）'/u);
-  assert.match(copy, /“死”是十二长生的阶段名/u);
-  assert.match(copy, /不是死亡或寿命判断/u);
+  assert.match(i18nCopySource, /terrain:\s*'十二长生'/u);
+  assert.match(i18nCopySource, /terrainLabel:\s*\(terrain\)\s*=>/u);
+  assert.match(i18nCopySource, /死:\s*'死（收束）'/u);
+  assert.match(i18nCopySource, /“死”是十二长生的阶段名/u);
+  assert.match(i18nCopySource, /不是死亡或寿命判断/u);
 });

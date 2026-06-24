@@ -1,0 +1,207 @@
+/* =====================================================================
+ * NianJing rich tab — header strip + current-phase hero + concern
+ * filter row + multi-lane long-horizon phase timeline.
+ *
+ * Scoped under `.shijing-nianjing` so it overrides the baseline rules in
+ * `styles-mirror-v1.css` for the NianJing surface only. Other mirrors
+ * keep their own visual style.
+ *
+ * Palette matches `src/product/tabs/yuejing/yuejing-shell.css` so the five tendency
+ * tokens read the same across all three time-window mirrors.
+ *
+ * SJG-REMOVED-04 compliance: this stylesheet introduces only phase
+ * BANDS (rectangular fills, no curves), inflection MARKERS (circles
+ * at lane edges, no scores), and a now-line. No score axes, no
+ * gradient-as-trend, no rankable numeric series.
+ * ===================================================================== */
+
+.shijing-nianjing {
+  --nianjing-supportive: #4ECCA3;
+  --nianjing-steady:     #7DA3C9;
+  --nianjing-watch:      #E0A458;
+  --nianjing-blocked:    #D96A6A;
+  --nianjing-turning:    #8B7CD6;
+
+  /* Soft variants identical to the YueJing day-cell tokens — sit
+   * between the saturated brand color and white so a white-on-fill
+   * numeral or label stays readable on every nature. Tuned at 62%
+   * for green / orange / red / purple and slightly higher (68%) for
+   * steady-blue which would otherwise wash out white text. */
+  --nianjing-supportive-soft: color-mix(in srgb, var(--nianjing-supportive) 62%, white);
+  --nianjing-steady-soft:     color-mix(in srgb, var(--nianjing-steady)     68%, white);
+  --nianjing-watch-soft:      color-mix(in srgb, var(--nianjing-watch)      62%, white);
+  --nianjing-blocked-soft:    color-mix(in srgb, var(--nianjing-blocked)    62%, white);
+  --nianjing-turning-soft:    color-mix(in srgb, var(--nianjing-turning)    62%, white);
+
+  --nianjing-glass-bg: var(--shijing-shared-glass-bg);
+  --nianjing-glass-border: var(--shijing-shared-glass-border);
+  --nianjing-glass-blur: var(--shijing-shared-glass-blur);
+  --nianjing-glass-shadow: var(--shijing-shared-glass-shadow);
+
+  --nianjing-text-on-band: #ffffff;
+
+  gap: 18px;
+}
+
+/* The mirror-v1 baseline wraps every direct article/section in a card.
+ * The rich layout draws its own framing per block, so reset that on
+ * each direct NianJing block. */
+.shijing-nianjing > .shijing-nianjing__hero,
+.shijing-nianjing > .shijing-nianjing__filter-row,
+.shijing-nianjing > .shijing-nianjing__timeline,
+.shijing-nianjing > .shijing-nianjing__notice {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+/* ----- 1) Header actions ----------------------------------------- */
+
+/* Let the shared import button adopt the pill shape used by the
+ * NianJing header. */
+.shijing-nianjing .shijing-import-to-consultation {
+  margin-top: 0;
+  font-size: 14px;
+  padding: 9px 18px;
+  border-radius: 999px;
+}
+
+.shijing-nianjing .shijing-nianjing__generate {
+  background: var(--nianjing-supportive);
+  color: #fff;
+  border: 0;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px -4px rgba(78, 204, 163, 0.45);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shijing-nianjing .shijing-nianjing__generate:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--nianjing-supportive) 90%, black);
+}
+
+.shijing-nianjing .shijing-nianjing__generate:disabled {
+  background: var(--shijing-text-disabled);
+  box-shadow: none;
+}
+
+.shijing-nianjing__generate-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  font-size: 0;
+}
+
+/* Subtle link-button that only appears when the user has at least
+ * two NianJing readings in the store. Toggles between the latest and
+ * the immediate prior reading. Highlight when "viewing previous" so
+ * the user always knows which version they're looking at. */
+.shijing-nianjing .shijing-nianjing__version-toggle {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 2px 4px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--shijing-brand-primary);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.shijing-nianjing .shijing-nianjing__version-toggle:hover {
+  background: var(--shijing-brand-soft);
+  text-decoration: underline;
+}
+
+.shijing-nianjing .shijing-nianjing__version-toggle[aria-pressed="true"] {
+  color: var(--shijing-status-warning);
+  font-weight: 500;
+}
+
+/* ----- 2) Generic notice / stale banners ------------------------- */
+
+/* Two-class selector beats the reset so the glass background and
+ * padding survive on empty / loading / failure notices. */
+.shijing-nianjing > .shijing-nianjing__notice {
+  background: var(--nianjing-glass-bg);
+  backdrop-filter: var(--nianjing-glass-blur);
+  -webkit-backdrop-filter: var(--nianjing-glass-blur);
+  border: 1px solid var(--nianjing-glass-border);
+  border-radius: var(--shijing-radius-lg);
+  padding: 14px 18px;
+  color: var(--shijing-text-secondary);
+  text-align: center;
+  box-shadow: var(--nianjing-glass-shadow);
+}
+
+.shijing-nianjing > .shijing-nianjing__notice--action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  text-align: left;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--nianjing-supportive) 13%, transparent), rgba(255, 255, 255, 0.82));
+  border-color: color-mix(in srgb, var(--nianjing-supportive) 30%, transparent);
+}
+
+.shijing-nianjing__notice--action strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--shijing-text-primary);
+  font-size: 15px;
+}
+
+.shijing-nianjing__notice-action {
+  appearance: none;
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--nianjing-supportive) 46%, transparent);
+  border-radius: var(--shijing-radius-md);
+  background: color-mix(in srgb, var(--nianjing-supportive) 15%, white);
+  color: var(--shijing-text-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shijing-nianjing__notice-action:hover {
+  background: color-mix(in srgb, var(--nianjing-supportive) 25%, white);
+  border-color: color-mix(in srgb, var(--nianjing-supportive) 62%, transparent);
+}
+
+.shijing-nianjing__notice-action:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--nianjing-supportive) 58%, transparent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .shijing-nianjing > .shijing-nianjing__notice--action {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .shijing-nianjing__notice-action {
+    width: 100%;
+  }
+}
+
+.shijing-nianjing__stale {
+  background: color-mix(in srgb, var(--nianjing-watch) 14%, transparent);
+  color: var(--shijing-status-warning);
+  padding: 10px 14px;
+  border-radius: var(--shijing-radius-md);
+  border-left: 3px solid var(--nianjing-watch);
+  font-size: 13px;
+  margin: 0;
+}

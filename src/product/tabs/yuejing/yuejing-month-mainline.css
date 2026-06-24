@@ -1,0 +1,304 @@
+.shijing-yuejing__panel[data-panel-kind="month"] {
+  width: min(760px, 100vw);
+}
+
+.shijing-yuejing__month-head strong {
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+/* Each numbered section (① 本期主线 … ⑤ 收尾提醒) is a flex column with a
+ * heading carrying a small green index badge. */
+.shijing-yuejing .shijing-yuejing__month-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.shijing-yuejing .shijing-yuejing__month-section > h3 {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.01em;
+}
+
+.shijing-yuejing__month-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin-right: 9px;
+  border-radius: 50%;
+  background: var(--yuejing-supportive);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.shijing-yuejing__month-section-hint {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-yuejing__month-empty {
+  padding: 28px 22px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 38, 0.06);
+  color: var(--shijing-text-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+/* ----- ① 本期主线 ----------------------------------------------- */
+
+.shijing-yuejing__month-mainline {
+  display: grid;
+  grid-template-columns: minmax(200px, 0.82fr) minmax(0, 1.18fr);
+  gap: 14px;
+}
+
+.shijing-yuejing__month-primary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 204px;
+  padding: 22px 20px;
+  border-radius: 18px;
+  color: #ffffff;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, 0.24), transparent 56%),
+    color-mix(in srgb, var(--yuejing-supportive) 88%, #ffffff);
+  box-shadow: 0 14px 30px -18px rgba(15, 23, 38, 0.28);
+}
+
+.shijing-yuejing__month-primary[data-tendency="steady"] {
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, 0.24), transparent 56%),
+    color-mix(in srgb, var(--yuejing-steady) 88%, #ffffff);
+}
+.shijing-yuejing__month-primary[data-tendency="watch"] {
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, 0.24), transparent 56%),
+    color-mix(in srgb, var(--yuejing-watch) 88%, #ffffff);
+}
+.shijing-yuejing__month-primary[data-tendency="blocked"] {
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, 0.24), transparent 56%),
+    color-mix(in srgb, var(--yuejing-blocked) 88%, #ffffff);
+}
+.shijing-yuejing__month-primary[data-tendency="turning"] {
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, 0.24), transparent 56%),
+    color-mix(in srgb, var(--yuejing-turning) 88%, #ffffff);
+}
+
+.shijing-yuejing__month-primary-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.shijing-yuejing__month-primary-icon svg {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.shijing-yuejing__month-primary-label {
+  margin-top: 4px;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 40px;
+  line-height: 1.04;
+  letter-spacing: 0.08em;
+}
+
+.shijing-yuejing__month-primary-tagline {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.96);
+  letter-spacing: 0.02em;
+}
+
+.shijing-yuejing__month-primary-body {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  line-height: 1.72;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.shijing-yuejing__month-rhythm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 18px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 38, 0.06);
+}
+
+.shijing-yuejing__month-rhythm h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-yuejing .shijing-yuejing__month-rhythm-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.shijing-yuejing .shijing-yuejing__month-rhythm-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-yuejing__month-rhythm-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  background: var(--shijing-text-disabled);
+}
+
+.shijing-yuejing__month-rhythm-legend li[data-tendency="supportive"] .shijing-yuejing__month-rhythm-dot { background: var(--yuejing-supportive); }
+.shijing-yuejing__month-rhythm-legend li[data-tendency="steady"]     .shijing-yuejing__month-rhythm-dot { background: var(--yuejing-steady); }
+.shijing-yuejing__month-rhythm-legend li[data-tendency="watch"]      .shijing-yuejing__month-rhythm-dot { background: var(--yuejing-watch); }
+.shijing-yuejing__month-rhythm-legend li[data-tendency="blocked"]    .shijing-yuejing__month-rhythm-dot { background: var(--yuejing-blocked); }
+.shijing-yuejing__month-rhythm-legend li[data-tendency="turning"]    .shijing-yuejing__month-rhythm-dot { background: var(--yuejing-turning); }
+
+.shijing-yuejing .shijing-yuejing__month-rhythm-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  gap: 6px;
+}
+
+.shijing-yuejing .shijing-yuejing__month-rhythm-grid li {
+  aspect-ratio: 1;
+  border-radius: 5px;
+  background: var(--yuejing-steady);
+}
+
+.shijing-yuejing .shijing-yuejing__month-rhythm-cell {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.shijing-yuejing .shijing-yuejing__month-rhythm-cell > span {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.shijing-yuejing__month-rhythm-grid li[data-tendency="supportive"] { background: var(--yuejing-supportive); }
+.shijing-yuejing__month-rhythm-grid li[data-tendency="steady"]     { background: var(--yuejing-steady); }
+.shijing-yuejing__month-rhythm-grid li[data-tendency="watch"]      { background: var(--yuejing-watch); }
+.shijing-yuejing__month-rhythm-grid li[data-tendency="blocked"]    { background: var(--yuejing-blocked); }
+.shijing-yuejing__month-rhythm-grid li[data-tendency="turning"]    { background: var(--yuejing-turning); }
+.shijing-yuejing__month-rhythm-grid li[data-tendency="empty"]      { background: rgba(15, 23, 38, 0.08); }
+
+.shijing-yuejing__month-rhythm-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-yuejing .shijing-yuejing__month-stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.shijing-yuejing .shijing-yuejing__month-stats li {
+  flex: 1 1 0;
+  min-width: 104px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 11px 13px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(15, 23, 38, 0.05);
+}
+
+.shijing-yuejing__month-stat-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--shijing-text-secondary);
+}
+
+.shijing-yuejing__month-stat-head strong {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+  font-weight: 600;
+}
+
+.shijing-yuejing__month-stat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+  background: var(--shijing-text-disabled);
+}
+
+.shijing-yuejing__month-stat-bar {
+  display: block;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(15, 23, 38, 0.07);
+  overflow: hidden;
+}
+
+.shijing-yuejing__month-stat-bar i {
+  display: block;
+  height: 100%;
+  min-width: 8%;
+  border-radius: 999px;
+  background: var(--shijing-text-disabled);
+}
+
+.shijing-yuejing__month-stats li[data-tendency="supportive"] .shijing-yuejing__month-stat-dot,
+.shijing-yuejing__month-stats li[data-tendency="supportive"] .shijing-yuejing__month-stat-bar i { background: var(--yuejing-supportive); }
+.shijing-yuejing__month-stats li[data-tendency="steady"] .shijing-yuejing__month-stat-dot,
+.shijing-yuejing__month-stats li[data-tendency="steady"] .shijing-yuejing__month-stat-bar i { background: var(--yuejing-steady); }
+.shijing-yuejing__month-stats li[data-tendency="watch"] .shijing-yuejing__month-stat-dot,
+.shijing-yuejing__month-stats li[data-tendency="watch"] .shijing-yuejing__month-stat-bar i { background: var(--yuejing-watch); }
+.shijing-yuejing__month-stats li[data-tendency="blocked"] .shijing-yuejing__month-stat-dot,
+.shijing-yuejing__month-stats li[data-tendency="blocked"] .shijing-yuejing__month-stat-bar i { background: var(--yuejing-blocked); }
+.shijing-yuejing__month-stats li[data-tendency="turning"] .shijing-yuejing__month-stat-dot,
+.shijing-yuejing__month-stats li[data-tendency="turning"] .shijing-yuejing__month-stat-bar i { background: var(--yuejing-turning); }

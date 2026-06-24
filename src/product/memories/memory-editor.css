@@ -1,0 +1,55 @@
+/* Settings event-memory record list styles. */
+
+/* ── Record list (发生过的事 / 将来的打算) ─────────────────── */
+.shijing-settings-page--styled .sjp-records {
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-settings-page--styled .sjp-record {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 16px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--sjp-border-subtle);
+  border-radius: var(--sjp-radius-lg);
+}
+
+.shijing-settings-page--styled .sjp-record__main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.shijing-settings-page--styled .sjp-record__time {
+  font-family: var(--sjp-font-mono);
+  font-size: 12px;
+  color: var(--sjp-accent-hover);
+  letter-spacing: 0.01em;
+}
+
+.shijing-settings-page--styled .sjp-record__body {
+  font-size: 14px;
+  color: var(--sjp-fg-1);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.shijing-settings-page--styled .sjp-record .sjp-btn {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  font-size: 13px;
+}
+
+/* native datetime-local picker aligned to the .sjp-input treatment */
+.shijing-settings-page--styled input[type="datetime-local"].sjp-input {
+  font-family: var(--sjp-font-mono);
+  letter-spacing: 0.01em;
+}

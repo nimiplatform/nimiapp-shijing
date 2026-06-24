@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { readCssBundle, settingsCssFiles } from './css-bundles.mjs';
 
 const settingsPageSource = readFileSync(
   new URL('../src/product/settings/settings-page-view.tsx', import.meta.url),
@@ -26,10 +27,7 @@ const aiModelConfigSource = readFileSync(
   new URL('../src/shell/ai/shijing-ai-model-config-section.tsx', import.meta.url),
   'utf8',
 );
-const personalDataStyles = readFileSync(
-  new URL('../src/styles-personal-data.css', import.meta.url),
-  'utf8',
-).replace(/\/\*[\s\S]*?\*\//g, '');
+const personalDataStyles = readCssBundle(settingsCssFiles).replace(/\/\*[\s\S]*?\*\//g, '');
 const mirrorV1Styles = readFileSync(
   new URL('../src/styles-mirror-v1.css', import.meta.url),
   'utf8',

@@ -1,0 +1,127 @@
+/* ── 历史事件验证 (Wave 2) ───────────────────────────────────────────────── */
+
+.shijing-mj-events__recorder {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.shijing-mj-events__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-mj-events__field--grow { flex: 1 1 220px; }
+
+.shijing-mj-events__field--date {
+  flex: 0 0 170px;
+  min-width: 160px;
+}
+
+.shijing-mj-events__datepicker {
+  width: 100%;
+}
+
+.shijing-mj-events__field input {
+  padding: 8px 10px;
+  border: 1px solid var(--mingjing-glass-regular-border);
+  border-radius: var(--shijing-radius-md);
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.52);
+  color: var(--shijing-text-primary);
+}
+
+.shijing-mj-events__field .shijing-mj-events__date-input {
+  padding-right: 56px;
+}
+
+.shijing-mj-events__add,
+.shijing-mj-reading__generate {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--mingjing-accent);
+  white-space: nowrap;
+}
+
+.shijing-mj-events__add:hover:not(:disabled),
+.shijing-mj-reading__generate:hover:not(:disabled) {
+  background: var(--mingjing-accent-hover);
+}
+
+.shijing-mj-reading__generate:disabled { opacity: 0.6; cursor: default; }
+.shijing-mj-events__add:focus-visible,
+.shijing-mj-reading__generate:focus-visible {
+  outline: none;
+  box-shadow: var(--shijing-focus-ring);
+}
+
+.shijing-mj-events__error { color: var(--shijing-status-danger); font-size: 12px; margin: 6px 0 0; }
+.shijing-mj-events__hint,
+.shijing-mj-events__empty { font-size: 12px; color: var(--shijing-text-muted); margin: 12px 0 0; }
+
+.shijing-mj-events__list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-mj-events__item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding: 10px 36px 10px 14px;
+  border-radius: var(--shijing-radius-lg);
+  background: var(--mingjing-card-quiet-bg);
+  border: 1px solid var(--mingjing-glass-regular-border);
+  border-left: 3px solid var(--mj-nature, var(--shijing-border-default));
+}
+
+.shijing-mj-events__item[data-nature='supportive'] { --mj-nature: var(--mj-supportive); }
+.shijing-mj-events__item[data-nature='blocked'] { --mj-nature: var(--mj-blocked); }
+.shijing-mj-events__item[data-nature='watch'] { --mj-nature: var(--mj-watch); }
+.shijing-mj-events__item[data-nature='steady'] { --mj-nature: var(--mj-steady); }
+.shijing-mj-events__item[data-nature='turning'] { --mj-nature: var(--mj-turning); }
+
+.shijing-mj-events__when { flex: 0 0 84px; }
+.shijing-mj-events__year { font-size: 13px; font-weight: 600; color: var(--shijing-text-secondary); }
+.shijing-mj-events__body { flex: 1 1 220px; margin: 0; font-size: 14px; color: var(--shijing-text-primary); }
+
+.shijing-mj-events__resonance {
+  flex: 1 1 100%;
+  display: flex;
+  gap: 18px;
+  margin: 2px 0 0;
+  font-size: 11px;
+}
+
+.shijing-mj-events__resonance dt { color: var(--shijing-text-muted); display: inline; }
+.shijing-mj-events__resonance dd { margin: 0; display: inline; color: var(--shijing-text-secondary); }
+
+.shijing-mj-events__delete {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--shijing-text-disabled);
+}
+.shijing-mj-events__delete:hover { color: var(--shijing-status-danger); }

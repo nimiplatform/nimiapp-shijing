@@ -1,0 +1,199 @@
+/* Self profile summary and inline self editor settings styles. */
+
+/* ── 本人资料 summary ──────────────────────────────────────────
+ * A calm, generously-spaced profile: a 2×2 core grid of birth-info cells,
+ * a quiet stand-alone location/timezone row, then a footer that pairs the
+ * quick-entry chips with a light「✓ 资料完整」status at the far right.
+ * Large gaps between sections (核心 / 地点 / 快捷) keep it breathing. */
+.shijing-settings-page--styled .sjp-card-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.shijing-settings-page--styled .sjp-card-actions .sjp-card-action {
+  margin-left: 0;
+}
+
+.shijing-settings-page--styled .sjp-card-action--secondary {
+  color: var(--sjp-fg-3);
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.shijing-settings-page--styled .sjp-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+/* 核心摘要区 — 性别 / 出生日期 · 出生时间 on one row, 历法·地区·准确度 below. */
+.shijing-settings-page--styled .sjp-profile__core {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px 28px;
+}
+
+.shijing-settings-page--styled .sjp-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* the 历法·地区·准确度 cell spans the full row beneath the three short ones */
+.shijing-settings-page--styled .sjp-stat--wide {
+  grid-column: 1 / -1;
+}
+
+.shijing-settings-page--styled .sjp-stat__label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sjp-fg-4);
+}
+
+.shijing-settings-page--styled .sjp-stat__value {
+  font-family: var(--sjp-font-serif);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+  color: var(--sjp-fg-1);
+  overflow-wrap: anywhere;
+}
+
+/* the wide meta cell reads as supporting detail, not a headline number */
+.shijing-settings-page--styled .sjp-stat--wide .sjp-stat__value {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--sjp-fg-2);
+  line-height: 1.5;
+}
+
+.shijing-settings-page--styled .sjp-stat--muted .sjp-stat__value {
+  color: var(--sjp-fg-4);
+  font-weight: 500;
+}
+
+/* 地点与时区 — quiet stand-alone row with label + mono coordinates / IANA. */
+.shijing-settings-page--styled .sjp-profile__location {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin: 0;
+  padding-top: 22px;
+  border-top: 1px solid var(--sjp-border-subtle);
+  font-size: 12.5px;
+  color: var(--sjp-fg-4);
+}
+
+.shijing-settings-page--styled .sjp-profile__location svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--sjp-fg-4);
+}
+
+.shijing-settings-page--styled .sjp-profile__location-label {
+  letter-spacing: 0.02em;
+}
+
+.shijing-settings-page--styled .sjp-profile__location code {
+  font-family: var(--sjp-font-mono);
+  font-size: 12px;
+  color: var(--sjp-fg-3);
+  letter-spacing: 0.01em;
+}
+
+/* 快捷入口区 + 右下角轻量状态. */
+.shijing-settings-page--styled .sjp-profile__privacy-hint {
+  margin: -8px 0 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--sjp-fg-4);
+}
+
+.shijing-settings-page--styled .sjp-profile__privacy-error {
+  margin: -8px 0 0;
+}
+
+.shijing-settings-page--styled .sjp-profile__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.shijing-settings-page--styled .sjp-profile__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  font-size: 12.5px;
+  color: var(--sjp-accent-hover);
+}
+
+.shijing-settings-page--styled .sjp-profile__status svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* Accuracy reminders — only rendered when birth data is missing/uncertain. */
+.shijing-settings-page--styled .sjp-reminders {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shijing-settings-page--styled .sjp-reminder {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 14px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--sjp-fg-2);
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.26);
+  border-radius: var(--sjp-radius-md);
+}
+
+.shijing-settings-page--styled .sjp-reminder svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #d97706;
+}
+
+.shijing-settings-page--styled .sjp-inline-self-form .nimi-action--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--sjp-fg-2);
+  box-shadow: none;
+}
+
+.shijing-settings-page--styled .sjp-inline-self-form .nimi-action--ghost:hover:not(:disabled) {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: transparent;
+  color: var(--sjp-fg-1);
+  box-shadow: none;
+}
+
+.shijing-settings-page--styled .sjp-inline-self-form .nimi-action--ghost:disabled {
+  background: transparent;
+  border-color: transparent;
+  color: var(--sjp-fg-4);
+  box-shadow: none;
+}

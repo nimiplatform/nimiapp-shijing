@@ -1,19 +1,25 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { mingjingCssFiles, readCssBundle, sharedPrimitiveCssFiles } from './css-bundles.mjs';
+import { readI18nSource } from './i18n-source.mjs';
 
-const mingjingStyles = readFileSync(
-  new URL('../src/styles-mingjing-rich.css', import.meta.url),
-  'utf8',
-).replace(/\/\*[\s\S]*?\*\//g, '');
+const mingjingStyles = readCssBundle(mingjingCssFiles).replace(/\/\*[\s\S]*?\*\//g, '');
 
 const mirrorV1Styles = readFileSync(
   new URL('../src/styles-mirror-v1.css', import.meta.url),
   'utf8',
 ).replace(/\/\*[\s\S]*?\*\//g, '');
 
+const sharedSurfaceStyles = readCssBundle(sharedPrimitiveCssFiles).replace(/\/\*[\s\S]*?\*\//g, '');
+
 const mingjingTabSource = readFileSync(
   new URL('../src/product/tabs/mingjing-tab.tsx', import.meta.url),
+  'utf8',
+).replace(/\/\*[\s\S]*?\*\//g, '');
+
+const baziMingjingRouteSource = readFileSync(
+  new URL('../src/product/tabs/mingjing/bazi-mingjing-route.tsx', import.meta.url),
   'utf8',
 ).replace(/\/\*[\s\S]*?\*\//g, '');
 
@@ -26,6 +32,8 @@ const mingjingDayunSource = readFileSync(
   new URL('../src/product/tabs/mingjing/mingjing-dayun.tsx', import.meta.url),
   'utf8',
 ).replace(/\/\*[\s\S]*?\*\//g, '');
+
+const i18nCopySource = readI18nSource();
 
 function cssBlockFrom(source, selector) {
   const blocks = [];
@@ -40,6 +48,10 @@ function cssBlockFrom(source, selector) {
 
 function cssBlock(selector) {
   return cssBlockFrom(mingjingStyles, selector);
+}
+
+function sharedCssBlock(selector) {
+  return cssBlockFrom(sharedSurfaceStyles, selector);
 }
 
 test('MingJing root uses the full shell surface instead of a centered boxed frame', () => {
@@ -78,11 +90,12 @@ test('MingJing projection panels are stacked as full-width reading modules', () 
 
 test('MingJing uses the reference-style pastel shell and transparent chrome', () => {
   const shell = cssBlock('.shijing-shell[data-active-tab="mingjing"]');
-  const topbar = cssBlock('.shijing-shell[data-active-tab="mingjing"] .shijing-topbar');
+  const topbar = sharedCssBlock('.shijing-shell[data-active-tab="mingjing"] .shijing-topbar');
 
   assert.match(shell, /linear-gradient\(115deg,\s*#e8f7f2\s+0%,\s*#f7fbfd\s+48%,\s*#f4f0fb\s+100%\)/);
   assert.match(topbar, /background:\s*transparent/);
   assert.match(topbar, /backdrop-filter:\s*none/);
+  assert.match(topbar, /border-bottom-color:\s*var\(--shijing-surface-topbar-border\)/);
 });
 
 test('MingJing root exposes RiJing-style glass card tokens', () => {
@@ -217,7 +230,11 @@ test('MingJing paipan typography matches the heavier reference hierarchy', () =>
 test('MingJing ready state keeps the page title above the archetype card', () => {
   assert.match(
     mingjingTabSource,
-    /\)\s*:\s*\(\s*<>\s*<MingJingSimpleHeader copy=\{m\}\s*\/>\s*<MingJingHero/u,
+    /\)\s*:\s*\(\s*<>\s*<MingJingSimpleHeader copy=\{m\}\s*\/>\s*\{projection\.value\.kind === 'bazi_ziping_v1'/u,
+  );
+  assert.match(
+    baziMingjingRouteSource,
+    /return \(\s*<>\s*<MingJingHero/u,
   );
 });
 
@@ -369,14 +386,12 @@ test('MingJing liunian cards prioritize readable guidance before folded evidence
 });
 
 test('MingJing dayun copy puts product language before technical terms', () => {
-  const copy = readFileSync(new URL('../src/product/i18n/copy.ts', import.meta.url), 'utf8');
-
-  assert.match(copy, /phaseTitle:\s*\(index,\s*current\)/u);
-  assert.match(copy, /sectionTitle:\s*'大运排布'/u);
-  assert.match(copy, /distantTitle:\s*'90岁以后 · 远期排盘'/u);
-  assert.match(copy, /不代表寿命判断/u);
-  assert.match(copy, /第\$\{index \+ 1\}步大运/u);
-  assert.match(copy, /currentPrefix:\s*'当前 · '/u);
-  assert.doesNotMatch(copy, /人生各阶段的起落/u);
-  assert.doesNotMatch(copy, /童年根基期/u);
+  assert.match(i18nCopySource, /phaseTitle:\s*\(index,\s*current\)/u);
+  assert.match(i18nCopySource, /sectionTitle:\s*'大运排布'/u);
+  assert.match(i18nCopySource, /distantTitle:\s*'90岁以后 · 远期排盘'/u);
+  assert.match(i18nCopySource, /不代表寿命判断/u);
+  assert.match(i18nCopySource, /第\$\{index \+ 1\}步大运/u);
+  assert.match(i18nCopySource, /currentPrefix:\s*'当前 · '/u);
+  assert.doesNotMatch(i18nCopySource, /人生各阶段的起落/u);
+  assert.doesNotMatch(i18nCopySource, /童年根基期/u);
 });

@@ -1,0 +1,86 @@
+/* ----- 今日行动 ----- */
+
+.shijing-rijing .shijing-rijing__actions {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: var(--rijing-font-sans);
+}
+
+.shijing-rijing .shijing-rijing__actions-title {
+  margin: 0;
+  font-family: var(--rijing-font-sans);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--rijing-ink-strong);
+}
+
+.shijing-rijing .shijing-rijing__actions-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.shijing-rijing__action {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px 24px;
+  background: var(--rijing-card-bg);
+  border: 1px solid var(--rijing-card-border);
+  border-radius: var(--shijing-radius-2xl);
+  box-shadow: var(--rijing-card-shadow);
+  backdrop-filter: blur(var(--rijing-blur)) saturate(120%);
+  -webkit-backdrop-filter: blur(var(--rijing-blur)) saturate(120%);
+}
+
+.shijing-rijing__action-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shijing-rijing__action-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--rijing-accent);
+  flex-shrink: 0;
+}
+
+.shijing-rijing__action-badge svg {
+  width: 16px;
+  height: 16px;
+  color: inherit;
+}
+
+.shijing-rijing__action-eyebrow {
+  font-family: var(--rijing-font-sans);
+  color: var(--shijing-text-muted);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+.shijing-rijing .shijing-rijing__action-body {
+  margin: 0;
+  font-family: var(--rijing-font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.65;
+  color: var(--rijing-ink-strong);
+  overflow-wrap: anywhere;
+}
+
+.shijing-rijing__action-source {
+  font-size: 12px;
+  color: var(--rijing-ink-faint);
+}

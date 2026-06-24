@@ -1,0 +1,151 @@
+/* Shared ShiJing settings checkbox and pill-check controls. */
+
+/* ── Concern chips (关联到哪些关注) ──────────────────────────
+   Used both in-page (settings) and inside the drawer, which is portaled
+   to <body> outside the --styled scope. Both scopes share one definition
+   so the chips look identical wherever concerns are picked. The native
+   checkbox is visually hidden; a rounded indicator + filled pill convey
+   the checked state for a calmer, less utilitarian look. */
+.shijing-settings-page--styled .sjp-checks,
+.sjp-drawer__body .sjp-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.shijing-settings-page--styled .sjp-check,
+.sjp-drawer__body .sjp-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--sjp-fg-2);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--sjp-border-subtle);
+  border-radius: var(--sjp-radius-full);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 160ms, background 160ms, color 160ms, box-shadow 160ms;
+}
+
+.shijing-settings-page--styled .sjp-check:hover,
+.sjp-drawer__body .sjp-check:hover {
+  border-color: var(--sjp-border-strong);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* Rounded indicator that replaces the raw native checkbox. */
+.shijing-settings-page--styled .sjp-check::before,
+.sjp-drawer__body .sjp-check::before {
+  content: '';
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--sjp-border-strong);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 11px;
+  transition: border-color 160ms, background-color 160ms;
+}
+
+.shijing-settings-page--styled .sjp-check:has(input:checked),
+.sjp-drawer__body .sjp-check:has(input:checked) {
+  color: var(--sjp-accent-hover);
+  background: var(--sjp-accent-soft);
+  border-color: rgba(78, 204, 163, 0.45);
+  font-weight: 500;
+}
+
+.shijing-settings-page--styled .sjp-check:has(input:checked)::before,
+.sjp-drawer__body .sjp-check:has(input:checked)::before {
+  border-color: var(--sjp-accent);
+  background-color: var(--sjp-accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E");
+}
+
+/* Visually hide the native checkbox but keep it focusable/clickable via
+   the wrapping label. */
+.shijing-settings-page--styled .sjp-check input,
+.sjp-drawer__body .sjp-check input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Keyboard focus ring on the pill when its hidden input is focused. */
+.shijing-settings-page--styled .sjp-check:has(input:focus-visible),
+.sjp-drawer__body .sjp-check:has(input:focus-visible) {
+  box-shadow: 0 0 0 3px var(--sjp-accent-soft);
+  border-color: var(--sjp-accent);
+}
+
+/* Bare inline checkbox — no pill chrome, just a custom checkbox + label. Used
+   for the「我不知道确切时间」toggle, which reads better as a plain checkbox
+   than a filled pill. `flex: 1` lets the row grow to fill the grid cell below
+   its spacer label so the checkbox sits vertically centered against the 出生时间
+   input box on the left. We draw the box ourselves (appearance: none + a
+   white-stroke check SVG on a green fill) rather than relying on accent-color
+   or the .sjp-check ::before disc: accent-color can't force a white tick, and
+   in this engine a `:has() … ::before` rule matches but does not style the
+   pseudo-element, so the disc's checked state would never render. */
+.shijing-settings-page--styled .sjp-inline-check,
+.sjp-drawer__body .sjp-inline-check {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--sjp-fg-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* `!important` on the colors: the kit's form-control base layer sets the
+   native checkbox background with high priority, which silently overrides a
+   plain declaration here (var() resolves fine — only importance loses). */
+.shijing-settings-page--styled .sjp-inline-check input[type="checkbox"],
+.sjp-drawer__body .sjp-inline-check input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 1.5px solid var(--sjp-border-strong) !important;
+  border-radius: 5px;
+  background-color: #fff !important;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 11px;
+  cursor: pointer;
+  transition: background-color 160ms, border-color 160ms;
+}
+
+/* Literal #4ecca3 (the resolved value of --sjp-accent): in this bundled
+   stylesheet a `background-color: var(--sjp-accent)` here fails to apply even
+   though the variable resolves and the rule wins the cascade, while literal
+   colors and the literal check SVG apply normally. Hardcoding the accent for
+   this one control sidesteps the quirk. */
+.shijing-settings-page--styled .sjp-inline-check input[type="checkbox"]:checked,
+.sjp-drawer__body .sjp-inline-check input[type="checkbox"]:checked {
+  border-color: #4ecca3 !important;
+  background-color: #4ecca3 !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E");
+}
+
+.shijing-settings-page--styled .sjp-inline-check input[type="checkbox"]:focus-visible,
+.sjp-drawer__body .sjp-inline-check input[type="checkbox"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--sjp-accent-soft);
+}

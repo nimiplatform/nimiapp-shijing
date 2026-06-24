@@ -1,0 +1,198 @@
+@media (max-width: 720px) {
+  .shijing-yuejing__panel {
+    width: 100vw;
+    padding: 24px 22px 32px;
+  }
+  .shijing-yuejing__panel-entry-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .shijing-yuejing__panel-related {
+    align-self: flex-start;
+  }
+  .shijing-yuejing__month-mainline {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .shijing-yuejing .shijing-yuejing__month-windows-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .shijing-yuejing .shijing-yuejing__month-concern-windows {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .shijing-yuejing .shijing-yuejing__month-concern-checklist ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .shijing-yuejing__month-closing {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .shijing-yuejing__month-section-hint {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+}
+
+/* ----- 7) Bottom concern pill bar -------------------------------- */
+
+.shijing-yuejing__concern-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  background: var(--yuejing-glass-bg);
+  backdrop-filter: var(--yuejing-glass-blur);
+  -webkit-backdrop-filter: var(--yuejing-glass-blur);
+  border: 1px solid var(--yuejing-glass-border);
+  border-radius: var(--shijing-radius-2xl, 20px);
+  box-shadow: var(--yuejing-glass-shadow);
+}
+
+.shijing-yuejing__concern-bar header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shijing-yuejing__concern-bar header h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.shijing-yuejing__concern-bar header small {
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-yuejing .shijing-yuejing__concern-bar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shijing-yuejing .shijing-yuejing__concern-bar li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px 5px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-yuejing .shijing-yuejing__concern-bar li[data-status="active"] {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.shijing-yuejing .shijing-yuejing__concern-bar li[data-status="archived"] {
+  opacity: 0.7;
+}
+
+.shijing-yuejing .shijing-yuejing__concern-bar li button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  color: var(--shijing-text-secondary);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shijing-yuejing .shijing-yuejing__concern-bar li button:hover {
+  background: var(--shijing-hover-surface);
+  color: var(--shijing-text-primary);
+}
+
+.shijing-yuejing__concern-add input[type="text"] {
+  appearance: none;
+  border: 1px dashed var(--shijing-border-default);
+  background: transparent;
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 13px;
+  min-width: 240px;
+  width: auto;
+}
+
+.shijing-yuejing .shijing-yuejing__concern-add-btn {
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  border: 1px dashed var(--shijing-border-default);
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.shijing-yuejing .shijing-yuejing__concern-add-btn:hover:not(:disabled) {
+  color: var(--shijing-brand-primary);
+  border-color: var(--shijing-brand-primary);
+  background: transparent;
+}
+
+.shijing-yuejing .shijing-yuejing__concern-add-btn:disabled {
+  background: transparent;
+  color: var(--shijing-text-disabled);
+  border-color: var(--shijing-border-subtle);
+  cursor: not-allowed;
+}
+
+.shijing-yuejing__concern-link {
+  font-size: 12px;
+  color: var(--shijing-text-muted);
+}
+
+/* ----- 8) Details / summary -------------------------------------- */
+
+.shijing-yuejing__details {
+  background: var(--yuejing-glass-bg);
+  backdrop-filter: var(--yuejing-glass-blur);
+  -webkit-backdrop-filter: var(--yuejing-glass-blur);
+  border: 1px solid var(--yuejing-glass-border);
+  border-radius: var(--shijing-radius-lg);
+  padding: 14px 18px;
+  box-shadow: var(--yuejing-glass-shadow);
+}
+
+.shijing-yuejing__details summary {
+  cursor: pointer;
+  color: var(--shijing-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  list-style: none;
+}
+
+.shijing-yuejing__details summary::-webkit-details-marker { display: none; }
+
+.shijing-yuejing__details[open] > summary {
+  margin-bottom: 10px;
+}
+
+.shijing-yuejing__summary {
+  font-size: 13px;
+  color: var(--shijing-text-primary);
+  line-height: 1.6;
+}
+
+/* ----- 9) Responsive --------------------------------------------- */
+
+@media (max-width: 720px) {
+  .shijing-yuejing > .shijing-yuejing__hero { grid-template-columns: minmax(0, 1fr); padding: 20px; }
+  .shijing-yuejing__hero-tendency strong { font-size: 40px; }
+  .shijing-yuejing__filter-row { border-radius: var(--shijing-radius-lg); padding: 12px 14px; }
+  .shijing-yuejing__day-face { min-height: 72px; padding: 6px 8px; }
+  .shijing-yuejing__day-number { font-size: 20px; }
+  .shijing-yuejing__day-tendency { font-size: 10.5px; }
+  .shijing-yuejing .shijing-yuejing__month-rhythm-grid { grid-template-columns: repeat(10, 1fr); }
+}

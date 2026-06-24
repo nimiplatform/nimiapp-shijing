@@ -1,0 +1,9 @@
+/* Onboarding-specific overrides for embedded settings controls. */
+
+/* Onboarding embeds the personal-data controls inside its own glass workbench.
+   Clear the settings-page wash below 编辑本人资料 / 关注的事 without changing real settings pages. */
+.shijing-onboarding .shijing-settings-page--styled {
+  background: transparent;
+  background-image: none;
+  isolation: auto;
+}

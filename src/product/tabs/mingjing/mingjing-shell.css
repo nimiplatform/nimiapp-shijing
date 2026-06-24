@@ -1,0 +1,77 @@
+/* 命镜 (Destiny Mirror) — natal projection surface.
+ *
+ * Scoped to `.shijing-mingjing`. Builds on the shared --shijing-* design tokens
+ * (styles.css :root) and adds 五行 colour tokens for 干支 / element theming. */
+
+.shijing-mingjing {
+  --mingjing-accent: var(--nimi-action-primary-bg, #4ECCA3);
+  --mingjing-accent-hover: var(--nimi-action-primary-bg-hover, #3DBB96);
+  --mingjing-glass-thick-bg: var(--nimi-material-glass-thick-bg, rgba(255, 255, 255, 0.70));
+  --mingjing-glass-thick-border: var(--nimi-material-glass-thick-border, rgba(226, 232, 240, 0.40));
+  --mingjing-glass-regular-bg: var(--nimi-material-glass-regular-bg, rgba(255, 255, 255, 0.45));
+  --mingjing-glass-regular-border: var(--nimi-material-glass-regular-border, rgba(226, 232, 240, 0.30));
+  --mingjing-glass-thin-bg: var(--nimi-material-glass-thin-bg, rgba(255, 255, 255, 0.25));
+  --mingjing-glass-thin-border: var(--nimi-material-glass-thin-border, rgba(226, 232, 240, 0.20));
+  --mingjing-blur: var(--nimi-backdrop-blur-regular, 18px);
+  --mingjing-blur-chrome: var(--nimi-backdrop-blur-chrome, 28px);
+  --mingjing-elev-base: var(--nimi-elevation-base, 0 6px 18px rgba(15, 23, 42, 0.08));
+  --mingjing-elev-raised: var(--nimi-elevation-raised, 0 12px 28px rgba(15, 23, 42, 0.12));
+  --mingjing-font-sans: "PingFang SC", "HarmonyOS Sans SC", "HarmonyOS Sans",
+    "Noto Sans SC", "Inter", "Microsoft YaHei", system-ui, sans-serif;
+  --mingjing-ink-strong: #17202a;
+  --mingjing-ink-soft: rgba(23, 32, 42, 0.58);
+  --mingjing-ink-faint: rgba(23, 32, 42, 0.42);
+  --mingjing-card-bg: rgba(255, 255, 255, 0.62);
+  --mingjing-card-quiet-bg: rgba(255, 255, 255, 0.44);
+  --mingjing-card-border: rgba(23, 32, 42, 0.06);
+  --mingjing-card-shadow: 0 1px 2px rgba(23, 32, 42, 0.03),
+    0 8px 22px -14px rgba(23, 32, 42, 0.16);
+  --mingjing-page-max: 920px;
+  --mingjing-panel-radius: 16px;
+
+  --mj-wood: #4f9d69;
+  --mj-fire: #c8553d;
+  --mj-earth: #b08442;
+  --mj-metal: #9a7b3f;
+  --mj-water: #3f7cac;
+  --mj-supportive: var(--mingjing-accent);
+  --mj-blocked: var(--shijing-status-danger);
+  --mj-watch: #d49b3a;
+  --mj-steady: #5b78ed;
+  --mj-turning: #7a5ea8;
+
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  height: 100%;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  overflow-y: auto;
+  padding: 32px clamp(18px, 5vw, 56px) 46px;
+  box-sizing: border-box;
+  color: var(--mingjing-ink-strong);
+  font-family: var(--mingjing-font-sans);
+}
+
+.shijing-mingjing > .shijing-mingjing__hero,
+.shijing-mingjing > .shijing-mj-hero,
+.shijing-mingjing > .shijing-mingjing__panels,
+.shijing-mingjing > .shijing-mj-footer-cta,
+.shijing-mingjing > .shijing-mj-rectify {
+  width: 100%;
+  max-width: var(--mingjing-page-max);
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+
+.shijing-mingjing--onboarding {
+  max-width: none;
+  padding: 0;
+  overflow: hidden;
+}
+
+.shijing-shell[data-active-tab="mingjing"] {
+  background: linear-gradient(115deg, #e8f7f2 0%, #f7fbfd 48%, #f4f0fb 100%);
+}

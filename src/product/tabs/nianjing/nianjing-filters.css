@@ -1,0 +1,245 @@
+/* ----- 4) Filter row ----------------------------------------------- */
+
+/* Two-class selector beats the reset (also 0,2,0) by source order so
+ * the glass pill background, padding, and border survive. */
+.shijing-nianjing > .shijing-nianjing__filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 8px 16px;
+  background: var(--nianjing-glass-bg);
+  backdrop-filter: var(--nianjing-glass-blur);
+  -webkit-backdrop-filter: var(--nianjing-glass-blur);
+  border: 1px solid var(--nianjing-glass-border);
+  border-radius: 999px;
+  box-shadow: var(--nianjing-glass-shadow);
+  /* `backdrop-filter` already promotes this row to its own stacking
+   * context. Without an explicit z-index, sibling blocks that come
+   * later in the DOM (timeline card, footer) — both also creating
+   * stacking contexts via backdrop-filter — paint on top of this row's
+   * descendants, including the「编辑关注」popover. Lifting the whole
+   * row above downstream siblings keeps the popover visible. */
+  position: relative;
+  z-index: 5;
+}
+
+.shijing-nianjing .shijing-nianjing__filter {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.shijing-nianjing__filter legend {
+  font-size: 12px;
+  color: var(--shijing-text-secondary);
+  padding-right: 10px;
+  margin-right: 4px;
+  border-right: 1px solid var(--shijing-border-subtle);
+  float: left;
+  line-height: 22px;
+}
+
+.shijing-nianjing .shijing-nianjing__filter-pill {
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  border: 1px solid transparent;
+  font-size: 13px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.shijing-nianjing .shijing-nianjing__filter-pill[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--shijing-text-primary);
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 1px 4px rgba(15, 23, 38, 0.06);
+  font-weight: 500;
+}
+
+/* Hover / focus on an UNSELECTED pill: a subtle neutral wash. The
+ * explicit `background` + `border-color` are required to override the
+ * baseline `.shijing-tab button:hover` (specificity 0,3,1) which would
+ * otherwise bleed the brand-green button background onto the pill. */
+.shijing-nianjing .shijing-nianjing__filter-pill:hover:not([aria-pressed="true"]),
+.shijing-nianjing .shijing-nianjing__filter-pill:focus-visible:not([aria-pressed="true"]) {
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--shijing-text-primary);
+  border-color: rgba(255, 255, 255, 0.6);
+  outline: none;
+}
+
+/* Hover on the SELECTED pill keeps the white pressed look — never the
+ * baseline brand-green. */
+.shijing-nianjing .shijing-nianjing__filter-pill[aria-pressed="true"]:hover {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.shijing-nianjing .shijing-nianjing__filter-manage {
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  border: 1px dashed var(--shijing-border-default);
+  font-size: 12.5px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 4px;
+}
+
+.shijing-nianjing .shijing-nianjing__filter-manage:hover,
+.shijing-nianjing .shijing-nianjing__filter-manage[aria-expanded="true"] {
+  color: var(--shijing-text-primary);
+  border-color: var(--shijing-brand-primary);
+}
+
+/* ----- 4b) Concern editor popover -------------------------------- */
+
+.shijing-nianjing__editor-anchor {
+  position: relative;
+  display: inline-block;
+}
+
+.shijing-nianjing__editor {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 70;
+  min-width: 320px;
+  max-width: 380px;
+  padding: 16px 18px 14px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--shijing-radius-2xl, 20px);
+  box-shadow:
+    0 18px 40px -16px rgba(15, 23, 38, 0.22),
+    0 2px 8px -4px rgba(15, 23, 38, 0.10);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.shijing-nianjing__editor-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.shijing-nianjing__editor-head strong {
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.shijing-nianjing__editor-section h4 {
+  margin: 6px 0 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--shijing-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.shijing-nianjing__editor-row-text strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.shijing-nianjing .shijing-nianjing__editor-add {
+  appearance: none;
+  background: var(--nianjing-supportive);
+  color: #fff;
+  border: 0;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: background 120ms ease;
+}
+
+.shijing-nianjing .shijing-nianjing__editor-add:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--nianjing-supportive) 90%, black);
+}
+
+.shijing-nianjing .shijing-nianjing__editor-add:disabled {
+  background: var(--shijing-text-disabled);
+  cursor: not-allowed;
+}
+
+.shijing-nianjing__editor-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid color-mix(in srgb, var(--nianjing-supportive) 35%, transparent);
+  border-radius: 12px;
+  margin-top: 4px;
+}
+
+.shijing-nianjing .shijing-nianjing__editor-custom input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Two-class selector so it beats the baseline `.shijing-tab ul`
+ * (specificity 0,1,1) which would otherwise force `flex-direction:
+ * column` and stack our five legend items vertically. */
+.shijing-nianjing .shijing-nianjing__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  /* Keep all five tendency items on a single line, even when the
+   * filter row narrows. If the row genuinely can't fit pills + legend,
+   * the row itself wraps so the legend drops to its own line as a
+   * whole — but the five items never split across two lines. */
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+.shijing-nianjing__legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--shijing-text-secondary);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+  white-space: nowrap;
+}
+
+.shijing-nianjing__legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--shijing-text-disabled);
+}
+
+.shijing-nianjing__legend li[data-nature="supportive"] .shijing-nianjing__legend-dot { background: var(--nianjing-supportive); }
+.shijing-nianjing__legend li[data-nature="steady"]     .shijing-nianjing__legend-dot { background: var(--nianjing-steady); }
+.shijing-nianjing__legend li[data-nature="watch"]      .shijing-nianjing__legend-dot { background: var(--nianjing-watch); }
+.shijing-nianjing__legend li[data-nature="blocked"]    .shijing-nianjing__legend-dot { background: var(--nianjing-blocked); }
+.shijing-nianjing__legend li[data-nature="turning"]    .shijing-nianjing__legend-dot { background: var(--nianjing-turning); }

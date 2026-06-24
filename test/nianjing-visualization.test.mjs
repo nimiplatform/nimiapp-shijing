@@ -8,6 +8,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
+import { nianjingCssFiles, readCssBundle } from './css-bundles.mjs';
 
 const FORBIDDEN_PATTERNS = [
   /\bcurve\b/i,
@@ -56,7 +57,17 @@ function cssBlock(source, selector) {
 }
 
 test('NianJing tab executable source contains no forbidden authoritative visualization tokens', () => {
-  const raw = readFileSync(new URL('../src/product/tabs/nianjing-tab.tsx', import.meta.url), 'utf8');
+  const raw = [
+    '../src/product/tabs/nianjing-tab.tsx',
+    '../src/product/tabs/nianjing/nianjing-ready-view.tsx',
+    '../src/product/tabs/nianjing/nianjing-filter-row.tsx',
+    '../src/product/tabs/nianjing/nianjing-year-overview.tsx',
+    '../src/product/tabs/nianjing/nianjing-timeline.tsx',
+    '../src/product/tabs/nianjing/nianjing-detail-drawer.tsx',
+    '../src/product/tabs/nianjing/nianjing-view-model.ts',
+  ]
+    .map((file) => readFileSync(new URL(file, import.meta.url), 'utf8'))
+    .join('\n');
   const src = stripJsComments(raw);
   for (const pattern of FORBIDDEN_PATTERNS) {
     assert.equal(
@@ -68,7 +79,7 @@ test('NianJing tab executable source contains no forbidden authoritative visuali
 });
 
 test('NianJing phase drawer reads as a narrative guidance flow instead of modular template cards', () => {
-  const source = readFileSync(new URL('../src/product/tabs/nianjing-tab.tsx', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../src/product/tabs/nianjing/nianjing-detail-drawer.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /className="shijing-nianjing__band-detail-story"/);
   assert.match(source, /className="shijing-nianjing__band-detail-signals"/);
@@ -83,9 +94,7 @@ test('NianJing phase drawer reads as a narrative guidance flow instead of modula
 });
 
 test('NianJing phase drawer styles use a continuous reading surface', () => {
-  const css = stripCssComments(
-    readFileSync(new URL('../src/styles-nianjing-rich.css', import.meta.url), 'utf8'),
-  );
+  const css = stripCssComments(readCssBundle(nianjingCssFiles));
   const drawer = cssBlock(css, '.shijing-nianjing__inflection-drawer[data-kind="band"]');
   const story = cssBlock(css, '.shijing-nianjing__band-detail-story');
   const guidance = cssBlock(css, '.shijing-nianjing__band-detail-guidance');
@@ -98,7 +107,12 @@ test('NianJing phase drawer styles use a continuous reading surface', () => {
 });
 
 test('NianJing tab renders annual modules as a derived overview before the detailed timeline', () => {
-  const source = readFileSync(new URL('../src/product/tabs/nianjing-tab.tsx', import.meta.url), 'utf8');
+  const source = [
+    '../src/product/tabs/nianjing/nianjing-ready-view.tsx',
+    '../src/product/tabs/nianjing/nianjing-year-overview.tsx',
+  ]
+    .map((file) => readFileSync(new URL(file, import.meta.url), 'utf8'))
+    .join('\n');
 
   assert.match(source, /buildNianJingYearModules/);
   assert.match(source, /<NianJingYearOverview/);
@@ -116,9 +130,7 @@ test('NianJing tab renders annual modules as a derived overview before the detai
 });
 
 test('NianJing annual module CSS is a horizontal year matrix, not a score chart', () => {
-  const css = stripCssComments(
-    readFileSync(new URL('../src/styles-nianjing-rich.css', import.meta.url), 'utf8'),
-  );
+  const css = stripCssComments(readCssBundle(nianjingCssFiles));
   const overview = cssBlock(css, '.shijing-nianjing__year-overview');
   const grid = cssBlock(css, '.shijing-nianjing__year-grid');
   const column = cssBlock(css, '.shijing-nianjing__year-column');
@@ -141,7 +153,7 @@ test('NianJing annual module CSS is a horizontal year matrix, not a score chart'
 });
 
 test('NianJing CSS lane classes are present', () => {
-  const css = readFileSync(new URL('../src/styles-mirror-v1.css', import.meta.url), 'utf8');
+  const css = readCssBundle(nianjingCssFiles);
   assert.ok(css.includes('.shijing-nianjing__timeline'));
   assert.ok(css.includes('.shijing-nianjing__lane'));
   assert.ok(css.includes('.shijing-nianjing__band'));
@@ -149,7 +161,7 @@ test('NianJing CSS lane classes are present', () => {
 });
 
 test('NianJing CSS contains no curve / k-line / luck-score / trend-chart selectors', () => {
-  const css = readFileSync(new URL('../src/styles-mirror-v1.css', import.meta.url), 'utf8');
+  const css = stripCssComments(readCssBundle(nianjingCssFiles));
   // Only consult the NianJing-prefixed CSS block; other blocks may
   // include forbidden tokens as guard strings.
   const nianjingBlocks = css
@@ -163,4 +175,13 @@ test('NianJing CSS contains no curve / k-line / luck-score / trend-chart selecto
       `NianJing CSS block contains forbidden ${pattern}`,
     );
   }
+});
+
+test('styles-mirror-v1 no longer owns NianJing timeline selectors', () => {
+  const css = readFileSync(new URL('../src/styles-mirror-v1.css', import.meta.url), 'utf8');
+
+  assert.equal(css.includes('.shijing-nianjing__timeline'), false);
+  assert.equal(css.includes('.shijing-nianjing__lane'), false);
+  assert.equal(css.includes('.shijing-nianjing__band'), false);
+  assert.equal(css.includes('.shijing-nianjing__marker'), false);
 });

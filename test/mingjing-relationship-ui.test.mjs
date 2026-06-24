@@ -1,9 +1,15 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { mingjingCssFiles, readCssBundle } from './css-bundles.mjs';
 
 const mingjingTabSource = readFileSync(
   new URL('../src/product/tabs/mingjing-tab.tsx', import.meta.url),
+  'utf8',
+);
+
+const baziMingjingRouteSource = readFileSync(
+  new URL('../src/product/tabs/mingjing/bazi-mingjing-route.tsx', import.meta.url),
   'utf8',
 );
 
@@ -12,10 +18,7 @@ const relationshipViewSource = readFileSync(
   'utf8',
 );
 
-const mingjingStyles = readFileSync(
-  new URL('../src/styles-mingjing-rich.css', import.meta.url),
-  'utf8',
-).replace(/\/\*[\s\S]*?\*\//g, '');
+const mingjingStyles = readCssBundle(mingjingCssFiles).replace(/\/\*[\s\S]*?\*\//g, '');
 
 function cssBlock(selector) {
   const blocks = [];
@@ -27,12 +30,13 @@ function cssBlock(selector) {
 }
 
 test('MingJing page wires a real relationship HePan generation surface', () => {
-  assert.match(mingjingTabSource, /MingJingRelationshipReadingView/u);
   assert.match(mingjingTabSource, /latestMingJingNatalReading/u);
   assert.match(mingjingTabSource, /latestMingJingRelationshipReading/u);
   assert.match(mingjingTabSource, /relationshipNatalMirrorScopeForToday/u);
   assert.match(mingjingTabSource, /related_person_refs:\s*\[selectedRelationshipPersonRef\]/u);
   assert.match(mingjingTabSource, /inputsSummaryStalenessForSpace/u);
+  assert.match(baziMingjingRouteSource, /MingJingRelationshipReadingView/u);
+  assert.match(baziMingjingRouteSource, /relationshipReading\.onGenerate/u);
 });
 
 test('relationship HePan view renders every admitted output section', () => {

@@ -1,0 +1,85 @@
+/* Settings method-profile capability matrix. */
+
+.shijing-settings-page--styled .sjp-method-capabilities {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.shijing-settings-page--styled .sjp-method-capability-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 12px;
+}
+
+.shijing-settings-page--styled .sjp-method-capability {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--sjp-border-subtle);
+  border-radius: var(--sjp-radius-md);
+}
+
+.shijing-settings-page--styled .sjp-method-capability[data-current='true'] {
+  border-color: rgba(78, 204, 163, 0.42);
+  box-shadow: 0 10px 28px rgba(78, 204, 163, 0.12);
+}
+
+.shijing-settings-page--styled .sjp-method-capability__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.shijing-settings-page--styled .sjp-method-capability__section,
+.shijing-settings-page--styled .sjp-method-capability__route {
+  display: grid;
+  gap: 8px;
+}
+
+.shijing-settings-page--styled .sjp-method-capability__section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sjp-fg-2);
+}
+
+.shijing-settings-page--styled .sjp-method-capability__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.shijing-settings-page--styled .sjp-method-capability__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  padding: 5px 9px;
+  font-size: 12px;
+  color: var(--sjp-fg-2);
+  background: rgba(78, 204, 163, 0.08);
+  border: 1px solid rgba(78, 204, 163, 0.2);
+  border-radius: var(--sjp-radius-sm);
+}
+
+.shijing-settings-page--styled .sjp-method-capability__chip[data-supported='false'] {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.28);
+}
+
+.shijing-settings-page--styled .sjp-method-capability__chip small {
+  color: var(--sjp-fg-4);
+  font-size: 11px;
+}
+
+.shijing-settings-page--styled .sjp-method-capability__route[data-mingjing-route-status='not_implemented'] {
+  padding: 10px;
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: var(--sjp-radius-sm);
+}
