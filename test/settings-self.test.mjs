@@ -16,6 +16,9 @@ import { validShiJingSpace } from './_fixtures.mjs';
 const selfEditorSource = readFileSync(
   new URL('../src/product/self/self-editor.tsx', import.meta.url),
   'utf8',
+) + readFileSync(
+  new URL('../src/product/self/self-editor-form-fields.tsx', import.meta.url),
+  'utf8',
 );
 
 function gregorianDraft(overrides = {}) {
@@ -157,4 +160,19 @@ test('inline self editor refreshes its draft when the persisted snapshot changes
   assert.match(selfEditorSource, /if \(!inlineEditor\) return;/);
   assert.match(selfEditorSource, /setDraft\(selfDraftFromSpace\(state\.snapshot\)\);/);
   assert.match(selfEditorSource, /\[inlineEditor, state\.snapshot\]/);
+});
+
+test('self profile summary renders protected values until presence verification succeeds', () => {
+  assert.match(selfEditorSource, /protectSelfProfileSummary\(summary,\s*copy,\s*revealSensitive\)/);
+  assert.match(selfEditorSource, /displayedSummary\.coreFields\.map/);
+  assert.match(selfEditorSource, /presence_verification_client/);
+  assert.match(selfEditorSource, /SHIJING_PROFILE_REVEAL_PRESENCE_REQUEST/);
+  assert.doesNotMatch(selfEditorSource, /\{summary\.coreFields\.map/);
+});
+
+test('self profile edit action is gated by presence verification', () => {
+  assert.match(selfEditorSource, /async function ensureSensitiveReveal/);
+  assert.match(selfEditorSource, /const verified = await ensureSensitiveReveal\(\)/);
+  assert.match(selfEditorSource, /if \(!verified\) return;/);
+  assert.match(selfEditorSource, /setEditing\(true\)/);
 });

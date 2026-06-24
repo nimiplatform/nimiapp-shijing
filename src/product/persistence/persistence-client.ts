@@ -12,7 +12,9 @@ export type PersistenceError =
   | { kind: 'load_open_failed'; adapter: PersistenceAdapterKind; cause: string }
   | { kind: 'load_read_failed'; adapter: PersistenceAdapterKind; cause: string }
   | { kind: 'load_invalid_snapshot'; adapter: PersistenceAdapterKind; validation_error: ShijingSpaceValidationError }
+  | { kind: 'load_account_mismatch'; adapter: PersistenceAdapterKind; expected_user_id: string; snapshot_user_id: string }
   | { kind: 'save_validation_failed'; adapter: PersistenceAdapterKind; validation_error: ShijingSpaceValidationError }
+  | { kind: 'save_account_mismatch'; adapter: PersistenceAdapterKind; expected_user_id: string; snapshot_user_id: string }
   | { kind: 'save_write_failed'; adapter: PersistenceAdapterKind; cause: string }
   | { kind: 'clear_failed'; adapter: PersistenceAdapterKind; cause: string };
 

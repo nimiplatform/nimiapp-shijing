@@ -5,6 +5,10 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { SHIJING_INDEXEDDB_VERSION } from '../src/product/persistence/indexeddb-adapter.ts';
+import {
+  snapshotAccountMismatchError,
+  validateLoadedSnapshotForAccount,
+} from '../src/product/persistence/account-scope.ts';
 import { InMemoryPersistenceAdapter } from '../src/product/persistence/in-memory-adapter.ts';
 import {
   createDebouncedSaver,
@@ -27,13 +31,34 @@ const INDEXEDDB_ADAPTER_SOURCE = readFileSync(
   new URL('../src/product/persistence/indexeddb-adapter.ts', import.meta.url),
   'utf8',
 );
+const RUNTIME_APP_STORAGE_ADAPTER_SOURCE = readFileSync(
+  new URL('../src/shell/persistence/runtime-app-storage-adapter.ts', import.meta.url),
+  'utf8',
+);
+const PRODUCT_AREA_SOURCE = readFileSync(
+  new URL('../src/shell/routes/product-area.tsx', import.meta.url),
+  'utf8',
+);
 
-test('local persistence keeps the stable ShiJingSpace file while scanning recent storage aliases', () => {
+test('runtime app storage scopes ShiJingSpace files to the current Nimi account', () => {
   assert.equal(SHIJING_INDEXEDDB_VERSION, 3);
-  assert.match(TAURI_MAIN_SOURCE, /const SHIJING_SPACE_FILE: &str = "shijing-space\.json";/);
-  assert.match(TAURI_MAIN_SOURCE, /const SHIJING_SPACE_FILE_CANDIDATES: \[&str; 3\]/);
-  assert.match(TAURI_MAIN_SOURCE, /"shijing-space\.v3\.json"/);
-  assert.match(TAURI_MAIN_SOURCE, /"shijing-space\.v2\.json"/);
+  assert.match(
+    TAURI_MAIN_SOURCE,
+    /SHIJING_SPACE_ACCOUNT_FILE_PREFIX: &str = "shijing-space\.account\."/,
+  );
+  assert.doesNotMatch(TAURI_MAIN_SOURCE, /SHIJING_SPACE_FILE_CANDIDATES/);
+  assert.match(TAURI_MAIN_SOURCE, /ensure_snapshot_user_matches\(&parsed, &payload\.user_id\)/);
+  assert.match(
+    RUNTIME_APP_STORAGE_ADAPTER_SOURCE,
+    /payload: \{ storageRoot: root, userId: this\.user_id \}/,
+  );
+  assert.match(
+    PRODUCT_AREA_SOURCE,
+    /new RuntimeAppStoragePersistenceAdapter\(\{ user_id: userId \}\)/,
+  );
+  assert.match(PRODUCT_AREA_SOURCE, /\(userId \? pickPersistenceClient\(userId\) : null\)/);
+  assert.match(PRODUCT_AREA_SOURCE, /<ShijingStoreProvider\s+key=\{userId\}/);
+  assert.match(INDEXEDDB_ADAPTER_SOURCE, /this\.storage_key = snapshotKey\(this\.user_id\)/);
 });
 
 test('IndexedDB generation upgrade preserves existing user-data store', () => {
@@ -43,6 +68,37 @@ test('IndexedDB generation upgrade preserves existing user-data store', () => {
     INDEXEDDB_ADAPTER_SOURCE,
     /if \(!db\.objectStoreNames\.contains\(SHIJING_INDEXEDDB_STORE\)\) \{\s*db\.createObjectStore\(SHIJING_INDEXEDDB_STORE\);/s,
   );
+});
+
+test('persistence account scope accepts only snapshots owned by the expected account', () => {
+  const result = validateLoadedSnapshotForAccount(
+    validShiJingSpace({ user_id: 'account-1' }),
+    'runtime_app_storage',
+    ' account-1 ',
+  );
+  assert.equal(result.ok, true);
+
+  const mismatch = validateLoadedSnapshotForAccount(
+    validShiJingSpace({ user_id: 'account-2' }),
+    'runtime_app_storage',
+    'account-1',
+  );
+  assert.equal(mismatch.ok, false);
+  if (!mismatch.ok) {
+    assert.equal(mismatch.error.kind, 'load_account_mismatch');
+    assert.equal(mismatch.error.expected_user_id, 'account-1');
+    assert.equal(mismatch.error.snapshot_user_id, 'account-2');
+  }
+});
+
+test('persistence account scope blocks saving snapshots under another account key', () => {
+  const mismatch = snapshotAccountMismatchError(
+    'save',
+    'indexeddb',
+    validShiJingSpace({ user_id: 'account-2' }),
+    'account-1',
+  );
+  assert.equal(mismatch?.kind, 'save_account_mismatch');
 });
 
 test('in-memory adapter round-trips a valid mirror-architecture ShiJingSpace', async () => {

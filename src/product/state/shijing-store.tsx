@@ -39,6 +39,10 @@ import {
   createUnavailableConversationChatBridge,
   type ConversationChatBridge,
 } from '../conversations/conversation-chat-bridge.ts';
+import {
+  createUnavailablePresenceVerificationClient,
+  type PresenceVerificationClient,
+} from '../privacy/presence-verification.ts';
 
 interface ShijingStoreValue {
   readonly state: ShijingViewState;
@@ -48,6 +52,7 @@ interface ShijingStoreValue {
   readonly persistence_client: PersistenceClient | null;
   readonly runtime_ai_client: RuntimeAiClient;
   readonly conversation_chat_bridge: ConversationChatBridge;
+  readonly presence_verification_client: PresenceVerificationClient;
 }
 
 const ShijingStoreContext = createContext<ShijingStoreValue | null>(null);
@@ -58,6 +63,7 @@ interface ShijingStoreProviderProps {
   readonly persistenceDebounceMs?: number;
   readonly runtimeAiClient?: RuntimeAiClient;
   readonly conversationChatBridge?: ConversationChatBridge;
+  readonly presenceVerificationClient?: PresenceVerificationClient;
   readonly children: ReactNode;
 }
 
@@ -158,6 +164,13 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
     [props.conversationChatBridge],
   );
 
+  const presenceVerificationClient = useMemo<PresenceVerificationClient>(
+    () =>
+      props.presenceVerificationClient
+        ?? createUnavailablePresenceVerificationClient('shijing_presence_verification_unconfigured'),
+    [props.presenceVerificationClient],
+  );
+
   const value = useMemo<ShijingStoreValue>(
     () => ({
       state,
@@ -167,8 +180,18 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
       persistence_client: props.persistenceClient ?? null,
       runtime_ai_client: runtimeAiClient,
       conversation_chat_bridge: conversationChatBridge,
+      presence_verification_client: presenceVerificationClient,
     }),
-    [state, dispatch, replaceSnapshot, persistenceStatus, props.persistenceClient, runtimeAiClient, conversationChatBridge],
+    [
+      state,
+      dispatch,
+      replaceSnapshot,
+      persistenceStatus,
+      props.persistenceClient,
+      runtimeAiClient,
+      conversationChatBridge,
+      presenceVerificationClient,
+    ],
   );
 
   return <ShijingStoreContext.Provider value={value}>{props.children}</ShijingStoreContext.Provider>;

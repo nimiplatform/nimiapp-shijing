@@ -10,6 +10,11 @@ import {
 import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts';
 import { SHIJING_RUNTIME_APP_ID } from '../../contracts/app-identity.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
+import {
+  normalizePersistenceAccountId,
+  snapshotAccountMismatchError,
+  validateLoadedSnapshotForAccount,
+} from '../../product/persistence/account-scope.ts';
 import type {
   ClearResult,
   LoadResult,
@@ -21,14 +26,17 @@ import { getShijingNimiClient } from '../infra/shijing-nimi-client.ts';
 const STORAGE_LABEL = 'shijing app';
 
 export interface RuntimeAppStoragePersistenceAdapterOptions {
+  readonly user_id: string;
   readonly getClient?: () => NimiClient;
 }
 
 export class RuntimeAppStoragePersistenceAdapter implements PersistenceClient {
   readonly adapter_kind = 'runtime_app_storage' as const;
+  private readonly user_id: string;
   private readonly getClient: () => NimiClient;
 
-  constructor(options: RuntimeAppStoragePersistenceAdapterOptions = {}) {
+  constructor(options: RuntimeAppStoragePersistenceAdapterOptions) {
+    this.user_id = requireRuntimeStorageUserId(options.user_id);
     this.getClient = options.getClient ?? (() => getShijingNimiClient());
   }
 
@@ -49,7 +57,7 @@ export class RuntimeAppStoragePersistenceAdapter implements PersistenceClient {
     let raw: string | null | undefined;
     try {
       raw = await invokeShijingCommand<string | null | undefined>('shijing_space_load', {
-        payload: { storageRoot: root },
+        payload: { storageRoot: root, userId: this.user_id },
       });
     } catch (cause) {
       return {
@@ -75,18 +83,7 @@ export class RuntimeAppStoragePersistenceAdapter implements PersistenceClient {
         },
       };
     }
-    const validation = validateShiJingSpace(parsed);
-    if (!validation.ok) {
-      return {
-        ok: false,
-        error: {
-          kind: 'load_invalid_snapshot',
-          adapter: this.adapter_kind,
-          validation_error: validation.error,
-        },
-      };
-    }
-    return { ok: true, snapshot: parsed as ShiJingSpace };
+    return validateLoadedSnapshotForAccount(parsed, this.adapter_kind, this.user_id);
   }
 
   async save(snapshot: ShiJingSpace): Promise<SaveResult> {
@@ -101,6 +98,8 @@ export class RuntimeAppStoragePersistenceAdapter implements PersistenceClient {
         },
       };
     }
+    const accountError = snapshotAccountMismatchError('save', this.adapter_kind, snapshot, this.user_id);
+    if (accountError) return { ok: false, error: accountError };
     let root: string;
     try {
       root = await this.dataRoot();
@@ -118,6 +117,7 @@ export class RuntimeAppStoragePersistenceAdapter implements PersistenceClient {
       await invokeShijingCommand('shijing_space_save', {
         payload: {
           storageRoot: root,
+          userId: this.user_id,
           snapshotJson: JSON.stringify(snapshot),
         },
       });
@@ -149,7 +149,9 @@ export class RuntimeAppStoragePersistenceAdapter implements PersistenceClient {
       };
     }
     try {
-      await invokeShijingCommand('shijing_space_clear', { payload: { storageRoot: root } });
+      await invokeShijingCommand('shijing_space_clear', {
+        payload: { storageRoot: root, userId: this.user_id },
+      });
       return { ok: true };
     } catch (cause) {
       return {
@@ -173,6 +175,14 @@ export class RuntimeAppStoragePersistenceAdapter implements PersistenceClient {
     });
     return roots.dataRoot;
   }
+}
+
+function requireRuntimeStorageUserId(value: string): string {
+  const userId = normalizePersistenceAccountId(value);
+  if (!userId) {
+    throw new Error('Runtime app storage user_id is required');
+  }
+  return userId;
 }
 
 async function invokeShijingCommand<T = void>(

@@ -4,6 +4,11 @@
 
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts';
+import {
+  normalizePersistenceAccountId,
+  snapshotAccountMismatchError,
+  validateLoadedSnapshotForAccount,
+} from './account-scope.ts';
 import type {
   ClearResult,
   LoadResult,
@@ -81,10 +86,12 @@ export interface IndexedDBPersistenceAdapterOptions {
 
 export class IndexedDBPersistenceAdapter implements PersistenceClient {
   readonly adapter_kind = 'indexeddb' as const;
+  private readonly user_id: string;
   private readonly storage_key: string;
 
   constructor(options: IndexedDBPersistenceAdapterOptions) {
-    this.storage_key = snapshotKey(options.user_id);
+    this.user_id = requireIndexedDbUserId(options.user_id);
+    this.storage_key = snapshotKey(this.user_id);
   }
 
   static isSupported(): boolean {
@@ -119,14 +126,7 @@ export class IndexedDBPersistenceAdapter implements PersistenceClient {
     }
     db.close();
     if (raw === undefined || raw === null) return { ok: true, snapshot: null };
-    const validation = validateShiJingSpace(raw);
-    if (!validation.ok) {
-      return {
-        ok: false,
-        error: { kind: 'load_invalid_snapshot', adapter: 'indexeddb', validation_error: validation.error },
-      };
-    }
-    return { ok: true, snapshot: raw as ShiJingSpace };
+    return validateLoadedSnapshotForAccount(raw, this.adapter_kind, this.user_id);
   }
 
   async save(snapshot: ShiJingSpace): Promise<SaveResult> {
@@ -137,6 +137,8 @@ export class IndexedDBPersistenceAdapter implements PersistenceClient {
         error: { kind: 'save_validation_failed', adapter: 'indexeddb', validation_error: validation.error },
       };
     }
+    const accountError = snapshotAccountMismatchError('save', this.adapter_kind, snapshot, this.user_id);
+    if (accountError) return { ok: false, error: accountError };
     if (!IndexedDBPersistenceAdapter.isSupported()) {
       return {
         ok: false,
@@ -193,6 +195,14 @@ export class IndexedDBPersistenceAdapter implements PersistenceClient {
     db.close();
     return { ok: true };
   }
+}
+
+function requireIndexedDbUserId(value: string): string {
+  const userId = normalizePersistenceAccountId(value);
+  if (!userId) {
+    throw new Error('IndexedDB persistence user_id is required');
+  }
+  return userId;
 }
 
 function errorMessage(cause: unknown): string {

@@ -7,17 +7,24 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Button } from '@nimiplatform/kit/ui';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import type { PersistenceError } from '../persistence/persistence-client.ts';
-import { NatalFields } from '../natal/natal-fields.tsx';
 import { describeNatalError } from '../natal/natal-error-copy.ts';
+import {
+  SHIJING_PROFILE_REVEAL_PRESENCE_REQUEST,
+} from '../privacy/presence-verification.ts';
 import {
   commitSelfDraft,
   selfDraftFromSpace,
   type SelfNatalDraft,
 } from './self-editor-state.ts';
+import { SelfEditorFormFields } from './self-editor-form-fields.tsx';
 import { summarizeSelfSubject } from './self-summary.ts';
+import {
+  isPresenceVerificationForSelfProfile,
+  protectSelfProfileSummary,
+  selfProfilePresenceVerificationFailureReason,
+} from './self-profile-privacy.ts';
 import { useProductCopy, type ProductCopy } from '../i18n/copy.ts';
 
 export interface SelfEditorProps {
@@ -26,10 +33,13 @@ export interface SelfEditorProps {
 }
 
 export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEditorProps) {
-  const { state, replace_snapshot } = useShijingStore();
+  const { state, replace_snapshot, presence_verification_client } = useShijingStore();
   const copy = useProductCopy();
   const summary = summarizeSelfSubject(state.snapshot, copy);
   const inlineEditor = mode === 'inline-editor';
+  const [verifiedUntilMs, setVerifiedUntilMs] = useState(0);
+  const [verificationPending, setVerificationPending] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
   const [draft, setDraft] = useState<SelfNatalDraft>(() => selfDraftFromSpace(state.snapshot));
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -37,6 +47,8 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
   const [savedNoticeVisible, setSavedNoticeVisible] = useState(false);
   const autoOpenedRef = useRef(false);
   const draftDirtyRef = useRef(false);
+  const revealSensitive = verifiedUntilMs > Date.now();
+  const displayedSummary = protectSelfProfileSummary(summary, copy, revealSensitive);
 
   // Close the editor drawer on Escape.
   useEffect(() => {
@@ -54,13 +66,71 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
     return () => document.removeEventListener('keydown', onKeyDown, true);
   }, [editing, inlineEditor, saving]);
 
+  useEffect(() => {
+    if (inlineEditor) return;
+    if (verifiedUntilMs <= Date.now()) return;
+    const timeout = window.setTimeout(() => {
+      setVerifiedUntilMs(0);
+      setVerificationError(null);
+      setEditing(false);
+    }, Math.max(0, verifiedUntilMs - Date.now()));
+    return () => window.clearTimeout(timeout);
+  }, [inlineEditor, verifiedUntilMs]);
+
+  useEffect(() => {
+    if (inlineEditor) return;
+    setVerifiedUntilMs(0);
+    setVerificationError(null);
+    setVerificationPending(false);
+    setEditing(false);
+  }, [inlineEditor, state.snapshot.user_id]);
+
   function update<K extends keyof SelfNatalDraft>(key: K, value: SelfNatalDraft[K]) {
     draftDirtyRef.current = true;
     setSavedNoticeVisible(false);
     setDraft((prev) => ({ ...prev, [key]: value }));
   }
 
-  function openEdit() {
+  function lockSensitiveProfile() {
+    setVerifiedUntilMs(0);
+    setVerificationError(null);
+    if (!inlineEditor) setEditing(false);
+  }
+
+  async function ensureSensitiveReveal(): Promise<boolean> {
+    if (revealSensitive) return true;
+    if (verificationPending) return false;
+    setVerificationPending(true);
+    setVerificationError(null);
+    try {
+      const result = await presence_verification_client.requestPresenceVerification(
+        SHIJING_PROFILE_REVEAL_PRESENCE_REQUEST,
+      );
+      if (result.state === 'verified') {
+        if (isPresenceVerificationForSelfProfile(result, state.snapshot.user_id)) {
+          setVerifiedUntilMs(result.verifiedUntilMs);
+          return true;
+        }
+        setVerificationError(copy.self.revealSensitiveFailed(
+          selfProfilePresenceVerificationFailureReason(result, state.snapshot.user_id)
+            ?? 'presence_verification_failed',
+        ));
+        return false;
+      }
+      if (result.state === 'cancelled') return false;
+      setVerificationError(copy.self.revealSensitiveFailed(result.reason));
+      return false;
+    } catch (error) {
+      setVerificationError(copy.self.revealSensitiveFailed(error instanceof Error ? error.message : String(error)));
+      return false;
+    } finally {
+      setVerificationPending(false);
+    }
+  }
+
+  async function openEdit() {
+    const verified = await ensureSensitiveReveal();
+    if (!verified) return;
     // Seed the draft from the latest snapshot each time the drawer opens.
     draftDirtyRef.current = false;
     setDraft(selfDraftFromSpace(state.snapshot));
@@ -80,11 +150,7 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
   useEffect(() => {
     if (!autoOpenEditor || autoOpenedRef.current) return;
     autoOpenedRef.current = true;
-    draftDirtyRef.current = false;
-    setDraft(selfDraftFromSpace(state.snapshot));
-    setErrorCode(null);
-    setSavedNoticeVisible(false);
-    setEditing(true);
+    void openEdit();
   }, [autoOpenEditor, state.snapshot]);
 
   function closeEdit() {
@@ -147,65 +213,6 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
     }
   }
 
-  function renderEditorFormFields(idPrefix: string) {
-    return (
-      <>
-        <NatalFields draft={draft} onChange={update} idPrefix={idPrefix} />
-
-        <div className="sjp-field sjp-field--full">
-          <label className="sjp-label" htmlFor={`${idPrefix}-notes`}>{copy.self.notes}</label>
-          <textarea
-            id={`${idPrefix}-notes`}
-            className="sjp-textarea"
-            placeholder={copy.self.notesPlaceholder}
-            value={draft.notes}
-            onChange={(e) => update('notes', e.currentTarget.value)}
-          />
-        </div>
-
-        {errorCode ? (
-          <p className="sjp-alert" role="alert">
-            {errorCode}
-          </p>
-        ) : null}
-
-        <div className="sjp-actions sjp-actions--drawer">
-          {savedNoticeVisible ? (
-            <span className="sjp-actions__status" role="status">
-              {copy.common.saved}
-            </span>
-          ) : null}
-          <Button
-            type="submit"
-            tone="primary"
-            loading={saving}
-            disabled={saving}
-            leadingIcon={
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-            }
-          >
-            {saving ? copy.common.saving : copy.common.save}
-          </Button>
-          <Button type="button" tone="ghost" onClick={closeEdit} disabled={saving}>
-            {copy.common.cancel}
-          </Button>
-        </div>
-      </>
-    );
-  }
-
   if (inlineEditor) {
     return (
       <section className="sjp-card sjp-card--inline-self-editor" aria-label={copy.self.editDialog}>
@@ -219,7 +226,16 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
             void save();
           }}
         >
-          {renderEditorFormFields('self-inline')}
+          <SelfEditorFormFields
+            draft={draft}
+            onChange={update}
+            idPrefix="self-inline"
+            errorCode={errorCode}
+            savedNoticeVisible={savedNoticeVisible}
+            saving={saving}
+            copy={copy}
+            onClose={closeEdit}
+          />
         </form>
       </section>
     );
@@ -247,28 +263,72 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
           <h2 className="sjp-card-title">{copy.self.title}</h2>
           <p className="sjp-card-desc">{copy.self.description}</p>
         </div>
-        <button type="button" className="sjp-btn sjp-card-action" onClick={openEdit}>
-          <svg
-            className="sjp-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
+        <div className="sjp-card-actions">
+          <button
+            type="button"
+            className="sjp-btn sjp-card-action sjp-card-action--secondary"
+            onClick={() => {
+              if (revealSensitive) {
+                lockSensitiveProfile();
+                return;
+              }
+              void ensureSensitiveReveal();
+            }}
+            disabled={verificationPending}
           >
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z" />
-          </svg>
-          {copy.common.edit}
-        </button>
+            <svg
+              className="sjp-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              {revealSensitive ? (
+                <path d="M17 11V7a5 5 0 00-9.9-1" />
+              ) : (
+                <path d="M7 11V7a5 5 0 0110 0v4" />
+              )}
+              <rect x="5" y="11" width="14" height="10" rx="2" />
+            </svg>
+            {verificationPending
+              ? copy.self.revealSensitivePending
+              : revealSensitive
+                ? copy.self.lockSensitive
+                : copy.self.revealSensitive}
+          </button>
+          <button
+            type="button"
+            className="sjp-btn sjp-card-action"
+            onClick={() => {
+              void openEdit();
+            }}
+            disabled={verificationPending}
+          >
+            <svg
+              className="sjp-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z" />
+            </svg>
+            {copy.common.edit}
+          </button>
+        </div>
       </div>
 
       <div className="sjp-profile">
         {/* 核心摘要区 — 性别 / 出生日期 · 出生时间 / 历法·城市·准确度. */}
         <div className="sjp-profile__core">
-          {summary.coreFields.map((field, index) => (
+          {displayedSummary.coreFields.map((field, index) => (
             <div
               className={`sjp-stat${index === 0 ? ' sjp-stat--lead' : ''}${field.missing ? ' sjp-stat--muted' : ''}`}
               key={field.label}
@@ -277,14 +337,24 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
               <span className="sjp-stat__value">{field.value}</span>
             </div>
           ))}
-          <div className={`sjp-stat sjp-stat--wide${summary.metaMissing ? ' sjp-stat--muted' : ''}`}>
+          <div className={`sjp-stat sjp-stat--wide${displayedSummary.metaMissing ? ' sjp-stat--muted' : ''}`}>
             <span className="sjp-stat__label">{copy.self.metaLabel}</span>
-            <span className="sjp-stat__value">{summary.metaText}</span>
+            <span className="sjp-stat__value">{displayedSummary.metaText}</span>
           </div>
         </div>
 
         {/* 地点与时区 — 单独弱化展示的一行. */}
-        {summary.calibrationText ? (
+        {!revealSensitive ? (
+          <p className="sjp-profile__privacy-hint">{copy.self.revealSensitiveHint}</p>
+        ) : null}
+
+        {verificationError ? (
+          <p className="sjp-alert sjp-profile__privacy-error" role="alert">
+            {verificationError}
+          </p>
+        ) : null}
+
+        {displayedSummary.calibrationText ? (
           <p className="sjp-profile__location">
             <svg
               viewBox="0 0 24 24"
@@ -299,7 +369,7 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
               <circle cx="12" cy="10" r="3" />
             </svg>
             <span className="sjp-profile__location-label">{copy.self.locationLabel}</span>
-            <code>{summary.calibrationText}</code>
+            <code>{displayedSummary.calibrationText}</code>
           </p>
         ) : null}
 
@@ -389,7 +459,16 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
                     void save();
                   }}
                 >
-                  {renderEditorFormFields('self')}
+                  <SelfEditorFormFields
+                    draft={draft}
+                    onChange={update}
+                    idPrefix="self"
+                    errorCode={errorCode}
+                    savedNoticeVisible={savedNoticeVisible}
+                    saving={saving}
+                    copy={copy}
+                    onClose={closeEdit}
+                  />
                 </form>
               </div>
             </div>,
