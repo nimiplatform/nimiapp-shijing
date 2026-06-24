@@ -73,8 +73,8 @@ export const MINGJING_ROUTE_DECLARATIONS: readonly MingJingRouteDeclaration[] = 
     id: 'mingjing.route.ziwei_sanhe_v1',
     method_profile_id: ZIWEI_SANHE_V1,
     label: 'Ziwei Sanhe MingJing route',
-    status: 'not_implemented',
-    supported_features: [],
+    status: 'implemented',
+    supported_features: ['natal_projection', 'natal_reading'],
     module_ids: [
       'ziwei.minggong',
       'ziwei.shengong',

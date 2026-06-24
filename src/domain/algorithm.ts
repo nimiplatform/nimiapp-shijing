@@ -10,48 +10,23 @@ import type { MirrorKind, MirrorScope, MirrorScopeKind } from './mirror-scope.ts
 import type { SubjectRef } from './subject-ref.ts';
 import type { TendencyClass } from './mirror-output.ts';
 import type { NianJingInflectionKind } from './mirror-output.ts';
+import { BAZI_ZIPING_V1, ZIWEI_SANHE_V1 } from './algorithm-method-profile.ts';
+import type { MethodProfile } from './algorithm-method-profile.ts';
 
-export const SJG_ALGO_CONTRACT_VERSION = 'SJG-ALGO-v1' as const;
-export const SJG_ALGO_FEATURE_SCHEMA_VERSION = 'SJG-FEATURE-v2' as const;
-export const SJG_ASTRO_CONTRACT_VERSION = 'SJG-ASTRO-v1' as const;
+export {
+  ADMITTED_METHOD_PROFILE_IDS,
+  BAZI_ZIPING_V1,
+  DEFAULT_METHOD_PROFILE_ID,
+  METHOD_PROFILE_IDS,
+  SJG_ALGO_CONTRACT_VERSION,
+  SJG_ALGO_FEATURE_SCHEMA_VERSION,
+  SJG_ASTRO_CONTRACT_VERSION,
+  ZIWEI_SANHE_V1,
+  isAdmittedMethodProfileId,
+} from './algorithm-method-profile.ts';
+export type { MethodProfile, MethodProfileId } from './algorithm-method-profile.ts';
 
 // SJG-ALGO-01 — Method profile registry. Profiles are a closed set; user data
-// never defines or mutates one. Each id is realized by a MethodEngine
-// (src/domain/method-engine.ts).
-export const BAZI_ZIPING_V1 = 'bazi_ziping_v1' as const;
-export const ZIWEI_SANHE_V1 = 'ziwei_sanhe_v1' as const;
-
-export type MethodProfileId = typeof BAZI_ZIPING_V1 | typeof ZIWEI_SANHE_V1;
-
-export const METHOD_PROFILE_IDS: readonly MethodProfileId[] = [
-  BAZI_ZIPING_V1,
-  ZIWEI_SANHE_V1,
-] as const;
-
-// Admitted (selectable) profiles. Keep this list in sync with the closed
-// SJG-ALGO-01 registry and the MethodEngine registry.
-export const ADMITTED_METHOD_PROFILE_IDS: readonly MethodProfileId[] = [
-  BAZI_ZIPING_V1,
-  ZIWEI_SANHE_V1,
-] as const;
-
-export const DEFAULT_METHOD_PROFILE_ID: MethodProfileId = BAZI_ZIPING_V1;
-
-export function isAdmittedMethodProfileId(value: string): value is MethodProfileId {
-  return (ADMITTED_METHOD_PROFILE_IDS as readonly string[]).includes(value);
-}
-
-export interface MethodProfile {
-  readonly id: MethodProfileId;
-  readonly contract_version: typeof SJG_ALGO_CONTRACT_VERSION;
-  readonly feature_schema_version: typeof SJG_ALGO_FEATURE_SCHEMA_VERSION;
-  // Calendar/source provenance, e.g. "tyme4ts-1.5.0". Replaces the per-pillar
-  // ephemeris_version the old approximate engine carried.
-  readonly ephemeris_version: string;
-  // Interpretive doctrine id, e.g. "fuyi_tiaohou_v1" (admitted at Wave 2).
-  readonly interpretive_profile?: string;
-}
-
 export type HeavenlyStem =
   | 'jia'
   | 'yi'

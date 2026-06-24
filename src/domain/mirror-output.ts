@@ -204,12 +204,53 @@ export interface MingJingRelationshipMirrorOutput {
   readonly citations: readonly MirrorCitation[];
 }
 
+export interface MingJingZiweiChartBasis {
+  readonly soul_palace_branch: string;
+  readonly soul_palace_name: string;
+  readonly body_palace_name: string;
+  readonly five_elements_class: string;
+  readonly soul_star: string;
+  readonly body_star: string;
+  readonly palace_count: number;
+  readonly sihua_refs: readonly string[];
+}
+
+export interface MingJingZiweiProfile {
+  readonly life_pattern: string;
+  readonly strengths: string;
+  readonly long_term_theme: string;
+  readonly relationship_pattern: string;
+  readonly career_inclination: string;
+}
+
+export interface MingJingZiweiDecadeGuidance {
+  readonly age_range: string;
+  readonly palace_name: string;
+  readonly palace_branch: string;
+  readonly major_stars: readonly string[];
+  readonly theme: string;
+  readonly strategy: string;
+}
+
+export interface MingJingZiweiNatalMirrorOutput {
+  readonly mirror_kind: 'mingjing';
+  readonly output_kind: 'ziwei_natal_brief';
+  readonly summary: string;
+  readonly chart_basis: MingJingZiweiChartBasis;
+  readonly profile: MingJingZiweiProfile;
+  readonly decade_guidance: readonly MingJingZiweiDecadeGuidance[];
+  readonly cited_event_memory_refs: readonly string[];
+  readonly cited_plan_item_refs: readonly string[];
+  readonly citations: readonly MirrorCitation[];
+}
+
 export type MirrorOutput =
   | RiJingMirrorOutput
   | YueJingMirrorOutput
   | NianJingMirrorOutput
   | MingJingMirrorOutput
   | MingJingRelationshipMirrorOutput
+  | MingJingZiweiNatalMirrorOutput
   | ShiJingMirrorOutput;
 
 export function mirrorOutputKind(output: MirrorOutput): MirrorKind {

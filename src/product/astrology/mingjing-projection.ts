@@ -53,6 +53,17 @@ export function buildMingJingProjection(
       },
     };
   }
+  if (routeSupport.route.id !== 'mingjing.route.bazi_ziping_v1') {
+    return {
+      ok: false,
+      error: {
+        stage: 'mingjing_projection',
+        kind: 'stage_invalid_input',
+        subject_ref: SELF_REF,
+        detail: `buildMingJingProjection is BaZi-only; received ${routeSupport.route.id}`,
+      },
+    };
+  }
 
   const natalInputs = input.space.self_subject.natal_inputs;
 

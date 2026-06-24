@@ -268,6 +268,6 @@ test('generateReading fails closed when selected method cannot produce relations
   assert.equal(result.failure.stage, 'mingjing_route_support');
   assert.match(
     result.failure.detail ?? '',
-    /mingjing_route_not_implemented:mingjing\.route\.ziwei_sanhe_v1:ziwei_sanhe_v1/u,
+    /mingjing_route_feature_not_supported:mingjing\.route\.ziwei_sanhe_v1:relationship_hepan/u,
   );
 });

@@ -1,12 +1,8 @@
-// SJG-IA-08 — 命镜 (Destiny Mirror) tab.
+// SJG-IA-08 — 命镜 (Destiny Mirror) route shell.
 //
-// Two layers:
-//   1. Deterministic natal projection (MingJingChart, SJG-ALGO-16) — rendered
-//      live from natal inputs, no AI: 八字排盘 / 原局格局 / 大运结构 / 流年关键窗口
-//      + 历史事件验证 timeline resonance.
-//   2. AI 解读 (mingjing Reading, SJG-ASTRO-12) — 命局核心特点 + 长期阶段策略,
-//      generated on demand and grounded by the chart + recorded history. The
-//      chart numbers are never recomputed by the AI.
+// MingJing is a method-routed surface. The shell owns cross-route state,
+// startup, persistence, and generation actions. Route components own
+// method-specific deterministic modules.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useShijingStore } from '../state/shijing-store.tsx';
@@ -18,9 +14,10 @@ import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import type {
   MingJingMirrorOutput,
   MingJingRelationshipMirrorOutput,
+  MingJingZiweiNatalMirrorOutput,
 } from '../../domain/mirror-output.ts';
 import type { ReadingGenerationFailure } from '../../domain/reading.ts';
-import { buildMingJingProjection } from '../astrology/mingjing-projection.ts';
+import { buildMingJingRouteProjection } from '../astrology/mingjing-route-projection.ts';
 import {
   inputsSummaryExpired,
   inputsSummaryStalenessForSpace,
@@ -38,17 +35,31 @@ import {
   natalMirrorScopeForToday,
   relationshipNatalMirrorScopeForToday,
 } from './mirror-scope-helpers.ts';
-import { MingJingHero } from './mingjing/mingjing-hero.tsx';
-import { MingJingPaipan } from './mingjing/mingjing-paipan.tsx';
-import { MingJingDayun } from './mingjing/mingjing-dayun.tsx';
-import { MingJingLiunian } from './mingjing/mingjing-liunian.tsx';
-import { MingJingEvents } from './mingjing/mingjing-events.tsx';
-import { MingJingReadingView } from './mingjing/mingjing-reading-view.tsx';
-import { MingJingRelationshipReadingView } from './mingjing/mingjing-relationship-reading-view.tsx';
+import { BaziMingJingRoute } from './mingjing/bazi-mingjing-route.tsx';
 import { MingJingRectify } from './mingjing/mingjing-rectify.tsx';
+import { MingJingRouteUnavailable } from './mingjing/mingjing-route-unavailable.tsx';
+import { ZiweiMingJingRoute } from './mingjing/ziwei-mingjing-route.tsx';
 
 function nowIso(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
+function isBaziMingJingOutput(output: unknown): output is MingJingMirrorOutput {
+  return (
+    typeof output === 'object' &&
+    output !== null &&
+    (output as { mirror_kind?: unknown }).mirror_kind === 'mingjing' &&
+    !Object.prototype.hasOwnProperty.call(output, 'output_kind')
+  );
+}
+
+function isZiweiMingJingOutput(output: unknown): output is MingJingZiweiNatalMirrorOutput {
+  return (
+    typeof output === 'object' &&
+    output !== null &&
+    (output as { mirror_kind?: unknown }).mirror_kind === 'mingjing' &&
+    (output as { output_kind?: unknown }).output_kind === 'ziwei_natal_brief'
+  );
 }
 
 export interface MingJingTabProps {
@@ -86,7 +97,7 @@ export function MingJingTab({
 
   const readiness = useMemo(() => mingJingReadiness(space), [space]);
   const projection = useMemo(
-    () => (readiness.ok ? buildMingJingProjection({ space }) : null),
+    () => (readiness.ok ? buildMingJingRouteProjection({ space }) : null),
     [space, readiness.ok],
   );
 
@@ -104,10 +115,11 @@ export function MingJingTab({
   );
 
   const reading = useMemo(
-    () => latestMingJingNatalReading(space.readings),
-    [space.readings],
+    () => latestMingJingNatalReading(space.readings, space.settings.method_profile_id),
+    [space.readings, space.settings.method_profile_id],
   );
-  const output = (reading?.output ?? null) as MingJingMirrorOutput | null;
+  const baziOutput = isBaziMingJingOutput(reading?.output) ? reading.output : null;
+  const ziweiOutput = isZiweiMingJingOutput(reading?.output) ? reading.output : null;
 
   const relationshipReading = useMemo(
     () =>
@@ -215,11 +227,19 @@ export function MingJingTab({
         <>
           <MingJingSimpleHeader copy={m} />
           <div className="shijing-mingjing__blocked">
-            <MingJingReadinessCard
-              reason={readiness.reason}
-              copy={m}
-              onOpen={() => onRequestOpenSettings?.('profile')}
-            />
+            {readiness.reason === 'mingjing_route_unavailable' ? (
+              <MingJingRouteUnavailable
+                copy={m}
+                detail={readiness.detail}
+                onSwitchRoute={() => onRequestOpenSettings?.('profile')}
+              />
+            ) : (
+              <MingJingReadinessCard
+                reason={readiness.reason}
+                copy={m}
+                onOpen={() => onRequestOpenSettings?.('profile')}
+              />
+            )}
             {readiness.reason === 'birth_time_required_for_method' ? (
               <MingJingRectify space={space} onSpaceChange={handleSpaceChange} />
             ) : null}
@@ -236,52 +256,53 @@ export function MingJingTab({
       ) : (
         <>
           <MingJingSimpleHeader copy={m} />
-          <MingJingHero chart={projection.value} onSeeStages={scrollToStages} />
-          <div className="shijing-mingjing__panels">
-            <MingJingPaipan chart={projection.value} />
-            <div ref={stagesRef} className="shijing-mingjing__anchor">
-              <MingJingDayun dayun={projection.value.dayun} />
-            </div>
-            <MingJingLiunian liunian={projection.value.liunian} />
-            <MingJingEvents chart={projection.value} space={space} onSpaceChange={handleSpaceChange} />
-            <MingJingReadingView
-              output={output}
-              stale={stale}
-              loading={loading}
-              failure={failure}
-              onGenerate={handleGenerate}
-            />
-            <MingJingRelationshipReadingView
-              persons={space.persons}
-              selectedPersonId={selectedRelationshipPersonId}
-              readingId={relationshipReading?.id ?? null}
-              output={relationshipOutput}
-              stale={relationshipStale}
-              loading={relationshipLoading}
-              failure={relationshipFailure}
-              onSelectPerson={(personId) => {
-                setSelectedRelationshipPersonId(personId);
-                setRelationshipFailure(null);
-              }}
-              onGenerate={handleGenerateRelationship}
-              onOpenPeople={() => onRequestOpenSettings?.('profile')}
-            />
-          </div>
-          {showRectify ? (
-            <MingJingRectify
+          {projection.value.kind === 'bazi_ziping_v1' ? (
+            <BaziMingJingRoute
+              copy={m}
+              chart={projection.value.chart}
               space={space}
+              stagesRef={stagesRef}
+              onSeeStages={scrollToStages}
               onSpaceChange={handleSpaceChange}
-              onClose={() => setShowRectify(false)}
+              natalReading={{
+                output: baziOutput,
+                stale,
+                loading,
+                failure,
+                onGenerate: handleGenerate,
+              }}
+              relationshipReading={{
+                selectedPersonId: selectedRelationshipPersonId,
+                readingId: relationshipReading?.id ?? null,
+                output: relationshipOutput,
+                stale: relationshipStale,
+                loading: relationshipLoading,
+                failure: relationshipFailure,
+                onSelectPerson: (personId) => {
+                  setSelectedRelationshipPersonId(personId);
+                  setRelationshipFailure(null);
+                },
+                onGenerate: handleGenerateRelationship,
+                onOpenPeople: () => onRequestOpenSettings?.('profile'),
+              }}
+              rectification={{
+                open: showRectify,
+                onOpen: () => setShowRectify(true),
+                onClose: () => setShowRectify(false),
+              }}
             />
-          ) : (
-            <button
-              type="button"
-              className="shijing-mj-footer-cta"
-              onClick={() => setShowRectify(true)}
-            >
-              {m.rectify.entryLive}
-            </button>
-          )}
+          ) : projection.value.kind === 'ziwei_sanhe_v1' ? (
+            <ZiweiMingJingRoute
+              chart={projection.value.chart}
+              natalReading={{
+                output: ziweiOutput,
+                stale,
+                loading,
+                failure,
+                onGenerate: handleGenerate,
+              }}
+            />
+          ) : null}
         </>
       )}
     </section>

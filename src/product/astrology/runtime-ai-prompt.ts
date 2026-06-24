@@ -8,6 +8,7 @@ import type { MirrorKind } from '../../domain/mirror-scope.ts';
 import type {
   MingJingMirrorOutput,
   MingJingRelationshipMirrorOutput,
+  MingJingZiweiNatalMirrorOutput,
   MirrorOutput,
 } from '../../domain/mirror-output.ts';
 import type { ResponsePreferences } from '../../domain/settings.ts';
@@ -72,6 +73,13 @@ function isMingjingRelationshipOutput(
     (output as { output_kind?: unknown }).output_kind === 'relationship_hepan';
 }
 
+function isMingjingZiweiNatalOutput(
+  output: MirrorOutput,
+): output is MingJingZiweiNatalMirrorOutput {
+  return output.mirror_kind === 'mingjing' &&
+    (output as { output_kind?: unknown }).output_kind === 'ziwei_natal_brief';
+}
+
 function schemaShapeForKind(kind: MirrorKind, output?: MirrorOutput): string {
   switch (kind) {
     case 'rijing':
@@ -105,6 +113,15 @@ function schemaShapeForKind(kind: MirrorKind, output?: MirrorOutput): string {
           'timing_windows items: start_date, end_date, summary? only. start_date + end_date MUST exactly match one provided timing window.',
           'practice object fields: communication, boundary, repair',
           'Do NOT output relationship_subject, citations, cited_event_memory_refs, cited_plan_item_refs, nature, driver_refs, deterministic ids/refs, compatibility scores, trends, or graphs.',
+        ].join('\n');
+      }
+      if (output && isMingjingZiweiNatalOutput(output)) {
+        return [
+          'output_kind: ziwei_natal_brief',
+          'patch_fields: patch_kind, mirror_kind, output_kind, summary, profile, decade_guidance',
+          'profile object fields: life_pattern, strengths, long_term_theme, relationship_pattern, career_inclination. Fill ALL five.',
+          'decade_guidance items: age_range, palace_name, theme, strategy. age_range + palace_name MUST exactly match provided targets, and every provided target must be included.',
+          'Do NOT output chart_basis, major_stars, palace_branch, citations, cited_event_memory_refs, cited_plan_item_refs, scores, trends, or graphs.',
         ].join('\n');
       }
       return [
@@ -241,6 +258,28 @@ function wordingTargetFor(
           citations: output.citations,
         };
       }
+      if (isMingjingZiweiNatalOutput(output)) {
+        return {
+          mirror_kind: output.mirror_kind,
+          output_kind: output.output_kind,
+          summary: output.summary,
+          chart_basis: output.chart_basis,
+          profile: output.profile,
+          decade_guidance: output.decade_guidance.map((item) => ({
+            age_range: item.age_range,
+            palace_name: item.palace_name,
+            palace_branch: item.palace_branch,
+            major_stars: item.major_stars,
+            theme: item.theme,
+            strategy: item.strategy,
+          })),
+          // Read-only deterministic refs and citations: useful grounding context,
+          // but explicitly forbidden as returned patch fields.
+          cited_event_memory_refs: output.cited_event_memory_refs,
+          cited_plan_item_refs: output.cited_plan_item_refs,
+          citations: output.citations,
+        };
+      }
       const natalOutput = output as MingJingMirrorOutput;
       return {
         mirror_kind: natalOutput.mirror_kind,
@@ -328,6 +367,17 @@ export function buildRuntimeAiPromptRequest(args: {
       'Do NOT output relationship_subject, citations, cited_event_memory_refs, cited_plan_item_refs, nature, driver_refs, deterministic ids/refs, compatibility scores, trends, or graphs.',
       'Do not compute compatibility, fate certainty, match percentages, relation graphs, or contact-management advice.',
       'Write relationship guidance as concrete communication, boundary, and repair language, never as fixed destiny.',
+    ].join('\n'));
+  } else if (args.mirror_kind === 'mingjing' && isMingjingZiweiNatalOutput(args.deterministic_output)) {
+    userPromptLines.push([
+      'MingJing Ziwei Sanhe natal brief writing requirements:',
+      'Role: word the admitted Ziwei Sanhe natal evidence for the MingJing route.',
+      'Return output_kind: ziwei_natal_brief in the patch so the SDK applies the Ziwei natal patch path.',
+      'AI may word only summary, profile, and decade_guidance theme/strategy fields.',
+      'chart_basis, palace_branch, major_stars, citations, and cited refs are read-only grounding context.',
+      'Every decade_guidance patch item must target an existing age_range + palace_name exactly.',
+      'Write as long-horizon life guidance grounded in Minggong, Shengong, five-elements class, major stars, and decadal palaces.',
+      'Do not compute compatibility, scores, trends, graphs, fate certainty, or new chart facts.',
     ].join('\n'));
   } else if (args.mirror_kind === 'mingjing') {
     userPromptLines.push([

@@ -1,6 +1,7 @@
 // W03 — Reading selectors under the Mirror Architecture v1.
 
 import type { Reading } from '../../domain/reading.ts';
+import type { MethodProfileId } from '../../domain/algorithm.ts';
 import type {
   MirrorKind,
   RelationshipNatalMirrorScope,
@@ -43,12 +44,14 @@ function isPersonRef(ref: SubjectRef): ref is Extract<SubjectRef, { kind: 'perso
 
 export function latestMingJingNatalReading(
   readings: readonly Reading[],
+  method_profile_id?: MethodProfileId,
 ): Reading | undefined {
   return newestReading(
     readings.filter(
       (reading) =>
         reading.mirror_kind === 'mingjing' &&
         reading.mirror_scope.kind === 'natal' &&
+        (!method_profile_id || reading.inputs_summary.method_profile.id === method_profile_id) &&
         reading.output.mirror_kind === 'mingjing' &&
         !isRelationshipHePanOutput(reading.output),
     ),
