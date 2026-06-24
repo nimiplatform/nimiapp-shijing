@@ -20,6 +20,10 @@ import { computeFiveElementDistribution } from './engines/bazi/bazi-five-element
 import { computeBaziPattern } from './engines/bazi/bazi-pattern.ts';
 import { buildDayunStructure } from './engines/bazi/bazi-dayun-features.ts';
 import { buildLiuNianProjection } from './engines/bazi/bazi-liunian.ts';
+import {
+  mingJingRouteFailCloseDetail,
+  validateMingJingRouteSupport,
+} from './mingjing-route-support.ts';
 
 const SELF_REF = 'self' as const;
 
@@ -34,6 +38,22 @@ export interface BuildMingJingProjectionInput {
 export function buildMingJingProjection(
   input: BuildMingJingProjectionInput,
 ): StageResult<MingJingChart> {
+  const routeSupport = validateMingJingRouteSupport({
+    method_profile_id: input.space.settings.method_profile_id,
+    feature_id: 'natal_projection',
+  });
+  if (!routeSupport.ok) {
+    return {
+      ok: false,
+      error: {
+        stage: 'mingjing_route_support',
+        kind: 'stage_invalid_input',
+        subject_ref: SELF_REF,
+        detail: mingJingRouteFailCloseDetail(routeSupport.error),
+      },
+    };
+  }
+
   const natalInputs = input.space.self_subject.natal_inputs;
 
   const canon = canonicalizeNatalInputs(natalInputs);

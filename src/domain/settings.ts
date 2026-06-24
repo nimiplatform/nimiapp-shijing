@@ -1,4 +1,4 @@
-// SJG-DATA-09 — Settings, ResponsePreferences.
+// SJG-DATA-11 — Settings, ResponsePreferences.
 
 import type { MethodProfileId } from './algorithm.ts';
 

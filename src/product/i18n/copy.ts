@@ -288,8 +288,6 @@ export interface ProductCopy {
     readonly concernStageEyebrow: string;
     readonly profileStageTitle: string;
     readonly concernStageTitle: string;
-    readonly continueProfile: string;
-    readonly continueConcerns: string;
   };
   readonly concerns: {
     readonly title: string;
@@ -390,7 +388,9 @@ export interface ProductCopy {
       readonly regenerate: string;
       readonly refresh: string;
     };
+    readonly emptyTagsTitle: string;
     readonly emptyTagsStatus: string;
+    readonly emptyTagsAction: string;
     readonly loadingStatus: string;
     readonly date: {
       readonly locale: string;
@@ -527,6 +527,16 @@ export interface ProductCopy {
     readonly send: string;
     readonly suggestLabel: string;
     readonly resultAria: string;
+    readonly archive: {
+      readonly aria: string;
+      readonly addPrefix: string;
+      readonly removeAria: (label: string) => string;
+      readonly filterButton: string;
+      readonly filterButtonActive: (count: number) => string;
+      readonly filterMenuAria: string;
+      readonly filterAll: string;
+      readonly filterEmpty: string;
+    };
     readonly context: {
       readonly aria: string;
       readonly title: string;
@@ -1041,8 +1051,6 @@ const ZH_COPY: ProductCopy = {
     concernStageEyebrow: '关注镜片',
     profileStageTitle: '先确定推算依据。',
     concernStageTitle: '再告诉时镜该看向哪里。',
-    continueProfile: '继续完善资料',
-    continueConcerns: '继续选择关注',
   },
   concerns: {
     title: '关注的事',
@@ -1194,11 +1202,13 @@ const ZH_COPY: ProductCopy = {
       persistenceFailed: '本地数据读写失败,请先在设置中处理',
       persistencePending: '本地数据加载中,暂不能生成今日',
       profileIncomplete: '资料还不足以生成今日',
-      missingFocus: '请先在「设置 → 关注标签」中激活至少一个关注',
+      missingFocus: '去设置关注，激活一个关注后生成日镜',
       regenerate: '重新生成今日',
       refresh: '刷新今日',
     },
-    emptyTagsStatus: '请先在「设置 → 关注标签」中激活至少一个关注，今日才能围绕你正在意的事生成。',
+    emptyTagsTitle: '还没有激活关注',
+    emptyTagsStatus: '日镜需要至少一个关注作为镜片，才会生成今天的判断。',
+    emptyTagsAction: '去设置关注',
     loadingStatus: '正在生成今日日镜…',
     date: {
       locale: 'zh-CN-u-ca-gregory',
@@ -1292,6 +1302,14 @@ const ZH_COPY: ProductCopy = {
         birth_location_unresolved: {
           title: '资料完整度：出生地点待补充',
           body: '补充后真太阳时与时区会更准确。',
+        },
+        method_profile_unsupported_for_feature: {
+          title: '所选方法暂不支持此功能',
+          body: '请切换到当前功能已支持的推演方法后再生成。',
+        },
+        mingjing_route_unavailable: {
+          title: '当前命镜路线尚未接入',
+          body: '请切换到已实现的命镜路线后再查看。',
         },
         birth_precision_rough_year_for_mirror: {
           title: '资料完整度：出生时间需补到月或日',
@@ -1422,6 +1440,16 @@ const ZH_COPY: ProductCopy = {
     send: '发送',
     suggestLabel: '可以这样问',
     resultAria: '解读结果',
+    archive: {
+      aria: '提问归入关注',
+      addPrefix: '归入关注',
+      removeAria: (label) => `移除归入关注 ${label}`,
+      filterButton: '筛选关注',
+      filterButtonActive: (count) => `筛选关注，已选 ${count} 项`,
+      filterMenuAria: '按关注筛选提问记录',
+      filterAll: '全部提问',
+      filterEmpty: '暂无可筛选关注',
+    },
     context: {
       aria: '上下文焦点',
       title: '上下文焦点',
@@ -1458,6 +1486,8 @@ const ZH_COPY: ProductCopy = {
         scaffold_default_natal_inputs: '当前仍是初始占位生辰,请先录入真实出生信息。',
         birth_precision_unknown: '出生时间精度为不详,无法排出完整命盘。',
         birth_location_unresolved: '出生地点仍是默认值,请先补全地点与时区。',
+        method_profile_unsupported_for_feature: '当前所选命理方法暂不支持命镜本命盘,请切换到八字子平法后再生成。',
+        mingjing_route_unavailable: '当前命理方法的命镜路线尚未接入,请切换到已实现的命镜路线后再查看。',
         birth_time_required_for_method: '命镜需要精确到时辰的出生时间,请补全准确出生时刻。',
         birth_precision_rough_year_for_mirror: '出生时间只到年份,无法排出四柱命盘。',
         birth_precision_rough_month_for_dayun: '出生时间只到月份,无法推算大运。',
@@ -2020,8 +2050,6 @@ const EN_COPY: ProductCopy = {
     concernStageEyebrow: 'Concern lens',
     profileStageTitle: 'First, set the calculation basis.',
     concernStageTitle: 'Then tell ShiJing where to look.',
-    continueProfile: 'Continue profile',
-    continueConcerns: 'Continue concerns',
   },
   concerns: {
     title: 'Concerns',
@@ -2173,11 +2201,13 @@ const EN_COPY: ProductCopy = {
       persistenceFailed: 'Local data read/write failed. Handle it in Settings first.',
       persistencePending: 'Local data is loading. Daily Mirror cannot be generated yet.',
       profileIncomplete: 'Profile is not complete enough to generate today.',
-      missingFocus: 'Activate at least one concern in Settings -> Concern tags first.',
+      missingFocus: 'Open concern settings and activate one concern before generating Daily Mirror.',
       regenerate: 'Regenerate today',
       refresh: 'Refresh today',
     },
-    emptyTagsStatus: 'Activate at least one concern in Settings -> Concern tags so today can be generated around what matters to you.',
+    emptyTagsTitle: 'No active concern yet',
+    emptyTagsStatus: 'Daily Mirror needs at least one active concern as its lens before it can generate today.',
+    emptyTagsAction: 'Open concern settings',
     loadingStatus: 'Generating Daily Mirror...',
     date: {
       locale: 'en-US',
@@ -2271,6 +2301,14 @@ const EN_COPY: ProductCopy = {
         birth_location_unresolved: {
           title: 'Profile completeness: birth place is missing',
           body: 'Completing it improves true solar time and time-zone accuracy.',
+        },
+        method_profile_unsupported_for_feature: {
+          title: 'Selected method does not support this feature',
+          body: 'Switch to a method supported by this feature before generating.',
+        },
+        mingjing_route_unavailable: {
+          title: 'Current MingJing route is not available',
+          body: 'Switch to an implemented MingJing route before viewing this surface.',
         },
         birth_precision_rough_year_for_mirror: {
           title: 'Profile completeness: birth time needs month or day precision',
@@ -2401,6 +2439,16 @@ const EN_COPY: ProductCopy = {
     send: 'Send',
     suggestLabel: 'Try asking',
     resultAria: 'Reading result',
+    archive: {
+      aria: 'Question archive lens',
+      addPrefix: 'Add to concern',
+      removeAria: (label) => `Remove concern archive ${label}`,
+      filterButton: 'Filter concerns',
+      filterButtonActive: (count) => `Filter concerns, ${count} selected`,
+      filterMenuAria: 'Filter question history by concern',
+      filterAll: 'All questions',
+      filterEmpty: 'No concerns available',
+    },
     context: {
       aria: 'Context focus',
       title: 'Context focus',
@@ -2438,6 +2486,8 @@ const EN_COPY: ProductCopy = {
         scaffold_default_natal_inputs: 'Still a placeholder birth record — enter the real birth data first.',
         birth_precision_unknown: 'Birth-time precision is unknown; a full chart cannot be cast.',
         birth_location_unresolved: 'Birth place is still the default — complete place and time zone first.',
+        method_profile_unsupported_for_feature: 'The selected method does not support the current Destiny Mirror natal chart yet. Switch to BaZi Ziping first.',
+        mingjing_route_unavailable: 'The selected method route is not implemented for Destiny Mirror yet. Switch to an implemented route first.',
         birth_time_required_for_method: 'The Destiny Mirror needs an exact birth time (to the hour).',
         birth_precision_rough_year_for_mirror: 'Birth time is only to the year; four pillars cannot be cast.',
         birth_precision_rough_month_for_dayun: 'Birth time is only to the month; DaYun cannot be derived.',

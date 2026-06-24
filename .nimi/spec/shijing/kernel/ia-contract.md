@@ -109,13 +109,18 @@ Downstream source must expose one ordered IA constant matching this contract.
 Renderer code must consume that contract rather than hardcoding a parallel
 primary tab list.
 
-## SJG-IA-08 - 命镜 Natal Projection Surface
+## SJG-IA-08 - 命镜 Method-Routed Surface
 
-`mingjing` (命镜) is the whole-life natal-chart surface. Unlike the four time
+`mingjing` (命镜) is the whole-life method-routed surface. Unlike the four time
 mirrors, it is anchored to the subject's birth chart rather than a rolling mirror
-window. Its first authority layer is a deterministic natal projection
-(SJG-ALGO-16) rendered directly from the engine — without a Reading or runtime-AI
-wording pass — covering:
+window. Its first authority layer is the selected MingJing route from
+SJG-ALGO-18, resolved by `Settings.method_profile_id`. The tab remains one
+primary product surface; method switching changes the internal route, modules,
+evidence model, and fail-close state.
+
+The implemented BaZi route renders a deterministic natal projection
+(SJG-ALGO-16) directly from the engine — without a Reading or runtime-AI wording
+pass — covering:
 
 - 八字排盘: four pillars · 十神 · 藏干 · 纳音 · 十二长生 · 空亡 · 五行分布;
 - 原局格局: 旺衰 · 格局 · 用神/喜忌 · 合冲刑害破;
@@ -123,11 +128,15 @@ wording pass — covering:
 - 流年关键窗口: salient future-year windows (not a year-by-year ledger).
 
 命镜 is self-anchored (SJG-IA-03) and surfaces the SJG-IA-05 readiness blockers.
-The natal projection requires exact birth precision and a specified calculation
-sex (DaYun, SJG-ALGO-07); otherwise it shows the matching typed blocker and routes
-to the Self profile. The 命镜 AI 解读 reading kind (命局核心特点, 长期阶段策略) and
-历史事件验证 (event overlay on the deterministic DaYun/流年 timeline) are admitted
-separately and never recompute the deterministic projection.
+Each route owns its own additional readiness requirements. The implemented BaZi
+route requires exact birth precision and a specified calculation sex (DaYun,
+SJG-ALGO-07); otherwise it shows the matching typed blocker and routes to the
+Self profile. A selected route whose status is `not_implemented` shows a typed
+`mingjing_route_unavailable` blocker and must not render another method's route.
+
+The 命镜 AI 解读 reading kind (命局核心特点, 长期阶段策略) and 历史事件验证 (event overlay
+on the deterministic route timeline) are admitted separately and never recompute
+the deterministic route projection.
 
 MingJing admits two secondary modes: `benming` and `relationship_hepan`.
 `relationship_hepan` remains inside MingJing and may be launched from a Person

@@ -7,10 +7,26 @@
 
 import type { ShiJingSpace } from '../../../domain/shijing-space.ts';
 import { subjectNatalReadiness, type NatalReadiness } from '../../subjects/natal-readiness.ts';
+import {
+  mingJingRouteFailCloseDetail,
+  validateMingJingRouteSupport,
+} from '../../astrology/mingjing-route-support.ts';
 
 export function mingJingReadiness(space: ShiJingSpace): NatalReadiness {
   const base = subjectNatalReadiness('self', space);
   if (!base.ok) return base;
+
+  const routeSupport = validateMingJingRouteSupport({
+    method_profile_id: space.settings.method_profile_id,
+    feature_id: 'natal_projection',
+  });
+  if (!routeSupport.ok) {
+    return {
+      ok: false,
+      reason: 'mingjing_route_unavailable',
+      detail: mingJingRouteFailCloseDetail(routeSupport.error),
+    };
+  }
 
   if (base.inputs.birth_precision !== 'exact') {
     return {

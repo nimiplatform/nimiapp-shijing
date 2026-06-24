@@ -1,4 +1,4 @@
-// SJG-DATA-09 + SJG-ALGO-01 — Settings validator.
+// SJG-DATA-11 + SJG-ALGO-01 — Settings validator.
 //
 // Persistence-time fail-close for Settings. The active method_profile_id must be
 // an admitted profile and the response preferences must use admitted enums.

@@ -63,6 +63,16 @@ import { isRuntimeAiWordingPatchAppliedSource } from './runtime-ai-client.ts';
 import type { StageFailure } from './stage-result.ts';
 import { deriveUncertainty, evaluateFailClose } from './uncertainty-decision.ts';
 import { inputsSummaryExpired } from './inputs-summary-expiry.ts';
+import {
+  methodFeatureFailCloseDetail,
+  methodFeatureIdForMirror,
+  validateMethodFeatureSupport,
+} from './method-feature-support.ts';
+import {
+  mingJingRouteFailCloseDetail,
+  mingJingRouteFeatureIdForScope,
+  validateMingJingRouteSupport,
+} from './mingjing-route-support.ts';
 
 export interface GenerateReadingInput {
   readonly id: string;
@@ -222,6 +232,67 @@ export async function generateReading(
   const scopePairingFailure = validateGenerationScopePairing(input);
   if (scopePairingFailure) {
     return { ok: false, failure: scopePairingFailure };
+  }
+  if (input.mirror_kind === 'mingjing') {
+    const routeFeatureId = mingJingRouteFeatureIdForScope(input.mirror_scope);
+    if (!routeFeatureId) {
+      return {
+        ok: false,
+        failure: {
+          kind: 'validation_failed',
+          mirror_kind: input.mirror_kind,
+          mirror_scope: input.mirror_scope,
+          stage: 'mingjing_route_support',
+          detail: `mingjing_route_feature_not_declared:${input.mirror_scope.kind}`,
+        },
+      };
+    }
+    const routeSupport = validateMingJingRouteSupport({
+      method_profile_id: input.space.settings.method_profile_id,
+      feature_id: routeFeatureId,
+    });
+    if (!routeSupport.ok) {
+      return {
+        ok: false,
+        failure: {
+          kind: 'algorithm_fail_closed',
+          mirror_kind: input.mirror_kind,
+          mirror_scope: input.mirror_scope,
+          stage: 'mingjing_route_support',
+          detail: mingJingRouteFailCloseDetail(routeSupport.error),
+        },
+      };
+    }
+  } else {
+    const methodFeatureId = methodFeatureIdForMirror(input.mirror_kind, input.mirror_scope);
+    if (!methodFeatureId) {
+      return {
+        ok: false,
+        failure: {
+          kind: 'validation_failed',
+          mirror_kind: input.mirror_kind,
+          mirror_scope: input.mirror_scope,
+          stage: 'method_feature_support',
+          detail: `method_feature_not_declared:${input.mirror_kind}:${input.mirror_scope.kind}`,
+        },
+      };
+    }
+    const methodFeatureSupport = validateMethodFeatureSupport({
+      method_profile_id: input.space.settings.method_profile_id,
+      feature_id: methodFeatureId,
+    });
+    if (!methodFeatureSupport.ok) {
+      return {
+        ok: false,
+        failure: {
+          kind: 'algorithm_fail_closed',
+          mirror_kind: input.mirror_kind,
+          mirror_scope: input.mirror_scope,
+          stage: 'method_feature_support',
+          detail: methodFeatureFailCloseDetail(methodFeatureSupport.error),
+        },
+      };
+    }
   }
 
   const tagsResult = activeConcernTagsForRefs(input.concern_tag_refs, input.space);

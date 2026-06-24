@@ -15,6 +15,8 @@ export type StageId =
   | 'nianjing_generate'
   | 'shijing_generate'
   | 'mingjing_projection'
+  | 'method_feature_support'
+  | 'mingjing_route_support'
   | 'mirror_window';
 
 export const STAGE_IDS: readonly StageId[] = [
@@ -27,6 +29,8 @@ export const STAGE_IDS: readonly StageId[] = [
   'nianjing_generate',
   'shijing_generate',
   'mingjing_projection',
+  'method_feature_support',
+  'mingjing_route_support',
   'mirror_window',
 ] as const;
 

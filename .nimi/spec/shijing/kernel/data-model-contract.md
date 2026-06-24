@@ -318,6 +318,7 @@ Conversation {
   id: string
   created_at: string
   source_reading_ids: string[]
+  concern_tag_refs: string[]
   turns: ConversationTurn[]
 }
 
@@ -337,6 +338,10 @@ Invariants:
 - Person does not own conversations.
 - Before any AI turn is appended, the owning Conversation must have at least
   one resolvable `source_reading_ids[]` entry.
+- `concern_tag_refs[]` records the active ConcernTag lens selected when the
+  conversation was created. It is a filter/archive hint only: it does not own
+  the conversation, does not create a Project/View container, and does not
+  replace cited readings as the Runtime-AI grounding source.
 - AI turns clarify cited readings and must not become alternate astrology
   output entities.
 - AI turns must disclose cited reading, event memory, and plan item refs when
@@ -348,6 +353,7 @@ Invariants:
 Settings {
   ui_language: "zh" | "en"
   response_preferences: ResponsePreferences
+  method_profile_id?: MethodProfileId
 }
 
 ResponsePreferences {
@@ -363,6 +369,13 @@ Invariants:
 - `ui_language` controls renderer UI copy only. It must not enter
   deterministic astrology calculation, Runtime AI prompt construction,
   canonical hashing, or `Reading.inputs_summary`.
+- `method_profile_id`, when present, selects the active admitted
+  `MethodProfileId` for new generation. Absence means the default
+  `bazi_ziping_v1` profile. It is a deterministic calculation setting, not a
+  wording preference, and must be included in input hashing and frozen
+  `Reading.inputs_summary` provenance.
+- Persisted Settings must fail closed when `method_profile_id` is not in the
+  admitted registry from SJG-ALGO-01.
 - Settings has no `global_instructions`, `project_memory`, catalog snapshot,
   workflow, task, report, trend chart, or luck-score fields.
 - Settings UI may expose Self, People, Concern Tags, Memory & Plans, Response

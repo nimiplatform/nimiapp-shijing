@@ -13,18 +13,19 @@ data under `ShiJingSpace`.
 
 ## SJG-PROD-03 - Personal Time-Mirror Product
 
-ShiJing is a personal astrology time-mirror product. It is organized by four
-mirrors: RiJing, YueJing, NianJing, and ShiJing consultation. It is not a CRM,
-consultant workspace, report builder, project manager, batch import/export
-tool, or free-form context container.
+ShiJing is a personal astrology time-mirror and natal-companion product. It is
+organized by five primary tabs: RiJing, YueJing, NianJing, MingJing, and
+ShiJing consultation. It is not a CRM, consultant workspace, report builder,
+project manager, batch import/export tool, or free-form context container.
 
-## SJG-PROD-04 - Four Primary Mirrors
+## SJG-PROD-04 - Five Primary Tabs
 
-The product has exactly four primary surfaces:
+The product has exactly five primary tabs:
 
 - RiJing (`日镜`) for daily reflection.
 - YueJing (`月镜`) for a rolling 30-day calendar.
 - NianJing (`年镜`) for long-horizon phase bands and inflection points.
+- MingJing (`命镜`) for natal projection and relationship hepan modes.
 - ShiJing (`时镜`) for session-based consultation grounded in cited readings.
 
 ## SJG-PROD-05 - Concern Tags Replace View / Focus

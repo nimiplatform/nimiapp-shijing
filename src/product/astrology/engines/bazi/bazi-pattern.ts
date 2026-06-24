@@ -118,12 +118,16 @@ export function computeBaziPattern(ec: EightChar, natal: NatalChartSnapshot): Ba
   let isTransparent = benQiTransparent;
 
   if (!benQiTransparent) {
-    // 本气不透 → 取透出的中/余气 (中气优先于余气).
+    // 本气不透 → 取透出的中/余气 (中气优先于余气). 比劫不进入八正格闭集；
+    // only a ten-god with an admitted pattern name may override 本气 here.
     const middleResidual = monthBranch
       .getHideHeavenStems()
       .filter((h: HideHeavenStem) => h.getType() < 2)
       .sort((a: HideHeavenStem, b: HideHeavenStem) => b.getType() - a.getType()); // 中气(1) before 余气(0)
-    const surfaced = middleResidual.find((h: HideHeavenStem) => transparent.has(h.getHeavenStem().getIndex()));
+    const surfaced = middleResidual.find((h: HideHeavenStem) => {
+      const stem = h.getHeavenStem();
+      return transparent.has(stem.getIndex()) && PATTERN_BY_TEN_GOD[tenGodName(stem)] !== undefined;
+    });
     if (surfaced) {
       chosenStem = surfaced.getHeavenStem();
       chosenTenGod = tenGodName(chosenStem);

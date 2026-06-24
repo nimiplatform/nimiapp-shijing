@@ -19,6 +19,8 @@ export type NatalReadinessReason =
   | 'scaffold_default_natal_inputs'
   | 'birth_precision_unknown'
   | 'birth_location_unresolved'
+  | 'method_profile_unsupported_for_feature'
+  | 'mingjing_route_unavailable'
   | 'birth_time_required_for_method'
   | 'birth_precision_rough_year_for_mirror'
   | 'birth_precision_rough_month_for_dayun'
@@ -146,6 +148,8 @@ export function natalReadinessSeverity(reason: NatalReadinessReason): NatalReadi
     case 'subject_missing':
     case 'natal_inputs_invalid':
     case 'scaffold_default_natal_inputs':
+    case 'method_profile_unsupported_for_feature':
+    case 'mingjing_route_unavailable':
     case 'birth_time_required_for_method':
       return 'blocker';
     case 'birth_precision_unknown':
@@ -174,6 +178,10 @@ export function natalReadinessHeadline(readiness: Exclude<NatalReadiness, { ok: 
       return '当前出生时间精度为不详,不能生成解读。';
     case 'birth_location_unresolved':
       return '当前出生地点仍是默认值,请先补全地点和时区。';
+    case 'method_profile_unsupported_for_feature':
+      return '当前所选命理方法暂不支持这个产品功能,请切换到已支持的方法后再生成。';
+    case 'mingjing_route_unavailable':
+      return '当前命理方法的命镜路线尚未接入,请切换到已实现的命镜路线后再查看。';
     case 'birth_time_required_for_method':
       return '所选命理方法需要精确到时辰的出生时间,请先补全准确的出生时刻。';
     case 'birth_precision_rough_year_for_mirror':

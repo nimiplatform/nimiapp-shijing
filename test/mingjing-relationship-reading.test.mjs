@@ -264,7 +264,10 @@ test('generateReading fails closed when selected method cannot produce relations
     { runtime_ai_client: runtimeClient, now: NOW },
   );
   assert.equal(result.ok, false);
-  assert.equal(result.failure.kind, 'pipeline_stage_failed');
-  assert.equal(result.failure.stage, 'build_feature_snapshot');
-  assert.match(result.failure.detail ?? '', /relationship_hepan.*method.*not_supported|unsupported_method/u);
+  assert.equal(result.failure.kind, 'algorithm_fail_closed');
+  assert.equal(result.failure.stage, 'mingjing_route_support');
+  assert.match(
+    result.failure.detail ?? '',
+    /mingjing_route_not_implemented:mingjing\.route\.ziwei_sanhe_v1:ziwei_sanhe_v1/u,
+  );
 });

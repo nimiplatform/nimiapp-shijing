@@ -634,3 +634,62 @@ related Person. The minimum evidence set is:
 - uncertainty inputs for precision, location, consent, and related-person data.
 
 Runtime AI must not compute or alter these evidence fields.
+
+## SJG-ALGO-18 - Product Feature and MingJing Route Support
+
+ShiJing has two support shapes. RiJing, YueJing, NianJing, and ShiJing
+consultation are algorithm-neutral product features. MingJing is a route family:
+the selected `MethodProfileId` resolves to a method-specific MingJing route.
+This support declaration is product authority, not user data. Method switching
+is allowed only inside these declared boundaries.
+
+| Feature id | Product surface | Mirror kind | Scope kind | Supported method_profile_id values |
+| --- | --- | --- | --- | --- |
+| `rijing.daily_reading` | RiJing daily reading | `rijing` | `daily` | `bazi_ziping_v1`, `ziwei_sanhe_v1` |
+| `yuejing.rolling_30_day_reading` | YueJing rolling-30-day reading | `yuejing` | `rolling_30_day` | `bazi_ziping_v1`, `ziwei_sanhe_v1` |
+| `nianjing.long_horizon_reading` | NianJing long-horizon reading | `nianjing` | `long_horizon` | `bazi_ziping_v1`, `ziwei_sanhe_v1` |
+| `shijing.consultation` | ShiJing consultation grounded in cited readings | `shijing` | `consultation` | `bazi_ziping_v1`, `ziwei_sanhe_v1` |
+
+MingJing route registry:
+
+| Route id | Method profile | Status | Supported route features |
+| --- | --- | --- | --- |
+| `mingjing.route.bazi_ziping_v1` | `bazi_ziping_v1` | `implemented` | `natal_projection`, `natal_reading`, `relationship_hepan` |
+| `mingjing.route.ziwei_sanhe_v1` | `ziwei_sanhe_v1` | `not_implemented` | none |
+
+Rules:
+
+- Before any deterministic feature snapshot or Runtime AI wording request for
+  the four algorithm-neutral features, the implementation must resolve the
+  active feature id from `mirror_kind` + `mirror_scope.kind` and validate it
+  against the selected `method_profile_id`.
+- If the selected method is admitted but unsupported for that feature,
+  generation fails closed with stage `method_feature_support` and detail
+  `method_feature_not_supported:<feature_id>:<method_profile_id>`, plus the
+  supported alternatives when available. It must not continue to another
+  method, synthesize a partial Reading, or ask Runtime AI to compensate.
+- Before any MingJing live projection, MingJing Reading, or MingJing
+  Relationship HePan generation, the implementation must resolve the selected
+  MingJing route from `Settings.method_profile_id`.
+- If the selected MingJing route is not implemented, generation fails closed
+  with stage `mingjing_route_support` and detail
+  `mingjing_route_not_implemented:<route_id>:<method_profile_id>`. It must not
+  render another method's route, synthesize route output, or ask Runtime AI to
+  compensate.
+- If an implemented MingJing route does not support a specific route feature,
+  generation fails closed with stage `mingjing_route_support` and detail
+  `mingjing_route_feature_not_supported:<route_id>:<feature_id>`.
+- A missing `Settings.method_profile_id` resolves to `bazi_ziping_v1`; an
+  unadmitted persisted value is rejected by Settings validation before
+  generation.
+- Runtime AI model choice is orthogonal to both support declarations. A stronger
+  or different AI model may change wording quality only; it cannot make an
+  unsupported deterministic feature or unimplemented MingJing route supported.
+- Historical Readings keep their frozen `inputs_summary.method_profile` and
+  hashes. Switching the active method affects only new generation and live
+  projections after the switch.
+- `ziwei_sanhe_v1` is admitted for the three time-mirror readings and
+  consultation over already-cited Ziwei readings. It is also product-admitted as
+  a MingJing route target, but that route remains `not_implemented` until
+  Ziwei-specific route evidence, renderer modules, validators, and Runtime AI
+  schemas are explicitly added here.

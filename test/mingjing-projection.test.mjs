@@ -85,6 +85,23 @@ test('命镜 projection is deterministic (frozen engine — same input, same cha
   assert.deepEqual(a, b);
 });
 
+test('命镜 projection keeps 本气 when only a 比劫 residual stem is transparent', () => {
+  const r = buildMingJingProjection({
+    space: spaceFor('2026-07-20', '12:00', 'male'),
+    reference_year: 2026,
+  });
+
+  assert.equal(r.ok, true, JSON.stringify(r));
+  const c = r.value;
+  assert.deepEqual(c.natal_chart.month_pillar, { stem: 'yi', branch: 'wei' });
+  assert.deepEqual(c.natal_chart.day_pillar, { stem: 'yi', branch: 'wei' });
+  assert.equal(c.pattern.name, '偏财格');
+  assert.equal(c.pattern.ten_god, '偏财');
+  assert.equal(c.pattern.source, '本气');
+  assert.equal(c.pattern.transparent, false);
+  assert.equal(validateMingJingChart(c).ok, true);
+});
+
 test('命镜 流年 windows are salient and within the horizon (not a ledger)', () => {
   const r = buildMingJingProjection({
     space: spaceFor('1990-04-12', '08:30', 'male'),
