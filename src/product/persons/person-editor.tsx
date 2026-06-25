@@ -46,63 +46,122 @@ function emptyMeta(): PersonMetaDraft {
 
 export interface PersonEditorProps {
   readonly profileSensitiveAccess?: ProfileSensitiveAccess;
+  readonly mode?: 'settings' | 'dialog';
+  readonly open?: boolean;
+  readonly onOpenChange?: (open: boolean) => void;
+  readonly dialogTitle?: string;
+  readonly onSavedPerson?: (person: Person) => void;
+}
+
+export interface AddPersonDialogProps {
+  readonly open: boolean;
+  readonly title?: string;
+  readonly onClose: () => void;
+  readonly onSavedPerson?: (person: Person) => void;
+  readonly profileSensitiveAccess?: ProfileSensitiveAccess;
+}
+
+export function AddPersonDialog({
+  open,
+  title,
+  onClose,
+  onSavedPerson,
+  profileSensitiveAccess = LOCKED_PROFILE_SENSITIVE_ACCESS,
+}: AddPersonDialogProps) {
+  return (
+    <PersonEditor
+      mode="dialog"
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
+      }}
+      dialogTitle={title}
+      onSavedPerson={onSavedPerson}
+      profileSensitiveAccess={profileSensitiveAccess}
+    />
+  );
 }
 
 export function PersonEditor({
   profileSensitiveAccess = LOCKED_PROFILE_SENSITIVE_ACCESS,
+  mode = 'settings',
+  open = false,
+  onOpenChange,
+  dialogTitle,
+  onSavedPerson,
 }: PersonEditorProps) {
   const { state, dispatch } = useShijingStore();
   const copy = useProductCopy();
   const [meta, setMeta] = useState<PersonMetaDraft>(emptyMeta);
   const [natal, setNatal] = useState<SelfNatalDraft>(emptyNatalDraft);
   const [errorCode, setErrorCode] = useState<string | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [localDrawerOpen, setLocalDrawerOpen] = useState(false);
   const [editingPersonId, setEditingPersonId] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState<Person | null>(null);
+  const isDialogMode = mode === 'dialog';
+  const drawerOpen = isDialogMode ? open : localDrawerOpen;
   const persons = state.snapshot.persons;
   const consentOptions = CONSENT_STATE_ORDER.filter((c) => CONSENT_STATES.includes(c)).map((c) => ({
     value: c,
     label: copy.consentStateLabels[c],
   }));
-  const drawerTitle = editingPersonId ? copy.people.editDialog : copy.people.addDialog;
+  const drawerTitle = editingPersonId ? copy.people.editDialog : dialogTitle ?? copy.people.addDialog;
   const drawerPrimaryLabel = editingPersonId ? copy.common.save : copy.people.addPerson;
   const drawerPrimaryIconPath = editingPersonId ? 'M20 6L9 17l-5-5' : 'M12 5v14M5 12h14';
 
   // Close drawer on Escape. Inlining the state setters here (rather than
   // calling closeDrawer) keeps the effect's dependency list honest.
   useEffect(() => {
+    if (!isDialogMode) return;
+    if (!open) return;
+    setMeta(emptyMeta());
+    setNatal(emptyNatalDraft());
+    setEditingPersonId(null);
+    setErrorCode(null);
+  }, [isDialogMode, open]);
+
+  useEffect(() => {
     if (!drawerOpen) return;
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         event.stopPropagation();
-        setDrawerOpen(false);
+        if (isDialogMode) {
+          onOpenChange?.(false);
+        } else {
+          setLocalDrawerOpen(false);
+        }
         setEditingPersonId(null);
         setErrorCode(null);
       }
     }
     document.addEventListener('keydown', onKeyDown, true);
     return () => document.removeEventListener('keydown', onKeyDown, true);
-  }, [drawerOpen]);
+  }, [drawerOpen, isDialogMode, onOpenChange]);
 
   useEffect(() => {
     if (!drawerOpen) return;
     if (!editingPersonId) return;
     if (profileSensitiveAccess.revealSensitive) return;
-    setDrawerOpen(false);
+    if (isDialogMode) {
+      onOpenChange?.(false);
+    } else {
+      setLocalDrawerOpen(false);
+    }
     setEditingPersonId(null);
     setErrorCode(null);
-  }, [drawerOpen, editingPersonId, profileSensitiveAccess.revealSensitive]);
+  }, [drawerOpen, editingPersonId, isDialogMode, onOpenChange, profileSensitiveAccess.revealSensitive]);
 
   function updateNatal<K extends keyof SelfNatalDraft>(key: K, value: SelfNatalDraft[K]) {
     setNatal((prev) => ({ ...prev, [key]: value }));
   }
 
   function openDrawer() {
+    if (isDialogMode) return;
     setMeta(emptyMeta());
     setNatal(emptyNatalDraft());
     setEditingPersonId(null);
     setErrorCode(null);
-    setDrawerOpen(true);
+    setLocalDrawerOpen(true);
   }
 
   async function openEdit(person: Person) {
@@ -113,7 +172,7 @@ export function PersonEditor({
     setNatal(draft.natal);
     setEditingPersonId(person.id);
     setErrorCode(null);
-    setDrawerOpen(true);
+    setLocalDrawerOpen(true);
   }
 
   async function openDeleteConfirm(person: Person) {
@@ -133,7 +192,11 @@ export function PersonEditor({
   }
 
   function closeDrawer() {
-    setDrawerOpen(false);
+    if (isDialogMode) {
+      onOpenChange?.(false);
+    } else {
+      setLocalDrawerOpen(false);
+    }
     setEditingPersonId(null);
     setErrorCode(null);
   }
@@ -168,6 +231,7 @@ export function PersonEditor({
       return;
     }
     dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+    onSavedPerson?.(person);
     closeDrawer();
   }
 
@@ -189,8 +253,10 @@ export function PersonEditor({
     setConfirmingDelete(null);
   }
 
+  if (isDialogMode && !drawerOpen) return null;
+
   return (
-    <section className="sjp-card">
+    <section className="sjp-card" hidden={isDialogMode}>
       <div className="sjp-card-head">
         <span className="sjp-card-icon">
           <svg

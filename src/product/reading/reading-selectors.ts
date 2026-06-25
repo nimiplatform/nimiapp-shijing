@@ -15,13 +15,19 @@ import type { SubjectRef } from '../../domain/subject-ref.ts';
 export interface LatestReadingByMirrorKindInput {
   readonly readings: readonly Reading[];
   readonly mirror_kind: MirrorKind;
+  readonly method_profile_id?: MethodProfileId;
 }
 
 export function latestReadingByMirrorKind(
   input: LatestReadingByMirrorKindInput,
 ): Reading | undefined {
   return input.readings
-    .filter((reading) => reading.mirror_kind === input.mirror_kind)
+    .filter(
+      (reading) =>
+        reading.mirror_kind === input.mirror_kind &&
+        (!input.method_profile_id ||
+          reading.inputs_summary.method_profile.id === input.method_profile_id),
+    )
     .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
 }
 
@@ -61,11 +67,18 @@ export function latestMingJingNatalReading(
 export function latestMingJingRelationshipReading(input: {
   readonly readings: readonly Reading[];
   readonly related_person_ref: Extract<SubjectRef, { kind: 'person' }>;
+  readonly method_profile_id?: MethodProfileId;
 }): Reading | undefined {
   return newestReading(
     input.readings.filter((reading) => {
       if (reading.mirror_kind !== 'mingjing') return false;
       if (reading.mirror_scope.kind !== 'relationship_natal') return false;
+      if (
+        input.method_profile_id &&
+        reading.inputs_summary.method_profile.id !== input.method_profile_id
+      ) {
+        return false;
+      }
       if (!isRelationshipHePanOutput(reading.output)) return false;
       const scope = reading.mirror_scope as RelationshipNatalMirrorScope;
       if (scope.related_person_ref.id !== input.related_person_ref.id) return false;

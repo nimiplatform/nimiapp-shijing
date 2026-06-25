@@ -95,7 +95,9 @@ test('HeJing copy avoids absolute fate language', () => {
 test('HeJing styles match the green relationship workbench language responsively', () => {
   assert.match(cssBlock('.shijing-hejing'), /max-width:\s*1080px/);
   assert.match(cssBlock('.shijing-hejing'), /gap:\s*16px/);
-  assert.match(hejingStyles, /\.shijing-hejing__hero[\s\S]*?linear-gradient\(155deg/);
+  assert.match(cssBlock('.shijing-hejing .shijing-hejing__hero'), /linear-gradient\(150deg/);
+  assert.match(cssBlock('.shijing-hejing__unsupported'), /background:\s*rgba\(184,\s*105,\s*79,\s*0\.1\)/);
+  assert.match(cssBlock('.shijing-hejing__generated-grid'), /grid-template-columns:\s*minmax\(0,\s*1fr\)\s+minmax\(280px,\s*0\.88fr\)/);
   assert.match(cssBlock('.shijing-hejing__index-body'), /grid-template-columns:\s*minmax\(260px,\s*0\.78fr\)\s+minmax\(0,\s*1fr\)/);
   assert.match(cssBlock('.shijing-hejing__metric-readouts'), /grid-template-columns:\s*repeat\(5,\s*minmax\(0,\s*1fr\)\)/);
   assert.match(cssBlock('.shijing-hejing__structure-grid'), /grid-template-columns:\s*minmax\(180px,\s*1fr\)\s+minmax\(240px,\s*1\.1fr\)\s+minmax\(180px,\s*1fr\)/);

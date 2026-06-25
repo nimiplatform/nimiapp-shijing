@@ -10,11 +10,22 @@
 .shijing-hejing__profile-card {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 16px;
   overflow: hidden;
   padding: 20px;
   border: 1px solid var(--hejing-line);
   border-radius: 16px;
+}
+
+.shijing-hejing__profile-content {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
 }
 
 .shijing-hejing__profile-card[data-tone="self"] {

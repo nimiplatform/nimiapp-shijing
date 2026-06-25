@@ -3,6 +3,7 @@
 @media (max-width: 960px) {
   .shijing-hejing__hero-body,
   .shijing-hejing__index-body,
+  .shijing-hejing__generated-grid,
   .shijing-hejing__structure-grid {
     grid-template-columns: 1fr;
     gap: 22px;

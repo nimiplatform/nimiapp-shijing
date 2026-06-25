@@ -238,36 +238,37 @@ test('generateReading fails closed for non-MingJing relationship_natal scope wit
   assert.match(result.failure.detail ?? '', /mirror_kind_scope_forbidden:shijing:relationship_natal/u);
 });
 
-test('generateReading fails closed when selected method cannot produce relationship evidence', async () => {
-  const runtimeClient = {
-    async generate() {
-      throw new Error('runtime client should not be reached for unsupported relationship method');
-    },
-  };
-  const space = relationshipSpace();
-  const result = await generateReading(
-    {
-      id: 'rdg_rel_ziwei_unsupported',
-      created_at: '2026-06-22T00:00:00Z',
-      mirror_kind: 'mingjing',
-      mirror_scope: SCOPE,
-      related_person_refs: [ALICE_REF],
-      concern_tag_refs: [],
-      cited_reading_ids: [],
-      cited_event_memory_refs: [],
-      cited_plan_item_refs: [],
-      space: {
-        ...space,
-        settings: { ...space.settings, method_profile_id: 'ziwei_sanhe_v1' },
+test('generateReading succeeds for relationship_natal on every implemented MingJing route', async () => {
+  for (const method_profile_id of [
+    'bazi_ziping_v1',
+    'ziwei_sanhe_v1',
+    'qizheng_siyu_guolao_v1',
+  ]) {
+    const runtimeClient = new MockRuntimeAiClient({
+      canned_patch_by_kind: { mingjing: relationshipWordingPatch() },
+    });
+    const space = relationshipSpace();
+    const result = await generateReading(
+      {
+        id: `rdg_rel_${method_profile_id}`,
+        created_at: '2026-06-22T00:00:00Z',
+        mirror_kind: 'mingjing',
+        mirror_scope: SCOPE,
+        related_person_refs: [ALICE_REF],
+        concern_tag_refs: [],
+        cited_reading_ids: [],
+        cited_event_memory_refs: [],
+        cited_plan_item_refs: [],
+        space: {
+          ...space,
+          settings: { ...space.settings, method_profile_id },
+        },
       },
-    },
-    { runtime_ai_client: runtimeClient, now: NOW },
-  );
-  assert.equal(result.ok, false);
-  assert.equal(result.failure.kind, 'algorithm_fail_closed');
-  assert.equal(result.failure.stage, 'mingjing_route_support');
-  assert.match(
-    result.failure.detail ?? '',
-    /mingjing_route_feature_not_supported:mingjing\.route\.ziwei_sanhe_v1:relationship_hepan/u,
-  );
+      { runtime_ai_client: runtimeClient, now: NOW },
+    );
+    assert.equal(result.ok, true, JSON.stringify(result));
+    assert.equal(result.reading.inputs_summary.method_profile.id, method_profile_id);
+    assert.equal(result.reading.output.output_kind, 'relationship_hepan');
+    assert.equal(validateReading(result.reading).ok, true, JSON.stringify(validateReading(result.reading)));
+  }
 });
