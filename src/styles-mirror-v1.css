@@ -81,6 +81,18 @@
   position: relative;
 }
 
+.shijing-topbar__method {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-width: 196px;
+}
+
+.shijing-topbar__method-select {
+  width: 100%;
+  min-width: 0;
+}
+
 .shijing-ui-language-switch__control {
   box-shadow: none;
 }
@@ -383,8 +395,13 @@
     margin: 0;
     overflow-x: auto;
   }
+  .shijing-topbar__method {
+    order: 2;
+    margin-left: auto;
+  }
   .shijing-topbar__account {
     order: 2;
+    margin-left: 0;
   }
   .shijing-shell__settings {
     border-left: 0;

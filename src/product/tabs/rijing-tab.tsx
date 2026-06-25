@@ -174,6 +174,7 @@ export function RiJingTab(props: RiJingTabProps) {
   const reading = latestReadingByMirrorKind({
     readings: state.snapshot.readings,
     mirror_kind: 'rijing',
+    method_profile_id: state.snapshot.settings.method_profile_id,
   });
   const stale = reading
     ? inputsSummaryStaleForSpace({

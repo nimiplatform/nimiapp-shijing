@@ -10,7 +10,6 @@ import { useProductCopy, type ProductCopy } from '../i18n/copy.ts';
 import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
 import type { ShijingSettingsFocusTarget } from '../settings/settings-page-view.tsx';
 import type { NatalReadinessReason } from '../subjects/natal-readiness.ts';
-import type { MethodProfileId } from '../../domain/algorithm.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import type {
   MingJingMirrorOutput,
@@ -28,8 +27,6 @@ import {
 import { generateReadingForStorage } from '../reading/generate-and-store.ts';
 import { newReadingId } from '../ids/index.ts';
 import { ShijingOnboarding } from '../onboarding/shijing-onboarding.tsx';
-import { MethodProfileSelect } from '../settings/method-profile-select.tsx';
-import { commitMethodProfile } from '../settings/method-profile-state.ts';
 import { mingJingReadiness } from './mingjing/mingjing-readiness.ts';
 import { shouldShowMingJingStartupGuide } from './mingjing/mingjing-startup-guide.ts';
 import {
@@ -150,12 +147,6 @@ export function MingJingTab({
     dispatch({ type: 'snapshot/replace', snapshot: next });
   }
 
-  function handleMethodProfileChange(methodProfileId: MethodProfileId) {
-    const next = commitMethodProfile(space, methodProfileId);
-    setFailure(null);
-    dispatch({ type: 'snapshot/replace', snapshot: next });
-  }
-
   function handleStartupGuideComplete() {
     setLocalStartupGuideDismissed(true);
     onStartupGuideComplete?.();
@@ -178,9 +169,6 @@ export function MingJingTab({
         <>
           <MingJingSimpleHeader
             copy={m}
-            methodProfileCopy={copy.methodProfile}
-            methodProfileId={space.settings.method_profile_id}
-            onMethodProfileChange={handleMethodProfileChange}
           />
           <div className="shijing-mingjing__blocked">
             {readiness.reason === 'mingjing_route_unavailable' ? (
@@ -205,9 +193,6 @@ export function MingJingTab({
         <>
           <MingJingSimpleHeader
             copy={m}
-            methodProfileCopy={copy.methodProfile}
-            methodProfileId={space.settings.method_profile_id}
-            onMethodProfileChange={handleMethodProfileChange}
           />
           <div className="shijing-mingjing__failure" role="alert">
             <h2>{m.failureTitle}</h2>
@@ -218,9 +203,6 @@ export function MingJingTab({
         <>
           <MingJingSimpleHeader
             copy={m}
-            methodProfileCopy={copy.methodProfile}
-            methodProfileId={space.settings.method_profile_id}
-            onMethodProfileChange={handleMethodProfileChange}
           />
           {projection.value.kind === 'bazi_ziping_v1' ? (
             <BaziMingJingRoute
@@ -274,29 +256,12 @@ export function MingJingTab({
 
 function MingJingSimpleHeader({
   copy,
-  methodProfileCopy,
-  methodProfileId,
-  onMethodProfileChange,
 }: {
   readonly copy: ProductCopy['mingjing'];
-  readonly methodProfileCopy: ProductCopy['methodProfile'];
-  readonly methodProfileId?: MethodProfileId;
-  readonly onMethodProfileChange: (methodProfileId: MethodProfileId) => void;
 }) {
   return (
     <MirrorPageHeader
       title={copy.title}
-      actions={(
-        <div className="shijing-mingjing__method-switch">
-          <MethodProfileSelect
-            id="mingjing-method-profile"
-            value={methodProfileId}
-            onChange={onMethodProfileChange}
-            className="shijing-mingjing__method-select"
-            aria-label={methodProfileCopy.algorithm}
-          />
-        </div>
-      )}
     />
   );
 }

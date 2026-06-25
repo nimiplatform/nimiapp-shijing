@@ -1,4 +1,5 @@
 import { SolarDay } from 'tyme4ts';
+import type { MethodProfileId } from '../../../domain/algorithm.ts';
 import type { YueJingCell, YueJingMirrorOutput, TendencyClass } from '../../../domain/mirror-output.ts';
 import type { Reading } from '../../../domain/reading.ts';
 import type { ShiJingSpace } from '../../../domain/shijing-space.ts';
@@ -220,9 +221,14 @@ export function yuejingReadings(readings: readonly Reading[]): Reading[] {
 export function latestYuejingReadingForDate(
   readings: readonly Reading[],
   date: string,
+  methodProfileId?: MethodProfileId,
 ): Reading | undefined {
   return yuejingReadings(readings)
-    .filter((reading) => yuejingReadingStartsOn(reading, date))
+    .filter(
+      (reading) =>
+        yuejingReadingStartsOn(reading, date) &&
+        (!methodProfileId || reading.inputs_summary.method_profile.id === methodProfileId),
+    )
     .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
 }
 
@@ -252,12 +258,19 @@ export function aggregateYuejingCellsByDate(input: {
   readonly dates: readonly string[];
   readonly activeTagIdSet: ReadonlySet<string>;
   readonly activeTagIds: readonly string[];
+  readonly method_profile_id?: MethodProfileId;
   readonly space: ShiJingSpace;
   readonly now: Date;
 }): Map<string, readonly YueJingCell[]> {
   const dateSet = new Set(input.dates);
   const latestByKey = new Map<string, { readonly createdAtMs: number; readonly cell: YueJingCell }>();
   for (const reading of yuejingReadings(input.readings)) {
+    if (
+      input.method_profile_id &&
+      reading.inputs_summary.method_profile.id !== input.method_profile_id
+    ) {
+      continue;
+    }
     if (reading.output.mirror_kind !== 'yuejing') continue;
     if (!yuejingReadingHasPerConcernDrivers(reading)) continue;
     if (

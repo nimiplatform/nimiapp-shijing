@@ -1,19 +1,20 @@
-// Audit P2 — persisted Readings grew unbounded with no dedup. pruneReadings
-// dedups regenerations by input_hash and caps per mirror_kind, both citation-safe.
+// Audit P2: persisted Readings grew unbounded with no dedup. pruneReadings
+// dedups regenerations by input_hash and caps per method/mirror bucket,
+// both citation-safe.
 
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { pruneReadings, DEFAULT_MAX_READINGS_PER_KIND } from '../src/product/reading/prune-readings.ts';
 
-// Minimal Reading-shaped objects — pruneReadings reads only id, mirror_kind,
-// created_at, cited_reading_ids, inputs_summary.input_hash.
-function r(id, kind, hash, day, cited = []) {
+// Minimal Reading-shaped objects: pruneReadings reads only id, mirror_kind,
+// mirror_scope.kind, created_at, cited_reading_ids, and inputs_summary metadata.
+function r(id, kind, hash, day, cited = [], method = 'bazi_ziping_v1') {
   return {
     id, mirror_kind: kind,
     mirror_scope: { kind: kind === 'mingjing' ? 'natal' : 'daily' },
     created_at: `2026-06-${String(day).padStart(2, '0')}T00:00:00Z`,
     cited_reading_ids: cited,
-    inputs_summary: { input_hash: hash },
+    inputs_summary: { input_hash: hash, method_profile: { id: method } },
   };
 }
 function rel(id, hash, day, personId) {
@@ -66,6 +67,20 @@ test('cap is independent per mirror_kind, and protected readings exceed the cap'
   const kept = pruneReadings(list, [convo], { max_per_kind: 2 });
   // rijing: newest 2 (r2,r3) + protected r1 = 3; yuejing: both
   assert.deepEqual(ids(kept), ['r1', 'r2', 'r3', 'y1', 'y2']);
+});
+
+test('cap is independent per method profile inside the same mirror bucket', () => {
+  const kept = pruneReadings(
+    [
+      r('bazi_old', 'rijing', 'B1', 1, [], 'bazi_ziping_v1'),
+      r('bazi_new', 'rijing', 'B2', 2, [], 'bazi_ziping_v1'),
+      r('ziwei_old', 'rijing', 'Z1', 3, [], 'ziwei_sanhe_v1'),
+      r('ziwei_new', 'rijing', 'Z2', 4, [], 'ziwei_sanhe_v1'),
+    ],
+    [],
+    { max_per_kind: 1 },
+  );
+  assert.deepEqual(ids(kept), ['bazi_new', 'ziwei_new']);
 });
 
 test('mingjing cap keeps natal and relationship_natal readings in separate retention buckets', () => {

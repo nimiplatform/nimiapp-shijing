@@ -18,6 +18,9 @@ import {
 } from '../../contracts/ia-contract.ts';
 import { useProductCopy } from '../i18n/copy.ts';
 import { usePersistedUiLanguageSync } from '../settings/ui-language-switch.tsx';
+import { MethodProfileSelect } from '../settings/method-profile-select.tsx';
+import { commitMethodProfile } from '../settings/method-profile-state.ts';
+import type { MethodProfileId } from '../../domain/algorithm.ts';
 import type { PersistenceError } from '../persistence/persistence-client.ts';
 
 const RiJingTab = lazy(() =>
@@ -78,7 +81,7 @@ interface ActiveSettingsPageState {
 }
 
 export function ShijingShell(props: ShijingShellProps) {
-  const { state, persistence_status } = useShijingStore();
+  const { state, dispatch, persistence_status } = useShijingStore();
   usePersistedUiLanguageSync();
   const copy = useProductCopy();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -121,6 +124,13 @@ export function ShijingShell(props: ShijingShellProps) {
     onSelect: () => openPage(page.id),
   }));
 
+  function handleMethodProfileChange(methodProfileId: MethodProfileId) {
+    dispatch({
+      type: 'snapshot/replace',
+      snapshot: commitMethodProfile(state.snapshot, methodProfileId),
+    });
+  }
+
   return (
     <div className="shijing-shell" data-active-tab={state.active_tab}>
       <header className="shijing-topbar">
@@ -131,6 +141,15 @@ export function ShijingShell(props: ShijingShellProps) {
           </span>
         </div>
         <PrimaryTabBar />
+        <div className="shijing-topbar__method">
+          <MethodProfileSelect
+            id="shijing-global-method-profile"
+            value={state.snapshot.settings.method_profile_id}
+            onChange={handleMethodProfileChange}
+            className="shijing-topbar__method-select"
+            aria-label={copy.methodProfile.algorithm}
+          />
+        </div>
         <div className="shijing-topbar__account" ref={accountRef}>
           <button
             type="button"

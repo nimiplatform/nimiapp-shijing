@@ -86,6 +86,24 @@ test('topbar does not render the compact UI language switch', () => {
   assert.doesNotMatch(shellSource, /<UiLanguageSwitch\s*\/>/);
 });
 
+test('topbar owns the global method profile selector', () => {
+  const shellSource = readFileSync(
+    new URL('../src/product/shell/shijing-shell.tsx', import.meta.url),
+    'utf8',
+  );
+  const mingjingSource = readFileSync(
+    new URL('../src/product/tabs/mingjing-tab.tsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(shellSource, /MethodProfileSelect/u);
+  assert.match(shellSource, /commitMethodProfile/u);
+  assert.match(shellSource, /shijing-topbar__method/u);
+  assert.match(shellSource, /id="shijing-global-method-profile"/u);
+  assert.doesNotMatch(mingjingSource, /MethodProfileSelect/u);
+  assert.doesNotMatch(mingjingSource, /mingjing-method-profile/u);
+});
+
 test('startup onboarding is not mounted as a RiJing shell interstitial', () => {
   const shellSource = readFileSync(
     new URL('../src/product/shell/shijing-shell.tsx', import.meta.url),

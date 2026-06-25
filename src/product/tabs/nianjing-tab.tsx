@@ -68,15 +68,21 @@ export function NianJingTab(props: NianJingTabProps) {
     [state.snapshot.concern_tags],
   );
   const activeTagIds = useMemo(() => activeTags.map((t) => t.id), [activeTags]);
+  const currentMethodProfileId = state.snapshot.settings.method_profile_id;
 
   // All NianJing readings sorted newest-first. Computed once per
   // snapshot change so the toggle is stable across re-renders.
   const nianjingReadings = useMemo(
     () =>
       [...state.snapshot.readings]
-        .filter((r) => r.mirror_kind === 'nianjing')
+        .filter(
+          (r) =>
+            r.mirror_kind === 'nianjing' &&
+            (!currentMethodProfileId ||
+              r.inputs_summary.method_profile.id === currentMethodProfileId),
+        )
         .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)),
-    [state.snapshot.readings],
+    [state.snapshot.readings, currentMethodProfileId],
   );
 
   const hasPreviousReading = nianjingReadings.length >= 2;

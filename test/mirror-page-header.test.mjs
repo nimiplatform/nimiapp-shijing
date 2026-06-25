@@ -69,14 +69,19 @@ test('RiJing, YueJing, NianJing, and MingJing render the shared month-style page
   assert.doesNotMatch(tabSources.rijing, /<header className="shijing-rijing__header">/);
 });
 
-test('RiJing, YueJing, NianJing, and MingJing use the shared header action slot', () => {
-  for (const mirror of ['rijing', 'yuejing', 'nianjing', 'mingjing']) {
+test('RiJing, YueJing, and NianJing use the shared header action slot', () => {
+  for (const mirror of ['rijing', 'yuejing', 'nianjing']) {
     assert.match(
       mirrorHeaderCall(tabSources[mirror]),
       /actions=\{\(/,
       `${mirror} routes primary controls through MirrorPageHeader actions`,
     );
   }
+  assert.doesNotMatch(
+    mirrorHeaderCall(tabSources.mingjing),
+    /actions=\{\(/,
+    'mingjing delegates method switching to the global topbar',
+  );
 
   const rijingHero = stripJsComments(
     readProjectFile('src/product/tabs/rijing/rijing-hero.tsx'),

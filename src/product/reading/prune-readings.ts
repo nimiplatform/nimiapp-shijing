@@ -1,14 +1,14 @@
-// Reading retention — bound the persisted Reading set so auto-generation
+// Reading retention: bound the persisted Reading set so auto-generation
 // (daily RiJing, rolling YueJing) can't grow it without limit.
 //
 // Two passes, both citation-safe (a Reading cited by a Conversation or by another
-// Reading — e.g. a ShiJing consultation source — is never dropped):
+// Reading, e.g. a ShiJing consultation source, is never dropped):
 //   1. dedup by input_hash: regenerating the identical query (same scope + tags +
 //      method + prefs) supersedes the older copy; keep the newest.
-//   2. cap per mirror_kind to the most recent N, so unbounded distinct-day history
-//      still has a ceiling.
+//   2. cap per method + mirror_kind/scope to the most recent N, so unbounded
+//      distinct-day history still has a ceiling without cross-engine eviction.
 //
-// Layer-3: keys on inputs_summary.input_hash + mirror_kind only; never on
+// Layer-3: keys on inputs_summary.input_hash + method/mirror buckets; never on
 // method_evidence / driver_refs.
 
 import type { Reading } from '../../domain/reading.ts';
@@ -23,9 +23,13 @@ export const DEFAULT_MAX_READINGS_PER_KIND = 60;
 function retentionBucketKey(reading: Reading): string {
   const scopeKind = (reading as { readonly mirror_scope?: { readonly kind?: unknown } })
     .mirror_scope?.kind;
+  const methodId = (reading as {
+    readonly inputs_summary?: { readonly method_profile?: { readonly id?: unknown } };
+  }).inputs_summary?.method_profile?.id;
+  const methodKey = typeof methodId === 'string' ? methodId : 'unknown_method';
   return typeof scopeKind === 'string'
-    ? `${reading.mirror_kind}:${scopeKind}`
-    : reading.mirror_kind;
+    ? `${methodKey}:${reading.mirror_kind}:${scopeKind}`
+    : `${methodKey}:${reading.mirror_kind}`;
 }
 
 function citedReadingIds(readings: readonly Reading[], conversations: readonly Conversation[]): Set<string> {
@@ -46,7 +50,7 @@ export function pruneReadings(
   const maxPerKind = options.max_per_kind ?? DEFAULT_MAX_READINGS_PER_KIND;
   const protectedIds = citedReadingIds(readings, conversations);
 
-  // Pass 1 — dedup by input_hash, keeping the newest; protected readings are
+  // Pass 1: dedup by input_hash, keeping the newest; protected readings are
   // exempt (their id is referenced, so they must survive verbatim).
   const newestByHash = new Map<string, Reading>();
   const kept: Reading[] = [];
@@ -63,9 +67,9 @@ export function pruneReadings(
     kept.push(r);
   }
 
-  // Pass 2 — cap per mirror kind/scope bucket (newest first); protected readings
-  // always survive. MingJing natal readings and relationship HePan readings are
-  // separate product surfaces and must not evict each other.
+  // Pass 2: cap per method + mirror kind/scope bucket (newest first);
+  // protected readings always survive. MingJing natal readings and relationship
+  // HePan readings are separate product surfaces and must not evict each other.
   const byKind = new Map<string, Reading[]>();
   for (const r of kept) {
     const key = retentionBucketKey(r);

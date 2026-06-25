@@ -107,10 +107,16 @@ export function YueJingTab(props: YueJingTabProps) {
     return dates;
   }, [today]);
 
-  const reading = latestYuejingReadingForDate(state.snapshot.readings, today);
+  const currentMethodProfileId = state.snapshot.settings.method_profile_id;
+  const reading = latestYuejingReadingForDate(
+    state.snapshot.readings,
+    today,
+    currentMethodProfileId,
+  );
   const latestReading = latestReadingByMirrorKind({
     readings: state.snapshot.readings,
     mirror_kind: 'yuejing',
+    method_profile_id: currentMethodProfileId,
   });
   const freshnessNow = useMemo(() => new Date(), [state.snapshot]);
   const stale = reading
@@ -139,10 +145,11 @@ export function YueJingTab(props: YueJingTabProps) {
         dates: placeholderDates,
         activeTagIdSet,
         activeTagIds,
+        method_profile_id: currentMethodProfileId,
         space: state.snapshot,
         now: freshnessNow,
       }),
-    [state.snapshot, placeholderDates, activeTagIdSet, activeTagIds, freshnessNow],
+    [state.snapshot, placeholderDates, activeTagIdSet, activeTagIds, currentMethodProfileId, freshnessNow],
   );
   const nextGenerationDate = useMemo(
     () => nextMissingYuejingDate({ dates: placeholderDates, cellsByDate, activeTagIds }),
@@ -189,6 +196,7 @@ export function YueJingTab(props: YueJingTabProps) {
           dates: placeholderDates,
           activeTagIdSet: targetTagIdSet,
           activeTagIds: targetTagIds,
+          method_profile_id: currentSpace.settings.method_profile_id,
           space: currentSpace,
           now: new Date(),
         });
