@@ -46,6 +46,7 @@ function seededSpace(): ShiJingSpace {
     settings: {
       ui_language: 'zh',
       response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' },
+      method_profile_id: 'ziwei_sanhe_v1',
     },
   };
 }

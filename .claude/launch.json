@@ -12,6 +12,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["exec", "vite", "--host", "127.0.0.1", "--port", "1431", "--strictPort"],
       "port": 1431
+    },
+    {
+      "name": "shijing-hejing-verify",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["exec", "vite", "--host", "127.0.0.1", "--port", "1443", "--strictPort"],
+      "port": 1443
     }
   ]
 }
