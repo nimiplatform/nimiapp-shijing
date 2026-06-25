@@ -12,6 +12,10 @@ import type { ReadingGenerationFailure } from '../../../domain/reading.ts';
 import type { ShiJingSpace } from '../../../domain/shijing-space.ts';
 import { buildAstrologyFeatureSnapshot } from '../../astrology/build-feature-snapshot.ts';
 import { generateNianJingOutput } from '../../astrology/nianjing-generator.ts';
+import {
+  methodFeatureFailCloseDetail,
+  validateMethodFeatureSupport,
+} from '../../astrology/method-feature-support.ts';
 import type { StageFailure } from '../../astrology/stage-result.ts';
 import { evaluateFailClose } from '../../astrology/uncertainty-decision.ts';
 
@@ -41,6 +45,23 @@ function failureFromStage(
 export function buildNianJingDirectDisplayOutput(
   input: BuildNianJingDirectDisplayOutputInput,
 ): BuildNianJingDirectDisplayOutputResult {
+  const methodFeatureSupport = validateMethodFeatureSupport({
+    method_profile_id: input.space.settings.method_profile_id,
+    feature_id: 'nianjing.long_horizon_reading',
+  });
+  if (!methodFeatureSupport.ok) {
+    return {
+      ok: false,
+      failure: {
+        kind: 'algorithm_fail_closed',
+        mirror_kind: 'nianjing',
+        mirror_scope: input.mirror_scope,
+        stage: 'method_feature_support',
+        detail: methodFeatureFailCloseDetail(methodFeatureSupport.error),
+      },
+    };
+  }
+
   const featureResult = buildAstrologyFeatureSnapshot({
     mirror_kind: 'nianjing',
     mirror_scope: input.mirror_scope,

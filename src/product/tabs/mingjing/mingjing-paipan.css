@@ -3,9 +3,9 @@
 .shijing-mingjing-paipan {
   display: flex;
   flex-direction: column;
-  gap: 26px;
-  padding: clamp(32px, 4vw, 48px);
-  border-radius: 26px;
+  gap: 22px;
+  padding: 28px clamp(20px, 3vw, 32px) 30px;
+  border-radius: 18px;
   border: 1px solid var(--mingjing-card-border);
   background: var(--mingjing-card-bg);
   box-shadow: var(--mingjing-card-shadow);
@@ -23,20 +23,20 @@
 
 .shijing-paipan__title {
   margin: 0;
-  color: #17202a;
-  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
-  font-size: 34px;
+  color: var(--mingjing-ink-strong);
+  font-family: var(--mingjing-font-sans);
+  font-size: 18px;
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .shijing-paipan__intro {
-  margin: 8px 0 0;
+  margin: 10px 0 0;
   max-width: 72ch;
-  color: #63718a;
-  font-size: 21px;
+  color: color-mix(in srgb, var(--mingjing-ink-strong) 82%, transparent);
+  font-size: 16px;
   font-weight: 650;
-  line-height: 1.75;
+  line-height: 1.7;
 }
 
 .shijing-paipan__structure-badge {
@@ -56,17 +56,17 @@
 .shijing-paipan__pillar-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
+  gap: 16px;
 }
 
 .shijing-paipan__pillar-card {
   position: relative;
-  min-height: 270px;
-  padding: 18px 14px 15px;
+  min-height: 224px;
+  padding: 18px 14px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 11px;
+  gap: 10px;
   border-radius: 16px;
   border: 1px solid rgba(110, 128, 153, 0.16);
   background: rgba(255, 255, 255, 0.64);
@@ -99,9 +99,9 @@
 
 .shijing-paipan__pillar-role {
   margin: 0;
-  color: #91a0b7;
-  font-size: 18px;
-  font-weight: 800;
+  color: #475569;
+  font-size: 15px;
+  font-weight: 750;
   text-align: center;
 }
 
@@ -112,7 +112,7 @@
   align-items: center;
   gap: 2px;
   font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
-  font-size: 64px;
+  font-size: 52px;
   font-weight: 650;
   line-height: 1.04;
 }
@@ -124,8 +124,8 @@
 .shijing-paipan__ten-god {
   margin: 0;
   color: #66748d;
-  font-size: 18px;
-  font-weight: 750;
+  font-size: 15px;
+  font-weight: 700;
   text-align: center;
 }
 
@@ -153,7 +153,7 @@
 
 .shijing-mingjing .shijing-paipan__toggle:hover {
   border-color: rgba(95, 121, 160, 0.26);
-  background: rgba(255, 255, 255, 0.72);
+  background: color-mix(in srgb, var(--mingjing-accent) 10%, rgba(255, 255, 255, 0.72));
 }
 
 .shijing-mingjing .shijing-paipan__toggle:focus-visible {
@@ -184,8 +184,8 @@
 .shijing-mingjing .shijing-paipan__detail-title {
   margin: 0;
   color: #8c9bb3;
-  font-size: 17px;
-  font-weight: 750;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .shijing-paipan__table-wrap {
@@ -206,8 +206,8 @@
   text-align: left;
   vertical-align: middle;
   color: #243044;
-  font-size: 18px;
-  font-weight: 650;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .shijing-paipan__table thead th {
@@ -292,9 +292,9 @@
 /* 五行分布 */
 .shijing-mingjing-five {
   margin-top: 12px;
-  min-height: 250px;
-  padding: 34px 36px 30px;
-  border-radius: 22px;
+  min-height: 198px;
+  padding: 26px 28px 24px;
+  border-radius: 16px;
   border: 1px solid rgba(110, 128, 153, 0.14);
   background: rgba(255, 255, 255, 0.36);
   box-sizing: border-box;
@@ -304,14 +304,14 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: baseline;
-  gap: 14px;
-  margin-bottom: 26px;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .shijing-mingjing-five__title {
   margin: 0;
-  font-size: 24px;
-  font-weight: 800;
+  font-size: 16px;
+  font-weight: 750;
   color: #1f2d3f;
 }
 
@@ -321,17 +321,17 @@
   max-width: 58ch;
   text-align: right;
   color: #6f7f96;
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 650;
   line-height: 1.55;
 }
 
 .shijing-mingjing-five__bars {
   display: grid;
-  grid-template-columns: repeat(5, minmax(88px, 1fr));
-  gap: clamp(18px, 4vw, 54px);
+  grid-template-columns: repeat(5, minmax(72px, 1fr));
+  gap: clamp(16px, 3vw, 40px);
   align-items: end;
-  height: 150px;
+  height: 118px;
   max-width: none;
   justify-content: stretch;
   padding: 0;
@@ -354,10 +354,10 @@
 .shijing-mingjing-five__bar[data-element='water'] { --mj-five-el: #778fc8; }
 
 .shijing-mingjing-five__value {
-  width: 70px;
-  min-height: 34px;
-  max-height: 108px;
-  border-radius: 10px;
+  width: 54px;
+  min-height: 28px;
+  max-height: 82px;
+  border-radius: 9px;
   background: var(--mj-five-el, var(--mj-el, var(--shijing-text-muted)));
   transition: height 0.3s ease;
 }
@@ -367,7 +367,7 @@
 }
 
 .shijing-mingjing-five__label {
-  font-size: 28px;
+  font-size: 22px;
   font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
   font-weight: 500;
   line-height: 1;
@@ -376,7 +376,7 @@
 
 .shijing-mingjing-five__count {
   color: #66748d;
-  font-size: 19px;
-  font-weight: 750;
+  font-size: 14px;
+  font-weight: 700;
   line-height: 1;
 }

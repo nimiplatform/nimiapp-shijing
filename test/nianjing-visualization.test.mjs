@@ -149,6 +149,35 @@ test('NianJing year overview separates overall annual summary from focus detail'
   assert.match(source, /className="shijing-nianjing__year-selected-head"/);
 });
 
+test('NianJing annual path renders every active concern when no single focus is selected', () => {
+  const source = readFileSync(
+    new URL('../src/product/tabs/nianjing/nianjing-year-overview.tsx', import.meta.url),
+    'utf8',
+  );
+  const css = stripCssComments(readCssBundle(nianjingCssFiles));
+
+  assert.doesNotMatch(
+    source,
+    /overviewTags\.slice\(0,\s*2\)/,
+    'annual path must not silently cap the selected concern dimensions at two',
+  );
+  assert.match(
+    source,
+    /props\.focusedTag\s*\?\s*\[props\.focusedTag\]\s*:\s*props\.overviewTags/,
+    'annual path should render all selected concerns unless the user focuses one concern',
+  );
+  assert.match(
+    source,
+    /'quaternary'/,
+    'annual path should provide a fourth stable dimension tone',
+  );
+  assert.match(
+    css,
+    /\.shijing-nianjing__path-line\[data-tone="quaternary"\]/,
+    'annual path CSS should style the fourth rendered concern line',
+  );
+});
+
 test('NianJing annual module CSS is a selected-year workbench, not a score chart', () => {
   const css = stripCssComments(readCssBundle(nianjingCssFiles));
   const overview = cssBlock(css, '.shijing-nianjing__year-overview');

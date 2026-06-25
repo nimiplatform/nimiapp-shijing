@@ -28,7 +28,7 @@ const NATURE_LEVEL: Record<NianJingNature, number> = {
   blocked: 40,
 };
 
-const PATH_TONES = ['primary', 'secondary', 'tertiary'] as const;
+const PATH_TONES = ['primary', 'secondary', 'tertiary', 'quaternary', 'quinary'] as const;
 
 function selectedDefaultYear(modules: readonly NianJingYearModule[]): number | null {
   return modules.find((module) => module.is_current_year)?.year ?? modules[0]?.year ?? null;
@@ -138,7 +138,7 @@ export function NianJingYearOverview(props: {
   );
   const pathTags = props.focusedTag
     ? [props.focusedTag]
-    : props.overviewTags.slice(0, 2);
+    : props.overviewTags;
 
   if (props.overviewModules.length === 0 || props.overviewTags.length === 0 || !selectedDetail) {
     return null;

@@ -101,7 +101,15 @@
 }
 
 .shijing-nianjing__path-legend li[data-tone="tertiary"] .shijing-nianjing__path-legend-line {
+  background: var(--nianjing-watch);
+}
+
+.shijing-nianjing__path-legend li[data-tone="quaternary"] .shijing-nianjing__path-legend-line {
   background: var(--nianjing-turning);
+}
+
+.shijing-nianjing__path-legend li[data-tone="quinary"] .shijing-nianjing__path-legend-line {
+  background: var(--nianjing-blocked);
 }
 
 .shijing-nianjing__path-plot {
@@ -149,7 +157,15 @@
 }
 
 .shijing-nianjing__path-line[data-tone="tertiary"] {
+  stroke: var(--nianjing-watch);
+}
+
+.shijing-nianjing__path-line[data-tone="quaternary"] {
   stroke: var(--nianjing-turning);
+}
+
+.shijing-nianjing__path-line[data-tone="quinary"] {
+  stroke: var(--nianjing-blocked);
 }
 
 /* Node ring tracks the year's tendency nature (--nat), set from the

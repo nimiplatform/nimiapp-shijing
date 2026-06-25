@@ -55,28 +55,6 @@ function cssBlock(selector) {
   return cssBlockFrom(mingjingStyles, selector);
 }
 
-function cssBlockInAtRule(atRule, selector) {
-  const start = mingjingStyles.indexOf(atRule);
-  assert.notEqual(start, -1, `Missing CSS at-rule: ${atRule}`);
-  const openBrace = mingjingStyles.indexOf('{', start);
-  assert.notEqual(openBrace, -1, `Missing opening brace for at-rule: ${atRule}`);
-
-  let depth = 0;
-  for (let index = openBrace; index < mingjingStyles.length; index += 1) {
-    const char = mingjingStyles[index];
-    if (char === '{') {
-      depth += 1;
-    } else if (char === '}') {
-      depth -= 1;
-      if (depth === 0) {
-        return cssBlockFrom(mingjingStyles.slice(openBrace + 1, index), selector);
-      }
-    }
-  }
-
-  throw new Error(`Unclosed CSS at-rule: ${atRule}`);
-}
-
 function sharedCssBlock(selector) {
   return cssBlockFrom(sharedSurfaceStyles, selector);
 }
@@ -204,11 +182,11 @@ test('MingJing bazi chart keeps the visible four-pillar natal chart above five e
   const dayCard = cssBlock('.shijing-paipan__pillar-card[data-daymaster]');
 
   assert.match(grid, /grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
-  assert.match(card, /min-height:\s*270px/);
+  assert.match(card, /min-height:\s*224px/);
   assert.match(dayCard, /border-color:\s*rgba\(78,\s*204,\s*163,\s*0\.48\)/);
 });
 
-test('MingJing paipan wraps pillars, five elements, and full table in one background', () => {
+test('MingJing paipan keeps the compact product panel frame around the chart controls', () => {
   assert.match(
     mingjingPaipanSource,
     /<section className="shijing-mingjing-paipan"[\s\S]*<MingJingPillarCards[\s\S]*<MingJingFiveElements[\s\S]*className="shijing-paipan__toggle"[\s\S]*className="shijing-paipan__detail"/u,
@@ -216,13 +194,13 @@ test('MingJing paipan wraps pillars, five elements, and full table in one backgr
 
   const paipan = cssBlock('.shijing-mingjing-paipan');
 
-  assert.match(paipan, /padding:\s*clamp\(32px,\s*4vw,\s*48px\)/);
-  assert.match(paipan, /border-radius:\s*26px/);
+  assert.match(paipan, /padding:\s*28px\s+clamp\(20px,\s*3vw,\s*32px\)\s+30px/);
+  assert.match(paipan, /border-radius:\s*18px/);
   assert.match(paipan, /background:\s*var\(--mingjing-card-bg\)/);
   assert.match(paipan, /box-shadow:\s*var\(--mingjing-card-shadow\)/);
 });
 
-test('MingJing paipan typography matches the heavier reference hierarchy', () => {
+test('MingJing paipan typography stays in the compact product-panel hierarchy', () => {
   const title = cssBlock('.shijing-paipan__title');
   const intro = cssBlock('.shijing-paipan__intro');
   const role = cssBlock('.shijing-paipan__pillar-role');
@@ -235,33 +213,33 @@ test('MingJing paipan typography matches the heavier reference hierarchy', () =>
   const detailTitle = cssBlock('.shijing-mingjing .shijing-paipan__detail-title');
   const tableCells = cssBlock('.shijing-paipan__table th');
 
-  assert.match(title, /font-size:\s*34px/);
+  assert.match(title, /font-size:\s*18px/);
   assert.match(title, /font-weight:\s*700/);
-  assert.match(intro, /font-size:\s*21px/);
+  assert.match(intro, /font-size:\s*16px/);
   assert.match(intro, /font-weight:\s*650/);
-  assert.match(role, /font-size:\s*18px/);
-  assert.match(role, /font-weight:\s*800/);
-  assert.match(glyphs, /font-size:\s*64px/);
+  assert.match(role, /font-size:\s*15px/);
+  assert.match(role, /font-weight:\s*750/);
+  assert.match(glyphs, /font-size:\s*52px/);
   assert.match(glyphs, /font-weight:\s*650/);
-  assert.match(tenGod, /font-size:\s*18px/);
-  assert.match(tenGod, /font-weight:\s*750/);
-  assert.match(fiveTitle, /font-size:\s*24px/);
-  assert.match(fiveTitle, /font-weight:\s*800/);
-  assert.match(fiveSummary, /font-size:\s*18px/);
-  assert.match(fiveSummary, /font-weight:\s*700/);
-  assert.match(fiveCount, /font-size:\s*19px/);
-  assert.match(fiveCount, /font-weight:\s*750/);
-  assert.match(fiveLabel, /font-size:\s*28px/);
-  assert.match(detailTitle, /font-size:\s*17px/);
-  assert.match(detailTitle, /font-weight:\s*750/);
-  assert.match(tableCells, /font-size:\s*18px/);
-  assert.match(tableCells, /font-weight:\s*650/);
+  assert.match(tenGod, /font-size:\s*15px/);
+  assert.match(tenGod, /font-weight:\s*700/);
+  assert.match(fiveTitle, /font-size:\s*16px/);
+  assert.match(fiveTitle, /font-weight:\s*750/);
+  assert.match(fiveSummary, /font-size:\s*15px/);
+  assert.match(fiveSummary, /font-weight:\s*650/);
+  assert.match(fiveCount, /font-size:\s*14px/);
+  assert.match(fiveCount, /font-weight:\s*700/);
+  assert.match(fiveLabel, /font-size:\s*22px/);
+  assert.match(detailTitle, /font-size:\s*13px/);
+  assert.match(detailTitle, /font-weight:\s*700/);
+  assert.match(tableCells, /font-size:\s*14px/);
+  assert.match(tableCells, /font-weight:\s*600/);
 });
 
 test('MingJing ready state keeps the page title above the archetype card', () => {
   assert.match(
     mingjingTabSource,
-    /\)\s*:\s*\(\s*<>\s*<MingJingSimpleHeader[\s\S]*?onMethodProfileChange=\{handleMethodProfileChange\}\s*\/>\s*\{projection\.value\.kind === 'bazi_ziping_v1'/u,
+    /\)\s*:\s*\(\s*<>\s*<MingJingSimpleHeader\s+copy=\{m\}\s*\/>\s*\{projection\.value\.kind === 'bazi_ziping_v1'/u,
   );
   assert.match(
     baziMingjingRouteSource,
@@ -287,24 +265,13 @@ test('MingJing page title uses the same shared header position and scale as YueJ
   assert.doesNotMatch(title, /clamp\(34px,\s*4vw,\s*48px\)/);
 });
 
-test('MingJing title bar owns the settings-backed method selector on the far right', () => {
-  assert.match(mingjingTabSource, /import \{ MethodProfileSelect \} from '\.\.\/settings\/method-profile-select\.tsx';/u);
-  assert.match(mingjingTabSource, /import \{ commitMethodProfile \} from '\.\.\/settings\/method-profile-state\.ts';/u);
-  assert.match(mingjingTabSource, /function handleMethodProfileChange\(methodProfileId: MethodProfileId\)/u);
-  assert.match(mingjingTabSource, /commitMethodProfile\(space,\s*methodProfileId\)/u);
-  assert.match(mingjingTabSource, /<MingJingSimpleHeader\s+copy=\{m\}\s+methodProfileCopy=\{copy\.methodProfile\}\s+methodProfileId=\{space\.settings\.method_profile_id\}\s+onMethodProfileChange=\{handleMethodProfileChange\}\s*\/>/u);
-  assert.match(mingjingTabSource, /<MirrorPageHeader[\s\S]*title=\{copy\.title\}[\s\S]*actions=\{\(/u);
-  assert.match(mingjingTabSource, /<MethodProfileSelect[\s\S]*className="shijing-mingjing__method-select"[\s\S]*aria-label=\{methodProfileCopy\.algorithm\}/u);
-
-  const switcher = cssBlock('.shijing-mingjing__method-switch');
-  const trigger = cssBlock('.shijing-mingjing .shijing-mingjing__method-select');
-  const mobileSwitcher = cssBlockInAtRule('@media (max-width: 720px)', '.shijing-mingjing__method-switch');
-
-  assert.match(switcher, /margin-left:\s*auto/);
-  assert.match(trigger, /min-width:\s*220px/);
-  assert.match(trigger, /max-width:\s*280px/);
-  assert.match(trigger, /border-radius:\s*999px/);
-  assert.match(mobileSwitcher, /justify-content:\s*stretch/);
+test('MingJing title bar delegates method switching to the global topbar', () => {
+  assert.doesNotMatch(mingjingTabSource, /MethodProfileSelect/u);
+  assert.doesNotMatch(mingjingTabSource, /commitMethodProfile/u);
+  assert.doesNotMatch(mingjingTabSource, /handleMethodProfileChange/u);
+  assert.doesNotMatch(mingjingTabSource, /mingjing-method-profile/u);
+  assert.match(mingjingTabSource, /<MirrorPageHeader[\s\S]*title=\{copy\.title\}/u);
+  assert.doesNotMatch(mingjingTabSource, /actions=\{\(/u);
 });
 
 test('MingJing full paipan keeps the expert table behind the toggle', () => {
@@ -322,7 +289,7 @@ test('MingJing full paipan keeps the expert table behind the toggle', () => {
   assert.match(toggle, /width:\s*fit-content/);
 });
 
-test('MingJing five-element balance matches the reference card hierarchy', () => {
+test('MingJing five-element balance stays compact inside the paipan module', () => {
   const five = cssBlock('.shijing-mingjing-five');
   const head = cssBlock('.shijing-mingjing-five__head');
   const summary = cssBlock('.shijing-mingjing-five__summary');
@@ -332,21 +299,21 @@ test('MingJing five-element balance matches the reference card hierarchy', () =>
   const label = cssBlock('.shijing-mingjing-five__label');
 
   assert.match(mingjingPaipanSource, /shijing-mingjing-five__summary/u);
-  assert.match(five, /border-radius:\s*22px/);
-  assert.match(five, /min-height:\s*250px/);
+  assert.match(five, /border-radius:\s*16px/);
+  assert.match(five, /min-height:\s*198px/);
   assert.match(five, /background:\s*rgba\(255,\s*255,\s*255,\s*0\.36\)/);
   assert.match(head, /grid-template-columns:\s*auto\s+minmax\(0,\s*1fr\)\s+auto/);
   assert.match(summary, /justify-self:\s*end/);
-  assert.match(summary, /font-size:\s*17px/);
-  assert.match(summary, /font-weight:\s*700/);
-  assert.match(bars, /grid-template-columns:\s*repeat\(5,\s*minmax\(88px,\s*1fr\)\)/);
-  assert.match(bars, /height:\s*150px/);
-  assert.match(value, /width:\s*70px/);
-  assert.match(value, /max-height:\s*108px/);
-  assert.match(value, /border-radius:\s*10px/);
-  assert.match(count, /font-size:\s*17px/);
-  assert.match(count, /font-weight:\s*750/);
-  assert.match(label, /font-size:\s*24px/);
+  assert.match(summary, /font-size:\s*15px/);
+  assert.match(summary, /font-weight:\s*650/);
+  assert.match(bars, /grid-template-columns:\s*repeat\(5,\s*minmax\(72px,\s*1fr\)\)/);
+  assert.match(bars, /height:\s*118px/);
+  assert.match(value, /width:\s*54px/);
+  assert.match(value, /max-height:\s*82px/);
+  assert.match(value, /border-radius:\s*9px/);
+  assert.match(count, /font-size:\s*14px/);
+  assert.match(count, /font-weight:\s*700/);
+  assert.match(label, /font-size:\s*22px/);
 });
 
 test('MingJing dayun renders a complete professional matrix with only the current period expanded', () => {
@@ -413,13 +380,28 @@ test('MingJing dayun rows stay light by default and tint on hover', () => {
   assert.match(row, /transition:\s*border-color\s+160ms\s+ease,\s*background\s+160ms\s+ease,\s*box-shadow\s+160ms\s+ease,\s*transform\s+160ms\s+ease/);
   assert.match(expanded, /background:\s*rgba\(255,\s*255,\s*255,\s*0\.84\)/);
   assert.doesNotMatch(expanded, /linear-gradient\(180deg,\s*rgba\(236,\s*251,\s*245/u);
-  assert.match(hover, /background:\s*rgba\(247,\s*252,\s*249,\s*0\.94\)/);
+  assert.match(hover, /background:\s*color-mix\(in srgb,\s*var\(--mingjing-accent\)\s+10%,\s*rgba\(255,\s*255,\s*255,\s*0\.72\)\)/);
   assert.match(hover, /transform:\s*translateY\(-1px\)/);
   assert.match(toggle, /background:\s*rgba\(255,\s*255,\s*255,\s*0\.88\)/);
   assert.match(toggleSkin, /background:\s*rgba\(255,\s*255,\s*255,\s*0\.88\)/);
   assert.match(toggleSkin, /color:\s*inherit/);
-  assert.match(hoverToggle, /background:\s*rgba\(242,\s*250,\s*246,\s*0\.96\)/);
+  assert.match(hoverToggle, /background:\s*color-mix\(in srgb,\s*var\(--mingjing-accent\)\s+10%,\s*rgba\(255,\s*255,\s*255,\s*0\.72\)\)/);
   assert.doesNotMatch(hoverToggle, /var\(--mj-nature/u);
+});
+
+test('MingJing hover blocks use the same light green wash as RiJing concern frames', () => {
+  const lightHover = /background:\s*color-mix\(in srgb,\s*var\(--mingjing-accent\)\s+10%,\s*rgba\(255,\s*255,\s*255,\s*0\.72\)\)/;
+
+  for (const selector of [
+    '.shijing-dayun__row:hover',
+    '.shijing-dayun__row:hover .shijing-dayun__row-toggle',
+    '.shijing-mingjing .shijing-ziwei-palace:hover',
+    '.shijing-mingjing .shijing-ziwei-decade__card:hover',
+    '.shijing-mingjing .shijing-paipan__toggle:hover',
+    '.shijing-mingjing .shijing-mingjing-info__button:hover',
+  ]) {
+    assert.match(cssBlock(selector), lightHover, selector);
+  }
 });
 
 test('MingJing liunian cards prioritize readable guidance before folded evidence', () => {

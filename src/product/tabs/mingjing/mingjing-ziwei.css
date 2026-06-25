@@ -1,6 +1,6 @@
 /* Ziwei Sanhe route — module styling aligned to the 命镜 · 紫微命盘 reference. */
 .shijing-mingjing > .shijing-mingjing__panels--ziwei {
-  max-width: min(100%, 1380px);
+  max-width: var(--mingjing-page-max);
   gap: 24px;
 }
 
@@ -196,7 +196,7 @@
 
 .shijing-mingjing .shijing-ziwei-palace:hover {
   border-color: rgba(148, 163, 184, 0.55);
-  background: rgba(255, 255, 255, 0.78);
+  background: color-mix(in srgb, var(--mingjing-accent) 10%, rgba(255, 255, 255, 0.72));
   box-shadow: 0 12px 26px -20px rgba(15, 23, 42, 0.28);
   transform: translateY(-1px);
 }

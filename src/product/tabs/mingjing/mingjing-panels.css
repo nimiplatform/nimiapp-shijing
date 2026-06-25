@@ -86,7 +86,7 @@
 }
 
 .shijing-mingjing .shijing-mingjing-info__button:hover {
-  background: color-mix(in srgb, var(--mingjing-accent) 18%, rgba(255, 255, 255, 0.86));
+  background: color-mix(in srgb, var(--mingjing-accent) 10%, rgba(255, 255, 255, 0.72));
   border-color: color-mix(in srgb, var(--mingjing-accent) 44%, transparent);
   color: var(--mingjing-accent-hover);
   transform: translateY(-1px);

@@ -207,6 +207,17 @@
   text-align: left;
   font: inherit;
   cursor: pointer;
+  transition: background 160ms ease, box-shadow 160ms ease;
+}
+
+.shijing-tab .shijing-rijing__frame-row:hover {
+  background: color-mix(in srgb, var(--rijing-accent) 10%, rgba(255, 255, 255, 0.72));
+}
+
+.shijing-tab .shijing-rijing__frame-row:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--rijing-accent) 12%, rgba(255, 255, 255, 0.76));
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--rijing-accent) 38%, transparent);
 }
 
 .shijing-rijing__frame-icon {

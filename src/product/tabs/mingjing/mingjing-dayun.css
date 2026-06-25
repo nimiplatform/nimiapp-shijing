@@ -49,7 +49,7 @@
 }
 
 .shijing-dayun__row:hover {
-  background: rgba(247, 252, 249, 0.94);
+  background: color-mix(in srgb, var(--mingjing-accent) 10%, rgba(255, 255, 255, 0.72));
   border-color: color-mix(in srgb, var(--mj-nature, var(--mingjing-accent)) 32%, rgba(110, 128, 153, 0.14));
   border-left-color: var(--mj-nature, var(--mingjing-accent));
   box-shadow: 0 14px 28px rgba(57, 122, 102, 0.11);
@@ -81,7 +81,7 @@
 }
 
 .shijing-dayun__row:hover .shijing-dayun__row-toggle {
-  background: rgba(242, 250, 246, 0.96);
+  background: color-mix(in srgb, var(--mingjing-accent) 10%, rgba(255, 255, 255, 0.72));
 }
 
 .shijing-dayun__row-toggle:focus-visible {
