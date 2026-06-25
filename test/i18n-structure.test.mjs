@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { ZH_SHIJING_COPY } from '../src/product/i18n/zh/shijing.ts';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const i18nRoot = join(repoRoot, 'src/product/i18n');
@@ -35,4 +36,9 @@ test('i18n modules stay below the AI structure budget', () => {
       `${relative(repoRoot, file)} has ${count} lines, expected <= ${maxI18nModuleLines}`,
     );
   }
+});
+
+test('Chinese ShiJing pending answer copy is localized', () => {
+  assert.notEqual(ZH_SHIJING_COPY.thinking, 'Thinking...');
+  assert.match(ZH_SHIJING_COPY.thinking, /思考|正在|稍等/u);
 });

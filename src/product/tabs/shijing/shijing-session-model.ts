@@ -311,6 +311,64 @@ export function sameStringArray(left: readonly string[], right: readonly string[
   return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
+export interface PendingConversationPreviewInput {
+  readonly baseConversation?: Conversation;
+  readonly conversationId: string;
+  readonly createdAt: string;
+  readonly sourceReadingIds: readonly string[];
+  readonly concernTagRefs: readonly string[];
+  readonly question: string;
+  readonly citedEventMemoryRefs: readonly string[];
+  readonly citedPlanItemRefs: readonly string[];
+  readonly userTurnId: string;
+  readonly aiTurnId: string;
+  readonly thinkingLabel: string;
+}
+
+export interface PendingConversationPreview {
+  readonly conversation: Conversation;
+  readonly pendingTurnIds: readonly string[];
+}
+
+export function buildPendingConversationPreview(
+  input: PendingConversationPreviewInput,
+): PendingConversationPreview {
+  const userTurn = {
+    id: input.userTurnId,
+    role: 'user' as const,
+    body: input.question,
+    cited_reading_ids: [],
+    cited_event_memory_refs: [...input.citedEventMemoryRefs],
+    cited_plan_item_refs: [...input.citedPlanItemRefs],
+    created_at: input.createdAt,
+  };
+  const aiTurn = {
+    id: input.aiTurnId,
+    role: 'ai' as const,
+    body: input.thinkingLabel,
+    cited_reading_ids: [...input.sourceReadingIds],
+    cited_event_memory_refs: [...input.citedEventMemoryRefs],
+    cited_plan_item_refs: [...input.citedPlanItemRefs],
+    created_at: input.createdAt,
+  };
+  const base = input.baseConversation;
+  return {
+    conversation: base
+      ? {
+          ...base,
+          turns: [...base.turns, userTurn, aiTurn],
+        }
+      : {
+          id: input.conversationId,
+          created_at: input.createdAt,
+          source_reading_ids: [...input.sourceReadingIds],
+          concern_tag_refs: [...input.concernTagRefs],
+          turns: [userTurn, aiTurn],
+        },
+    pendingTurnIds: [input.aiTurnId],
+  };
+}
+
 export function followUpFailureAsReadingFailure(
   failure: ConversationFollowUpFailure,
   sourceReadingIds: readonly string[],

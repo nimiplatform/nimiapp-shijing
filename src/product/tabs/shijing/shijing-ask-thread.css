@@ -104,6 +104,50 @@
   background: rgba(255, 255, 255, 0.78);
 }
 
+.shijing-ask__turn[data-pending="true"] .shijing-ask__turn-body {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  color: #475569;
+  font-weight: 650;
+}
+
+.shijing-ask__thinking-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.shijing-ask__thinking-dots span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #6ed2a9;
+  animation: shijing-thinking-pulse 1.12s ease-in-out infinite;
+}
+
+.shijing-ask__thinking-dots span:nth-child(2) {
+  animation-delay: 0.14s;
+}
+
+.shijing-ask__thinking-dots span:nth-child(3) {
+  animation-delay: 0.28s;
+}
+
+@keyframes shijing-thinking-pulse {
+  0%,
+  80%,
+  100% {
+    opacity: 0.38;
+    transform: scale(0.86);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .shijing-ask__turn-cite {
   align-self: flex-start;
   color: #94a3b8;

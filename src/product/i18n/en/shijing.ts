@@ -44,6 +44,7 @@ export const EN_SHIJING_COPY: ProductCopy['shijing'] = {
   sendTitle: 'Send follow-up',
   sending: 'Sending...',
   send: 'Send',
+  thinking: 'Thinking...',
   suggestLabel: 'Try asking',
   resultAria: 'Reading result',
   archive: {

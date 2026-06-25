@@ -43,6 +43,7 @@ import { ShiJingComposer } from './shijing/shijing-composer.tsx';
 import { ShiJingHistoryRail } from './shijing/shijing-history-rail.tsx';
 import {
   activateArchiveConcernOption,
+  buildPendingConversationPreview,
   concernMatchesQuestion,
   conversationMatchesQuestionArchive,
   conversationMatchesConcernFilter,
@@ -74,6 +75,8 @@ export function ShiJingTab(_props: ShiJingTabProps) {
   const [question, setQuestion] = useState('');
   const [search, setSearch] = useState('');
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [pendingConversation, setPendingConversation] = useState<Conversation | null>(null);
+  const [pendingTurnIds, setPendingTurnIds] = useState<readonly string[]>([]);
   const [draftingNewQuestion, setDraftingNewQuestion] = useState(false);
   const [selectedArchiveConcernIds, setSelectedArchiveConcernIds] = useState<string[]>([]);
   const [dismissedArchiveConcernIds, setDismissedArchiveConcernIds] = useState<string[]>([]);
@@ -112,8 +115,9 @@ export function ShiJingTab(_props: ShiJingTabProps) {
       resolveShiJingSourceReadingIds({
         imported_reading_ids: importedIds,
         readings: state.snapshot.readings,
+        method_profile_id: state.snapshot.settings.method_profile_id,
       }),
-    [importedIds, state.snapshot.readings],
+    [importedIds, state.snapshot.readings, state.snapshot.settings.method_profile_id],
   );
 
   const activeConcernTags = useMemo(
@@ -182,16 +186,18 @@ export function ShiJingTab(_props: ShiJingTabProps) {
   const selectedConversation = selectedConversationId
     ? conversations.find((c) => c.id === selectedConversationId) ?? null
     : null;
-  const resultConversation = draftingNewQuestion ? null : selectedConversation ?? newestConversation;
+  const resultConversation = pendingConversation ?? (draftingNewQuestion ? null : selectedConversation ?? newestConversation);
   const followUpConversation =
-    !draftingNewQuestion && resultConversation != null && importedIds.length === 0 && seedCount === 0
+    pendingConversation == null && !draftingNewQuestion && resultConversation != null && importedIds.length === 0 && seedCount === 0
       ? resultConversation
       : null;
   const latestConsultation = latestReadingByMirrorKind({
     readings: state.snapshot.readings,
     mirror_kind: 'shijing',
+    method_profile_id: state.snapshot.settings.method_profile_id,
   });
   const resultIsLatest = resultConversation != null && resultConversation === newestConversation;
+  const showLatestCitation = pendingConversation == null && resultIsLatest && latestConsultation != null;
 
   const canAsk =
     question.trim().length > 0 &&
@@ -206,8 +212,25 @@ export function ShiJingTab(_props: ShiJingTabProps) {
     if (q.length === 0) return;
     if (followUpConversation) {
       if (followUpConversation.source_reading_ids.length === 0) return;
+      const createdAt = nowIso();
+      const pending = buildPendingConversationPreview({
+        baseConversation: followUpConversation,
+        conversationId: followUpConversation.id,
+        createdAt,
+        sourceReadingIds: followUpConversation.source_reading_ids,
+        concernTagRefs: followUpConversation.concern_tag_refs,
+        question: q,
+        citedEventMemoryRefs: [],
+        citedPlanItemRefs: [],
+        userTurnId: newConversationTurnId(),
+        aiTurnId: newConversationTurnId(),
+        thinkingLabel: copy.shijing.thinking,
+      });
+      setPendingConversation(pending.conversation);
+      setPendingTurnIds(pending.pendingTurnIds);
       setLoading(true);
       setFailure(null);
+      setQuestion('');
       const outcome = await sendConversationFollowUp({
         space: state.snapshot,
         conversation_id: followUpConversation.id,
@@ -216,25 +239,49 @@ export function ShiJingTab(_props: ShiJingTabProps) {
       });
       setLoading(false);
       if (!outcome.ok) {
+        setPendingConversation({
+          ...pending.conversation,
+          turns: pending.conversation.turns.filter((turn) => !pending.pendingTurnIds.includes(turn.id)),
+        });
+        setPendingTurnIds([]);
         setFailure(followUpFailureAsReadingFailure(outcome.failure, followUpConversation.source_reading_ids));
         return;
       }
       dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
-      setQuestion('');
+      setPendingConversation(null);
+      setPendingTurnIds([]);
       setSelectedConversationId(followUpConversation.id);
       setDraftingNewQuestion(false);
       return;
     }
     if (sourceReadingIds.length === 0) return;
-    setLoading(true);
-    setFailure(null);
-    const id = newReadingId();
+    const convId = newConversationId();
+    const createdAt = nowIso();
     const activeConcernTagIds = activeConcernTags.map((t) => t.id);
     const readingConcernTagIds =
       selectedArchiveConcernIds.length > 0 ? selectedArchiveConcernIds : activeConcernTagIds;
+    const pending = buildPendingConversationPreview({
+      conversationId: convId,
+      createdAt,
+      sourceReadingIds,
+      concernTagRefs: selectedArchiveConcernIds,
+      question: q,
+      citedEventMemoryRefs: seedMemoryIds,
+      citedPlanItemRefs: seedPlanIds,
+      userTurnId: newConversationTurnId(),
+      aiTurnId: newConversationTurnId(),
+      thinkingLabel: copy.shijing.thinking,
+    });
+    setPendingConversation(pending.conversation);
+    setPendingTurnIds(pending.pendingTurnIds);
+    setDraftingNewQuestion(false);
+    setLoading(true);
+    setFailure(null);
+    setQuestion('');
+    const id = newReadingId();
     const outcome = await generateReadingForStorage({
       id,
-      created_at: nowIso(),
+      created_at: createdAt,
       mirror_kind: 'shijing',
       mirror_scope: consultationMirrorScopeFor(sourceReadingIds),
       related_person_refs: [],
@@ -248,36 +295,40 @@ export function ShiJingTab(_props: ShiJingTabProps) {
     });
     setLoading(false);
     if (!outcome.ok) {
+      setPendingConversation({
+        ...pending.conversation,
+        turns: pending.conversation.turns.filter((turn) => !pending.pendingTurnIds.includes(turn.id)),
+      });
+      setPendingTurnIds([]);
       setFailure(outcome.failure);
       return;
     }
     // Append a consultation conversation thread. The "save question as
     // EventMemory" path is currently hidden from UI; re-enable here once
     // AI integration decides whether it should come back.
-    const convId = newConversationId();
     const conv: Conversation = {
       id: convId,
-      created_at: nowIso(),
+      created_at: createdAt,
       source_reading_ids: sourceReadingIds,
       concern_tag_refs: selectedArchiveConcernIds,
       turns: [
         {
-          id: newConversationTurnId(),
+          id: pending.conversation.turns[0]?.id ?? newConversationTurnId(),
           role: 'user',
           body: q,
           cited_reading_ids: [],
           cited_event_memory_refs: seedMemoryIds.slice(),
           cited_plan_item_refs: seedPlanIds.slice(),
-          created_at: nowIso(),
+          created_at: createdAt,
         } satisfies ConversationTurn,
         {
-          id: newConversationTurnId(),
+          id: pending.pendingTurnIds[0] ?? newConversationTurnId(),
           role: 'ai',
           body: (outcome.reading.output as ShiJingMirrorOutput).answer,
           cited_reading_ids: sourceReadingIds,
           cited_event_memory_refs: outcome.reading.cited_event_memory_refs.slice(),
           cited_plan_item_refs: outcome.reading.cited_plan_item_refs.slice(),
-          created_at: nowIso(),
+          created_at: createdAt,
         } satisfies ConversationTurn,
       ],
     };
@@ -286,7 +337,8 @@ export function ShiJingTab(_props: ShiJingTabProps) {
       conversations: [...outcome.next_space.conversations, conv],
     };
     dispatch({ type: 'snapshot/replace', snapshot: nextSpace });
-    setQuestion('');
+    setPendingConversation(null);
+    setPendingTurnIds([]);
     setSelectedArchiveConcernIds([]);
     setDismissedArchiveConcernIds([]);
     setSelectedConversationId(convId);
@@ -296,7 +348,7 @@ export function ShiJingTab(_props: ShiJingTabProps) {
     dispatch({ type: 'shijing/clear-seed-plan' });
   }
 
-  const chatActive = !draftingNewQuestion && resultConversation != null && importedIds.length === 0 && seedCount === 0;
+  const chatActive = pendingConversation != null || (!draftingNewQuestion && resultConversation != null && importedIds.length === 0 && seedCount === 0);
   const historyLookupText = search.trim().length > 0 ? search : chatActive ? '' : question;
   const filteredConversations = useMemo(
     () =>
@@ -335,6 +387,8 @@ export function ShiJingTab(_props: ShiJingTabProps) {
       : copy.shijing.generate;
   const composerPlaceholder = chatActive ? '' : copy.shijing.composerPlaceholder;
   function startNewQuestion() {
+    setPendingConversation(null);
+    setPendingTurnIds([]);
     setDraftingNewQuestion(true);
     setSelectedConversationId(null);
     setQuestion('');
@@ -392,6 +446,8 @@ export function ShiJingTab(_props: ShiJingTabProps) {
   }
 
   function selectConversation(id: string) {
+    setPendingConversation(null);
+    setPendingTurnIds([]);
     setDraftingNewQuestion(false);
     setSelectedConversationId(id);
     setQuestion('');
@@ -434,8 +490,12 @@ export function ShiJingTab(_props: ShiJingTabProps) {
               {failure ? <FailureBanner failure={failure} /> : null}
               {resultConversation ? (
                 <article className="shijing-ask__result" aria-label={copy.shijing.resultAria}>
-                  <ConversationThread conversation={resultConversation} />
-                  {resultIsLatest && latestConsultation ? (
+                  <ConversationThread
+                    conversation={resultConversation}
+                    pendingTurnIds={pendingTurnIds}
+                    thinkingLabel={copy.shijing.thinking}
+                  />
+                  {showLatestCitation ? (
                     <CitationDrawer reading={latestConsultation} />
                   ) : null}
                 </article>
@@ -509,8 +569,12 @@ export function ShiJingTab(_props: ShiJingTabProps) {
 
           {resultConversation ? (
             <article className="shijing-ask__result" aria-label={copy.shijing.resultAria}>
-              <ConversationThread conversation={resultConversation} />
-              {resultIsLatest && latestConsultation ? (
+              <ConversationThread
+                conversation={resultConversation}
+                pendingTurnIds={pendingTurnIds}
+                thinkingLabel={copy.shijing.thinking}
+              />
+              {showLatestCitation ? (
                 <CitationDrawer reading={latestConsultation} />
               ) : null}
             </article>

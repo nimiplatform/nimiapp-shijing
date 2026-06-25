@@ -156,21 +156,47 @@ export function ContextFocusBar(props: {
   );
 }
 
-export function ConversationThread(props: { readonly conversation: Conversation }) {
+export function ConversationThread(props: {
+  readonly conversation: Conversation;
+  readonly pendingTurnIds?: readonly string[];
+  readonly thinkingLabel?: string;
+}) {
   const copy = useProductCopy();
+  const pendingTurnIds = new Set(props.pendingTurnIds ?? []);
   return (
     <ol className="shijing-ask__thread">
-      {props.conversation.turns.map((turn) => (
-        <li key={turn.id} className="shijing-ask__turn" data-role={turn.role}>
-          <span className="shijing-ask__turn-role">{copy.conversationRoleLabels[turn.role]}</span>
-          <p className="shijing-ask__turn-body">{turn.body}</p>
-          {turn.cited_reading_ids.length > 0 ? (
-            <small className="shijing-ask__turn-cite">
-              {copy.shijing.citedReadings(turn.cited_reading_ids.length)}
-            </small>
-          ) : null}
-        </li>
-      ))}
+      {props.conversation.turns.map((turn) => {
+        const isPending = pendingTurnIds.has(turn.id);
+        return (
+          <li
+            key={turn.id}
+            className="shijing-ask__turn"
+            data-role={turn.role}
+            data-pending={isPending ? 'true' : undefined}
+          >
+            <span className="shijing-ask__turn-role">{copy.conversationRoleLabels[turn.role]}</span>
+            <p className="shijing-ask__turn-body" aria-live={isPending ? 'polite' : undefined}>
+              {isPending ? (
+                <>
+                  <span className="shijing-ask__thinking-dots" aria-hidden="true">
+                    <span />
+                    <span />
+                    <span />
+                  </span>
+                  <span>{props.thinkingLabel ?? turn.body}</span>
+                </>
+              ) : (
+                turn.body
+              )}
+            </p>
+            {turn.cited_reading_ids.length > 0 && !isPending ? (
+              <small className="shijing-ask__turn-cite">
+                {copy.shijing.citedReadings(turn.cited_reading_ids.length)}
+              </small>
+            ) : null}
+          </li>
+        );
+      })}
     </ol>
   );
 }

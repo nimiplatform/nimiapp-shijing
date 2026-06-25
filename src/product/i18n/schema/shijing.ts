@@ -34,6 +34,7 @@ export interface ShiJingConsultationCopy {
   readonly sendTitle: string;
   readonly sending: string;
   readonly send: string;
+  readonly thinking: string;
   readonly suggestLabel: string;
   readonly resultAria: string;
   readonly archive: {

@@ -44,6 +44,7 @@ export const ZH_SHIJING_COPY: ProductCopy['shijing'] = {
   sendTitle: '发送追问',
   sending: '发送中…',
   send: '发送',
+  thinking: '正在思考…',
   suggestLabel: '可以这样问',
   resultAria: '解读结果',
   archive: {

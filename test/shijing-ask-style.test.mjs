@@ -155,7 +155,7 @@ test('Ask ShiJing concern sync effect preserves identical array state', () => {
 });
 
 test('Ask ShiJing switches to a chat window once a conversation exists', () => {
-  assert.match(shijingTabSource, /const chatActive = !draftingNewQuestion && resultConversation != null/);
+  assert.match(shijingTabSource, /const chatActive = pendingConversation != null \|\| \(!draftingNewQuestion && resultConversation != null/);
   assert.match(
     shijingTabSource,
     /data-chat-active=\{chatActive \? 'true' : 'false'\}/,
@@ -192,6 +192,39 @@ test('Ask ShiJing switches to a chat window once a conversation exists', () => {
   assert.match(composerChat, /position:\s*relative/);
   assert.match(composerChat, /bottom:\s*auto/);
   assert.doesNotMatch(composerChat, /position:\s*sticky/);
+});
+
+test('Ask ShiJing immediately previews a submitted question in the chat thread', () => {
+  assert.match(shijingTabSource, /const \[pendingConversation, setPendingConversation\]/);
+  assert.match(shijingTabSource, /buildPendingConversationPreview/);
+  assert.match(
+    shijingTabSource,
+    /const resultConversation = pendingConversation \?\? \(draftingNewQuestion \? null : selectedConversation \?\? newestConversation\);/,
+  );
+  assert.match(
+    shijingTabSource,
+    /if \(sourceReadingIds\.length === 0\) return;[\s\S]*?setPendingConversation\(pending\.conversation\);[\s\S]*?const outcome = await generateReadingForStorage/,
+  );
+  assert.match(
+    shijingTabSource,
+    /const chatActive = pendingConversation != null \|\| \(!draftingNewQuestion && resultConversation != null/,
+  );
+});
+
+test('Ask ShiJing pending answer uses a Nimi chat thinking bubble', () => {
+  assert.match(shijingTabSource, /pendingTurnIds/);
+  assert.match(shijingTabSource, /thinkingLabel=\{copy\.shijing\.thinking\}/);
+  assert.match(shijingTabSource, /data-pending=\{isPending \? 'true' : undefined\}/);
+
+  const pendingTurn = cssBlock(shijingStyles, '.shijing-ask__turn[data-pending="true"] .shijing-ask__turn-body');
+  const thinkingDots = cssBlock(shijingStyles, '.shijing-ask__thinking-dots');
+  const thinkingDot = cssBlock(shijingStyles, '.shijing-ask__thinking-dots span');
+
+  assert.match(pendingTurn, /display:\s*inline-flex/);
+  assert.match(pendingTurn, /align-items:\s*center/);
+  assert.match(thinkingDots, /display:\s*inline-flex/);
+  assert.match(thinkingDot, /animation:\s*shijing-thinking-pulse/);
+  assert.match(shijingStyles, /@keyframes shijing-thinking-pulse/);
 });
 
 test('Ask ShiJing hides composer placeholder inside an active chat thread', () => {
@@ -344,7 +377,7 @@ test('Ask ShiJing recalls archived conversations from the current question text'
 });
 
 test('Ask ShiJing conversation thread uses right-user and left-answer chat bubbles', () => {
-  assert.match(shijingTabSource, /className="shijing-ask__turn" data-role=\{turn\.role\}/);
+  assert.match(shijingTabSource, /className="shijing-ask__turn"[\s\S]*?data-role=\{turn\.role\}/);
 
   const turn = cssBlock(shijingStyles, '.shijing-ask__turn');
   const userTurn = cssBlock(shijingStyles, '.shijing-ask__turn[data-role="user"]');
