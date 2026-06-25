@@ -45,6 +45,9 @@ export interface ShiJingConsultationCopy {
     readonly filterMenuAria: string;
     readonly filterAll: string;
     readonly filterEmpty: string;
+    readonly recallAria: string;
+    readonly recallTitle: string;
+    readonly recallOpenAria: (question: string) => string;
   };
   readonly context: {
     readonly aria: string;

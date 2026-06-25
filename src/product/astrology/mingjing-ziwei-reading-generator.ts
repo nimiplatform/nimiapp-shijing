@@ -38,7 +38,6 @@ function decadeGuidanceSeed(
   return [...chart.palaces]
     .filter((palace) => palace.decadal_start_age >= 0 && palace.decadal_end_age >= palace.decadal_start_age)
     .sort((a, b) => a.decadal_start_age - b.decadal_start_age)
-    .slice(0, 6)
     .map((palace) => ({
       age_range: `${palace.decadal_start_age}-${palace.decadal_end_age}`,
       palace_name: palace.name,

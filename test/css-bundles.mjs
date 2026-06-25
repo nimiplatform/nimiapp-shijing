@@ -8,6 +8,7 @@ export const rijingCssFiles = [
   '../src/product/tabs/rijing/rijing-shell.css',
   '../src/product/tabs/rijing/rijing-onboarding.css',
   '../src/product/tabs/rijing/rijing-hero.css',
+  '../src/product/tabs/rijing/rijing-day-rite.css',
   '../src/product/tabs/rijing/rijing-projections.css',
   '../src/product/tabs/rijing/rijing-event-input.css',
   '../src/product/tabs/rijing/rijing-actions.css',
@@ -20,6 +21,8 @@ export const nianjingCssFiles = [
   '../src/product/tabs/nianjing/nianjing-hero.css',
   '../src/product/tabs/nianjing/nianjing-filters.css',
   '../src/product/tabs/nianjing/nianjing-year-overview.css',
+  '../src/product/tabs/nianjing/nianjing-year-detail.css',
+  '../src/product/tabs/nianjing/nianjing-year-summary.css',
   '../src/product/tabs/nianjing/nianjing-phase-list.css',
   '../src/product/tabs/nianjing/nianjing-timeline-base.css',
   '../src/product/tabs/nianjing/nianjing-timeline.css',
@@ -37,8 +40,20 @@ export const mingjingCssFiles = [
   '../src/product/tabs/mingjing/mingjing-liunian.css',
   '../src/product/tabs/mingjing/mingjing-events.css',
   '../src/product/tabs/mingjing/mingjing-reading.css',
+  '../src/product/tabs/mingjing/mingjing-ziwei.css',
+  '../src/product/tabs/mingjing/mingjing-ziwei-reading.css',
   '../src/product/tabs/mingjing/mingjing-rectify.css',
   '../src/product/tabs/mingjing/mingjing-responsive.css',
+];
+
+export const hejingCssFiles = [
+  '../src/product/tabs/hejing/hejing-shell.css',
+  '../src/product/tabs/hejing/hejing-hero.css',
+  '../src/product/tabs/hejing/hejing-index.css',
+  '../src/product/tabs/hejing/hejing-intersection.css',
+  '../src/product/tabs/hejing/hejing-future.css',
+  '../src/product/tabs/hejing/hejing-history.css',
+  '../src/product/tabs/hejing/hejing-responsive.css',
 ];
 
 export const shijingAskCssFiles = [
@@ -47,6 +62,7 @@ export const shijingAskCssFiles = [
   '../src/product/tabs/shijing/shijing-ask-rail.css',
   '../src/product/tabs/shijing/shijing-ask-composer.css',
   '../src/product/tabs/shijing/shijing-ask-context.css',
+  '../src/product/tabs/shijing/shijing-ask-recall.css',
   '../src/product/tabs/shijing/shijing-ask-thread.css',
   '../src/product/tabs/shijing/shijing-concern-bar.css',
 ];

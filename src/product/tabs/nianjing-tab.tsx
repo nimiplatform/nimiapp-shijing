@@ -3,7 +3,7 @@
 //
 // V2 layout (per the 年镜 redesign mockup):
 //   1. Header strip — title + horizon meta + concern count +
-//      「导入到时镜」/「生成长程相位」 actions + 上次生成 X 前.
+//      「导入到问镜」/「生成长程相位」 actions + 上次生成 X 前.
 //   2. Current-phase hero — a tinted overview card showing the
 //      dominant *current* phase nature with per-concern chips on the
 //      right pane (one row per active concern: label + nature chip +
@@ -36,6 +36,7 @@ import { MIRROR_KIND_LABELS } from '../i18n/copy.ts';
 import { longHorizonMirrorScopeNextTenYears } from './mirror-scope-helpers.ts';
 import { ImportToShiJingButton } from './shared/import-to-shijing-button.tsx';
 import { FailureBanner } from './shared/failure-banner.tsx';
+import { GeneratingButton } from './shared/generating-button.tsx';
 import { MirrorPageHeader } from './shared/mirror-page-header.tsx';
 import { nianjingFreshnessView } from './nianjing/nianjing-staleness.ts';
 import { buildNianJingDirectDisplayOutput } from './nianjing/nianjing-direct-output.ts';
@@ -177,15 +178,15 @@ export function NianJingTab(props: NianJingTabProps) {
         actions={(
           <>
             {importableReadingId ? <ImportToShiJingButton readingId={importableReadingId} /> : null}
-            <button
-              type="button"
+            <GeneratingButton
               className="shijing-nianjing__generate"
               disabled={loading || activeTagIds.length === 0}
+              busy={loading}
+              busyLabel={actionLabel}
               onClick={handleGenerate}
             >
-              <span className="shijing-nianjing__generate-icon" aria-hidden />
               {actionLabel}
-            </button>
+            </GeneratingButton>
           </>
         )}
         footer={hasPreviousReading ? (

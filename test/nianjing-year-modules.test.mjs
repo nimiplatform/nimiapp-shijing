@@ -190,3 +190,104 @@ test('NianJing year modules do not introduce forbidden trend or score fields', a
     );
   }
 });
+
+test('NianJing annual overview derives one overall year cell across all active concerns', async () => {
+  const {
+    buildNianJingAnnualOverview,
+    buildNianJingYearModules,
+  } = await loadYearModules();
+
+  const modules = buildNianJingYearModules({
+    output,
+    active_concern_tags: activeTags,
+    today: '2026-08-15',
+  });
+  const overview = buildNianJingAnnualOverview(modules);
+
+  assert.deepEqual(
+    overview.map((year) => ({
+      year: year.year,
+      is_current_year: year.is_current_year,
+      primary_nature: year.primary_nature,
+      primary_concern_tag_ref: year.primary_cell?.concern_tag_ref ?? null,
+      inflection_count: year.inflections.length,
+    })),
+    [
+      {
+        year: 2026,
+        is_current_year: true,
+        primary_nature: 'blocked',
+        primary_concern_tag_ref: 'tag_family',
+        inflection_count: 1,
+      },
+      {
+        year: 2027,
+        is_current_year: false,
+        primary_nature: 'blocked',
+        primary_concern_tag_ref: 'tag_family',
+        inflection_count: 1,
+      },
+    ],
+  );
+});
+
+test('NianJing selected year detail is derived from phase bands and inflections', async () => {
+  const {
+    buildNianJingSelectedYearDetail,
+    buildNianJingYearModules,
+  } = await loadYearModules();
+
+  const modules = buildNianJingYearModules({
+    output,
+    active_concern_tags: activeTags,
+    today: '2026-08-15',
+  });
+  const detail = buildNianJingSelectedYearDetail({
+    module: modules[0],
+    active_concern_tags: activeTags,
+  });
+
+  assert.equal(detail.year, 2026);
+  assert.equal(detail.primary_nature, 'blocked');
+  assert.equal(detail.primary_concern_tag_ref, 'tag_family');
+  assert.equal(detail.concern_cards.length, 2);
+  assert.deepEqual(
+    detail.concern_cards.map((card) => ({
+      concern_tag_ref: card.concern_tag_ref,
+      label: card.label,
+      primary_nature: card.primary_nature,
+      primary_summary: card.primary_summary,
+      month_markers: card.month_markers.map((marker) => ({
+        month: marker.month,
+        kind: marker.kind,
+      })),
+    })),
+    [
+      {
+        concern_tag_ref: 'tag_body',
+        label: '#Body',
+        primary_nature: 'watch',
+        primary_summary: 'body bridge',
+        month_markers: [{ month: 7, kind: 'annual_transition' }],
+      },
+      {
+        concern_tag_ref: 'tag_family',
+        label: '#Family',
+        primary_nature: 'blocked',
+        primary_summary: 'family long phase',
+        month_markers: [],
+      },
+    ],
+  );
+  assert.deepEqual(
+    detail.basis_items.map((item) => ({
+      kind: item.kind,
+      count: item.count,
+    })),
+    [
+      { kind: 'phase_band', count: 3 },
+      { kind: 'annual_transition', count: 1 },
+    ],
+  );
+  assert.equal(JSON.stringify(detail).includes('score'), false);
+});

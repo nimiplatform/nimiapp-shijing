@@ -6,6 +6,7 @@ import {
   deriveRiJingHero,
   rijingDateLabel,
 } from '../src/product/tabs/rijing/rijing-derive.ts';
+import { deriveRiJingDailyAlmanac } from '../src/product/tabs/rijing/rijing-daily-almanac.ts';
 import { getProductCopy } from '../src/product/i18n/copy.ts';
 import { validEventMemory, validReading, validRijingOutput } from './_fixtures.mjs';
 
@@ -42,6 +43,42 @@ test('deriveRiJingActions yields do/say items tagged with their source concern',
     items.some((item) => item.slot === 'avoid'),
     false,
   );
+});
+
+test('deriveRiJingDailyAlmanac builds a generic almanac from the civil date', () => {
+  const almanac = deriveRiJingDailyAlmanac('2026-06-24');
+
+  assert.equal(almanac.lunar_title, '五月初十');
+  assert.equal(almanac.ganzhi_line, '丙午年 甲午月 己巳日 周三');
+  assert.deepEqual(almanac.recommends.slice(0, 4), ['嫁娶', '合帐', '裁衣', '冠笄']);
+  assert.deepEqual(almanac.avoids, ['安床', '祈福', '出行', '安葬', '行丧', '开光']);
+  assert.deepEqual(almanac.direction_rows, [
+    { label: '财神', value: '北' },
+    { label: '喜神', value: '东北' },
+    { label: '福神', value: '南' },
+    { label: '阳贵', value: '北' },
+  ]);
+  assert.deepEqual(almanac.foundation_rows, [
+    { label: '五行', value: '大林木' },
+    { label: '建除', value: '闭日' },
+    { label: '冲煞', value: '冲猪 煞东' },
+    { label: '值神', value: '玄武' },
+  ]);
+  assert.equal(almanac.pengzu, '己不破券二比并亡 巳不远行财物伏藏');
+  assert.equal(almanac.fetus, '占门床 外正南');
+  assert.equal(almanac.good_gods, '四相 王日 玉宇');
+  assert.equal(almanac.bad_gods, '游祸 血支 重日 元武');
+  assert.equal(almanac.hours.length, 12);
+  assert.deepEqual(almanac.hours.slice(0, 4), [
+    { branch: '子', luck: '凶' },
+    { branch: '丑', luck: '吉' },
+    { branch: '寅', luck: '凶' },
+    { branch: '卯', luck: '凶' },
+  ]);
+});
+
+test('deriveRiJingDailyAlmanac fails closed for invalid civil dates', () => {
+  assert.equal(deriveRiJingDailyAlmanac('2026-99-99'), null);
 });
 
 test('deriveRiJingHero names profile blockers instead of asking for refresh', () => {
@@ -107,13 +144,27 @@ test('deriveRiJingHero builds the overview from a reading and its cited referenc
 
   assert.equal(hero.hasReading, true);
   assert.match(hero.subtitle, /修养蓄力/);
-  assert.equal(hero.theme?.title, '今日基调');
-  assert.match(hero.theme?.body ?? '', /重要合作/);
+  assert.equal(Object.hasOwn(hero, 'theme'), false);
   // Leanings carry the tendency tone, dominant first.
   assert.equal(hero.leanings[0]?.tone, 'supportive');
   assert.equal(hero.reference_event?.event_body, '下午要谈一个重要合作，心里有点不确定。');
   assert.match(hero.reference_event?.guidance ?? '', /三条必须确认的问题/);
   assert.match(hero.closing_wish, /运由己造/);
+});
+
+test('deriveRiJingHero keeps 今日基调 in the subtitle without a duplicate theme field', () => {
+  const reading = validReading({
+    output: validRijingOutput({
+      summary: '今日基调：稳住节奏，把变化拆小。',
+      daily_overview:
+        '今天的时间状态适合先稳住呼吸，再把重要合作拆成可确认的边界和下一步；不急着一次说完全部判断，先让节奏回到可掌控的位置。',
+    }),
+  });
+
+  const hero = deriveRiJingHero(reading);
+
+  assert.match(hero.subtitle, /稳住节奏，把变化拆小/);
+  assert.equal(Object.hasOwn(hero, 'theme'), false);
 });
 
 test('deriveRiJingHero keeps 今日事件解析 visible when no reference event was provided', () => {

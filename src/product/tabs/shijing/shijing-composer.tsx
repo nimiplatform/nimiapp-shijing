@@ -1,6 +1,7 @@
 import type { FormEventHandler, RefObject } from 'react';
 import { Tooltip } from '@nimiplatform/kit/ui';
 import { useProductCopy } from '../../i18n/copy.ts';
+import { GeneratingButton } from '../shared/generating-button.tsx';
 import { ArrowUpIcon } from './shijing-icons.tsx';
 import type { SeedItem } from './shijing-session-model.ts';
 
@@ -13,6 +14,7 @@ export interface ShiJingComposerProps {
   readonly askReason: string;
   readonly submitTitle: string;
   readonly submitLabel: string;
+  readonly submitting: boolean;
   readonly textareaRef: RefObject<HTMLTextAreaElement | null>;
   readonly onSubmit: FormEventHandler<HTMLFormElement>;
   readonly onQuestionChange: (question: string) => void;
@@ -73,14 +75,17 @@ export function ShiJingComposer(props: ShiJingComposerProps) {
               <span className="shijing-ask__submit-reason">{props.askReason}</span>
             ) : null}
             <Tooltip content={props.askReason || props.submitTitle} placement="top">
-              <button
+              <GeneratingButton
                 type="submit"
                 className="shijing-ask__submit"
                 disabled={!props.canAsk}
+                busy={props.submitting}
+                busyLabel={props.submitLabel}
+                leadingIcon={<ArrowUpIcon className="shijing-ask__submit-icon" />}
+                labelClassName="shijing-ask__submit-text"
               >
-                <ArrowUpIcon className="shijing-ask__submit-icon" />
-                <span className="shijing-ask__submit-text">{props.submitLabel}</span>
-              </button>
+                {props.submitLabel}
+              </GeneratingButton>
             </Tooltip>
           </div>
         </div>

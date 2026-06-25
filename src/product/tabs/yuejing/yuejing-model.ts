@@ -1,3 +1,4 @@
+import { SolarDay } from 'tyme4ts';
 import type { YueJingCell, YueJingMirrorOutput, TendencyClass } from '../../../domain/mirror-output.ts';
 import type { Reading } from '../../../domain/reading.ts';
 import type { ShiJingSpace } from '../../../domain/shijing-space.ts';
@@ -60,8 +61,124 @@ export function dayOfMonth(dateStr: string): number {
   return Number(dateStr.slice(-2));
 }
 
-export function monthOf(dateStr: string): number {
-  return Number(dateStr.slice(5, 7));
+export type YueJingLunisolarMarkerKind =
+  | 'solar_term'
+  | 'festival'
+  | 'lunar_month'
+  | 'lunar_day';
+
+export interface YueJingLunisolarMarker {
+  readonly kind: YueJingLunisolarMarkerKind;
+  readonly label: string;
+  readonly lunar_label: string;
+}
+
+export interface YueJingCalendarDetails {
+  readonly lunar_label: string;
+  readonly ganzhi_label: string;
+  readonly solar_term_label: string | null;
+  readonly festival_labels: readonly string[];
+}
+
+const FIXED_SOLAR_OBSERVANCES: Readonly<Record<string, string>> = {
+  '07-11': '中国航海日',
+};
+
+function solarDayFromIsoDate(dateStr: string): SolarDay | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  try {
+    return SolarDay.fromYmd(year, month, day);
+  } catch {
+    return null;
+  }
+}
+
+function fixedSolarObservance(dateStr: string): string | null {
+  return FIXED_SOLAR_OBSERVANCES[dateStr.slice(5, 10)] ?? null;
+}
+
+function uniqueLabels(labels: readonly (string | null | undefined)[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const label of labels) {
+    if (!label || seen.has(label)) continue;
+    seen.add(label);
+    result.push(label);
+  }
+  return result;
+}
+
+export function deriveYueJingLunisolarMarker(dateStr: string): YueJingLunisolarMarker | null {
+  const solarDay = solarDayFromIsoDate(dateStr);
+  if (!solarDay) return null;
+
+  const lunarDay = solarDay.getLunarDay();
+  const lunarLabel = lunarDay.getDay() === 1
+    ? lunarDay.getLunarMonth().getName()
+    : lunarDay.getName();
+  const termDay = solarDay.getTermDay();
+  if (termDay.getDayIndex() === 0) {
+    return {
+      kind: 'solar_term',
+      label: termDay.getSolarTerm().getName(),
+      lunar_label: lunarLabel,
+    };
+  }
+
+  const festivalLabel =
+    lunarDay.getFestival()?.getName()
+    ?? solarDay.getFestival()?.getName()
+    ?? solarDay.getLegalHoliday()?.getName()
+    ?? fixedSolarObservance(dateStr);
+  if (festivalLabel) {
+    return {
+      kind: 'festival',
+      label: festivalLabel,
+      lunar_label: lunarLabel,
+    };
+  }
+
+  if (lunarDay.getDay() === 1) {
+    return {
+      kind: 'lunar_month',
+      label: lunarLabel,
+      lunar_label: lunarLabel,
+    };
+  }
+
+  return {
+    kind: 'lunar_day',
+    label: lunarLabel,
+    lunar_label: lunarLabel,
+  };
+}
+
+export function deriveYueJingCalendarDetails(dateStr: string): YueJingCalendarDetails | null {
+  const solarDay = solarDayFromIsoDate(dateStr);
+  if (!solarDay) return null;
+
+  const lunarDay = solarDay.getLunarDay();
+  const termDay = solarDay.getTermDay();
+  const solarTermLabel = termDay.getDayIndex() === 0
+    ? termDay.getSolarTerm().getName()
+    : null;
+  const festivalLabels = uniqueLabels([
+    lunarDay.getFestival()?.getName(),
+    solarDay.getFestival()?.getName(),
+    solarDay.getLegalHoliday()?.getName(),
+    fixedSolarObservance(dateStr),
+  ]);
+
+  return {
+    lunar_label: `农历${lunarDay.getLunarMonth().getName()}${lunarDay.getName()}`,
+    ganzhi_label: `${lunarDay.getYearSixtyCycle().getName()}年 ${lunarDay.getMonthSixtyCycle().getName()}月 ${lunarDay.getSixtyCycle().getName()}日`,
+    solar_term_label: solarTermLabel,
+    festival_labels: festivalLabels,
+  };
 }
 
 export function dominantTendency(entries: readonly YueJingCell[]): TendencyClass {

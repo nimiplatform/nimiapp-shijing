@@ -110,46 +110,66 @@ test('NianJing tab renders annual modules as a derived overview before the detai
   const source = [
     '../src/product/tabs/nianjing/nianjing-ready-view.tsx',
     '../src/product/tabs/nianjing/nianjing-year-overview.tsx',
+    '../src/product/tabs/nianjing/nianjing-year-modules.ts',
   ]
     .map((file) => readFileSync(new URL(file, import.meta.url), 'utf8'))
     .join('\n');
 
   assert.match(source, /buildNianJingYearModules/);
+  assert.match(source, /buildNianJingSelectedYearDetail/);
   assert.match(source, /<NianJingYearOverview/);
   assert.match(source, /className="shijing-nianjing__year-overview"/);
-  assert.match(source, /className="shijing-nianjing__year-column"/);
-  assert.match(source, /className="shijing-nianjing__year-cell"/);
-  assert.match(source, /className="shijing-nianjing__year-cell-main"/);
-  assert.match(source, /className="shijing-nianjing__year-cell-stripe-segment"/);
+  assert.match(source, /className="shijing-nianjing__path-card"/);
+  assert.match(source, /className="shijing-nianjing__path-line"/);
+  assert.match(source, /className="shijing-nianjing__year-selector"/);
+  assert.match(source, /className="shijing-nianjing__year-selected"/);
+  assert.match(source, /className="shijing-nianjing__year-concern-card"/);
+  assert.match(source, /className="shijing-nianjing__year-months"/);
+  assert.match(source, /className="shijing-nianjing__year-basis"/);
   assert.doesNotMatch(
     source,
-    /className="shijing-nianjing__year-cell-segment"/,
-    'annual overview should not render each clipped phase as a primary button',
+    /className="shijing-nianjing__year-grid"/,
+    'redesigned annual overview should not render the old matrix grid',
   );
-  assert.match(source, /className="shijing-nianjing__year-marker"/);
 });
 
-test('NianJing annual module CSS is a horizontal year matrix, not a score chart', () => {
+test('NianJing year overview separates overall annual summary from focus detail', () => {
+  const source = [
+    '../src/product/tabs/nianjing/nianjing-ready-view.tsx',
+    '../src/product/tabs/nianjing/nianjing-year-overview.tsx',
+    '../src/product/tabs/nianjing/nianjing-year-modules.ts',
+  ]
+    .map((file) => readFileSync(new URL(file, import.meta.url), 'utf8'))
+    .join('\n');
+
+  assert.match(source, /buildNianJingAnnualOverview/);
+  assert.match(source, /className="shijing-nianjing__path-plot"/);
+  assert.match(source, /className="shijing-nianjing__year-selector"/);
+  assert.match(source, /className="shijing-nianjing__year-summary-card"/);
+  assert.match(source, /className="shijing-nianjing__year-selected-head"/);
+});
+
+test('NianJing annual module CSS is a selected-year workbench, not a score chart', () => {
   const css = stripCssComments(readCssBundle(nianjingCssFiles));
   const overview = cssBlock(css, '.shijing-nianjing__year-overview');
-  const grid = cssBlock(css, '.shijing-nianjing__year-grid');
-  const column = cssBlock(css, '.shijing-nianjing__year-column');
-  const cell = cssBlock(css, '.shijing-nianjing__year-cell');
-  const main = cssBlock(css, '.shijing-nianjing__year-cell-main');
-  const stripeSegment = cssBlock(css, '.shijing-nianjing__year-cell-stripe-segment');
-  const marker = cssBlock(css, '.shijing-nianjing__year-marker');
+  const pathCard = cssBlock(css, '.shijing-nianjing__path-card');
+  const pathLine = cssBlock(css, '.shijing-nianjing__path-line');
+  const selector = cssBlock(css, '.shijing-nianjing__year-selector');
+  const summaryCard = cssBlock(css, '.shijing-nianjing__year-summary-card');
+  const selected = cssBlock(css, '.shijing-nianjing__year-selected');
+  const concernGrid = cssBlock(css, '.shijing-nianjing__year-concerns');
+  const monthButton = cssBlock(css, '.shijing-nianjing__year-months button');
+  const basisGrid = cssBlock(css, '.shijing-nianjing__year-basis-grid');
 
-  assert.match(overview, /overflow-x:\s*auto/);
-  assert.match(grid, /grid-auto-flow:\s*column/);
-  assert.match(column, /grid-template-rows:/);
-  assert.match(cell, /min-height:\s*72px/);
-  assert.match(main, /position:\s*absolute/);
-  assert.match(main, /inset:\s*0/);
-  assert.match(main, /min-width:\s*0/);
-  assert.match(stripeSegment, /flex:/);
-  assert.match(marker, /border-radius:\s*999px/);
-  assert.match(marker, /min-width:\s*0/);
-  assert.match(marker, /display:\s*block/);
+  assert.match(overview, /flex-direction:\s*column/);
+  assert.match(pathCard, /padding:\s*26px 28px 20px/);
+  assert.match(pathLine, /stroke-linecap:\s*round/);
+  assert.match(selector, /display:\s*flex/);
+  assert.match(summaryCard, /flex-direction:\s*column/);
+  assert.match(selected, /padding:\s*30px 30px 28px/);
+  assert.match(concernGrid, /grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(monthButton, /min-height:\s*32px/);
+  assert.match(basisGrid, /grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
 });
 
 test('NianJing CSS lane classes are present', () => {

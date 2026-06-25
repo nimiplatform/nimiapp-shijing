@@ -11,6 +11,11 @@ const mirrorV1Styles = readFileSync(
   'utf8',
 ).replace(/\/\*[\s\S]*?\*\//g, '');
 
+const mirrorHeaderStyles = readFileSync(
+  new URL('../src/styles-mirror-header.css', import.meta.url),
+  'utf8',
+).replace(/\/\*[\s\S]*?\*\//g, '');
+
 const sharedSurfaceStyles = readCssBundle(sharedPrimitiveCssFiles).replace(/\/\*[\s\S]*?\*\//g, '');
 
 const mingjingTabSource = readFileSync(
@@ -50,8 +55,34 @@ function cssBlock(selector) {
   return cssBlockFrom(mingjingStyles, selector);
 }
 
+function cssBlockInAtRule(atRule, selector) {
+  const start = mingjingStyles.indexOf(atRule);
+  assert.notEqual(start, -1, `Missing CSS at-rule: ${atRule}`);
+  const openBrace = mingjingStyles.indexOf('{', start);
+  assert.notEqual(openBrace, -1, `Missing opening brace for at-rule: ${atRule}`);
+
+  let depth = 0;
+  for (let index = openBrace; index < mingjingStyles.length; index += 1) {
+    const char = mingjingStyles[index];
+    if (char === '{') {
+      depth += 1;
+    } else if (char === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        return cssBlockFrom(mingjingStyles.slice(openBrace + 1, index), selector);
+      }
+    }
+  }
+
+  throw new Error(`Unclosed CSS at-rule: ${atRule}`);
+}
+
 function sharedCssBlock(selector) {
   return cssBlockFrom(sharedSurfaceStyles, selector);
+}
+
+function mirrorHeaderCssBlock(selector) {
+  return cssBlockFrom(mirrorHeaderStyles, selector);
 }
 
 test('MingJing root uses the full shell surface instead of a centered boxed frame', () => {
@@ -65,7 +96,7 @@ test('MingJing root uses the full shell surface instead of a centered boxed fram
 test('MingJing content width matches the NianJing page width', () => {
   const nianjingBase = cssBlockFrom(mirrorV1Styles, '.shijing-tab');
   const root = cssBlock('.shijing-mingjing');
-  const content = cssBlock('.shijing-mingjing > .shijing-mingjing__hero');
+  const content = cssBlock('.shijing-mingjing > .shijing-mirror-header');
 
   assert.match(nianjingBase, /max-width:\s*920px/);
   assert.match(root, /--mingjing-page-max:\s*920px/);
@@ -230,7 +261,7 @@ test('MingJing paipan typography matches the heavier reference hierarchy', () =>
 test('MingJing ready state keeps the page title above the archetype card', () => {
   assert.match(
     mingjingTabSource,
-    /\)\s*:\s*\(\s*<>\s*<MingJingSimpleHeader copy=\{m\}\s*\/>\s*\{projection\.value\.kind === 'bazi_ziping_v1'/u,
+    /\)\s*:\s*\(\s*<>\s*<MingJingSimpleHeader[\s\S]*?onMethodProfileChange=\{handleMethodProfileChange\}\s*\/>\s*\{projection\.value\.kind === 'bazi_ziping_v1'/u,
   );
   assert.match(
     baziMingjingRouteSource,
@@ -238,16 +269,42 @@ test('MingJing ready state keeps the page title above the archetype card', () =>
   );
 });
 
-test('MingJing page title matches the NianJing header scale without eyebrow or subtitle', () => {
+test('MingJing page title uses the same shared header position and scale as YueJing', () => {
+  assert.match(mingjingTabSource, /import \{ MirrorPageHeader \} from '\.\/shared\/mirror-page-header\.tsx';/u);
   assert.doesNotMatch(mingjingTabSource, /shijing-mingjing__eyebrow/u);
   assert.doesNotMatch(mingjingTabSource, /shijing-mingjing__subtitle/u);
+  assert.doesNotMatch(mingjingTabSource, /<header className="shijing-mingjing__hero">/u);
+  assert.doesNotMatch(mingjingTabSource, /className="shijing-mingjing__title"/u);
 
-  const title = cssBlock('.shijing-mingjing .shijing-mingjing__title');
+  const header = cssBlock('.shijing-mingjing > .shijing-mirror-header');
+  const title = mirrorHeaderCssBlock('.shijing-mirror-header__titles h1');
 
+  assert.match(header, /max-width:\s*var\(--mingjing-page-max\)/);
+  assert.match(header, /margin-inline:\s*auto/);
   assert.match(title, /font-size:\s*32px/);
   assert.match(title, /font-weight:\s*600/);
   assert.match(title, /letter-spacing:\s*0\.04em/);
   assert.doesNotMatch(title, /clamp\(34px,\s*4vw,\s*48px\)/);
+});
+
+test('MingJing title bar owns the settings-backed method selector on the far right', () => {
+  assert.match(mingjingTabSource, /import \{ MethodProfileSelect \} from '\.\.\/settings\/method-profile-select\.tsx';/u);
+  assert.match(mingjingTabSource, /import \{ commitMethodProfile \} from '\.\.\/settings\/method-profile-state\.ts';/u);
+  assert.match(mingjingTabSource, /function handleMethodProfileChange\(methodProfileId: MethodProfileId\)/u);
+  assert.match(mingjingTabSource, /commitMethodProfile\(space,\s*methodProfileId\)/u);
+  assert.match(mingjingTabSource, /<MingJingSimpleHeader\s+copy=\{m\}\s+methodProfileCopy=\{copy\.methodProfile\}\s+methodProfileId=\{space\.settings\.method_profile_id\}\s+onMethodProfileChange=\{handleMethodProfileChange\}\s*\/>/u);
+  assert.match(mingjingTabSource, /<MirrorPageHeader[\s\S]*title=\{copy\.title\}[\s\S]*actions=\{\(/u);
+  assert.match(mingjingTabSource, /<MethodProfileSelect[\s\S]*className="shijing-mingjing__method-select"[\s\S]*aria-label=\{methodProfileCopy\.algorithm\}/u);
+
+  const switcher = cssBlock('.shijing-mingjing__method-switch');
+  const trigger = cssBlock('.shijing-mingjing .shijing-mingjing__method-select');
+  const mobileSwitcher = cssBlockInAtRule('@media (max-width: 720px)', '.shijing-mingjing__method-switch');
+
+  assert.match(switcher, /margin-left:\s*auto/);
+  assert.match(trigger, /min-width:\s*220px/);
+  assert.match(trigger, /max-width:\s*280px/);
+  assert.match(trigger, /border-radius:\s*999px/);
+  assert.match(mobileSwitcher, /justify-content:\s*stretch/);
 });
 
 test('MingJing full paipan keeps the expert table behind the toggle', () => {

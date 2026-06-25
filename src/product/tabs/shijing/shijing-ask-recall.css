@@ -1,0 +1,81 @@
+.shijing-recall {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  margin: -6px 4px 0;
+  padding: 10px 12px 12px;
+  border: 1px solid rgba(67, 198, 165, 0.22);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: 0 8px 24px -18px rgba(15, 23, 38, 0.18);
+}
+
+.shijing-recall__lead {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.shijing-recall__icon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: #1fae91;
+  background: rgba(67, 198, 165, 0.12);
+}
+
+.shijing-recall__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.shijing-ask .shijing-recall__item {
+  appearance: none;
+  width: 100%;
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 10px;
+  border: 1px solid rgba(67, 198, 165, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  text-align: left;
+}
+
+.shijing-ask .shijing-recall__item:hover {
+  border-color: rgba(67, 198, 165, 0.36);
+  background: rgba(67, 198, 165, 0.1);
+}
+
+.shijing-recall__question {
+  min-width: 0;
+  overflow: hidden;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shijing-recall__meta {
+  color: #1fae91;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}

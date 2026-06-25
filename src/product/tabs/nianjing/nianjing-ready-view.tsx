@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Reading } from '../../../domain/reading.ts';
 import type { NianJingMirrorOutput, NianJingNature } from '../../../domain/mirror-output.ts';
 import type { ConcernTag } from '../../../domain/concern-tag.ts';
@@ -32,6 +32,7 @@ interface NianJingReadyViewProps {
 }
 
 export function NianJingReadyView(props: NianJingReadyViewProps) {
+  const [concernEditorOpen, setConcernEditorOpen] = useState(false);
   const today = todayIsoDate();
   const lanes = useMemo(
     () => buildLanes(props.output, props.activeTags, today),
@@ -55,18 +56,29 @@ export function NianJingReadyView(props: NianJingReadyViewProps) {
         : null,
     [props.activeTags, props.filterTagId],
   );
-  const yearOverviewTags = useMemo(
+  const detailTags = useMemo(
     () => (focusedTag ? [focusedTag] : props.activeTags),
     [focusedTag, props.activeTags],
   );
-  const yearModules = useMemo(
+  const overviewYearModules = useMemo(
     () =>
       buildNianJingYearModules({
         output: props.output,
-        active_concern_tags: yearOverviewTags,
+        active_concern_tags: props.activeTags,
         today,
       }),
-    [props.output, yearOverviewTags, today],
+    [props.output, props.activeTags, today],
+  );
+  const detailYearModules = useMemo(
+    () =>
+      focusedTag
+        ? buildNianJingYearModules({
+            output: props.output,
+            active_concern_tags: detailTags,
+            today,
+          })
+        : overviewYearModules,
+    [props.output, detailTags, focusedTag, overviewYearModules, today],
   );
   const horizonStartMs = dateToMs(props.output.horizon.start_date);
   const horizonEndMs = dateToMs(props.output.horizon.end_date);
@@ -102,11 +114,16 @@ export function NianJingReadyView(props: NianJingReadyViewProps) {
         activeTags={props.activeTags}
         filterTagId={props.filterTagId}
         onFilterChange={props.onFilterChange}
+        editorOpen={concernEditorOpen}
+        onEditorOpenChange={setConcernEditorOpen}
       />
 
       <NianJingYearOverview
-        modules={yearModules}
-        activeTags={yearOverviewTags}
+        overviewModules={overviewYearModules}
+        detailModules={detailYearModules}
+        overviewTags={props.activeTags}
+        detailTags={detailTags}
+        focusedTag={focusedTag}
         onSelectDetail={props.onSelectDetail}
       />
 

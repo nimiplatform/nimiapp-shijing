@@ -19,8 +19,16 @@ export function NianJingFilterRow(props: {
   readonly activeTags: readonly ConcernTag[];
   readonly filterTagId: string | null;
   readonly onFilterChange: (id: string | null) => void;
+  readonly editorOpen?: boolean;
+  readonly onEditorOpenChange?: (open: boolean) => void;
 }) {
-  const [editorOpen, setEditorOpen] = useState(false);
+  const [localEditorOpen, setLocalEditorOpen] = useState(false);
+  const editorOpen = props.editorOpen ?? localEditorOpen;
+  function setEditorOpen(next: boolean | ((current: boolean) => boolean)) {
+    const resolved = typeof next === 'function' ? next(editorOpen) : next;
+    if (props.onEditorOpenChange) props.onEditorOpenChange(resolved);
+    else setLocalEditorOpen(resolved);
+  }
   return (
     <div
       className="shijing-nianjing__filter-row"

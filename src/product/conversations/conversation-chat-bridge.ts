@@ -44,7 +44,7 @@ export interface ConversationChatBridgeOptions {
 }
 
 export const CONVERSATION_SYSTEM_PROMPT =
-  '你是 ShiJing 时镜的咨询解读助手。只能基于 source_readings 中已经保存的 Reading 做解释与回应,不能做新的占星推算,不能计算四柱、大运、阶段或关键窗口,不能输出 luck score / trend / task。若用户提出新的占星问题,要求先生成一份新的 Reading。';
+  '你是 ShiJing 问镜的咨询解读助手。只能基于 source_readings 中已经保存的 Reading 做解释与回应,不能做新的占星推算,不能计算四柱、大运、阶段或关键窗口,不能输出 luck score / trend / task。若用户提出新的占星问题,要求先生成一份新的 Reading。';
 
 export interface ConversationChatBridge {
   send(request: ConversationChatRequest): Promise<ConversationChatResult>;

@@ -1,4 +1,4 @@
-// SJG-ASTRO-07 — ShiJing consultation mirror screen (问时镜).
+// SJG-ASTRO-07 — ShiJing consultation mirror screen (问镜).
 //
 // Grounded multi-reading consultation. Explicitly imported source Reading ids
 // from pending_shijing_source_reading_ids take priority; otherwise the surface
@@ -6,7 +6,7 @@
 // user confirmation is still required to convert any user question into a
 // saved EventMemory.
 //
-// The 问时镜 redesign frames this as a calm "ask the time mirror" surface:
+// The 问镜 redesign frames this as a calm consultation surface:
 // a hero, a left提问记录 rail backed by `conversations`, a composer card,
 // and example prompt chips. Every AI answer still displays its cited
 // readings (design-system: ShiJing) and the generation依据 drawer.
@@ -21,6 +21,7 @@ import { generateReadingForStorage } from '../reading/generate-and-store.ts';
 import {
   newConversationId,
   newConversationTurnId,
+  newConcernTagId,
   newReadingId,
 } from '../ids/index.ts';
 import { latestReadingByMirrorKind } from '../reading/reading-selectors.ts';
@@ -32,17 +33,26 @@ import { CitationDrawer } from './shared/citation-drawer.tsx';
 import { FailureBanner } from './shared/failure-banner.tsx';
 import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
 import { sendConversationFollowUp } from '../conversations/conversation-follow-up.ts';
-import { ArchiveTray, ContextFocusBar, ConversationThread } from './shijing/shijing-context-widgets.tsx';
+import {
+  ArchiveTray,
+  ContextFocusBar,
+  ConversationThread,
+  QuestionArchiveRecall,
+} from './shijing/shijing-context-widgets.tsx';
 import { ShiJingComposer } from './shijing/shijing-composer.tsx';
 import { ShiJingHistoryRail } from './shijing/shijing-history-rail.tsx';
 import {
+  activateArchiveConcernOption,
   concernMatchesQuestion,
+  conversationMatchesQuestionArchive,
   conversationMatchesConcernFilter,
-  firstUserQuestion,
   followUpFailureAsReadingFailure,
   groupConversations,
   nowIso,
+  questionArchiveMatches,
   sameStringArray,
+  suggestArchiveConcernOptions,
+  type ArchiveConcernOption,
   type SeedItem,
 } from './shijing/shijing-session-model.ts';
 
@@ -52,7 +62,13 @@ export interface ShiJingTabProps {
 
 export function ShiJingTab(_props: ShiJingTabProps) {
   const copy = useProductCopy();
-  const { state, dispatch, runtime_ai_client, conversation_chat_bridge } = useShijingStore();
+  const {
+    state,
+    dispatch,
+    replace_snapshot,
+    runtime_ai_client,
+    conversation_chat_bridge,
+  } = useShijingStore();
   const [loading, setLoading] = useState(false);
   const [failure, setFailure] = useState<ReadingGenerationFailure | null>(null);
   const [question, setQuestion] = useState('');
@@ -67,7 +83,7 @@ export function ShiJingTab(_props: ShiJingTabProps) {
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
   const importedIds = state.pending_shijing_source_reading_ids;
-  // Seed records pushed from another mirror's "去时镜问这条" action.
+  // Seed records pushed from another mirror's "去问镜问这条" action.
   // Past events ground the question via `cited_event_memory_refs`,
   // future plans via `cited_plan_item_refs`.
   const seedMemoryIds = state.pending_shijing_seed_memory_ids;
@@ -85,7 +101,7 @@ export function ShiJingTab(_props: ShiJingTabProps) {
   }, [seedMemoryIds, seedPlanIds, state.snapshot.event_memories, state.snapshot.plan_items]);
   const seedCount = seedItems.length;
 
-  // When a seed arrives (user clicked 去时镜问这条 on another tab),
+  // When a seed arrives (user clicked 去问镜问这条 on another tab),
   // pull focus into the composer so they can type immediately.
   useEffect(() => {
     if (seedCount > 0) composerRef.current?.focus();
@@ -111,6 +127,10 @@ export function ShiJingTab(_props: ShiJingTabProps) {
     () => new Set(activeConcernTags.map((tag) => tag.id)),
     [activeConcernTags],
   );
+  const concernIds = useMemo(
+    () => new Set(state.snapshot.concern_tags.map((tag) => tag.id)),
+    [state.snapshot.concern_tags],
+  );
   const suggestedArchiveConcernIds = useMemo(
     () =>
       activeConcernTags
@@ -119,6 +139,21 @@ export function ShiJingTab(_props: ShiJingTabProps) {
         .map((tag) => tag.id)
         .slice(0, 2),
     [activeConcernTags, dismissedArchiveConcernIds, question],
+  );
+  const archiveTrayOptions = useMemo(
+    () =>
+      suggestArchiveConcernOptions({
+        question,
+        tags: state.snapshot.concern_tags,
+        dismissedOptionIds: dismissedArchiveConcernIds,
+        selectedTagIds: selectedArchiveConcernIds,
+      }),
+    [
+      dismissedArchiveConcernIds,
+      question,
+      selectedArchiveConcernIds,
+      state.snapshot.concern_tags,
+    ],
   );
 
   useEffect(() => {
@@ -132,23 +167,16 @@ export function ShiJingTab(_props: ShiJingTabProps) {
       return sameStringArray(ids, next) ? ids : next;
     });
     setDismissedArchiveConcernIds((ids) => {
-      const next = ids.filter((id) => activeConcernIds.has(id));
+      const next = ids.filter((id) => id.startsWith('preset:') || concernIds.has(id));
       return sameStringArray(ids, next) ? ids : next;
     });
-  }, [activeConcernIds, suggestedArchiveConcernIds]);
+  }, [activeConcernIds, concernIds, suggestedArchiveConcernIds]);
 
   // History rail, newest first.
   const conversations = useMemo(
     () => [...state.snapshot.conversations].sort((a, b) => b.created_at.localeCompare(a.created_at)),
     [state.snapshot.conversations],
   );
-  const filteredConversations = useMemo(() => {
-    const q = search.trim();
-    return conversations.filter((c) => {
-      const matchesSearch = q.length === 0 || firstUserQuestion(c, copy).includes(q);
-      return matchesSearch && conversationMatchesConcernFilter(c, selectedFilterConcernIds);
-    });
-  }, [conversations, search, copy, selectedFilterConcernIds]);
 
   const newestConversation = conversations[0] ?? null;
   const selectedConversation = selectedConversationId
@@ -268,6 +296,23 @@ export function ShiJingTab(_props: ShiJingTabProps) {
     dispatch({ type: 'shijing/clear-seed-plan' });
   }
 
+  const chatActive = !draftingNewQuestion && resultConversation != null && importedIds.length === 0 && seedCount === 0;
+  const historyLookupText = search.trim().length > 0 ? search : chatActive ? '' : question;
+  const filteredConversations = useMemo(
+    () =>
+      conversations.filter((c) =>
+        conversationMatchesQuestionArchive(c, historyLookupText, state.snapshot.concern_tags, copy) &&
+        conversationMatchesConcernFilter(c, selectedFilterConcernIds),
+      ),
+    [conversations, historyLookupText, state.snapshot.concern_tags, copy, selectedFilterConcernIds],
+  );
+  const archiveRecallConversations = useMemo(
+    () =>
+      search.trim().length > 0 || chatActive
+        ? []
+        : questionArchiveMatches(conversations, question, state.snapshot.concern_tags, copy, 3),
+    [chatActive, conversations, copy, question, search, state.snapshot.concern_tags],
+  );
   const sessionGroups = groupConversations(filteredConversations, copy);
   const askReason = loading
     ? ''
@@ -288,18 +333,7 @@ export function ShiJingTab(_props: ShiJingTabProps) {
     : followUpConversation
       ? copy.shijing.send
       : copy.shijing.generate;
-  const chatActive = !draftingNewQuestion && resultConversation != null && importedIds.length === 0 && seedCount === 0;
   const composerPlaceholder = chatActive ? '' : copy.shijing.composerPlaceholder;
-  const archiveTrayTags = useMemo(() => {
-    const selected = activeConcernTags.filter((tag) => selectedArchiveConcernIds.includes(tag.id));
-    if (selected.length > 0) return selected;
-    const matched = activeConcernTags.filter((tag) => concernMatchesQuestion(question, tag));
-    const candidates = matched.length > 0 ? matched : activeConcernTags;
-    return candidates
-      .filter((tag) => !dismissedArchiveConcernIds.includes(tag.id))
-      .slice(0, 3);
-  }, [activeConcernTags, dismissedArchiveConcernIds, question, selectedArchiveConcernIds]);
-
   function startNewQuestion() {
     setDraftingNewQuestion(true);
     setSelectedConversationId(null);
@@ -310,16 +344,37 @@ export function ShiJingTab(_props: ShiJingTabProps) {
     setTimeout(() => composerRef.current?.focus(), 0);
   }
 
-  function toggleArchiveConcern(id: string) {
-    setDismissedArchiveConcernIds((ids) => ids.filter((item) => item !== id));
-    setSelectedArchiveConcernIds((ids) =>
-      ids.includes(id) ? ids.filter((item) => item !== id) : [id],
+  async function toggleArchiveOption(option: ArchiveConcernOption) {
+    const selectedTagId = option.tag_id;
+    if (selectedTagId != null && selectedArchiveConcernIds.includes(selectedTagId)) {
+      setSelectedArchiveConcernIds((ids) => ids.filter((item) => item !== selectedTagId));
+      return;
+    }
+
+    const activation = activateArchiveConcernOption({
+      option,
+      tags: state.snapshot.concern_tags,
+      now: nowIso(),
+      newId: newConcernTagId(),
+    });
+    if (!activation) return;
+    if (activation.tags !== state.snapshot.concern_tags) {
+      const status = await replace_snapshot({ ...state.snapshot, concern_tags: activation.tags });
+      if (status.kind !== 'idle' && status.kind !== 'saved') return;
+    }
+    setDismissedArchiveConcernIds((ids) =>
+      ids.filter((item) => item !== activation.option_id && item !== activation.selected_tag_id),
     );
+    setSelectedArchiveConcernIds([activation.selected_tag_id]);
   }
 
-  function removeArchiveConcern(id: string) {
-    setSelectedArchiveConcernIds((ids) => ids.filter((item) => item !== id));
-    setDismissedArchiveConcernIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
+  function removeArchiveOption(option: ArchiveConcernOption) {
+    if (option.tag_id) {
+      setSelectedArchiveConcernIds((ids) => ids.filter((item) => item !== option.tag_id));
+    }
+    setDismissedArchiveConcernIds((ids) =>
+      ids.includes(option.option_id) ? ids : [...ids, option.option_id],
+    );
   }
 
   function clearSeedItem(item: SeedItem) {
@@ -334,6 +389,13 @@ export function ShiJingTab(_props: ShiJingTabProps) {
     setSelectedFilterConcernIds((ids) =>
       ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
     );
+  }
+
+  function selectConversation(id: string) {
+    setDraftingNewQuestion(false);
+    setSelectedConversationId(id);
+    setQuestion('');
+    setFailure(null);
   }
 
   return (
@@ -363,10 +425,7 @@ export function ShiJingTab(_props: ShiJingTabProps) {
           onClearFilter={() => setSelectedFilterConcernIds([])}
           onToggleFilterConcern={toggleFilterConcern}
           onStartNewQuestion={startNewQuestion}
-          onSelectConversation={(id) => {
-            setDraftingNewQuestion(false);
-            setSelectedConversationId(id);
-          }}
+          onSelectConversation={selectConversation}
         />
 
         <div className="shijing-ask__main" data-chat-active={chatActive ? 'true' : 'false'}>
@@ -390,6 +449,7 @@ export function ShiJingTab(_props: ShiJingTabProps) {
                 askReason={askReason}
                 submitTitle={submitTitle}
                 submitLabel={submitLabel}
+                submitting={loading}
                 textareaRef={composerRef}
                 onSubmit={handleAsk}
                 onQuestionChange={setQuestion}
@@ -407,17 +467,24 @@ export function ShiJingTab(_props: ShiJingTabProps) {
                 askReason={askReason}
                 submitTitle={submitTitle}
                 submitLabel={submitLabel}
+                submitting={loading}
                 textareaRef={composerRef}
                 onSubmit={handleAsk}
                 onQuestionChange={setQuestion}
                 onClearSeed={clearSeedItem}
               />
 
+          <QuestionArchiveRecall
+            conversations={archiveRecallConversations}
+            concernTags={state.snapshot.concern_tags}
+            onSelectConversation={selectConversation}
+          />
+
           <ArchiveTray
-            tags={archiveTrayTags}
+            options={archiveTrayOptions}
             selectedIds={selectedArchiveConcernIds}
-            onToggle={toggleArchiveConcern}
-            onRemove={removeArchiveConcern}
+            onToggleOption={toggleArchiveOption}
+            onRemoveOption={removeArchiveOption}
           />
 
           {failure ? <FailureBanner failure={failure} /> : null}

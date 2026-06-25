@@ -1,307 +1,188 @@
-/* ----- 5) Annual module matrix ------------------------------------ */
+.shijing-nianjing {
+  max-width: min(1180px, 100%);
+}
 
 .shijing-nianjing__year-overview {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 18px 20px 20px;
-  background: var(--nianjing-glass-bg);
-  backdrop-filter: var(--nianjing-glass-blur);
-  -webkit-backdrop-filter: var(--nianjing-glass-blur);
-  border: 1px solid var(--nianjing-glass-border);
-  border-radius: var(--shijing-radius-2xl, 20px);
-  box-shadow: var(--nianjing-glass-shadow);
-  overflow-x: auto;
-  scrollbar-width: thin;
-}
-
-.shijing-nianjing__year-overview-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.shijing-nianjing__year-overview-head h2 {
-  margin: 0;
-  color: var(--shijing-text-primary);
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-}
-
-.shijing-nianjing__year-overview-head span {
-  color: var(--shijing-text-muted);
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.shijing-nianjing__year-grid {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(96px, 1fr);
-  gap: 8px;
-  min-width: max-content;
-  align-items: stretch;
-}
-
-.shijing-nianjing__year-labels {
-  position: sticky;
-  left: 0;
-  z-index: 5;
-  display: grid;
-  grid-template-rows: 34px;
-  grid-auto-rows: minmax(72px, auto);
-  gap: 8px;
-  width: 118px;
-  padding-right: 6px;
-  background:
-    linear-gradient(90deg,
-      rgba(248, 252, 250, 0.98) 0%,
-      rgba(248, 252, 250, 0.94) 78%,
-      rgba(248, 252, 250, 0) 100%
-    );
-}
-
-.shijing-nianjing__year-label-head {
-  align-self: center;
-  color: var(--shijing-text-muted);
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.shijing-nianjing__year-row-label {
-  display: flex;
-  align-items: center;
-  min-height: 72px;
-  color: var(--shijing-text-primary);
-  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
-  font-size: 15px;
-  font-weight: 650;
-  letter-spacing: 0.03em;
-}
-
-.shijing-nianjing__year-column {
-  display: grid;
-  grid-template-rows: 34px;
-  grid-auto-rows: minmax(72px, auto);
-  gap: 8px;
-  min-width: 96px;
-}
-
-.shijing-nianjing__year-head {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--shijing-text-secondary);
-  font-size: 12.5px;
-  font-weight: 700;
-}
-
-.shijing-nianjing__year-column[data-current="true"] .shijing-nianjing__year-head {
-  color: var(--shijing-status-success);
-}
-
-.shijing-nianjing__year-now {
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 2px 8px;
-  color: var(--shijing-status-success);
-  background: color-mix(in srgb, var(--nianjing-supportive) 16%, white);
-  border: 1px solid color-mix(in srgb, var(--nianjing-supportive) 35%, transparent);
-  border-radius: 999px;
-  font-size: 10px;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.shijing-nianjing__year-cell {
-  position: relative;
-  min-height: 72px;
-  border-radius: 12px;
-  overflow: hidden;
-  isolation: isolate;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0) 62%),
-    rgba(255, 255, 255, 0.54);
-  border: 1px solid rgba(255, 255, 255, 0.64);
-  box-shadow: 0 8px 18px -15px rgba(15, 23, 38, 0.32);
-}
-
-.shijing-nianjing__year-cell[data-current="true"] {
-  box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--nianjing-supportive) 36%, transparent),
-    0 8px 18px -15px rgba(15, 23, 38, 0.32);
-}
-
-.shijing-nianjing__year-cell[data-nature="supportive"] {
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0) 62%),
-    var(--nianjing-supportive-soft);
-}
-
-.shijing-nianjing__year-cell[data-nature="steady"] {
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0) 62%),
-    var(--nianjing-steady-soft);
-}
-
-.shijing-nianjing__year-cell[data-nature="watch"] {
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0) 62%),
-    var(--nianjing-watch-soft);
-}
-
-.shijing-nianjing__year-cell[data-nature="blocked"] {
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0) 62%),
-    var(--nianjing-blocked-soft);
-}
-
-.shijing-nianjing__year-cell[data-nature="turning"] {
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0) 62%),
-    var(--nianjing-turning-soft);
-}
-
-.shijing-nianjing__year-cell-main {
-  appearance: none;
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  min-height: 0;
-  margin: 0;
-  padding: 10px 8px 18px;
-  border: 0;
-  border-radius: inherit;
+  gap: 22px;
+  padding: 0;
   background: transparent;
-  color: #ffffff;
-  font: inherit;
-  line-height: 1.2;
-  text-align: center;
-  cursor: pointer;
+  border: 0;
+  box-shadow: none;
+  overflow: visible;
 }
 
-.shijing-nianjing__year-cell-main:hover {
-  filter: brightness(1.04) saturate(1.04);
+/* Per-nature accent. Any block carrying data-nature publishes its tone
+ * as --nat so rails, badges, chips, and month cells can all tint from a
+ * single source instead of repeating five-way nature selectors. */
+.shijing-nianjing [data-nature="supportive"] { --nat: var(--nianjing-supportive); }
+.shijing-nianjing [data-nature="steady"]     { --nat: var(--nianjing-steady); }
+.shijing-nianjing [data-nature="watch"]      { --nat: var(--nianjing-watch); }
+.shijing-nianjing [data-nature="blocked"]    { --nat: var(--nianjing-blocked); }
+.shijing-nianjing [data-nature="turning"]    { --nat: var(--nianjing-turning); }
+.shijing-nianjing [data-nature="empty"]      { --nat: var(--shijing-text-muted); }
+
+/* Outer panels read as soft frosted glass; the selected-year panel
+ * (styled in nianjing-year-detail.css) lifts a touch heavier so it owns
+ * the page the way the reference layout does. */
+.shijing-nianjing__path-card,
+.shijing-nianjing__year-selected,
+.shijing-nianjing__year-basis {
+  border: 1px solid color-mix(in srgb, var(--shijing-border-subtle) 78%, transparent);
+  border-radius: var(--shijing-radius-3xl);
+  background: color-mix(in srgb, var(--shijing-surface-card) 56%, transparent);
+  box-shadow: 0 6px 20px -6px rgba(15, 23, 42, 0.10);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
 }
 
-.shijing-nianjing__year-cell-main:focus-visible {
-  outline: none;
-  box-shadow: inset var(--shijing-focus-ring);
+.shijing-nianjing__path-card {
+  padding: 26px 28px 20px;
 }
 
-span.shijing-nianjing__year-cell-main {
-  cursor: default;
-}
-
-.shijing-nianjing__year-cell-label {
-  position: relative;
-  z-index: 2;
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-align: center;
-  text-shadow: 0 1px 4px rgba(15, 23, 38, 0.28);
-}
-
-.shijing-nianjing__year-cell[data-nature="empty"] .shijing-nianjing__year-cell-label {
-  color: var(--shijing-text-muted);
-  text-shadow: none;
-}
-
-.shijing-nianjing__year-cell-stripe {
-  position: absolute;
-  z-index: 2;
-  right: 8px;
-  bottom: 7px;
-  left: 8px;
+.shijing-nianjing__path-head {
   display: flex;
-  gap: 2px;
-  height: 5px;
-  overflow: hidden;
-  border-radius: 999px;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.42);
-  pointer-events: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
 }
 
-.shijing-nianjing__year-cell-stripe-segment {
-  flex: 1 1 auto;
-  min-width: 3px;
-  background: var(--nianjing-steady-soft);
+.shijing-nianjing__path-head h2,
+.shijing-nianjing__year-basis h3 {
+  margin: 0;
+  color: var(--shijing-text-primary);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
-.shijing-nianjing__year-cell-stripe-segment[data-current="true"] {
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.86);
+.shijing-nianjing__path-head span,
+.shijing-nianjing__year-basis header span {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--shijing-text-muted);
+  font-size: 13px;
+  font-weight: 500;
 }
 
-.shijing-nianjing__year-cell-stripe-segment[data-nature="supportive"] {
+/* Legend — one swatch per concern dimension, colored by the dimension
+ * (not by nature) so the two decorative curves stay identifiable. */
+.shijing-nianjing .shijing-nianjing__path-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  list-style: none;
+}
+
+.shijing-nianjing__path-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--shijing-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.shijing-nianjing__path-legend-line {
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
   background: var(--nianjing-supportive);
 }
-.shijing-nianjing__year-cell-stripe-segment[data-nature="steady"] {
-  background: var(--nianjing-steady);
+
+.shijing-nianjing__path-legend li[data-tone="secondary"] .shijing-nianjing__path-legend-line {
+  background: #0ea5e9;
 }
-.shijing-nianjing__year-cell-stripe-segment[data-nature="watch"] {
-  background: var(--nianjing-watch);
-}
-.shijing-nianjing__year-cell-stripe-segment[data-nature="blocked"] {
-  background: var(--nianjing-blocked);
-}
-.shijing-nianjing__year-cell-stripe-segment[data-nature="turning"] {
+
+.shijing-nianjing__path-legend li[data-tone="tertiary"] .shijing-nianjing__path-legend-line {
   background: var(--nianjing-turning);
 }
 
-.shijing-nianjing__year-markers {
-  position: absolute;
-  z-index: 3;
-  top: 7px;
-  right: 7px;
-  display: flex;
-  gap: 4px;
+.shijing-nianjing__path-plot {
+  position: relative;
+  height: 190px;
+  margin-top: 8px;
+  border-radius: 16px;
+  overflow: visible;
 }
 
-.shijing-nianjing__year-marker {
-  appearance: none;
+.shijing-nianjing__path-plot svg {
   display: block;
-  flex: 0 0 auto;
-  width: 10px;
-  height: 10px;
-  min-width: 0;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  border-radius: 999px;
-  border: 1.5px solid #ffffff;
-  background: var(--shijing-text-primary);
-  font-size: 0;
-  line-height: 0;
-  box-shadow: 0 0 0 1px rgba(15, 23, 38, 0.12);
-  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
 
-.shijing-nianjing__year-marker[data-kind="annual_transition"] {
-  background: #ffffff;
-  border-color: var(--shijing-text-primary);
+.shijing-nianjing__path-grid line {
+  stroke: rgba(148, 163, 184, 0.2);
+  stroke-width: 1;
+  stroke-dasharray: 2 5;
 }
 
-.shijing-nianjing__year-marker[data-kind="marker_cluster"] {
-  background:
-    radial-gradient(circle, var(--shijing-text-primary) 30%, transparent 34%),
-    #ffffff;
-  border-color: var(--shijing-text-primary);
+/* Vertical guide for the year the detail panel is showing — decorative
+ * tie between curve and selection, never a score axis. */
+.shijing-nianjing__path-now {
+  stroke: color-mix(in srgb, var(--nianjing-supportive) 78%, transparent);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+  opacity: 0.5;
+  vector-effect: non-scaling-stroke;
 }
 
-.shijing-nianjing__year-marker:focus-visible {
-  outline: none;
-  box-shadow: var(--shijing-focus-ring), 0 0 0 1px rgba(15, 23, 38, 0.12);
+.shijing-nianjing__path-line {
+  fill: none;
+  stroke: var(--nianjing-supportive);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.shijing-nianjing__path-line[data-tone="secondary"] {
+  stroke: #0ea5e9;
+}
+
+.shijing-nianjing__path-line[data-tone="tertiary"] {
+  stroke: var(--nianjing-turning);
+}
+
+/* Node ring tracks the year's tendency nature (--nat), set from the
+ * circle's data-nature — so 阻滞 reads red, 助力 green, 平稳 blue, etc.,
+ * matching the chips below. The connecting line keeps its dimension hue. */
+.shijing-nianjing__path-point {
+  fill: var(--shijing-surface-card);
+  stroke: var(--nat, var(--nianjing-supportive));
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.shijing-nianjing__path-point[data-selected="true"] {
+  stroke-width: 3;
+}
+
+@media (max-width: 720px) {
+  .shijing-nianjing__path-card {
+    border-radius: 22px;
+    padding: 22px 18px 18px;
+  }
+
+  .shijing-nianjing__path-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .shijing-nianjing .shijing-nianjing__path-legend {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .shijing-nianjing__path-plot {
+    height: 150px;
+  }
 }

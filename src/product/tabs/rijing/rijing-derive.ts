@@ -57,11 +57,6 @@ export interface RiJingHeroContent {
   readonly leanings: readonly RiJingLeaning[];
   readonly confidence_label: string;
   readonly confidence_note: string;
-  // 今日基调 (full narrative) + 今日事件解析, revealed behind 展开完整解读.
-  readonly theme?: {
-    readonly title: string;
-    readonly body: string;
-  };
   readonly reference_event?: RiJingHeroReferenceEvent;
   readonly closing_label: string;
   readonly closing_wish: string;
@@ -220,7 +215,7 @@ export function deriveRiJingHero(
   const output = reading.output as RiJingMirrorOutput;
   // stage_label comes from the feature snapshot's stage_drivers list.
   // We use the first driver's label as the dominant stage for the
-  // headline; the full pipeline narrative stays in the theme body.
+  // headline; the summary subtitle carries the one-glance pipeline narrative.
   const firstStage = reading.inputs_summary.feature_snapshot.common.stage_drivers[0]?.stage_label;
   const headline = firstStage
     ? copy.rijing.stageHeadlines[firstStage] ?? copy.rijing.stageHeadlineFallback
@@ -241,10 +236,6 @@ export function deriveRiJingHero(
     leanings: leaningsForReading(reading, copy),
     confidence_label: copy.rijing.confidenceLabels[reading.uncertainty.confidence],
     confidence_note,
-    theme: {
-      title: copy.rijing.hero.themeLabel,
-      body: description,
-    },
     reference_event: referenceEventForReading(
       reading,
       description,

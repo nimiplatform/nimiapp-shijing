@@ -77,6 +77,21 @@ export function ChevronDownIcon(props: IconProps) {
   );
 }
 
+export function AlmanacIcon(props: IconProps) {
+  return (
+    <svg {...COMMON_PROPS} aria-hidden {...props}>
+      <rect x="4" y="5" width="16" height="16" rx="3" />
+      <path d="M8 3v4" />
+      <path d="M16 3v4" />
+      <path d="M4 9h16" />
+      <path d="M8 13h2" />
+      <path d="M14 13h2" />
+      <path d="M8 17h2" />
+      <path d="M14 17h2" />
+    </svg>
+  );
+}
+
 export function ChevronRightIcon(props: IconProps) {
   return (
     <svg {...COMMON_PROPS} aria-hidden {...props}>

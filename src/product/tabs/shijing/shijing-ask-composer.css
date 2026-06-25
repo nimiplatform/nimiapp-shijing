@@ -73,7 +73,7 @@
 }
 
 /* Seed-memory context card — shown when the user arrives via another
- * mirror's "去时镜问这条". Each chip names the record's date + body and
+ * mirror's "去问镜问这条". Each chip names the record's date + body and
  * can be removed; the seeds are injected as `cited_event_memory_refs`
  * when the question is submitted. */
 .shijing-ask .shijing-ask__seed {

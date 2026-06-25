@@ -9,7 +9,7 @@ import { newEventMemoryId, newPlanItemId } from '../../ids/index.ts';
 import { useShijingStore } from '../../state/shijing-store.tsx';
 import { trimmedConcernLabel as yuejingTagLabel } from '../../concern-tags/concern-presets.ts';
 import { AskIcon, ClipboardIcon, CloseIcon, PencilIcon, TrashIcon } from './yuejing-icons.tsx';
-import { classifyDay, nowIso, shortMonthDay, WEEKDAY_SHORT, weekdayIndexMondayFirst, yuejingCellDetail } from './yuejing-model.ts';
+import { classifyDay, deriveYueJingCalendarDetails, nowIso, shortMonthDay, WEEKDAY_SHORT, weekdayIndexMondayFirst, yuejingCellDetail } from './yuejing-model.ts';
 import { concernIconStyle, ConcernIcon } from './yuejing-calendar.tsx';
 import { YUEJING_COPY } from './yuejing-copy.ts';
 
@@ -37,6 +37,7 @@ export function YueJingDayPanel(props: {
   const kind = classifyDay(props.date, props.today);
   const isPlan = kind === 'future';
   const weekday = WEEKDAY_SHORT[weekdayIndexMondayFirst(props.date)];
+  const calendarDetails = deriveYueJingCalendarDetails(props.date);
 
   // Reset the draft + edit state whenever the user navigates to a
   // different date so leftover edits from the previous day don't
@@ -256,6 +257,37 @@ export function YueJingDayPanel(props: {
             {weekday} · {YUEJING_COPY.dayPanel.dayKindLabels[kind]}
           </small>
         </header>
+
+        {calendarDetails ? (
+          <section
+            className="shijing-yuejing__panel-section shijing-yuejing__panel-calendar"
+            aria-label={YUEJING_COPY.dayPanel.calendarDetails.ariaLabel}
+          >
+            <h3>{YUEJING_COPY.dayPanel.calendarDetails.title}</h3>
+            <dl className="shijing-yuejing__panel-calendar-grid">
+              <div>
+                <dt>{YUEJING_COPY.dayPanel.calendarDetails.lunar}</dt>
+                <dd>{calendarDetails.lunar_label}</dd>
+              </div>
+              <div>
+                <dt>{YUEJING_COPY.dayPanel.calendarDetails.ganzhi}</dt>
+                <dd>{calendarDetails.ganzhi_label}</dd>
+              </div>
+              {calendarDetails.solar_term_label ? (
+                <div>
+                  <dt>{YUEJING_COPY.dayPanel.calendarDetails.solarTerm}</dt>
+                  <dd>{calendarDetails.solar_term_label}</dd>
+                </div>
+              ) : null}
+              {calendarDetails.festival_labels.length > 0 ? (
+                <div>
+                  <dt>{YUEJING_COPY.dayPanel.calendarDetails.festivals}</dt>
+                  <dd>{calendarDetails.festival_labels.join('、')}</dd>
+                </div>
+              ) : null}
+            </dl>
+          </section>
+        ) : null}
 
         <section className="shijing-yuejing__panel-section">
           <h3>{YUEJING_COPY.dayPanel.currentTendency}</h3>

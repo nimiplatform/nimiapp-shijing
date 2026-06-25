@@ -4,15 +4,20 @@ import type { ConcernTag } from '../../../domain/concern-tag.ts';
 import { InlineConcernEditorPopover } from '../../concern-tags/inline-concern-editor.tsx';
 import { trimmedConcernLabel } from '../../concern-tags/concern-presets.ts';
 import { useProductCopy } from '../../i18n/copy.ts';
+import {
+  firstUserQuestion,
+  sessionTimeLabel,
+  type ArchiveConcernOption,
+} from './shijing-session-model.ts';
 
 export function ArchiveTray(props: {
-  readonly tags: readonly ConcernTag[];
+  readonly options: readonly ArchiveConcernOption[];
   readonly selectedIds: readonly string[];
-  readonly onToggle: (id: string) => void;
-  readonly onRemove: (id: string) => void;
+  readonly onToggleOption: (option: ArchiveConcernOption) => void;
+  readonly onRemoveOption: (option: ArchiveConcernOption) => void;
 }) {
   const copy = useProductCopy();
-  if (props.tags.length === 0) return null;
+  if (props.options.length === 0) return null;
   return (
     <section className="shijing-archive" aria-label={copy.shijing.archive.aria}>
       <div className="shijing-archive__lead">
@@ -22,15 +27,15 @@ export function ArchiveTray(props: {
         <span className="shijing-archive__label">{copy.shijing.archive.addPrefix}</span>
       </div>
       <div className="shijing-archive__chips">
-        {props.tags.map((tag) => {
-          const selected = props.selectedIds.includes(tag.id);
-          const label = trimmedConcernLabel(tag);
+        {props.options.map((option) => {
+          const selected = option.tag_id != null && props.selectedIds.includes(option.tag_id);
+          const label = option.label;
           return (
-            <span key={tag.id} className="shijing-archive__chip" data-selected={selected ? 'true' : 'false'}>
+            <span key={option.option_id} className="shijing-archive__chip" data-selected={selected ? 'true' : 'false'}>
               <button
                 type="button"
                 className="shijing-archive__chip-main"
-                onClick={() => props.onToggle(tag.id)}
+                onClick={() => props.onToggleOption(option)}
               >
                 {label}
               </button>
@@ -38,7 +43,7 @@ export function ArchiveTray(props: {
                 type="button"
                 className="shijing-archive__close"
                 aria-label={copy.shijing.archive.removeAria(label)}
-                onClick={() => props.onRemove(tag.id)}
+                onClick={() => props.onRemoveOption(option)}
               >
                 x
               </button>
@@ -46,6 +51,50 @@ export function ArchiveTray(props: {
           );
         })}
       </div>
+    </section>
+  );
+}
+
+export function QuestionArchiveRecall(props: {
+  readonly conversations: readonly Conversation[];
+  readonly concernTags: readonly ConcernTag[];
+  readonly onSelectConversation: (id: string) => void;
+}) {
+  const copy = useProductCopy();
+  if (props.conversations.length === 0) return null;
+  const tagsById = new Map(props.concernTags.map((tag) => [tag.id, tag]));
+  return (
+    <section className="shijing-recall" aria-label={copy.shijing.archive.recallAria}>
+      <div className="shijing-recall__lead">
+        <span className="shijing-recall__icon" aria-hidden>
+          +
+        </span>
+        <span className="shijing-recall__title">{copy.shijing.archive.recallTitle}</span>
+      </div>
+      <ul className="shijing-recall__list">
+        {props.conversations.map((conversation) => {
+          const question = firstUserQuestion(conversation, copy);
+          const labels = conversation.concern_tag_refs
+            .map((id) => tagsById.get(id))
+            .filter((tag): tag is ConcernTag => tag != null)
+            .map((tag) => trimmedConcernLabel(tag));
+          return (
+            <li key={conversation.id}>
+              <button
+                type="button"
+                className="shijing-recall__item"
+                aria-label={copy.shijing.archive.recallOpenAria(question)}
+                onClick={() => props.onSelectConversation(conversation.id)}
+              >
+                <span className="shijing-recall__question">{question}</span>
+                <span className="shijing-recall__meta">
+                  {labels.length > 0 ? labels.join(' / ') : sessionTimeLabel(conversation.created_at, copy)}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }

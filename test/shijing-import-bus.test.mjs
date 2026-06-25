@@ -70,7 +70,7 @@ test('snapshot/replace drops pending ids whose Reading is no longer in the snaps
   assert.deepEqual(replaced.pending_shijing_source_reading_ids, []);
 });
 
-// ----- seed-memory bus ("去时镜问这条") -----
+// ----- seed-memory bus ("去问镜问这条") -----
 
 function stateWithMemories(memories) {
   return createInitialState(validShiJingSpace({ event_memories: memories }));
@@ -128,7 +128,7 @@ test('snapshot/replace drops seed ids whose EventMemory is no longer present', (
   assert.deepEqual(replaced.pending_shijing_seed_memory_ids, []);
 });
 
-// ----- seed-plan bus ("去时镜问这条" on a future plan) -----
+// ----- seed-plan bus ("去问镜问这条" on a future plan) -----
 
 function stateWithPlans(plans) {
   return createInitialState(validShiJingSpace({ plan_items: plans }));

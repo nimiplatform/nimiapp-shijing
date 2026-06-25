@@ -1,7 +1,7 @@
 // SJG-ASTRO-05 — YueJing rolling 30-day mirror screen.
 //
 // V2 layout (per SJG-DSY-01 mockup):
-//   1. Header strip — title + window meta + 「导入到时镜」/「生成今日」
+//   1. Header strip — title + window meta + 「导入到问镜」/「生成今日」
 //      actions + 上次生成 X 前.
 //   2. Today hero — a tinted overview card showing today's dominant
 //      tendency and per-concern bars. Only rendered when today is
@@ -43,6 +43,7 @@ import { subjectMirrorReadiness } from '../subjects/natal-readiness.ts';
 import { CitationDrawer } from './shared/citation-drawer.tsx';
 import { ImportToShiJingButton } from './shared/import-to-shijing-button.tsx';
 import { FailureBanner } from './shared/failure-banner.tsx';
+import { GeneratingButton } from './shared/generating-button.tsx';
 import { MirrorPageHeader } from './shared/mirror-page-header.tsx';
 import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
 import {
@@ -313,16 +314,17 @@ export function YueJingTab(props: YueJingTabProps) {
         actions={(
           <>
             {latestReading?.id ? <ImportToShiJingButton readingId={latestReading.id} /> : null}
-            <button
-              type="button"
+            <GeneratingButton
               className="shijing-yuejing__generate"
               disabled={loading || activeTagIds.length === 0 || nextGenerationDate === null}
+              busy={loading}
+              busyLabel="生成中…"
               onClick={() => {
                 void handleGenerate(nextGenerationDate ?? today);
               }}
             >
-              {loading ? '生成中…' : generateLabel}
-            </button>
+              {generateLabel}
+            </GeneratingButton>
           </>
         )}
       />

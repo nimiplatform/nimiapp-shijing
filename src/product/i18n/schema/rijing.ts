@@ -23,6 +23,7 @@ export interface RiJingCopy {
   readonly emptyActions: Record<Exclude<RiJingEmptyStateCopyKind, 'persistence_pending'>, string>;
   readonly failureActions: {
     readonly runtimeAi: string;
+    readonly methodProfile: string;
   };
   readonly refreshAria: {
     readonly loading: string;
@@ -50,7 +51,6 @@ export interface RiJingCopy {
     readonly manageFocus: string;
     readonly leaningsAria: string;
     readonly confidenceLabel: string;
-    readonly themeLabel: string;
     readonly perspectivesLabel: string;
     readonly eventInsightLabel: string;
     readonly eventActionLead: string;
@@ -132,7 +132,22 @@ export interface RiJingCopy {
     readonly meterStageSuffix: string;
     readonly stageGuidance: Record<ShijingStageLabel, string>;
     readonly confidencePrefix: string;
-    readonly expandLabel: string;
-    readonly collapseLabel: string;
+  };
+  readonly dayRite: {
+    readonly flipToRiteLabel: string;
+    readonly flipToOverviewLabel: string;
+    readonly flipToRiteAria: string;
+    readonly flipToOverviewAria: string;
+    readonly eyebrow: string;
+    readonly title: string;
+    readonly suitableTitle: string;
+    readonly unsuitableTitle: string;
+    readonly pengzuTitle: string;
+    readonly fetusTitle: string;
+    readonly goodGodsTitle: string;
+    readonly badGodsTitle: string;
+    readonly hoursTitle: string;
+    readonly unavailableTitle: string;
+    readonly unavailableBody: string;
   };
 }

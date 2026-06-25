@@ -292,6 +292,14 @@ test('Ask ShiJing new-question page exposes GPT-style archive chips below the co
   assert.match(archiveClose, /height:\s*24px/);
 });
 
+test('Ask ShiJing new-question archive chips can materialize built-in preset concerns', () => {
+  assert.match(shijingTabSource, /suggestArchiveConcernOptions/);
+  assert.match(shijingTabSource, /activateArchiveConcernOption/);
+  assert.match(shijingTabSource, /newConcernTagId/);
+  assert.match(shijingTabSource, /onToggleOption=\{toggleArchiveOption\}/);
+  assert.match(shijingTabSource, /replace_snapshot\(\{\s*\.\.\.state\.snapshot,\s*concern_tags:\s*activation\.tags\s*\}\)/);
+});
+
 test('Ask ShiJing rail has concern filter controls before history sessions', () => {
   assert.match(shijingTabSource, /const \[filterOpen, setFilterOpen\]/);
   assert.match(shijingTabSource, /const \[selectedFilterConcernIds, setSelectedFilterConcernIds\]/);
@@ -310,6 +318,29 @@ test('Ask ShiJing rail has concern filter controls before history sessions', () 
   assert.match(filterMenu, /position:\s*absolute/);
   assert.match(filterOption, /display:\s*flex/);
   assert.match(filterOption, /justify-content:\s*space-between/);
+});
+
+test('Ask ShiJing recalls archived conversations from the current question text', () => {
+  assert.match(shijingTabSource, /conversationMatchesQuestionArchive/);
+  assert.match(shijingTabSource, /questionArchiveMatches/);
+  assert.match(
+    shijingTabSource,
+    /const historyLookupText = search\.trim\(\)\.length > 0 \? search : chatActive \? '' : question;/,
+  );
+  assert.match(
+    shijingTabSource,
+    /conversationMatchesQuestionArchive\(c, historyLookupText, state\.snapshot\.concern_tags, copy\)/,
+  );
+  assert.match(shijingTabSource, /const archiveRecallConversations =[\s\S]*?questionArchiveMatches\(/);
+  assert.match(shijingTabSource, /<QuestionArchiveRecall/);
+
+  const recall = cssBlock(shijingStyles, '.shijing-recall');
+  const recallButton = cssBlock(shijingStyles, '.shijing-ask .shijing-recall__item');
+
+  assert.match(recall, /display:\s*flex/);
+  assert.match(recall, /border:\s*1px solid rgba\(67, 198, 165, 0\.22\)/);
+  assert.match(recallButton, /display:\s*grid/);
+  assert.match(recallButton, /grid-template-columns:\s*1fr auto/);
 });
 
 test('Ask ShiJing conversation thread uses right-user and left-answer chat bubbles', () => {

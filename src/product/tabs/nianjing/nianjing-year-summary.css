@@ -1,0 +1,105 @@
+.shijing-nianjing__year-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.shijing-nianjing__year-summary-card {
+  appearance: none;
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 74px;
+  padding: 9px 4px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--shijing-text-secondary);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+/* Tint every chip with its year's nature so the ten-year rhythm reads at
+ * a glance and each chip matches its own dot + the legend (助力 green ·
+ * 平稳 blue · 观察 amber · 阻滞 red · 转折 purple). Scoped under
+ * .shijing-nianjing (class + class) so it overrides the lower-specificity
+ * `.shijing-tab button` brand-fill baseline in styles-mirror-v1.css. */
+.shijing-nianjing .shijing-nianjing__year-summary-card {
+  background: color-mix(in srgb, var(--nat, var(--nianjing-supportive)) 22%, white);
+  border-color: color-mix(in srgb, var(--nat, var(--nianjing-supportive)) 34%, transparent);
+}
+
+.shijing-nianjing .shijing-nianjing__year-summary-card:hover {
+  background: color-mix(in srgb, var(--nat, var(--nianjing-supportive)) 30%, white);
+  border-color: color-mix(in srgb, var(--nat, var(--nianjing-supportive)) 48%, transparent);
+  transform: translateY(-1px);
+}
+
+.shijing-nianjing__year-summary-card:focus-visible {
+  outline: none;
+  box-shadow: var(--shijing-focus-ring);
+}
+
+/* Selected year — stronger ring + fill so it still stands out now that
+ * every chip carries a nature tint. */
+.shijing-nianjing .shijing-nianjing__year-summary-card[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--nat, var(--nianjing-supportive)) 70%, transparent);
+  background: color-mix(in srgb, var(--nat, var(--nianjing-supportive)) 36%, white);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nat, var(--nianjing-supportive)) 42%, transparent);
+}
+
+.shijing-nianjing__year-summary-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.shijing-nianjing__year-summary-card strong {
+  color: var(--shijing-text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.shijing-nianjing__year-summary-card[aria-pressed="true"] strong {
+  font-weight: 700;
+}
+
+.shijing-nianjing__year-summary-card > span:last-child {
+  color: var(--shijing-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.shijing-nianjing__year-summary-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--nat, var(--nianjing-supportive));
+}
+
+/* Current-year badge mirrors the chip's nature so "现在" agrees with the
+ * dot and tint instead of a fixed green. */
+.shijing-nianjing__year-now {
+  min-width: 40px;
+  padding: 1px 7px;
+  color: var(--nianjing-text-on-band);
+  background: var(--nat, var(--nianjing-supportive));
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .shijing-nianjing__year-summary-card {
+    min-width: 64px;
+  }
+}

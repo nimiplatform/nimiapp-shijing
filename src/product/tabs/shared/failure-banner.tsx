@@ -5,6 +5,7 @@
 
 import type { ReadingGenerationFailure } from '../../../domain/reading.ts';
 import { useProductCopy } from '../../i18n/copy.ts';
+import { readingFailureHeadline } from './reading-failure-copy.ts';
 
 export interface FailureBannerProps {
   readonly failure: ReadingGenerationFailure;
@@ -19,7 +20,7 @@ export function FailureBanner(props: FailureBannerProps) {
   return (
     <div role="alert" className="shijing-failure-banner" data-failure-kind={props.failure.kind}>
       <div className="shijing-failure-banner__copy">
-        {copy.readingFailure.headlines[props.failure.kind]}
+        {readingFailureHeadline(copy, props.failure)}
         {props.failure.detail ? <code>{props.failure.detail}</code> : null}
       </div>
       {props.action ? (

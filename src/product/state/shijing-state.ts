@@ -6,7 +6,7 @@
 //
 // W-c04 added `pending_shijing_source_reading_ids`: a state-only
 // (NOT persisted) staging list of Reading ids that mirror tabs push
-// when the user clicks "导入到时镜咨询". The ShiJing tab reads this
+// when the user clicks "导入到问镜咨询". The ShiJing tab reads this
 // list to seed the consultation's source readings instead of the
 // previous globalThis bus.
 
@@ -35,7 +35,7 @@ export interface ShijingViewState {
   readonly snapshot_status: SnapshotStatus;
   readonly pending_shijing_source_reading_ids: readonly string[];
   // State-only (NOT persisted) staging lists of record ids that a
-  // mirror tab pushes when the user clicks "去时镜问这条". The ShiJing
+  // mirror tab pushes when the user clicks "去问镜问这条". The ShiJing
   // consultation reads these to seed `cited_event_memory_refs` /
   // `cited_plan_item_refs` so the next question is grounded on those
   // specific records — past events (EventMemory) and forward-looking

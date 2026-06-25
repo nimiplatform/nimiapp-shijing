@@ -1,0 +1,381 @@
+/* Ziwei Sanhe route — module styling aligned to the 命镜 · 紫微命盘 reference. */
+.shijing-mingjing > .shijing-mingjing__panels--ziwei {
+  max-width: min(100%, 1380px);
+  gap: 24px;
+}
+
+.shijing-mingjing__panels--ziwei {
+  /* Mint accent system (reference A.mint). */
+  --zw-accent: #4ecca3;
+  --zw-accent-ink: #0f8a6e;
+  --zw-accent-soft: rgba(78, 204, 163, 0.16);
+  --zw-accent-border: #86dcc4;
+  --zw-accent-on: #06281e;
+  /* Glass cards. */
+  --zw-card-bg: rgba(255, 255, 255, 0.72);
+  --zw-card-border: rgba(226, 232, 240, 0.7);
+  --zw-card-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  --zw-card-radius: 24px;
+  --zw-inner-bg: rgba(255, 255, 255, 0.55);
+  --zw-inner-border: rgba(226, 232, 240, 0.8);
+  --zw-cell-radius: 14px;
+  /* Slate ink ramp. */
+  --zw-ink-900: #0f172a;
+  --zw-ink-700: #334155;
+  --zw-ink-600: #475569;
+  --zw-ink-500: #64748b;
+  --zw-ink-400: #94a3b8;
+  --zw-ink-300: #cbd5e1;
+  --zw-serif: "Noto Serif SC", "Songti SC", serif;
+  --zw-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Shared glass-card treatment for every panel in the route. */
+.shijing-mingjing__panels--ziwei .shijing-mingjing-panel {
+  background: var(--zw-card-bg);
+  border-color: var(--zw-card-border);
+  border-radius: var(--zw-card-radius);
+  box-shadow: var(--zw-card-shadow);
+  -webkit-backdrop-filter: blur(24px) saturate(130%);
+  backdrop-filter: blur(24px) saturate(130%);
+}
+
+.shijing-mingjing__panels--ziwei .shijing-mingjing-panel__title {
+  font-family: var(--zw-serif);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--zw-ink-900);
+}
+
+.shijing-mingjing__panels--ziwei .shijing-mingjing__eyebrow {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--zw-ink-400);
+}
+
+/* ── Persona / identity bar ─────────────────────────────────────────────── */
+.shijing-ziwei-persona {
+  min-height: 74px;
+  padding: 16px 22px;
+  border-radius: 20px;
+  display: grid;
+  grid-template-columns: auto minmax(150px, 0.7fr) minmax(0, 2.6fr);
+  gap: 16px;
+  align-items: center;
+  background: var(--zw-card-bg);
+  border: 1px solid var(--zw-card-border);
+  box-shadow: var(--zw-card-shadow);
+  -webkit-backdrop-filter: blur(24px) saturate(130%);
+  backdrop-filter: blur(24px) saturate(130%);
+}
+
+.shijing-ziwei-persona__mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: var(--zw-accent);
+  color: var(--zw-accent-on);
+  font-family: var(--zw-serif);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.shijing-ziwei-persona__identity h3 {
+  margin: 0 0 4px;
+  font-family: var(--zw-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--zw-ink-900);
+}
+
+.shijing-ziwei-persona__identity p,
+.shijing-ziwei-persona__facts dt {
+  margin: 0;
+  font-size: 11px;
+  color: var(--zw-ink-400);
+}
+
+.shijing-ziwei-persona__facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(72px, 1fr));
+  gap: 12px;
+}
+
+.shijing-ziwei-persona__facts dd {
+  margin: 3px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--zw-ink-900);
+}
+
+/* ── Workspace (chart + palace detail) ──────────────────────────────────── */
+.shijing-ziwei-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.48fr) minmax(330px, 0.92fr);
+  gap: 24px;
+  align-items: stretch;
+}
+
+.shijing-ziwei-chart { padding: 24px; }
+
+.shijing-ziwei-chart__head,
+.shijing-ziwei-decade__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.shijing-ziwei-chart__head p,
+.shijing-ziwei-decade__head p { margin: 5px 0 0; font-size: 12px; color: var(--zw-ink-400); }
+
+.shijing-ziwei-chart__legend {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+  color: var(--zw-ink-400);
+}
+
+.shijing-ziwei-chart__legend span,
+.shijing-ziwei-star__hua {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 5px;
+  background: var(--ziwei-hua-bg, rgba(148, 163, 184, 0.16));
+  color: var(--ziwei-hua-fg, var(--mingjing-ink-soft));
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* 四化 palette (reference HUA). */
+[data-mutagen='禄'] { --ziwei-hua-bg: #dcfce7; --ziwei-hua-fg: #15803d; }
+[data-mutagen='权'] { --ziwei-hua-bg: #dbeafe; --ziwei-hua-fg: #1d4ed8; }
+[data-mutagen='科'] { --ziwei-hua-bg: #ede9fe; --ziwei-hua-fg: #6d28d9; }
+[data-mutagen='忌'] { --ziwei-hua-bg: #fee2e2; --ziwei-hua-fg: #b91c1c; }
+
+/* ── Palace grid ────────────────────────────────────────────────────────── */
+.shijing-ziwei-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(128px, 1fr));
+  gap: 8px;
+  min-height: 610px;
+}
+
+/* Scoped under `.shijing-mingjing` to outrank the baseline `.shijing-tab
+ * button` reset (filled brand-green pill) that would otherwise win. */
+.shijing-mingjing .shijing-ziwei-palace {
+  appearance: none;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: var(--zw-cell-radius);
+  padding: 11px;
+  background: rgba(255, 255, 255, 0.55);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  color: var(--mingjing-ink-strong);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.shijing-mingjing .shijing-ziwei-palace:hover {
+  border-color: rgba(148, 163, 184, 0.55);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 12px 26px -20px rgba(15, 23, 42, 0.28);
+  transform: translateY(-1px);
+}
+
+.shijing-ziwei-palace[data-selected] {
+  border-color: color-mix(in srgb, var(--mingjing-accent) 58%, rgba(226, 232, 240, 0.9));
+  background: var(--zw-accent-soft);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
+  transform: translateY(-1px);
+}
+
+.shijing-ziwei-palace__top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+
+.shijing-ziwei-palace__name {
+  font-family: var(--zw-serif);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  color: var(--zw-ink-900);
+}
+
+.shijing-ziwei-palace[data-soul] .shijing-ziwei-palace__name { color: var(--zw-accent-ink); }
+
+.shijing-ziwei-palace__age,
+.shijing-ziwei-palace__branch {
+  font-family: var(--zw-mono);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: var(--zw-ink-400);
+}
+
+.shijing-ziwei-palace__branch {
+  align-self: flex-end;
+  margin-top: auto;
+  letter-spacing: 0.05em;
+  color: var(--zw-ink-300);
+}
+
+.shijing-ziwei-palace__body-mark {
+  margin-left: 5px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #475569;
+  font-family: var(--mingjing-font-sans);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.shijing-ziwei-palace__stars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  align-content: flex-start;
+  min-height: 36px;
+  flex: 1;
+}
+
+.shijing-ziwei-star {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.shijing-ziwei-star__name {
+  font-family: var(--zw-serif);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--zw-ink-400);
+}
+
+.shijing-ziwei-star[data-major] .shijing-ziwei-star__name {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* Dimmed major stars (陷 / 不) take the warm warning hue. */
+.shijing-ziwei-star[data-major][data-bright='陷'] .shijing-ziwei-star__name,
+.shijing-ziwei-star[data-major][data-bright='不'] .shijing-ziwei-star__name {
+  color: #9a3412;
+}
+
+.shijing-ziwei-star__brightness {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--zw-bright, var(--zw-ink-400));
+}
+
+.shijing-ziwei-palace__empty {
+  font-size: 10px;
+  color: var(--zw-ink-400);
+}
+
+/* 亮度 ramp (reference BRQ). */
+.shijing-ziwei-star[data-bright='庙'],
+.shijing-ziwei-star[data-bright='旺'] { --zw-bright: #0f766e; }
+.shijing-ziwei-star[data-bright='得'],
+.shijing-ziwei-star[data-bright='利'] { --zw-bright: #475569; }
+.shijing-ziwei-star[data-bright='平'] { --zw-bright: #94a3b8; }
+.shijing-ziwei-star[data-bright='陷'] { --zw-bright: #c2410c; }
+.shijing-ziwei-star[data-bright='不'] { --zw-bright: #dc2626; }
+
+.shijing-ziwei-palace[data-branch='巳'] { grid-area: 1 / 1; }
+.shijing-ziwei-palace[data-branch='午'] { grid-area: 1 / 2; }
+.shijing-ziwei-palace[data-branch='未'] { grid-area: 1 / 3; }
+.shijing-ziwei-palace[data-branch='申'] { grid-area: 1 / 4; }
+.shijing-ziwei-palace[data-branch='辰'] { grid-area: 2 / 1; }
+.shijing-ziwei-palace[data-branch='酉'] { grid-area: 2 / 4; }
+.shijing-ziwei-palace[data-branch='卯'] { grid-area: 3 / 1; }
+.shijing-ziwei-palace[data-branch='戌'] { grid-area: 3 / 4; }
+.shijing-ziwei-palace[data-branch='寅'] { grid-area: 4 / 1; }
+.shijing-ziwei-palace[data-branch='丑'] { grid-area: 4 / 2; }
+.shijing-ziwei-palace[data-branch='子'] { grid-area: 4 / 3; }
+.shijing-ziwei-palace[data-branch='亥'] { grid-area: 4 / 4; }
+
+.shijing-ziwei-center {
+  grid-area: 2 / 2 / 4 / 4;
+  border: 1px solid var(--zw-card-border);
+  border-radius: 16px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.55), rgba(236, 247, 242, 0.4));
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 20px;
+}
+
+.shijing-ziwei-center p,
+.shijing-ziwei-center dl,
+.shijing-ziwei-detail__meta,
+.shijing-ziwei-detail__meta dd { margin: 0; }
+
+.shijing-ziwei-center > p {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  color: var(--zw-ink-400);
+}
+
+.shijing-ziwei-center h3 {
+  margin: 8px 0 18px;
+  font-family: var(--zw-serif);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--zw-ink-900);
+}
+
+.shijing-ziwei-center dl {
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--zw-ink-600);
+}
+
+.shijing-ziwei-center dt,
+.shijing-ziwei-center dd { display: inline; }
+
+.shijing-ziwei-center dt {
+  margin-right: 8px;
+  color: var(--zw-ink-400);
+}
+
+/* ── Palace detail aside ────────────────────────────────────────────────── */
+/* ── 命格综述 (natal brief) ─────────────────────────────────────────────── */
+/* ── 大限指引 (decade guidance) ─────────────────────────────────────────── */
+@media (max-width: 1120px) {
+  .shijing-ziwei-workspace { grid-template-columns: 1fr; }
+  .shijing-ziwei-persona { grid-template-columns: auto minmax(0, 1fr); }
+  .shijing-ziwei-persona__facts { grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720.98px) {
+  .shijing-ziwei-chart { overflow-x: auto; padding: 18px; }
+  .shijing-ziwei-chart__head { flex-direction: column; }
+  .shijing-ziwei-grid { min-width: 680px; min-height: 560px; }
+  .shijing-ziwei-persona__facts { grid-template-columns: 1fr; }
+}

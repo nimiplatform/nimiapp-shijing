@@ -44,13 +44,17 @@ const tabSources = {
 function mirrorHeaderCall(source) {
   const start = source.indexOf('<MirrorPageHeader');
   assert.notEqual(start, -1, 'MirrorPageHeader call exists');
-  const end = source.indexOf('\n      />', start);
-  assert.notEqual(end, -1, 'MirrorPageHeader call closes on its own line');
-  return source.slice(start, end + '\n      />'.length);
+  const endings = ['\n      />', '\n    />'];
+  const match = endings
+    .map((closing) => ({ closing, index: source.indexOf(closing, start) }))
+    .filter((candidate) => candidate.index !== -1)
+    .sort((a, b) => a.index - b.index)[0];
+  assert.ok(match, 'MirrorPageHeader call closes on its own line');
+  return source.slice(start, match.index + match.closing.length);
 }
 
-test('RiJing, YueJing, and NianJing render the shared month-style page header', () => {
-  for (const mirror of ['rijing', 'yuejing', 'nianjing']) {
+test('RiJing, YueJing, NianJing, and MingJing render the shared month-style page header', () => {
+  for (const mirror of ['rijing', 'yuejing', 'nianjing', 'mingjing']) {
     const source = tabSources[mirror];
     assert.match(
       source,
@@ -65,8 +69,8 @@ test('RiJing, YueJing, and NianJing render the shared month-style page header', 
   assert.doesNotMatch(tabSources.rijing, /<header className="shijing-rijing__header">/);
 });
 
-test('RiJing, YueJing, and NianJing use the shared header action slot', () => {
-  for (const mirror of ['rijing', 'yuejing', 'nianjing']) {
+test('RiJing, YueJing, NianJing, and MingJing use the shared header action slot', () => {
+  for (const mirror of ['rijing', 'yuejing', 'nianjing', 'mingjing']) {
     assert.match(
       mirrorHeaderCall(tabSources[mirror]),
       /actions=\{\(/,
@@ -81,8 +85,7 @@ test('RiJing, YueJing, and NianJing use the shared header action slot', () => {
   assert.doesNotMatch(rijingHero, /shijing-rijing__hero-refresh/);
 });
 
-test('MingJing and ShiJing keep their distinct header logic', () => {
-  assert.doesNotMatch(tabSources.mingjing, /MirrorPageHeader/);
+test('ShiJing keeps its distinct consultation header logic', () => {
   assert.doesNotMatch(tabSources.shijing, /MirrorPageHeader/);
 });
 

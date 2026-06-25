@@ -17,6 +17,7 @@
 @import './product/tabs/rijing/rijing-shell.css';
 @import './product/tabs/rijing/rijing-onboarding.css';
 @import './product/tabs/rijing/rijing-hero.css';
+@import './product/tabs/rijing/rijing-day-rite.css';
 @import './product/tabs/rijing/rijing-projections.css';
 @import './product/tabs/rijing/rijing-event-input.css';
 @import './product/tabs/rijing/rijing-actions.css';
@@ -38,6 +39,8 @@
 @import './product/tabs/nianjing/nianjing-hero.css';
 @import './product/tabs/nianjing/nianjing-filters.css';
 @import './product/tabs/nianjing/nianjing-year-overview.css';
+@import './product/tabs/nianjing/nianjing-year-detail.css';
+@import './product/tabs/nianjing/nianjing-year-summary.css';
 @import './product/tabs/nianjing/nianjing-phase-list.css';
 @import './product/tabs/nianjing/nianjing-timeline-base.css';
 @import './product/tabs/nianjing/nianjing-timeline.css';
@@ -52,15 +55,26 @@
 @import './product/tabs/mingjing/mingjing-liunian.css';
 @import './product/tabs/mingjing/mingjing-events.css';
 @import './product/tabs/mingjing/mingjing-reading.css';
+@import './product/tabs/mingjing/mingjing-ziwei.css';
+@import './product/tabs/mingjing/mingjing-ziwei-reading.css';
 @import './product/tabs/mingjing/mingjing-rectify.css';
 @import './product/tabs/mingjing/mingjing-responsive.css';
+@import './product/tabs/hejing/hejing-shell.css';
+@import './product/tabs/hejing/hejing-hero.css';
+@import './product/tabs/hejing/hejing-index.css';
+@import './product/tabs/hejing/hejing-intersection.css';
+@import './product/tabs/hejing/hejing-future.css';
+@import './product/tabs/hejing/hejing-history.css';
+@import './product/tabs/hejing/hejing-responsive.css';
 @import './product/tabs/shijing/shijing-ask-shell.css';
 @import './product/tabs/shijing/shijing-ask-hero.css';
 @import './product/tabs/shijing/shijing-ask-rail.css';
 @import './product/tabs/shijing/shijing-ask-composer.css';
 @import './product/tabs/shijing/shijing-ask-context.css';
+@import './product/tabs/shijing/shijing-ask-recall.css';
 @import './product/tabs/shijing/shijing-ask-thread.css';
 @import './product/tabs/shijing/shijing-concern-bar.css';
+@import './product/tabs/shared/generating-button.css';
 @import './styles-personal-data.css';
 
 /* Tailwind 4 only scans `src/**` by default. The kit's auth + ui components

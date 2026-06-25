@@ -21,7 +21,7 @@ export const EN_SHIJING_COPY: ProductCopy['shijing'] = {
   },
   sessionDateLabel: (month, day) => `${month}/${day}`,
   sourceMissing: 'No cited reading is available yet',
-  title: 'Ask ShiJing',
+  title: 'Consultation Mirror',
   railAria: 'Question history',
   newQuestion: 'New question',
   newQuestionAria: 'Start a new ShiJing question',
@@ -55,6 +55,9 @@ export const EN_SHIJING_COPY: ProductCopy['shijing'] = {
     filterMenuAria: 'Filter question history by concern',
     filterAll: 'All questions',
     filterEmpty: 'No concerns available',
+    recallAria: 'Related question archive',
+    recallTitle: 'Related questions',
+    recallOpenAria: (question) => `Open question: ${question}`,
   },
   context: {
     aria: 'Context focus',

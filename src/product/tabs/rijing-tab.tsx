@@ -1,13 +1,13 @@
 // SJG-ASTRO-04 — RiJing daily mirror screen.
 //
 // Progressive-disclosure layout (Mirror Architecture v1). Each module reads as
-// one takeaway; depth is folded behind explicit toggles so the surface no
+// one takeaway; depth is shown in place so the surface no
 // longer lays every detail out flat:
 //
 //   Header             — "日镜" title + inline date / weekday + primary controls
 //   RiJingHero         — 今日总览: conclusion + energy meter + tendency /
-//                        confidence, with the full 解读 (今日基调 + 今日事件解析)
-//                        folded behind 展开完整解读
+//                        confidence, with 今日事件解析 shown directly below
+//                        the overview
 //   RiJingProjections  — 今日关注分镜: lens filter + collapsible concern rows
 //   RiJingEventInput   — 今日参照: today's reference events (inline edit /
 //                        delete) + composer → upsertEventMemory
@@ -38,8 +38,10 @@ import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
 import type { ShijingSettingsFocusTarget } from '../settings/settings-page-view.tsx';
 import type { PersistenceLifecycleStatus } from '../state/persistence-bridge.ts';
 import { FailureBanner } from './shared/failure-banner.tsx';
+import { GeneratingButton } from './shared/generating-button.tsx';
 import { ImportToShiJingButton } from './shared/import-to-shijing-button.tsx';
 import { MirrorPageHeader } from './shared/mirror-page-header.tsx';
+import { isMethodFeatureUnsupportedFailure } from './shared/reading-failure-copy.ts';
 import {
   deriveRiJingActions,
   deriveRiJingDataPanel,
@@ -48,6 +50,7 @@ import {
   type RiJingEmptyStateKind,
   rijingDateLabel,
 } from './rijing/rijing-derive.ts';
+import { deriveRiJingDailyAlmanac } from './rijing/rijing-daily-almanac.ts';
 import { RiJingHero } from './rijing/rijing-hero.tsx';
 import { RiJingEventInput } from './rijing/rijing-event-input.tsx';
 import { RiJingActions } from './rijing/rijing-actions.tsx';
@@ -127,6 +130,12 @@ function failureActionFor(
       readonly onClick: () => void;
     }
   | undefined {
+  if (isMethodFeatureUnsupportedFailure(failure)) {
+    return {
+      label: copy.rijing.failureActions.methodProfile,
+      onClick: () => onRequestOpenSettings?.('settings', 'method_profile'),
+    };
+  }
   if (failure.kind !== 'runtime_ai_failed') return undefined;
   return {
     label: copy.rijing.failureActions.runtimeAi,
@@ -299,6 +308,7 @@ export function RiJingTab(props: RiJingTabProps) {
     focus_tags: activeTags.map((tag) => ({ id: tag.id, label: tag.label })),
     reference_memories: heroReferenceMemories,
   });
+  const dailyAlmanac = deriveRiJingDailyAlmanac(dailyScope.date);
   const heroEmptyAction =
     currentReading || loading
       ? undefined
@@ -310,7 +320,7 @@ export function RiJingTab(props: RiJingTabProps) {
   );
   const dataPanel = deriveRiJingDataPanel(currentReading, copy);
   const dateLabel = rijingDateLabel(dailyScope.basis_time_zone, copy);
-  const runtimeFailureAction =
+  const failureAction =
     tabState.kind === 'failure'
       ? failureActionFor(tabState.failure, props.onRequestOpenSettings, copy)
       : undefined;
@@ -363,15 +373,16 @@ export function RiJingTab(props: RiJingTabProps) {
         actions={(
           <>
             {importableReadingId ? <ImportToShiJingButton readingId={importableReadingId} /> : null}
-            <button
-              type="button"
+            <GeneratingButton
               className="shijing-rijing__generate"
               disabled={refreshDisabled}
+              busy={loading}
+              busyLabel={copy.rijing.refreshAria.loading}
               onClick={handleGenerate}
               aria-label={refreshAriaLabel}
             >
               {refreshButtonLabel}
-            </button>
+            </GeneratingButton>
           </>
         )}
       />
@@ -398,10 +409,11 @@ export function RiJingTab(props: RiJingTabProps) {
         <p role="status">{copy.rijing.loadingStatus}</p>
       ) : null}
       {tabState.kind === 'failure' ? (
-        <FailureBanner failure={tabState.failure} action={runtimeFailureAction} />
+        <FailureBanner failure={tabState.failure} action={failureAction} />
       ) : null}
       <RiJingHero
         content={hero}
+        dailyAlmanac={dailyAlmanac}
         emptyAction={heroEmptyAction}
       />
 

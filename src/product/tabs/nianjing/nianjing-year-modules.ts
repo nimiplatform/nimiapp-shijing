@@ -48,6 +48,52 @@ export interface NianJingYearModule {
   readonly cells: readonly NianJingYearCell[];
 }
 
+export interface NianJingAnnualOverviewYear {
+  readonly year: number;
+  readonly start_date: string;
+  readonly end_date: string;
+  readonly is_current_year: boolean;
+  readonly primary_nature: NianJingNature | null;
+  readonly primary_cell: NianJingYearCell | null;
+  readonly inflections: readonly NianJingInflectionPoint[];
+}
+
+export interface NianJingSelectedYearMonthMarker {
+  readonly month: number;
+  readonly date: string;
+  readonly kind: NianJingInflectionPoint['kind'];
+  readonly inflection: NianJingInflectionPoint;
+}
+
+export interface NianJingSelectedYearConcernCard {
+  readonly concern_tag_ref: string;
+  readonly label: string;
+  readonly year: number;
+  readonly primary_nature: NianJingNature | null;
+  readonly primary_segment: NianJingYearSegment | null;
+  readonly primary_summary: string;
+  readonly segments: readonly NianJingYearSegment[];
+  readonly month_markers: readonly NianJingSelectedYearMonthMarker[];
+}
+
+export interface NianJingSelectedYearBasisItem {
+  readonly kind: 'phase_band' | NianJingInflectionPoint['kind'];
+  readonly count: number;
+  readonly dates: readonly string[];
+  readonly summaries: readonly string[];
+}
+
+export interface NianJingSelectedYearDetail {
+  readonly year: number;
+  readonly start_date: string;
+  readonly end_date: string;
+  readonly is_current_year: boolean;
+  readonly primary_nature: NianJingNature | null;
+  readonly primary_concern_tag_ref: string | null;
+  readonly concern_cards: readonly NianJingSelectedYearConcernCard[];
+  readonly basis_items: readonly NianJingSelectedYearBasisItem[];
+}
+
 export interface BuildNianJingYearModulesInput {
   readonly output: NianJingMirrorOutput;
   readonly active_concern_tags: readonly NianJingYearConcernTag[];
@@ -60,6 +106,10 @@ function dateMs(date: string): number {
 
 function yearOf(date: string): number {
   return Number(date.slice(0, 4));
+}
+
+function monthOf(date: string): number {
+  return Number(date.slice(5, 7));
 }
 
 function yearStart(year: number): string {
@@ -198,4 +248,155 @@ export function buildNianJingYearModules(
 
 export function nianjingYearSegmentFlex(segment: NianJingYearSegment): string {
   return String(segment.day_count);
+}
+
+function dominantNatureForYear(
+  cells: readonly NianJingYearCell[],
+): NianJingNature | null {
+  const totals = new Map<NianJingNature, number>();
+  for (const cell of cells) {
+    for (const segment of cell.segments) {
+      totals.set(segment.nature, (totals.get(segment.nature) ?? 0) + segment.day_count);
+    }
+  }
+
+  let best: NianJingNature | null = null;
+  let bestDays = -1;
+  for (const [nature, days] of totals) {
+    if (
+      days > bestDays ||
+      (days === bestDays && best !== null && NATURE_SEVERITY[nature] > NATURE_SEVERITY[best])
+    ) {
+      best = nature;
+      bestDays = days;
+    }
+  }
+  return best;
+}
+
+function cellDaysForNature(cell: NianJingYearCell, nature: NianJingNature): number {
+  return cell.segments
+    .filter((segment) => segment.nature === nature)
+    .reduce((total, segment) => total + segment.day_count, 0);
+}
+
+function primaryCellForNature(
+  cells: readonly NianJingYearCell[],
+  nature: NianJingNature | null,
+): NianJingYearCell | null {
+  if (!nature) return null;
+
+  let best: NianJingYearCell | null = null;
+  let bestDays = -1;
+  for (const cell of cells) {
+    const days = cellDaysForNature(cell, nature);
+    if (days <= 0) continue;
+    if (days > bestDays) {
+      best = cell;
+      bestDays = days;
+      continue;
+    }
+    if (
+      days === bestDays &&
+      cell.primary_segment?.is_current &&
+      !best?.primary_segment?.is_current
+    ) {
+      best = cell;
+    }
+  }
+
+  return best;
+}
+
+export function buildNianJingAnnualOverview(
+  modules: readonly NianJingYearModule[],
+): readonly NianJingAnnualOverviewYear[] {
+  return modules.map((module) => {
+    const primaryNature = dominantNatureForYear(module.cells);
+    return {
+      year: module.year,
+      start_date: module.start_date,
+      end_date: module.end_date,
+      is_current_year: module.is_current_year,
+      primary_nature: primaryNature,
+      primary_cell: primaryCellForNature(module.cells, primaryNature),
+      inflections: module.cells
+        .flatMap((cell) => cell.inflections)
+        .sort((a, b) => dateMs(a.date) - dateMs(b.date)),
+    };
+  });
+}
+
+export function buildNianJingSelectedYearDetail(input: {
+  readonly module: NianJingYearModule;
+  readonly active_concern_tags: readonly NianJingYearConcernTag[];
+}): NianJingSelectedYearDetail {
+  const tagsById = new Map(input.active_concern_tags.map((tag) => [tag.id, tag]));
+  const primaryNature = dominantNatureForYear(input.module.cells);
+  const primaryCell = primaryCellForNature(input.module.cells, primaryNature);
+  const allSegments = input.module.cells.flatMap((cell) => cell.segments);
+  const allInflections = input.module.cells.flatMap((cell) => cell.inflections);
+  const inflectionsByKind = new Map<NianJingInflectionPoint['kind'], NianJingInflectionPoint[]>();
+
+  for (const inflection of allInflections) {
+    const bucket = inflectionsByKind.get(inflection.kind);
+    if (bucket) bucket.push(inflection);
+    else inflectionsByKind.set(inflection.kind, [inflection]);
+  }
+
+  const concernCards: NianJingSelectedYearConcernCard[] = input.module.cells.map((cell) => {
+    const tag = tagsById.get(cell.concern_tag_ref);
+    const primarySummary =
+      cell.primary_segment?.band.summary ??
+      cell.primary_segment?.band.driver_refs[0] ??
+      '';
+    return {
+      concern_tag_ref: cell.concern_tag_ref,
+      label: tag?.label ?? cell.label,
+      year: cell.year,
+      primary_nature: cell.primary_nature,
+      primary_segment: cell.primary_segment,
+      primary_summary: primarySummary,
+      segments: cell.segments,
+      month_markers: cell.inflections.map((inflection) => ({
+        month: monthOf(inflection.date),
+        date: inflection.date,
+        kind: inflection.kind,
+        inflection,
+      })),
+    };
+  });
+
+  const basisItems: NianJingSelectedYearBasisItem[] = [];
+  if (allSegments.length > 0) {
+    basisItems.push({
+      kind: 'phase_band',
+      count: allSegments.length,
+      dates: [...new Set(allSegments.map((segment) => segment.start_date))],
+      summaries: allSegments
+        .map((segment) => segment.band.summary)
+        .filter((summary) => summary.length > 0),
+    });
+  }
+  for (const [kind, inflections] of inflectionsByKind) {
+    basisItems.push({
+      kind,
+      count: inflections.length,
+      dates: inflections.map((inflection) => inflection.date),
+      summaries: inflections
+        .map((inflection) => inflection.summary)
+        .filter((summary) => summary.length > 0),
+    });
+  }
+
+  return {
+    year: input.module.year,
+    start_date: input.module.start_date,
+    end_date: input.module.end_date,
+    is_current_year: input.module.is_current_year,
+    primary_nature: primaryNature,
+    primary_concern_tag_ref: primaryCell?.concern_tag_ref ?? null,
+    concern_cards: concernCards,
+    basis_items: basisItems,
+  };
 }

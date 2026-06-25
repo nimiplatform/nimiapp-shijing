@@ -2,7 +2,15 @@ import { useMemo } from 'react';
 import type { YueJingCell } from '../../../domain/mirror-output.ts';
 import { TENDENCY_CLASS_LABELS } from '../../i18n/copy.ts';
 import { useShijingStore } from '../../state/shijing-store.tsx';
-import { classifyDay, dayOfMonth, dominantTendency, monthOf, WEEKDAY_HEADERS, WEEKDAY_SHORT, weekdayIndexMondayFirst } from './yuejing-model.ts';
+import {
+  classifyDay,
+  dayOfMonth,
+  deriveYueJingLunisolarMarker,
+  dominantTendency,
+  WEEKDAY_HEADERS,
+  WEEKDAY_SHORT,
+  weekdayIndexMondayFirst,
+} from './yuejing-model.ts';
 import { YUEJING_COPY } from './yuejing-copy.ts';
 
 export interface YueJingCalendarProps {
@@ -77,6 +85,7 @@ function YueJingDayCard(props: YueJingDayCardProps) {
   const dominant = isEmpty ? null : dominantTendency(props.entries);
   const weekday = WEEKDAY_SHORT[weekdayIndexMondayFirst(props.date)];
   const dayNum = dayOfMonth(props.date);
+  const marker = deriveYueJingLunisolarMarker(props.date);
 
   const hasEntries = useMemo(() => {
     const datePrefix = props.date;
@@ -105,6 +114,7 @@ function YueJingDayCard(props: YueJingDayCardProps) {
         aria-expanded={props.selected}
         aria-label={YUEJING_COPY.calendar.dayAriaLabel(
           props.date,
+          marker?.label ?? null,
           dominant ? TENDENCY_CLASS_LABELS[dominant] : null,
         )}
       >
@@ -115,9 +125,14 @@ function YueJingDayCard(props: YueJingDayCardProps) {
           <span className="shijing-yuejing__day-edit-mark" aria-label={YUEJING_COPY.calendar.hasRecordAriaLabel}>✎</span>
         ) : null}
         <span className="shijing-yuejing__day-number">
-          {dayNum}
-          {dayNum === 1 ? (
-            <span className="shijing-yuejing__day-month-marker">{YUEJING_COPY.calendar.monthStart(monthOf(props.date))}</span>
+          <span className="shijing-yuejing__day-number-value">{dayNum}</span>
+          {marker ? (
+            <span
+              className="shijing-yuejing__day-lunisolar"
+              data-marker-kind={marker.kind}
+            >
+              {marker.label}
+            </span>
           ) : null}
         </span>
         {dominant ? (

@@ -13,7 +13,7 @@
 // note instead. The list shows events whose `occurred_at` falls inside the
 // framing range and is tagged with this concern. Save / edit / delete all go
 // through `upsertEventMemory` / `deleteEventMemory` so the validator +
-// concern-tag-ref gates apply. "去时镜问这条" seeds the ShiJing consultation
+// concern-tag-ref gates apply. "去问镜问这条" seeds the ShiJing consultation
 // and jumps there, matching the YueJing day panel.
 
 import { useMemo, useState } from 'react';
@@ -60,7 +60,7 @@ export interface NianJingEventRecorderProps {
   // Heading override — "发生过的事" for a band, "这个拐点前后发生过什么" for a
   // marker. Defaults to the band wording.
   readonly heading?: string;
-  // Called after "去时镜问这条" navigates away, so the host drawer can close.
+  // Called after "去问镜问这条" navigates away, so the host drawer can close.
   readonly onNavigatedAway: () => void;
   // Opens the full-life "发生过的事" archive in Settings — the timeline only
   // ever shows events inside this phase's window, so "查看全部" routes to the
@@ -180,7 +180,7 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
       ) : (
         <>
           <p className="shijing-nianjing__rec-intro">
-            记下这段时间里和「{props.concernTag.label.replace(/^#/, '')}」相关的经历,时镜解读这段相位时可以引用它。
+            记下这段时间里和「{props.concernTag.label.replace(/^#/, '')}」相关的经历,问镜解读这段相位时可以引用它。
           </p>
           <div className="shijing-nianjing__rec-compose">
             <textarea
@@ -304,10 +304,10 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
                     </span>
                     <span className="shijing-nianjing__rec-body">{m.body}</span>
                     <div className="shijing-nianjing__rec-actions">
-                      <Tooltip content="去时镜问这条" placement="top">
+                      <Tooltip content="去问镜问这条" placement="top">
                         <button
                           type="button"
-                          aria-label="去时镜问这条"
+                          aria-label="去问镜问这条"
                           onClick={() => askInShiJing(m.id)}
                         >
                           问

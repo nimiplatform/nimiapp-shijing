@@ -31,9 +31,8 @@ export const YUEJING_COPY = {
     gridAriaLabel: '30 日日历网格',
     today: '今日',
     hasRecordAriaLabel: '已有记录',
-    monthStart: (month: number) => `${month}月起`,
-    dayAriaLabel: (date: string, tendencyLabel: string | null) =>
-      tendencyLabel ? `${date} · ${tendencyLabel}` : date,
+    dayAriaLabel: (date: string, calendarMarkerLabel: string | null, tendencyLabel: string | null) =>
+      [date, calendarMarkerLabel, tendencyLabel].filter(Boolean).join(' · '),
   },
   dayPanel: {
     close: '关闭',
@@ -42,6 +41,14 @@ export const YUEJING_COPY = {
       past: '已过',
       today: '今日',
       future: '未来',
+    },
+    calendarDetails: {
+      ariaLabel: '通用历法',
+      title: '通用历法',
+      lunar: '农历',
+      ganzhi: '干支',
+      solarTerm: '节气',
+      festivals: '节日',
     },
     currentTendency: '当日倾向',
     emptyTendency: '本日还没有推算倾向。点击右上「生成今日」开始。',
@@ -66,7 +73,7 @@ export const YUEJING_COPY = {
     recordsEmpty: '这一天还没有记录。',
     recordsAriaLabel: (kind: string) => `已记录的${kind}`,
     editRecordContent: '编辑记录内容',
-    askThisRecord: '去时镜问这条',
+    askThisRecord: '去问镜问这条',
     edit: '编辑',
     delete: '删除',
     cancel: '取消',

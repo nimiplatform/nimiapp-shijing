@@ -1,0 +1,296 @@
+.shijing-rijing .shijing-rijing__hero {
+  perspective: 1200px;
+}
+
+.shijing-tab .shijing-rijing__hero-flip {
+  appearance: none;
+  position: absolute;
+  top: clamp(14px, 2vw, 22px);
+  right: clamp(14px, 2vw, 22px);
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 12px 0 16px;
+  border: 1px solid color-mix(in srgb, var(--rijing-accent) 30%, var(--shijing-border-subtle));
+  border-radius: 999px;
+  background: color-mix(in srgb, white 78%, var(--rijing-accent) 10%);
+  color: var(--rijing-accent-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.38);
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.shijing-tab .shijing-rijing__hero-flip:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--rijing-accent) 50%, var(--shijing-border-subtle));
+  background: color-mix(in srgb, white 70%, var(--rijing-accent) 16%);
+}
+
+.shijing-rijing__hero-flip-text {
+  white-space: nowrap;
+}
+
+.shijing-rijing__hero-flip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--rijing-accent) 14%, transparent);
+}
+
+.shijing-tab .shijing-rijing__hero-flip svg {
+  width: 14px;
+  height: 14px;
+}
+
+.shijing-rijing__hero-stage {
+  display: grid;
+  width: 100%;
+  transform-style: preserve-3d;
+}
+
+.shijing-rijing__hero-face {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 220ms ease;
+}
+
+.shijing-rijing__hero-face--front {
+  /* The stage grid sizes to the taller almanac back face, so the front
+     overview would otherwise pile at the top and strand the lower half empty.
+     Centre the compact (no-reading) overview so it sits balanced instead. */
+  justify-content: center;
+  transform: rotateY(0deg);
+  opacity: 1;
+}
+
+/* With a reading the overview is content-rich: distribute its blocks to fill
+   the stage height the almanac back face defines, so the text breathes evenly
+   top-to-bottom instead of crowding the top above a large empty band. */
+.shijing-rijing__hero:not(.shijing-rijing__hero--empty) .shijing-rijing__hero-face--front {
+  justify-content: space-between;
+}
+
+.shijing-rijing__hero-face--back {
+  transform: rotateY(180deg);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.shijing-rijing__hero[data-rite-open="true"] .shijing-rijing__hero-face--front {
+  transform: rotateY(-180deg);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.shijing-rijing__hero[data-rite-open="true"] .shijing-rijing__hero-face--back {
+  transform: rotateY(0deg);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.shijing-rijing .shijing-rijing__rite-title {
+  margin: 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: clamp(34px, 5.2vw, 52px);
+  font-weight: 700;
+  color: var(--shijing-text-primary);
+  letter-spacing: 0.08em;
+  line-height: 1.16;
+}
+
+.shijing-rijing .shijing-rijing__rite-summary {
+  margin: 0;
+  max-width: 680px;
+  color: var(--shijing-text-secondary);
+  font-size: 14.5px;
+  line-height: 1.85;
+}
+
+.shijing-rijing__almanac-recommends {
+  width: min(800px, 100%);
+  display: grid;
+  gap: 10px;
+  text-align: left;
+}
+
+.shijing-rijing__almanac-line {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 14px;
+  align-items: baseline;
+}
+
+.shijing-rijing__almanac-line span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.shijing-rijing__almanac-line[data-kind="recommend"] span {
+  border: 2px solid color-mix(in srgb, var(--rijing-accent) 68%, white);
+  color: var(--rijing-accent-ink);
+}
+
+.shijing-rijing__almanac-line[data-kind="avoid"] span {
+  border: 2px solid color-mix(in srgb, var(--shijing-status-danger) 62%, white);
+  color: var(--shijing-status-danger);
+}
+
+.shijing-rijing .shijing-rijing__almanac-line p {
+  margin: 0;
+  color: var(--shijing-text-primary);
+  font-size: 18px;
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+.shijing-rijing__almanac-grid {
+  width: min(800px, 100%);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid color-mix(in srgb, var(--rijing-accent) 20%, var(--shijing-border-subtle));
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.shijing-rijing__almanac-cell {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  min-height: 54px;
+  padding: 12px 14px;
+  border-right: 1px solid color-mix(in srgb, var(--rijing-accent) 20%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--rijing-accent) 20%, transparent);
+  text-align: left;
+}
+
+.shijing-rijing__almanac-cell:nth-child(3n) {
+  border-right: 0;
+}
+
+.shijing-rijing__almanac-cell:nth-last-child(-n + 3) {
+  border-bottom: 0;
+}
+
+.shijing-rijing__almanac-cell span,
+.shijing-rijing__almanac-detail span {
+  color: color-mix(in srgb, #c47a20 84%, var(--rijing-accent-ink));
+  font-weight: 700;
+}
+
+.shijing-rijing__almanac-cell strong {
+  min-width: 0;
+  color: var(--shijing-text-primary);
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.shijing-rijing__almanac-detail {
+  width: min(800px, 100%);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid color-mix(in srgb, var(--rijing-accent) 18%, var(--shijing-border-subtle));
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.45);
+  text-align: left;
+}
+
+.shijing-rijing__almanac-detail div {
+  min-height: 62px;
+  padding: 12px 14px;
+  border-right: 1px solid color-mix(in srgb, var(--rijing-accent) 18%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--rijing-accent) 18%, transparent);
+}
+
+.shijing-rijing__almanac-detail div:nth-child(2n) {
+  border-right: 0;
+}
+
+.shijing-rijing__almanac-detail div:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
+.shijing-rijing .shijing-rijing__almanac-detail p {
+  margin: 6px 0 0;
+  color: var(--shijing-text-primary);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.shijing-rijing__almanac-hours-panel {
+  width: min(800px, 100%);
+  display: grid;
+  gap: 8px;
+}
+
+.shijing-rijing__almanac-hours-heading {
+  color: var(--rijing-accent-ink);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.shijing-rijing__almanac-hours {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(34px, 1fr));
+  gap: 0;
+  border: 1px solid color-mix(in srgb, var(--rijing-accent) 18%, var(--shijing-border-subtle));
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.shijing-rijing__almanac-hours span {
+  display: grid;
+  gap: 3px;
+  justify-items: center;
+  padding: 10px 4px;
+  border-right: 1px solid color-mix(in srgb, var(--rijing-accent) 18%, transparent);
+  color: var(--shijing-text-secondary);
+  font-size: 13px;
+}
+
+.shijing-rijing__almanac-hours span:last-child {
+  border-right: 0;
+}
+
+.shijing-rijing__almanac-hours b {
+  color: var(--shijing-text-primary);
+  font-size: 16px;
+}
+
+.shijing-rijing__almanac-hours span[data-luck="吉"] {
+  color: var(--rijing-accent-ink);
+}
+
+.shijing-rijing__almanac-hours span[data-luck="凶"] {
+  color: var(--shijing-status-danger);
+}

@@ -6,6 +6,7 @@ import { useProductCopy } from '../../i18n/copy.ts';
 import type { MingJingMirrorOutput } from '../../../domain/mirror-output.ts';
 import type { ReadingGenerationFailure } from '../../../domain/reading.ts';
 import { FailureBanner } from '../shared/failure-banner.tsx';
+import { GeneratingButton } from '../shared/generating-button.tsx';
 import { pillarHanzi } from './ganzhi-hanzi.ts';
 import { MingJingInfo } from './mingjing-info.tsx';
 
@@ -45,14 +46,15 @@ export function MingJingReadingView({
             </MingJingInfo>
           </div>
         </div>
-        <button
-          type="button"
+        <GeneratingButton
           className="shijing-mj-reading__generate"
           onClick={onGenerate}
           disabled={loading}
+          busy={loading}
+          busyLabel={r.generating}
         >
-          {loading ? r.generating : output ? r.regenerate : r.generate}
-        </button>
+          {output ? r.regenerate : r.generate}
+        </GeneratingButton>
       </header>
 
       {failure ? <FailureBanner failure={failure} /> : null}

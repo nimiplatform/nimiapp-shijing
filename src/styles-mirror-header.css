@@ -1,5 +1,5 @@
-/* Shared month-style page header for RiJing / YueJing / NianJing.
- * MingJing and ShiJing intentionally keep distinct header structures. */
+/* Shared month-style page header for RiJing / YueJing / NianJing / MingJing.
+ * ShiJing intentionally keeps a distinct consultation header structure. */
 
 .shijing-mirror-header {
   display: grid;

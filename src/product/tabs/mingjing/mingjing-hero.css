@@ -2,13 +2,15 @@
 
 .shijing-mingjing__hero {
   display: flex;
-  flex-direction: column;
-  gap: 0;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
   padding: 0 2px 0;
 }
 
 .shijing-mingjing .shijing-mingjing__title {
-  margin: 0 0 6px;
+  margin: 0;
   font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
   font-size: 32px;
   font-weight: 600;
@@ -18,6 +20,47 @@
 }
 
 /* ── 命局总览 Hero (green card) ──────────────────────────────────────────── */
+
+.shijing-mingjing__method-switch {
+  margin-left: auto;
+  flex: 0 1 280px;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.shijing-mingjing .shijing-mingjing__method-select {
+  width: 100%;
+  min-width: 220px;
+  max-width: 280px;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid rgba(78, 204, 163, 0.26);
+  border-radius: 999px;
+  color: var(--mingjing-ink-strong);
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: 0 10px 26px -20px rgba(23, 32, 42, 0.28);
+  backdrop-filter: blur(16px) saturate(128%);
+  -webkit-backdrop-filter: blur(16px) saturate(128%);
+  font-family: var(--mingjing-font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.shijing-mingjing .shijing-mingjing__method-select:hover {
+  border-color: rgba(78, 204, 163, 0.42);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.shijing-mingjing .shijing-mingjing__method-select:focus,
+.shijing-mingjing .shijing-mingjing__method-select[data-state="open"] {
+  outline: none;
+  border-color: var(--mingjing-accent);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shijing-focus-ring);
+}
 
 .shijing-mingjing .shijing-mj-hero {
   position: relative;

@@ -132,8 +132,58 @@
     padding: 26px 22px 22px;
   }
 
+  .shijing-tab .shijing-rijing__hero-flip {
+    min-height: 34px;
+    padding: 0 10px 0 12px;
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  .shijing-rijing__hero-flip-icon {
+    width: 18px;
+    height: 18px;
+  }
+
   .shijing-rijing .shijing-rijing__hero-headline {
     letter-spacing: 0.06em;
+  }
+
+  .shijing-rijing__almanac-grid,
+  .shijing-rijing__almanac-detail {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-rijing__almanac-cell,
+  .shijing-rijing__almanac-detail div,
+  .shijing-rijing__almanac-cell:nth-child(3n),
+  .shijing-rijing__almanac-detail div:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .shijing-rijing__almanac-cell:nth-last-child(-n + 3),
+  .shijing-rijing__almanac-detail div:nth-last-child(-n + 2) {
+    border-bottom: 1px solid color-mix(in srgb, var(--rijing-accent) 18%, transparent);
+  }
+
+  .shijing-rijing__almanac-cell:last-child,
+  .shijing-rijing__almanac-detail div:last-child {
+    border-bottom: 0;
+  }
+
+  .shijing-rijing__almanac-line {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .shijing-rijing .shijing-rijing__almanac-line p {
+    font-size: 15px;
+  }
+
+  .shijing-rijing__almanac-hours {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .shijing-rijing__almanac-hours span:nth-child(6n) {
+    border-right: 0;
   }
 
   .shijing-rijing__data-grid {
@@ -142,6 +192,10 @@
 
   .shijing-rijing__hero-subtitle {
     font-size: 14px;
+  }
+
+  .shijing-rijing__hero-subtitle-row {
+    flex-direction: column;
   }
 
   .shijing-rijing__projections-head {

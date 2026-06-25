@@ -12,11 +12,11 @@
     gap: 14px;
   }
 
-  .shijing-paipan__title {
+  .shijing-mingjing .shijing-paipan__title {
     font-size: 17px;
   }
 
-  .shijing-paipan__intro {
+  .shijing-mingjing .shijing-paipan__intro {
     font-size: 13px;
     line-height: 1.75;
   }
@@ -34,7 +34,7 @@
     min-height: 0;
   }
 
-  .shijing-paipan__glyphs {
+  .shijing-mingjing .shijing-paipan__glyphs {
     font-size: 34px;
   }
 
@@ -114,25 +114,27 @@
     margin-top: -36px;
   }
 
-  .shijing-mj-relationship__controls {
-    grid-template-columns: 1fr;
-  }
-
-  .shijing-mj-relationship__controls .shijing-mj-reading__generate,
-  .shijing-mj-relationship__manage {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .shijing-mj-relationship__window-head {
-    align-items: flex-start;
-    flex-direction: column;
-  }
 }
 
 @media (max-width: 720px) {
   .shijing-mingjing {
     padding: 24px 14px 36px;
+  }
+
+  .shijing-mingjing__hero {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .shijing-mingjing__method-switch {
+    flex-basis: 100%;
+    margin-left: 0;
+    justify-content: stretch;
+  }
+
+  .shijing-mingjing .shijing-mingjing__method-select {
+    min-width: 0;
+    max-width: 100%;
   }
 
   .shijing-mingjing-paipan {

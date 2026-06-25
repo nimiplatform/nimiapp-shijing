@@ -208,10 +208,24 @@
 .shijing-yuejing__day[data-tendency="empty"] .shijing-yuejing__day-number {
   color: var(--shijing-text-primary);
   text-shadow: none;
+  opacity: 1;
+}
+.shijing-yuejing__day[data-tendency="empty"] .shijing-yuejing__day-number-value {
+  color: var(--shijing-text-primary);
+  text-shadow: none;
   opacity: 0.88;
 }
-.shijing-yuejing__day[data-tendency="empty"] .shijing-yuejing__day-month-marker {
+.shijing-yuejing__day[data-tendency="empty"] .shijing-yuejing__day-lunisolar {
   color: var(--shijing-text-muted);
+  text-shadow: none;
+  opacity: 0.95;
+}
+.shijing-yuejing__day[data-tendency="empty"] .shijing-yuejing__day-lunisolar[data-marker-kind="festival"],
+.shijing-yuejing__day[data-tendency="empty"] .shijing-yuejing__day-lunisolar[data-marker-kind="solar_term"],
+.shijing-yuejing__day[data-tendency="empty"] .shijing-yuejing__day-lunisolar[data-marker-kind="lunar_month"] {
+  color: #a86122;
+  font-weight: 650;
+  opacity: 1;
 }
 .shijing-yuejing__day[data-day-kind="today"][data-tendency="empty"] .shijing-yuejing__day-face {
   background:
@@ -250,24 +264,43 @@
   letter-spacing: 0.04em;
 }
 
-.shijing-yuejing__day-month-marker {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.78);
-  margin-top: 2px;
-  grid-row: 1;
-  justify-self: start;
-}
-
 .shijing-yuejing__day-number {
   grid-row: 2;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-self: center;
+  align-items: flex-start;
+  color: #ffffff;
+}
+
+.shijing-yuejing__day-number-value {
   font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
   font-size: 34px;
   font-weight: 600;
-  color: #ffffff;
   line-height: 1;
-  align-self: center;
   letter-spacing: 0.02em;
   text-shadow: 0 1px 2px rgba(15, 23, 38, 0.08);
+}
+
+.shijing-yuejing__day-lunisolar {
+  font-size: 11px;
+  line-height: 1.05;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0;
+  text-shadow: 0 1px 2px rgba(15, 23, 38, 0.08);
+}
+
+.shijing-yuejing__day-lunisolar[data-marker-kind="festival"],
+.shijing-yuejing__day-lunisolar[data-marker-kind="solar_term"],
+.shijing-yuejing__day-lunisolar[data-marker-kind="lunar_month"] {
+  color: #ffffff;
+  font-weight: 650;
 }
 
 .shijing-yuejing__day-tendency {
@@ -278,7 +311,7 @@
   padding: 2px 9px;
   border-radius: 999px;
   align-self: end;
-  justify-self: start;
+  justify-self: end;
   font-weight: 500;
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
