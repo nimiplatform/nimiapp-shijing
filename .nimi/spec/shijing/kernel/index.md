@@ -4,8 +4,8 @@ This directory is the normative authority landing for ShiJing (时镜).
 
 ## Normative Surfaces
 
-- `product-contract.md` (`SJG-PROD-*`): five-tab product invariants,
-  MingJing-owned Relationship HePan admission, no-legacy hard cut, single
+- `product-contract.md` (`SJG-PROD-*`): six-tab product invariants,
+  HeJing-owned relationship analysis UX admission, no-legacy hard cut, single
   Reading entity, concern-tag limit, Runtime AI boundary, no pseudo-success,
   no user-space catalog truth.
 - `data-model-contract.md` (`SJG-DATA-*`): `ShiJingSpace`, `SelfSubject`,
@@ -13,7 +13,7 @@ This directory is the normative authority landing for ShiJing (时镜).
   `PlanItem`, `Reading`, `relationship_natal` MirrorScope, `Conversation`, and
   `Settings`.
 - `astrology-contract.md` (`SJG-ASTRO-*`): mirror kinds/scopes, output
-  structure including MingJing Relationship HePan, forbidden outputs,
+  structure including relationship analysis output, forbidden outputs,
   uncertainty surface, inputs snapshots, and Runtime boundary.
 - `algorithm-contract.md` (`SJG-ALGO-*`): method profile registry
   (`bazi_ziping_v1`; `ziwei_sanhe_v1`), the MethodEngine port,
@@ -23,10 +23,10 @@ This directory is the normative authority landing for ShiJing (时镜).
   Relationship HePan deterministic evidence.
 - `algorithm-feature-snapshot-shape.md`: normative SJG-ALGO-08 field-level
   shape appendix for `AstrologyFeatureSnapshot`; no independent rule id.
-- `ia-contract.md` (`SJG-IA-*`): exactly five primary tabs: `日镜`, `月镜`,
-  `年镜`, `命镜`, `时镜`, plus mandatory secondary Settings. `命镜` is the
-  whole-life natal projection surface (SJG-IA-08 / SJG-ALGO-16) and owns the
-  `relationship_hepan` secondary mode.
+- `ia-contract.md` (`SJG-IA-*`): exactly six primary tabs: `日镜`, `月镜`,
+  `年镜`, `命镜`, `合镜`, `问镜`, plus mandatory secondary Settings. `命镜` is the
+  whole-life natal projection surface (SJG-IA-08 / SJG-ALGO-16). `合镜` is the
+  independent self-plus-one-person relationship workbench (SJG-IA-09).
 - `removed-surfaces-contract.md` (`SJG-REMOVED-*`): hard removals including
   old View/Focus/Relation/CurrentObservationTarget/catalog surfaces,
   reports, trend charts, luck scores, History, CRM, and project-management

@@ -26,6 +26,7 @@ CommonDrivers {
 MethodEvidence =
   | { method_id: "bazi_ziping_v1"; bazi: BaziEvidence }
   | { method_id: "ziwei_sanhe_v1"; ziwei: ZiweiEvidence }
+  | { method_id: "qizheng_siyu_guolao_v1"; qizheng_siyu: QizhengSiyuEvidence }
 
 CanonicalMirrorWindow {
   start_utc: string
@@ -119,6 +120,51 @@ ZiweiStar {
   name: string
   brightness: string            // 庙旺得利平不陷 (may be empty)
   mutagen: "" | "禄" | "权" | "科" | "忌"   // 生年四化
+}
+
+QizhengSiyuEvidence {
+  self_subject: QizhengSiyuSubjectChart
+  related_persons: QizhengSiyuSubjectChart[]
+}
+
+QizhengSiyuSubjectChart {
+  subject_ref: SubjectRef
+  canonicalization_hash: string
+  chart_basis: QizhengSiyuChartBasis
+  bodies: QizhengSiyuBody[]      // 七政 + 四余, method-private
+  houses: QizhengSiyuHouse[]     // twelve equal houses from ascendant in v1
+}
+
+QizhengSiyuChartBasis {
+  birth_utc: string
+  ascendant_longitude: number
+  day_night: "day" | "night"
+  zodiac_model: string
+  house_model: string // raw deterministic id; renderer must map to product-facing copy
+  mansion_model: string // `28-equal-mansion-v1` is an admitted v1 approximation
+  siyu_model: string // raw deterministic id; 罗喉=ascending node, 计都=descending node
+  ephemeris_version: string
+}
+
+QizhengSiyuBody {
+  key: string
+  label: string
+  kind: "qizheng" | "siyu"
+  longitude: number
+  latitude?: number
+  zodiac_sign: string
+  mansion: string
+  house_name: string
+  position_class: string
+  provenance: string
+}
+
+QizhengSiyuHouse {
+  index: number
+  name: string
+  start_longitude: number
+  end_longitude: number
+  body_keys: string[]
 }
 
 NatalChartSnapshot {

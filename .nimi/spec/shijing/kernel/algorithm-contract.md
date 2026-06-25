@@ -18,6 +18,7 @@ MethodProfile {
 MethodProfileId =
   | "bazi_ziping_v1"   // admitted — 八字子平
   | "ziwei_sanhe_v1"   // admitted — 紫微斗数 (三合派)
+  | "qizheng_siyu_guolao_v1" // admitted — 七政四余 / 果老星宗
 ```
 
 `bazi_ziping_v1`: BaZi four pillars, ganzhi cycles, jieqi boundaries, DaYun,
@@ -33,6 +34,18 @@ cannot otherwise be placed. Its long-horizon unit is 大限
 (`horizon_unit = "daxian"`). The admitted v1 四化 school is 三合派 (iztro
 default), captured as engine config and swappable without altering the common
 surface.
+
+`qizheng_siyu_guolao_v1`: 七政四余 / 果老星宗 — 七政 uses astronomical
+geocentric ecliptic longitudes for Sun, Moon, Mercury, Venus, Mars, Jupiter, and
+Saturn; 四余 is admitted as a v1 virtual-point model: 罗喉 is the ascending lunar
+node, 计都 is the descending lunar node, 月孛 is mean lunar apogee, and 紫气 is a
+28-year virtual point with explicit epoch provenance. 宿度 is `28-equal-mansion-v1`,
+an explicit v1 approximation and not a full traditional 距星 / 距度入宿 model.
+Its implemented v1 product scope is the MingJing natal route only. It strictly
+requires exact birth time and resolved birth location/timezone. RiJing,
+YueJing, NianJing, ShiJing consultation, and Relationship HePan remain
+unsupported until route-specific common-driver and relationship evidence rules
+are admitted.
 
 Each profile is realized by a `MethodEngine` that (1) computes a method-private
 deterministic chart (`method_evidence`) and (2) projects it onto the
@@ -450,6 +463,7 @@ MingJing route registry:
 | --- | --- | --- | --- |
 | `mingjing.route.bazi_ziping_v1` | `bazi_ziping_v1` | `implemented` | `natal_projection`, `natal_reading`, `relationship_hepan` |
 | `mingjing.route.ziwei_sanhe_v1` | `ziwei_sanhe_v1` | `implemented` | `natal_projection`, `natal_reading` |
+| `mingjing.route.qizheng_siyu_guolao_v1` | `qizheng_siyu_guolao_v1` | `implemented` | `natal_projection`, `natal_reading` |
 
 Rules:
 
@@ -491,3 +505,13 @@ Rules:
   remains unsupported for this route until Ziwei-specific self-plus-person
   relationship evidence, validators, renderer modules, and Runtime AI schemas
   are explicitly admitted here.
+- `qizheng_siyu_guolao_v1` is admitted as a MingJing natal route only in this
+  iteration. Its route evidence comes from `QizhengSiyuEvidence.self_subject`,
+  renderer modules may display 七政四余星曜、十二宫落位、二十八宿区间 and the
+  explicit 四余 model provenance. Renderer copy must translate raw model ids such
+  as `equal-house-from-ascendant-v1` and `28-equal-mansion-v1` into product-facing
+  labels, and must label `position_class` as 宫势 rather than a generic luck or
+  score-like strength. Runtime AI may word only the admitted
+  `qizheng_siyu_natal_brief` fields. All algorithm-neutral time mirrors,
+  consultation generation, and `relationship_hepan` fail closed until their
+  method-specific deterministic driver mappings are admitted.

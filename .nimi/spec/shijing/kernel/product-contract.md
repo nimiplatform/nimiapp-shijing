@@ -13,20 +13,24 @@ data under `ShiJingSpace`.
 
 ## SJG-PROD-03 - Personal Time-Mirror Product
 
-ShiJing is a personal astrology time-mirror and natal-companion product. It is
-organized by five primary tabs: RiJing, YueJing, NianJing, MingJing, and
-ShiJing consultation. It is not a CRM, consultant workspace, report builder,
-project manager, batch import/export tool, or free-form context container.
+ShiJing is a personal astrology time-mirror, natal-companion, and relationship
+insight product. It is organized by six primary tabs: RiJing, YueJing,
+NianJing, MingJing, HeJing, and ShiJing Consultation Mirror (`问镜`). It is not a
+CRM, consultant workspace, report builder, project manager, batch import/export
+tool, relation graph, or free-form context container.
 
-## SJG-PROD-04 - Five Primary Tabs
+## SJG-PROD-04 - Six Primary Tabs
 
-The product has exactly five primary tabs:
+The product has exactly six primary tabs:
 
 - RiJing (`日镜`) for daily reflection.
 - YueJing (`月镜`) for a rolling 30-day calendar.
 - NianJing (`年镜`) for long-horizon phase bands and inflection points.
-- MingJing (`命镜`) for natal projection and relationship hepan modes.
-- ShiJing (`时镜`) for session-based consultation grounded in cited readings.
+- MingJing (`命镜`) for self natal projection.
+- HeJing (`合镜`) for self-plus-one-person relationship structure, interaction
+  language, future windows, and relationship review.
+- ShiJing Consultation Mirror (`问镜`) for session-based consultation grounded in
+  cited readings.
 
 ## SJG-PROD-05 - Concern Tags Replace View / Focus
 
@@ -42,15 +46,17 @@ At most five concern tags may be active in one `ShiJingSpace`.
 Person is not a customer/contact/account and does not own conversations,
 events, memories, plans, settings, relationships, notifications, or lifecycle.
 
-## SJG-PROD-06A - Relationship HePan Belongs To MingJing
+## SJG-PROD-06A - HeJing Owns Relationship Analysis UX
 
-Relationship HePan is a MingJing-owned Reading mode for exactly
-`self + one Person`. It is not a primary product surface, relation graph,
-contact workspace, consultant workflow, or Person-owned lifecycle.
+HeJing is the primary product surface for exactly `self + one Person`
+relationship analysis. It may display relationship structure, interaction
+language, future windows, relationship advice, and relationship event review.
+It must not become a relation graph, contact workspace, consultant workflow,
+Person-owned lifecycle, or CRM-like surface.
 
-The People settings surface may launch Relationship HePan for a selected
-Person, but the generated result is stored only as a `Reading` and displayed on
-MingJing or cited by ShiJing consultation.
+Relationship analysis output still obeys the one-`Reading` rule when it becomes
+persisted output. This UI admission does not create a new persisted Relation
+entity or a parallel report entity.
 
 ## SJG-PROD-07 - Event Memory and Plan Item Separation
 

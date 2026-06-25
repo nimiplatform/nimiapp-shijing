@@ -1,10 +1,10 @@
 # SJG-IA - Information Architecture Contract
 
-## SJG-IA-01 - Exactly Five Primary Tabs
+## SJG-IA-01 - Exactly Six Primary Tabs
 
-The ShiJing renderer exposes exactly five primary tabs, in this order. The order
+The ShiJing renderer exposes exactly six primary tabs, in this order. The order
 follows a widening 命理 horizon: day → month → decade-horizon → whole-life natal
-→ consultation.
+→ relationship → consultation.
 
 | Order | Tab id | Chinese label | English anchor |
 | --- | --- | --- | --- |
@@ -12,11 +12,12 @@ follows a widening 命理 horizon: day → month → decade-horizon → whole-li
 | 2 | `yuejing` | `月镜` | Monthly Mirror |
 | 3 | `nianjing` | `年镜` | Yearly Mirror |
 | 4 | `mingjing` | `命镜` | Destiny Mirror |
-| 5 | `shijing` | `时镜` | Consultation Mirror |
+| 5 | `hejing` | `合镜` | Relationship Mirror |
+| 6 | `shijing` | `问镜` | Consultation Mirror |
 
-No sixth primary tab is admitted. `mingjing` (命镜, order 4) was admitted as a
-deliberate IA redesign in this contract revision; see SJG-IA-08. It is inserted
-after `nianjing` (whole-life natal > decade horizon) and before `shijing`, which
+`mingjing` (命镜, order 4) is the self natal projection surface; see SJG-IA-08.
+`hejing` (合镜, order 5) is the relationship analysis workbench for self plus one
+selected Person. It sits after self natal projection and before `shijing`, which
 remains the final consultation surface.
 
 ## SJG-IA-02 - Removed Primary Tabs
@@ -141,12 +142,38 @@ the deterministic route projection.
 The implemented Ziwei route renders a natal-only route directly from
 `ZiweiEvidence.self_subject`: 命宫 / 身宫 / 五行局 / 命主身主 summary, twelve-palace
 astrolabe, and a `ziwei_natal_brief` reading over deterministic decadal palace
-ranges. Ziwei Relationship HePan is not admitted; selecting
-`relationship_hepan` under the Ziwei route must fail closed through
-`mingjing_route_support` rather than falling back to BaZi or asking Runtime AI
-to compensate.
+ranges. Relationship analysis is not a MingJing secondary mode; it belongs to
+HeJing (SJG-IA-09). A method route that does not support relationship evidence
+must fail closed through route/support validation rather than falling back to
+another method or asking Runtime AI to compensate.
 
-MingJing admits two secondary modes: `benming` and `relationship_hepan`.
-`relationship_hepan` remains inside MingJing and may be launched from a Person
-card, but People remains a data-entry surface and does not own generated
-results.
+The implemented QiZheng SiYu / GuoLao route renders a natal-only route directly
+from `QizhengSiyuEvidence.self_subject`: ascendant and day/night basis, 七政四余
+body placements, 十二宫 distribution, 二十八宿 interval labels, and a
+`qizheng_siyu_natal_brief` reading over deterministic star-guidance targets. It
+requires exact birth time plus resolved birth location/timezone. Relationship
+analysis is not supported by this route until dedicated self-plus-person star
+evidence is admitted.
+
+MingJing admits no relationship secondary mode. It is the self natal projection
+surface.
+
+## SJG-IA-09 - 合镜 Relationship Workbench
+
+`hejing` (合镜) is an independent primary tab for `self + one Person`
+relationship analysis. It sits at the same primary-navigation level as RiJing,
+YueJing, NianJing, MingJing, and ShiJing consultation.
+
+HeJing renders a modular relationship workbench rather than a long report:
+
+- relationship type and object selection;
+- relationship basis, current phase, information completeness, and future hint;
+- relationship indices presented as product diagnostics, not fate claims;
+- self/other structure and shared convergence/friction areas;
+- interaction language and practical relationship advice;
+- future windows and relationship review records.
+
+HeJing must not become a Relation entity, relation graph, contact/customer
+workspace, project-management surface, or Person-owned lifecycle. People remains
+a secondary data-entry surface; HeJing may select a Person but does not make
+Person own generated output or conversations.

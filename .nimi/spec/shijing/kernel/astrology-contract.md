@@ -151,7 +151,7 @@ Invariants:
   change.
 - MingJing expires after 180 days or when cited events / natal inputs / response
   preferences change (the natal chart itself is fixed).
-- MingJing Relationship HePan expires after 180 days or when the related
+- Relationship HePan expires after 180 days or when the related
   Person's natal inputs, related Person consent posture, `anchor_year`, scope
   payload, self-plus-person deterministic relationship evidence, or response
   preferences change. Stale relationship evidence must fail closed before any
@@ -213,12 +213,33 @@ It must not:
   graphs, or trend curves;
 - degrade into a year-by-year ledger or rankable numeric series.
 
-## SJG-ASTRO-13 - MingJing Relationship HePan Output
+The QiZheng SiYu / GuoLao route (`qizheng_siyu_guolao_v1`) contains
+`output_kind = qizheng_siyu_natal_brief`:
 
-MingJing Relationship HePan (`mirror_kind = mingjing`,
-`scope = relationship_natal`) is grounded in deterministic self-plus-person
-relationship evidence. It contains stable relationship structure and
-anchor-year timing windows.
+- `chart_basis`: deterministic ascendant longitude, day/night label, zodiac,
+  house, mansion, 四余 model, ephemeris provenance, and key body references from
+  `QizhengSiyuEvidence`;
+- `profile`: AI wording over deterministic 七政四余 natal evidence;
+- `star_guidance`: one entry per admitted star target selected by the route seed.
+  Its body key, body label, house, mansion, and position class are deterministic;
+  theme and strategy are AI wording.
+
+It must not:
+
+- compute or mutate star longitudes, houses, mansions, 四余 provenance, or route
+  support through Runtime AI;
+- output relationship HePan, compatibility scores, match percentages, relation
+  graphs, trend curves, or star-position fields not present in the deterministic
+  evidence;
+- present the v1 virtual-point model as a universal 七政四余 definition. The model
+  provenance must remain visible in deterministic evidence.
+
+## SJG-ASTRO-13 - Relationship HePan Output
+
+Relationship HePan (`scope = relationship_natal`) is grounded in deterministic
+self-plus-person relationship evidence. It contains stable relationship
+structure and anchor-year timing windows, and its primary product UX is HeJing
+(SJG-IA-09).
 
 It must not output compatibility scores, match percentages, fate claims, trend
 curves, relation graphs, contact-management payloads, or a Runtime-AI-only

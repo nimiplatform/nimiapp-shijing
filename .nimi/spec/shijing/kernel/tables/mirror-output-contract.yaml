@@ -21,6 +21,7 @@ citations:
   allowed_method:
     - bazi_ziping_v1
     - ziwei_sanhe_v1
+    - qizheng_siyu_guolao_v1
 rijing:
   required_fields:
     - mirror_kind
@@ -197,6 +198,59 @@ mingjing_ziwei_natal_brief:
       ai_worded_fields: [theme, strategy]
   rules:
     - ziwei_palace_star_and_decadal_ranges_are_deterministic
+    - runtime_ai_words_profile_and_guidance_only
+    - no_relationship_hepan
+    - no_match_scores
+    - no_trend_curves
+mingjing_qizheng_siyu_natal_brief:
+  surface: MingJing QiZheng SiYu / GuoLao natal-only AI brief over deterministic QizhengSiyuEvidence
+  required_fields:
+    - mirror_kind
+    - output_kind
+    - summary
+    - chart_basis
+    - profile
+    - star_guidance
+    - cited_event_memory_refs
+    - cited_plan_item_refs
+    - citations
+  output_kind: qizheng_siyu_natal_brief
+  chart_basis:
+    deterministic: true
+    required_fields:
+      - ascendant_longitude
+      - day_night
+      - zodiac_model
+      - house_model
+      - mansion_model
+      - siyu_model
+      - ephemeris_version
+      - key_body_refs
+  profile:
+    ai_worded: true
+    required_fields:
+      - life_pattern
+      - strengths
+      - long_term_theme
+      - relationship_pattern
+      - career_inclination
+  star_guidance:
+    min_items: 1
+    item:
+      required_fields:
+        - body_key
+        - body_label
+        - house_name
+        - mansion
+        - position_class
+        - theme
+        - strategy
+      deterministic_fields: [body_key, body_label, house_name, mansion, position_class]
+      ai_worded_fields: [theme, strategy]
+  rules:
+    - qizheng_star_positions_and_virtual_point_provenance_are_deterministic
+    - chart_basis_model_ids_are_raw_evidence_and_must_be_rendered_with_product_copy
+    - qizheng_mansion_model_v1_is_28_equal_mansion_approximation_not_full_juxing_rudu
     - runtime_ai_words_profile_and_guidance_only
     - no_relationship_hepan
     - no_match_scores
