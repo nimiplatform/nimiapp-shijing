@@ -13,6 +13,7 @@ import type { ReadingGenerationFailure } from '../../../domain/reading.ts';
 import { generateMingJingOutput } from '../mingjing-reading-generator.ts';
 import { generateMingJingRelationshipOutput } from '../mingjing-relationship-generator.ts';
 import { buildMingJingProjection } from '../mingjing-projection.ts';
+import { generateMingJingQizhengNatalOutput } from '../mingjing-qizheng-reading-generator.ts';
 import { generateMingJingZiweiNatalOutput } from '../mingjing-ziwei-reading-generator.ts';
 import { generateNianJingOutput } from '../nianjing-generator.ts';
 import { generateRiJingOutput } from '../rijing-generator.ts';
@@ -84,6 +85,13 @@ function generateMingJingDeterministicOutput(
             cited_event_memory_refs: input.cited_event_memory_refs,
             cited_plan_item_refs: input.cited_plan_item_refs,
           })
+        : featureSnapshot.method_evidence.method_id === 'qizheng_siyu_guolao_v1'
+          ? generateMingJingQizhengNatalOutput({
+              feature_snapshot: featureSnapshot,
+              method_profile_id: featureSnapshot.method_profile.id,
+              cited_event_memory_refs: input.cited_event_memory_refs,
+              cited_plan_item_refs: input.cited_plan_item_refs,
+            })
         : (() => {
           const scope = input.mirror_scope as NatalMirrorScope;
           const projection = buildMingJingProjection({

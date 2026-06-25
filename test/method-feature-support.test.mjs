@@ -31,6 +31,10 @@ test('method feature matrix explicitly declares support for every algorithm-neut
   assert.equal(methodSupportsFeature('ziwei_sanhe_v1', 'yuejing.rolling_30_day_reading'), true);
   assert.equal(methodSupportsFeature('ziwei_sanhe_v1', 'nianjing.long_horizon_reading'), true);
   assert.equal(methodSupportsFeature('ziwei_sanhe_v1', 'shijing.consultation'), true);
+  assert.equal(methodSupportsFeature('qizheng_siyu_guolao_v1', 'rijing.daily_reading'), false);
+  assert.equal(methodSupportsFeature('qizheng_siyu_guolao_v1', 'yuejing.rolling_30_day_reading'), false);
+  assert.equal(methodSupportsFeature('qizheng_siyu_guolao_v1', 'nianjing.long_horizon_reading'), false);
+  assert.equal(methodSupportsFeature('qizheng_siyu_guolao_v1', 'shijing.consultation'), false);
 });
 
 test('methodFeatureIdForMirror maps only algorithm-neutral mirrors to product features', () => {

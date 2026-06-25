@@ -10,7 +10,6 @@ const componentFiles = [
   '../src/product/tabs/mingjing/mingjing-liunian.tsx',
   '../src/product/tabs/mingjing/mingjing-events.tsx',
   '../src/product/tabs/mingjing/mingjing-reading-view.tsx',
-  '../src/product/tabs/mingjing/mingjing-relationship-reading-view.tsx',
   '../src/product/tabs/mingjing/mingjing-rectify.tsx',
 ];
 

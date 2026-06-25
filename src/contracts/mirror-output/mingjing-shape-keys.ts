@@ -101,3 +101,48 @@ export const MINGJING_ZIWEI_DECADE_GUIDANCE_KEYS = new Set<string>([
   'theme',
   'strategy',
 ]);
+
+export const MINGJING_QIZHENG_ROOT_KEYS = new Set<string>([
+  'mirror_kind',
+  'output_kind',
+  'summary',
+  'chart_basis',
+  'profile',
+  'star_guidance',
+  'cited_event_memory_refs',
+  'cited_plan_item_refs',
+  'citations',
+]);
+
+export const MINGJING_QIZHENG_CHART_BASIS_KEYS = new Set<string>([
+  'ascendant_longitude',
+  'day_night',
+  'zodiac_model',
+  'house_model',
+  'mansion_model',
+  'siyu_model',
+  'ephemeris_version',
+  'key_body_refs',
+]);
+
+export const MINGJING_QIZHENG_PROFILE_FIELDS: readonly string[] = [
+  'life_pattern',
+  'strengths',
+  'long_term_theme',
+  'relationship_pattern',
+  'career_inclination',
+];
+
+export const MINGJING_QIZHENG_PROFILE_KEYS = new Set<string>(
+  MINGJING_QIZHENG_PROFILE_FIELDS,
+);
+
+export const MINGJING_QIZHENG_STAR_GUIDANCE_KEYS = new Set<string>([
+  'body_key',
+  'body_label',
+  'house_name',
+  'mansion',
+  'position_class',
+  'theme',
+  'strategy',
+]);

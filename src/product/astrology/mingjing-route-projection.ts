@@ -5,6 +5,7 @@
 
 import type {
   AstrologyFeatureSnapshot,
+  QizhengSiyuSubjectChart,
   ZiweiSubjectChart,
 } from '../../domain/algorithm.ts';
 import type { NatalMirrorScope } from '../../domain/mirror-scope.ts';
@@ -28,6 +29,13 @@ export type MingJingRouteProjection =
       readonly kind: 'ziwei_sanhe_v1';
       readonly route_id: 'mingjing.route.ziwei_sanhe_v1';
       readonly chart: ZiweiSubjectChart;
+      readonly feature_snapshot: AstrologyFeatureSnapshot;
+      readonly mirror_scope: NatalMirrorScope;
+    }
+  | {
+      readonly kind: 'qizheng_siyu_guolao_v1';
+      readonly route_id: 'mingjing.route.qizheng_siyu_guolao_v1';
+      readonly chart: QizhengSiyuSubjectChart;
       readonly feature_snapshot: AstrologyFeatureSnapshot;
       readonly mirror_scope: NatalMirrorScope;
     };
@@ -95,6 +103,30 @@ export function buildMingJingRouteProjection(input: {
     method_profile_id: support.route.method_profile_id,
   });
   if (!snapshot.ok) return snapshot;
+  if (support.route.id === 'mingjing.route.qizheng_siyu_guolao_v1') {
+    if (snapshot.value.method_evidence.method_id !== 'qizheng_siyu_guolao_v1') {
+      return {
+        ok: false,
+        error: {
+          stage: 'mingjing_projection',
+          kind: 'stage_invalid_input',
+          subject_ref: 'self',
+          detail: `QiZheng SiYu MingJing route received ${snapshot.value.method_evidence.method_id} evidence`,
+        },
+      };
+    }
+    return {
+      ok: true,
+      value: {
+        kind: 'qizheng_siyu_guolao_v1',
+        route_id: support.route.id,
+        chart: snapshot.value.method_evidence.qizheng_siyu.self_subject,
+        feature_snapshot: snapshot.value,
+        mirror_scope: scope,
+      },
+    };
+  }
+
   if (snapshot.value.method_evidence.method_id !== 'ziwei_sanhe_v1') {
     return {
       ok: false,

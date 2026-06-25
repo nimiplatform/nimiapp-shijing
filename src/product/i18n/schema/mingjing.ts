@@ -5,7 +5,6 @@ import type {
   LabelMap,
   NatalReadinessReason,
   PeriodFavor,
-  TendencyClass,
 } from './shared.ts';
 
 export interface MingJingCopy {
@@ -193,39 +192,51 @@ export interface MingJingCopy {
       readonly career_inclination: string;
     };
   };
-  readonly relationshipReading: {
+  readonly qizhengRoute: {
+    readonly chartAria: string;
+    readonly eyebrow: string;
+    readonly chartTitle: string;
+    readonly ascendant: string;
+    readonly dayNight: string;
+    readonly houseModel: string;
+    readonly mansionModel: string;
+    readonly siyuModel: string;
+    readonly houseModelValues: {
+      readonly equalHouseFromAscendantV1: string;
+    };
+    readonly mansionModelValues: {
+      readonly equalMansionV1: string;
+    };
+    readonly siyuModelValues: {
+      readonly nodeAxisVirtualPointAndApogee: string;
+    };
+    readonly bodiesTitle: string;
+    readonly housesTitle: string;
+    readonly emptyHouse: string;
+    readonly bodyColumns: {
+      readonly body: string;
+      readonly house: string;
+      readonly mansion: string;
+      readonly position: string;
+      readonly longitude: string;
+    };
+    readonly dayNightLabels: {
+      readonly day: string;
+      readonly night: string;
+    };
+  };
+  readonly qizhengReading: {
+    readonly aria: string;
     readonly eyebrow: string;
     readonly title: string;
-    readonly explanation: string;
-    readonly personLabel: string;
-    readonly generate: string;
-    readonly regenerate: string;
-    readonly generating: string;
-    readonly addPerson: string;
-    readonly noPeople: string;
-    readonly empty: (name: string) => string;
-    readonly emptyFallback: string;
-    readonly stale: string;
-    readonly personFallback: string;
-    readonly subjectLine: (name: string) => string;
-    readonly structureLabels: {
-      readonly baseline_pattern: string;
-      readonly attraction_and_support: string;
-      readonly friction_and_misread: string;
-      readonly communication_rhythm: string;
-      readonly boundary_advice: string;
+    readonly starGuidanceTitle: string;
+    readonly profileLabels: {
+      readonly life_pattern: string;
+      readonly strengths: string;
+      readonly long_term_theme: string;
+      readonly relationship_pattern: string;
+      readonly career_inclination: string;
     };
-    readonly timingTitle: string;
-    readonly natureLabels: LabelMap<TendencyClass>;
-    readonly dateRange: (start: string, end: string) => string;
-    readonly driverRefs: string;
-    readonly practiceTitle: string;
-    readonly practiceLabels: {
-      readonly communication: string;
-      readonly boundary: string;
-      readonly repair: string;
-    };
-    readonly citation: (refs: string) => string;
   };
   readonly events: {
     readonly title: string;

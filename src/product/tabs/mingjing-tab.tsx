@@ -4,41 +4,43 @@
 // startup, persistence, and generation actions. Route components own
 // method-specific deterministic modules.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { useProductCopy, type ProductCopy } from '../i18n/copy.ts';
 import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
 import type { ShijingSettingsFocusTarget } from '../settings/settings-page-view.tsx';
 import type { NatalReadinessReason } from '../subjects/natal-readiness.ts';
+import type { MethodProfileId } from '../../domain/algorithm.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import type {
   MingJingMirrorOutput,
-  MingJingRelationshipMirrorOutput,
+  MingJingQizhengNatalMirrorOutput,
   MingJingZiweiNatalMirrorOutput,
 } from '../../domain/mirror-output.ts';
 import type { ReadingGenerationFailure } from '../../domain/reading.ts';
 import { buildMingJingRouteProjection } from '../astrology/mingjing-route-projection.ts';
 import {
   inputsSummaryExpired,
-  inputsSummaryStalenessForSpace,
 } from '../astrology/inputs-summary-expiry.ts';
 import {
   latestMingJingNatalReading,
-  latestMingJingRelationshipReading,
 } from '../reading/reading-selectors.ts';
 import { generateReadingForStorage } from '../reading/generate-and-store.ts';
 import { newReadingId } from '../ids/index.ts';
 import { ShijingOnboarding } from '../onboarding/shijing-onboarding.tsx';
+import { MethodProfileSelect } from '../settings/method-profile-select.tsx';
+import { commitMethodProfile } from '../settings/method-profile-state.ts';
 import { mingJingReadiness } from './mingjing/mingjing-readiness.ts';
 import { shouldShowMingJingStartupGuide } from './mingjing/mingjing-startup-guide.ts';
 import {
   natalMirrorScopeForToday,
-  relationshipNatalMirrorScopeForToday,
 } from './mirror-scope-helpers.ts';
 import { BaziMingJingRoute } from './mingjing/bazi-mingjing-route.tsx';
 import { MingJingRectify } from './mingjing/mingjing-rectify.tsx';
 import { MingJingRouteUnavailable } from './mingjing/mingjing-route-unavailable.tsx';
+import { QizhengMingJingRoute } from './mingjing/qizheng-mingjing-route.tsx';
 import { ZiweiMingJingRoute } from './mingjing/ziwei-mingjing-route.tsx';
+import { MirrorPageHeader } from './shared/mirror-page-header.tsx';
 
 function nowIso(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -59,6 +61,15 @@ function isZiweiMingJingOutput(output: unknown): output is MingJingZiweiNatalMir
     output !== null &&
     (output as { mirror_kind?: unknown }).mirror_kind === 'mingjing' &&
     (output as { output_kind?: unknown }).output_kind === 'ziwei_natal_brief'
+  );
+}
+
+function isQizhengMingJingOutput(output: unknown): output is MingJingQizhengNatalMirrorOutput {
+  return (
+    typeof output === 'object' &&
+    output !== null &&
+    (output as { mirror_kind?: unknown }).mirror_kind === 'mingjing' &&
+    (output as { output_kind?: unknown }).output_kind === 'qizheng_siyu_natal_brief'
   );
 }
 
@@ -83,11 +94,6 @@ export function MingJingTab({
 
   const [loading, setLoading] = useState(false);
   const [failure, setFailure] = useState<ReadingGenerationFailure | null>(null);
-  const [relationshipLoading, setRelationshipLoading] = useState(false);
-  const [relationshipFailure, setRelationshipFailure] = useState<ReadingGenerationFailure | null>(null);
-  const [selectedRelationshipPersonId, setSelectedRelationshipPersonId] = useState(
-    () => space.persons[0]?.id ?? '',
-  );
   const [showRectify, setShowRectify] = useState(false);
   const stagesRef = useRef<HTMLDivElement>(null);
   const scrollToStages = () =>
@@ -101,38 +107,13 @@ export function MingJingTab({
     [space, readiness.ok],
   );
 
-  useEffect(() => {
-    if (space.persons.some((person) => person.id === selectedRelationshipPersonId)) return;
-    setSelectedRelationshipPersonId(space.persons[0]?.id ?? '');
-  }, [selectedRelationshipPersonId, space.persons]);
-
-  const selectedRelationshipPersonRef = useMemo(
-    () =>
-      selectedRelationshipPersonId
-        ? { kind: 'person' as const, id: selectedRelationshipPersonId }
-        : null,
-    [selectedRelationshipPersonId],
-  );
-
   const reading = useMemo(
     () => latestMingJingNatalReading(space.readings, space.settings.method_profile_id),
     [space.readings, space.settings.method_profile_id],
   );
   const baziOutput = isBaziMingJingOutput(reading?.output) ? reading.output : null;
   const ziweiOutput = isZiweiMingJingOutput(reading?.output) ? reading.output : null;
-
-  const relationshipReading = useMemo(
-    () =>
-      selectedRelationshipPersonRef
-        ? latestMingJingRelationshipReading({
-            readings: space.readings,
-            related_person_ref: selectedRelationshipPersonRef,
-          })
-        : undefined,
-    [selectedRelationshipPersonRef, space.readings],
-  );
-  const relationshipOutput =
-    (relationshipReading?.output ?? null) as MingJingRelationshipMirrorOutput | null;
+  const qizhengOutput = isQizhengMingJingOutput(reading?.output) ? reading.output : null;
 
   // "Stale" = the recorded history changed since this reading, or it aged out.
   const stale = useMemo(() => {
@@ -141,18 +122,6 @@ export function MingJingTab({
     const cited = [...reading.cited_event_memory_refs].sort().join(',');
     return current !== cited || inputsSummaryExpired(reading, new Date());
   }, [reading, space.event_memories]);
-
-  const relationshipStale = useMemo(() => {
-    if (!relationshipReading) return false;
-    return inputsSummaryStalenessForSpace({
-      reading: relationshipReading,
-      space,
-      now: new Date(),
-      expected_mirror_scope: relationshipReading.mirror_scope,
-      expected_concern_tag_refs: [],
-      expected_cited_event_memory_refs: [],
-    }).stale;
-  }, [relationshipReading, space]);
 
   async function handleGenerate() {
     if (!projection || !projection.ok || loading) return;
@@ -177,31 +146,13 @@ export function MingJingTab({
     }
   }
 
-  async function handleGenerateRelationship() {
-    if (!selectedRelationshipPersonRef || relationshipLoading) return;
-    setRelationshipLoading(true);
-    setRelationshipFailure(null);
-    const outcome = await generateReadingForStorage({
-      id: newReadingId(),
-      created_at: nowIso(),
-      mirror_kind: 'mingjing',
-      mirror_scope: relationshipNatalMirrorScopeForToday(selectedRelationshipPersonRef),
-      related_person_refs: [selectedRelationshipPersonRef],
-      concern_tag_refs: [],
-      cited_event_memory_refs: [],
-      cited_plan_item_refs: [],
-      space,
-      deps: { runtime_ai_client },
-    });
-    setRelationshipLoading(false);
-    if (outcome.ok) {
-      dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
-    } else {
-      setRelationshipFailure(outcome.failure);
-    }
+  function handleSpaceChange(next: ShiJingSpace) {
+    dispatch({ type: 'snapshot/replace', snapshot: next });
   }
 
-  function handleSpaceChange(next: ShiJingSpace) {
+  function handleMethodProfileChange(methodProfileId: MethodProfileId) {
+    const next = commitMethodProfile(space, methodProfileId);
+    setFailure(null);
     dispatch({ type: 'snapshot/replace', snapshot: next });
   }
 
@@ -225,7 +176,12 @@ export function MingJingTab({
     <section className="shijing-tab shijing-mingjing" data-mirror-kind="mingjing">
       {!readiness.ok ? (
         <>
-          <MingJingSimpleHeader copy={m} />
+          <MingJingSimpleHeader
+            copy={m}
+            methodProfileCopy={copy.methodProfile}
+            methodProfileId={space.settings.method_profile_id}
+            onMethodProfileChange={handleMethodProfileChange}
+          />
           <div className="shijing-mingjing__blocked">
             {readiness.reason === 'mingjing_route_unavailable' ? (
               <MingJingRouteUnavailable
@@ -247,7 +203,12 @@ export function MingJingTab({
         </>
       ) : !projection || !projection.ok ? (
         <>
-          <MingJingSimpleHeader copy={m} />
+          <MingJingSimpleHeader
+            copy={m}
+            methodProfileCopy={copy.methodProfile}
+            methodProfileId={space.settings.method_profile_id}
+            onMethodProfileChange={handleMethodProfileChange}
+          />
           <div className="shijing-mingjing__failure" role="alert">
             <h2>{m.failureTitle}</h2>
             <p>{projection && !projection.ok ? (projection.error.detail ?? projection.error.kind) : ''}</p>
@@ -255,7 +216,12 @@ export function MingJingTab({
         </>
       ) : (
         <>
-          <MingJingSimpleHeader copy={m} />
+          <MingJingSimpleHeader
+            copy={m}
+            methodProfileCopy={copy.methodProfile}
+            methodProfileId={space.settings.method_profile_id}
+            onMethodProfileChange={handleMethodProfileChange}
+          />
           {projection.value.kind === 'bazi_ziping_v1' ? (
             <BaziMingJingRoute
               copy={m}
@@ -270,20 +236,6 @@ export function MingJingTab({
                 loading,
                 failure,
                 onGenerate: handleGenerate,
-              }}
-              relationshipReading={{
-                selectedPersonId: selectedRelationshipPersonId,
-                readingId: relationshipReading?.id ?? null,
-                output: relationshipOutput,
-                stale: relationshipStale,
-                loading: relationshipLoading,
-                failure: relationshipFailure,
-                onSelectPerson: (personId) => {
-                  setSelectedRelationshipPersonId(personId);
-                  setRelationshipFailure(null);
-                },
-                onGenerate: handleGenerateRelationship,
-                onOpenPeople: () => onRequestOpenSettings?.('profile'),
               }}
               rectification={{
                 open: showRectify,
@@ -302,6 +254,17 @@ export function MingJingTab({
                 onGenerate: handleGenerate,
               }}
             />
+          ) : projection.value.kind === 'qizheng_siyu_guolao_v1' ? (
+            <QizhengMingJingRoute
+              chart={projection.value.chart}
+              natalReading={{
+                output: qizhengOutput,
+                stale,
+                loading,
+                failure,
+                onGenerate: handleGenerate,
+              }}
+            />
           ) : null}
         </>
       )}
@@ -309,11 +272,32 @@ export function MingJingTab({
   );
 }
 
-function MingJingSimpleHeader({ copy }: { readonly copy: ProductCopy['mingjing'] }) {
+function MingJingSimpleHeader({
+  copy,
+  methodProfileCopy,
+  methodProfileId,
+  onMethodProfileChange,
+}: {
+  readonly copy: ProductCopy['mingjing'];
+  readonly methodProfileCopy: ProductCopy['methodProfile'];
+  readonly methodProfileId?: MethodProfileId;
+  readonly onMethodProfileChange: (methodProfileId: MethodProfileId) => void;
+}) {
   return (
-    <header className="shijing-mingjing__hero">
-      <h1 className="shijing-mingjing__title">{copy.title}</h1>
-    </header>
+    <MirrorPageHeader
+      title={copy.title}
+      actions={(
+        <div className="shijing-mingjing__method-switch">
+          <MethodProfileSelect
+            id="mingjing-method-profile"
+            value={methodProfileId}
+            onChange={onMethodProfileChange}
+            className="shijing-mingjing__method-select"
+            aria-label={methodProfileCopy.algorithm}
+          />
+        </div>
+      )}
+    />
   );
 }
 

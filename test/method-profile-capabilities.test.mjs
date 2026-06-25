@@ -17,23 +17,25 @@ test('method profile capabilities disclose generic mirrors and MingJing route su
   const rows = deriveMethodProfileCapabilityRows();
   assert.deepEqual(
     rows.map((row) => row.method_profile_id),
-    ['bazi_ziping_v1', 'ziwei_sanhe_v1'],
+    ['bazi_ziping_v1', 'ziwei_sanhe_v1', 'qizheng_siyu_guolao_v1'],
   );
 
   for (const row of rows) {
+    const expectedSupported = row.method_profile_id === 'qizheng_siyu_guolao_v1' ? false : true;
     assert.deepEqual(
       row.algorithm_neutral_features.map((feature) => [feature.id, feature.supported]),
       [
-        ['rijing.daily_reading', true],
-        ['yuejing.rolling_30_day_reading', true],
-        ['nianjing.long_horizon_reading', true],
-        ['shijing.consultation', true],
+        ['rijing.daily_reading', expectedSupported],
+        ['yuejing.rolling_30_day_reading', expectedSupported],
+        ['nianjing.long_horizon_reading', expectedSupported],
+        ['shijing.consultation', expectedSupported],
       ],
     );
   }
 
   const bazi = rows.find((row) => row.method_profile_id === 'bazi_ziping_v1');
   const ziwei = rows.find((row) => row.method_profile_id === 'ziwei_sanhe_v1');
+  const qizheng = rows.find((row) => row.method_profile_id === 'qizheng_siyu_guolao_v1');
 
   assert.equal(bazi.mingjing_route.id, 'mingjing.route.bazi_ziping_v1');
   assert.equal(bazi.mingjing_route.status, 'implemented');
@@ -51,4 +53,12 @@ test('method profile capabilities disclose generic mirrors and MingJing route su
     'natal_reading',
   ]);
   assert.equal(ziwei.mingjing_route.fail_close_detail, null);
+
+  assert.equal(qizheng.mingjing_route.id, 'mingjing.route.qizheng_siyu_guolao_v1');
+  assert.equal(qizheng.mingjing_route.status, 'implemented');
+  assert.deepEqual(qizheng.mingjing_route.supported_features, [
+    'natal_projection',
+    'natal_reading',
+  ]);
+  assert.equal(qizheng.mingjing_route.fail_close_detail, null);
 });

@@ -12,6 +12,7 @@ import type { ConfidenceLevel, Reading } from '../../domain/reading.ts';
 export const METHOD_LABELS: Record<MethodProfileId, string> = {
   bazi_ziping_v1: '八字子平法',
   ziwei_sanhe_v1: '紫微斗数(三合派)',
+  qizheng_siyu_guolao_v1: '七政四余/果老星宗',
 };
 
 const CONFIDENCE_LABELS: Record<ConfidenceLevel, string> = {
@@ -46,7 +47,7 @@ const MIRROR_KIND_LABELS: Record<MirrorKind, string> = {
   yuejing: '月镜',
   nianjing: '年镜',
   mingjing: '命镜',
-  shijing: '时镜',
+  shijing: '问镜',
 };
 
 function dateTimeParts(iso: string, timeZone: string): Intl.DateTimeFormatPart[] | null {

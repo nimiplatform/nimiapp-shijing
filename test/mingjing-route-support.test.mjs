@@ -50,7 +50,7 @@ function spaceWithMethod(methodProfileId) {
   });
 }
 
-test('MingJing route registry declares BaZi full route and Ziwei natal-only route', () => {
+test('MingJing route registry declares BaZi full route plus Ziwei and QiZheng natal-only routes', () => {
   const bazi = resolveMingJingRouteForMethod('bazi_ziping_v1');
   assert.equal(bazi.id, 'mingjing.route.bazi_ziping_v1');
   assert.equal(bazi.status, 'implemented');
@@ -60,6 +60,11 @@ test('MingJing route registry declares BaZi full route and Ziwei natal-only rout
   assert.equal(ziwei.id, 'mingjing.route.ziwei_sanhe_v1');
   assert.equal(ziwei.status, 'implemented');
   assert.deepEqual(ziwei.supported_features, ['natal_projection', 'natal_reading']);
+
+  const qizheng = resolveMingJingRouteForMethod('qizheng_siyu_guolao_v1');
+  assert.equal(qizheng.id, 'mingjing.route.qizheng_siyu_guolao_v1');
+  assert.equal(qizheng.status, 'implemented');
+  assert.deepEqual(qizheng.supported_features, ['natal_projection', 'natal_reading']);
 });
 
 test('MingJing route feature mapping is scope-specific', () => {
@@ -89,8 +94,38 @@ test('Ziwei MingJing route supports natal projection but not relationship HePan'
   );
 });
 
+test('QiZheng SiYu MingJing route supports natal projection but not relationship HePan', () => {
+  const natal = validateMingJingRouteSupport({
+    method_profile_id: 'qizheng_siyu_guolao_v1',
+    feature_id: 'natal_projection',
+  });
+  assert.equal(natal.ok, true, JSON.stringify(natal));
+
+  const result = validateMingJingRouteSupport({
+    method_profile_id: 'qizheng_siyu_guolao_v1',
+    feature_id: 'relationship_hepan',
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.error.code, 'mingjing_route_feature_not_supported');
+  assert.equal(result.error.route_id, 'mingjing.route.qizheng_siyu_guolao_v1');
+  assert.equal(result.error.method_profile_id, 'qizheng_siyu_guolao_v1');
+});
+
 test('MingJing readiness accepts the Ziwei natal route', () => {
   const result = mingJingReadiness(spaceWithMethod('ziwei_sanhe_v1'));
+
+  assert.equal(result.ok, true, JSON.stringify(result));
+});
+
+test('MingJing readiness accepts QiZheng route without calculation sex', () => {
+  const space = spaceWithMethod('qizheng_siyu_guolao_v1');
+  const result = mingJingReadiness({
+    ...space,
+    self_subject: {
+      natal_inputs: validNatalInputs({ calculation_sex: 'unspecified' }),
+    },
+  });
 
   assert.equal(result.ok, true, JSON.stringify(result));
 });

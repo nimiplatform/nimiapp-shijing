@@ -7,6 +7,7 @@ import type { MirrorContextSnapshot, Reading } from '../../domain/reading.ts';
 import type { MirrorKind } from '../../domain/mirror-scope.ts';
 import type {
   MingJingMirrorOutput,
+  MingJingQizhengNatalMirrorOutput,
   MingJingRelationshipMirrorOutput,
   MingJingZiweiNatalMirrorOutput,
   MirrorOutput,
@@ -80,6 +81,31 @@ function isMingjingZiweiNatalOutput(
     (output as { output_kind?: unknown }).output_kind === 'ziwei_natal_brief';
 }
 
+function isMingjingQizhengNatalOutput(
+  output: MirrorOutput,
+): output is MingJingQizhengNatalMirrorOutput {
+  return output.mirror_kind === 'mingjing' &&
+    (output as { output_kind?: unknown }).output_kind === 'qizheng_siyu_natal_brief';
+}
+
+function qizhengHouseModelEvidenceLabel(value: string): string {
+  return value === 'equal-house-from-ascendant-v1'
+    ? '上升度起十二等宫'
+    : value;
+}
+
+function qizhengMansionModelEvidenceLabel(value: string): string {
+  return value === '28-equal-mansion-v1'
+    ? '二十八宿等分模型 v1'
+    : value;
+}
+
+function qizhengSiyuModelEvidenceLabel(value: string): string {
+  return value === 'luohou-ascending-node;jidu-descending-node;ziqi-28-year-j2000;yuebei-mean-lunar-apogee'
+    ? '罗喉=月亮升交点；计都=月亮降交点；紫气=28年虚点；月孛=月亮远地点'
+    : value;
+}
+
 function schemaShapeForKind(kind: MirrorKind, output?: MirrorOutput): string {
   switch (kind) {
     case 'rijing':
@@ -122,6 +148,15 @@ function schemaShapeForKind(kind: MirrorKind, output?: MirrorOutput): string {
           'profile object fields: life_pattern, strengths, long_term_theme, relationship_pattern, career_inclination. Fill ALL five.',
           'decade_guidance items: age_range, palace_name, theme, strategy. age_range + palace_name MUST exactly match provided targets, and every provided target must be included.',
           'Do NOT output chart_basis, major_stars, palace_branch, citations, cited_event_memory_refs, cited_plan_item_refs, scores, trends, or graphs.',
+        ].join('\n');
+      }
+      if (output && isMingjingQizhengNatalOutput(output)) {
+        return [
+          'output_kind: qizheng_siyu_natal_brief',
+          'patch_fields: patch_kind, mirror_kind, output_kind, summary, profile, star_guidance',
+          'profile object fields: life_pattern, strengths, long_term_theme, relationship_pattern, career_inclination. Fill ALL five.',
+          'star_guidance items: body_key, theme, strategy. body_key MUST exactly match a provided target, and every provided target must be included.',
+          'Do NOT output chart_basis, body_label, house_name, mansion, position_class, citations, cited_event_memory_refs, cited_plan_item_refs, scores, trends, or graphs.',
         ].join('\n');
       }
       return [
@@ -168,6 +203,25 @@ function interpretiveEvidenceProjection(snapshot: AstrologyFeatureSnapshot): str
       'interpretive_evidence (ziwei_sanhe_v1, read-only):',
       `  命宫: ${self.soul_palace_branch}; 命主: ${self.soul_star}; 身主: ${self.body_star}; 五行局: ${self.five_elements_class}`,
       `  生年四化: ${hua.join(' ') || '无'}`,
+    ].join('\n');
+  }
+  if (me.method_id === 'qizheng_siyu_guolao_v1') {
+    const chart = me.qizheng_siyu.self_subject;
+    const houseModel = qizhengHouseModelEvidenceLabel(chart.chart_basis.house_model);
+    const mansionModel = qizhengMansionModelEvidenceLabel(chart.chart_basis.mansion_model);
+    const siyuModel = qizhengSiyuModelEvidenceLabel(chart.chart_basis.siyu_model);
+    const bodies = chart.bodies
+      .map((body) => `${body.label}:${body.house_name}/${body.mansion}/${body.position_class}`)
+      .join(' ');
+    const siyu = chart.bodies
+      .filter((body) => body.kind === 'siyu')
+      .map((body) => `${body.label}:${body.provenance}`)
+      .join(' | ');
+    return [
+      'interpretive_evidence (qizheng_siyu_guolao_v1, read-only):',
+      `  上升度: ${chart.chart_basis.ascendant_longitude}; 昼夜: ${chart.chart_basis.day_night}; 宫制: ${houseModel}; 宿度: ${mansionModel}; 四余: ${siyuModel}`,
+      `  星曜落宫/宿: ${bodies}`,
+      `  四余模型: ${siyu}`,
     ].join('\n');
   }
   return null;
@@ -280,6 +334,29 @@ function wordingTargetFor(
           citations: output.citations,
         };
       }
+      if (isMingjingQizhengNatalOutput(output)) {
+        return {
+          mirror_kind: output.mirror_kind,
+          output_kind: output.output_kind,
+          summary: output.summary,
+          chart_basis: output.chart_basis,
+          profile: output.profile,
+          star_guidance: output.star_guidance.map((item) => ({
+            body_key: item.body_key,
+            body_label: item.body_label,
+            house_name: item.house_name,
+            mansion: item.mansion,
+            position_class: item.position_class,
+            theme: item.theme,
+            strategy: item.strategy,
+          })),
+          // Read-only deterministic refs and citations: useful grounding context,
+          // but explicitly forbidden as returned patch fields.
+          cited_event_memory_refs: output.cited_event_memory_refs,
+          cited_plan_item_refs: output.cited_plan_item_refs,
+          citations: output.citations,
+        };
+      }
       const natalOutput = output as MingJingMirrorOutput;
       return {
         mirror_kind: natalOutput.mirror_kind,
@@ -378,6 +455,17 @@ export function buildRuntimeAiPromptRequest(args: {
       'Every decade_guidance patch item must target an existing age_range + palace_name exactly.',
       'Write as long-horizon life guidance grounded in Minggong, Shengong, five-elements class, major stars, and decadal palaces.',
       'Do not compute compatibility, scores, trends, graphs, fate certainty, or new chart facts.',
+    ].join('\n'));
+  } else if (args.mirror_kind === 'mingjing' && isMingjingQizhengNatalOutput(args.deterministic_output)) {
+    userPromptLines.push([
+      'MingJing QiZheng SiYu / GuoLao natal brief writing requirements:',
+      'Role: word the admitted 七政四余 / 果老星宗 natal evidence for the MingJing route.',
+      'Return output_kind: qizheng_siyu_natal_brief in the patch so the SDK applies the QiZheng patch path.',
+      'AI may word only summary, profile, and star_guidance theme/strategy fields.',
+      'chart_basis, body_label, house_name, mansion, position_class, citations, and cited refs are read-only grounding context.',
+      'Every star_guidance patch item must target an existing body_key exactly.',
+      'Write as whole-life guidance grounded in 七政星曜、四余模型、十二宫落位与二十八宿区间.',
+      'Do not compute new star positions, compatibility, scores, trends, graphs, fate certainty, or new chart facts.',
     ].join('\n'));
   } else if (args.mirror_kind === 'mingjing') {
     userPromptLines.push([

@@ -3,15 +3,13 @@
 
 import { useState } from 'react';
 import {
-  ADMITTED_METHOD_PROFILE_IDS,
   DEFAULT_METHOD_PROFILE_ID,
   type MethodProfileId,
 } from '../../domain/algorithm.ts';
-import { METHOD_LABELS } from '../reading/reading-format.ts';
-import { SjpSelect } from '../components/sjp-select.tsx';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { useProductCopy } from '../i18n/copy.ts';
 import { deriveMethodProfileCapabilityRows } from './method-profile-capabilities.ts';
+import { MethodProfileSelect } from './method-profile-select.tsx';
 import { commitMethodProfile } from './method-profile-state.ts';
 
 export function MethodProfileEditor() {
@@ -21,8 +19,8 @@ export function MethodProfileEditor() {
   const capabilityRows = deriveMethodProfileCapabilityRows();
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
-  function onChange(value: string) {
-    const next = commitMethodProfile(state.snapshot, value as MethodProfileId);
+  function onChange(value: MethodProfileId) {
+    const next = commitMethodProfile(state.snapshot, value);
     dispatch({ type: 'snapshot/replace', snapshot: next });
     setSavedAt(new Date().toISOString());
   }
@@ -55,11 +53,10 @@ export function MethodProfileEditor() {
       <div className="sjp-grid">
         <div className="sjp-field sjp-field--full">
           <label className="sjp-label" htmlFor="method-profile">{copy.methodProfile.algorithm}</label>
-          <SjpSelect
+          <MethodProfileSelect
             id="method-profile"
             value={current}
-            onValueChange={onChange}
-            options={ADMITTED_METHOD_PROFILE_IDS.map((id) => ({ value: id, label: METHOD_LABELS[id] }))}
+            onChange={onChange}
           />
         </div>
         <p className="sjp-note">{copy.methodProfile.note}</p>

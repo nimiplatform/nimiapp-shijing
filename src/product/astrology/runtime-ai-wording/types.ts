@@ -127,6 +127,28 @@ export type MingJingZiweiNatalWordingPatch = WordingPatchBase & {
   readonly decade_guidance: readonly MingJingZiweiDecadeGuidancePatch[];
 };
 
+export type MingJingQizhengProfilePatch = {
+  readonly life_pattern: string;
+  readonly strengths: string;
+  readonly long_term_theme: string;
+  readonly relationship_pattern: string;
+  readonly career_inclination: string;
+};
+
+export type MingJingQizhengStarGuidancePatch = {
+  readonly body_key: string;
+  readonly theme: string;
+  readonly strategy: string;
+};
+
+export type MingJingQizhengNatalWordingPatch = WordingPatchBase & {
+  readonly mirror_kind: 'mingjing';
+  readonly output_kind: 'qizheng_siyu_natal_brief';
+  readonly summary: string;
+  readonly profile: MingJingQizhengProfilePatch;
+  readonly star_guidance: readonly MingJingQizhengStarGuidancePatch[];
+};
+
 export type RuntimeAiWordingPatch =
   | RiJingWordingPatch
   | YueJingWordingPatch
@@ -134,6 +156,7 @@ export type RuntimeAiWordingPatch =
   | MingJingWordingPatch
   | MingJingRelationshipWordingPatch
   | MingJingZiweiNatalWordingPatch
+  | MingJingQizhengNatalWordingPatch
   | ShiJingWordingPatch;
 
 export class RuntimeAiWordingPatchValidationError extends Error {

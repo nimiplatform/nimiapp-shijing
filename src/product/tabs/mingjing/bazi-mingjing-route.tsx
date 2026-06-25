@@ -3,7 +3,6 @@ import type { RefObject } from 'react';
 import type { MingJingChart } from '../../../domain/mingjing.ts';
 import type {
   MingJingMirrorOutput,
-  MingJingRelationshipMirrorOutput,
 } from '../../../domain/mirror-output.ts';
 import type { ShiJingSpace } from '../../../domain/shijing-space.ts';
 import type { ReadingGenerationFailure } from '../../../domain/reading.ts';
@@ -15,7 +14,6 @@ import { MingJingLiunian } from './mingjing-liunian.tsx';
 import { MingJingPaipan } from './mingjing-paipan.tsx';
 import { MingJingReadingView } from './mingjing-reading-view.tsx';
 import { MingJingRectify } from './mingjing-rectify.tsx';
-import { MingJingRelationshipReadingView } from './mingjing-relationship-reading-view.tsx';
 
 export interface BaziMingJingRouteProps {
   readonly copy: ProductCopy['mingjing'];
@@ -30,17 +28,6 @@ export interface BaziMingJingRouteProps {
     readonly loading: boolean;
     readonly failure: ReadingGenerationFailure | null;
     readonly onGenerate: () => void;
-  };
-  readonly relationshipReading: {
-    readonly selectedPersonId: string;
-    readonly readingId: string | null;
-    readonly output: MingJingRelationshipMirrorOutput | null;
-    readonly stale: boolean;
-    readonly loading: boolean;
-    readonly failure: ReadingGenerationFailure | null;
-    readonly onSelectPerson: (personId: string) => void;
-    readonly onGenerate: () => void;
-    readonly onOpenPeople: () => void;
   };
   readonly rectification: {
     readonly open: boolean;
@@ -57,7 +44,6 @@ export function BaziMingJingRoute({
   onSeeStages,
   onSpaceChange,
   natalReading,
-  relationshipReading,
   rectification,
 }: BaziMingJingRouteProps) {
   return (
@@ -76,18 +62,6 @@ export function BaziMingJingRoute({
           loading={natalReading.loading}
           failure={natalReading.failure}
           onGenerate={natalReading.onGenerate}
-        />
-        <MingJingRelationshipReadingView
-          persons={space.persons}
-          selectedPersonId={relationshipReading.selectedPersonId}
-          readingId={relationshipReading.readingId}
-          output={relationshipReading.output}
-          stale={relationshipReading.stale}
-          loading={relationshipReading.loading}
-          failure={relationshipReading.failure}
-          onSelectPerson={relationshipReading.onSelectPerson}
-          onGenerate={relationshipReading.onGenerate}
-          onOpenPeople={relationshipReading.onOpenPeople}
         />
       </div>
       {rectification.open ? (

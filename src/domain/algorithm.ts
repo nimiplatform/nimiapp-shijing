@@ -10,7 +10,7 @@ import type { MirrorKind, MirrorScope, MirrorScopeKind } from './mirror-scope.ts
 import type { SubjectRef } from './subject-ref.ts';
 import type { TendencyClass } from './mirror-output.ts';
 import type { NianJingInflectionKind } from './mirror-output.ts';
-import { BAZI_ZIPING_V1, ZIWEI_SANHE_V1 } from './algorithm-method-profile.ts';
+import { BAZI_ZIPING_V1, QIZHENG_SIYU_GUOLAO_V1, ZIWEI_SANHE_V1 } from './algorithm-method-profile.ts';
 import type { MethodProfile } from './algorithm-method-profile.ts';
 
 export {
@@ -18,6 +18,7 @@ export {
   BAZI_ZIPING_V1,
   DEFAULT_METHOD_PROFILE_ID,
   METHOD_PROFILE_IDS,
+  QIZHENG_SIYU_GUOLAO_V1,
   SJG_ALGO_CONTRACT_VERSION,
   SJG_ALGO_FEATURE_SCHEMA_VERSION,
   SJG_ASTRO_CONTRACT_VERSION,
@@ -360,6 +361,69 @@ export interface ZiweiEvidence {
   readonly related_persons: readonly ZiweiSubjectChart[];
 }
 
+// 七政四余 / 果老星宗 method evidence (method_evidence.qizheng_siyu).
+// v1 uses astronomical ecliptic longitudes for 七政, admitted virtual-point
+// definitions for 四余, and an equal-house route projection for 命镜.
+export type QizhengSiyuBodyKey =
+  | 'taiyang'
+  | 'taiyin'
+  | 'chenxing'
+  | 'taibai'
+  | 'yinghuo'
+  | 'suixing'
+  | 'zhenxing'
+  | 'luohou'
+  | 'jidu'
+  | 'ziqi'
+  | 'yuebei';
+
+export type QizhengSiyuBodyKind = 'qizheng' | 'siyu';
+
+export interface QizhengSiyuBody {
+  readonly key: QizhengSiyuBodyKey;
+  readonly label: string;
+  readonly kind: QizhengSiyuBodyKind;
+  readonly longitude: number;
+  readonly latitude?: number;
+  readonly zodiac_sign: string;
+  readonly mansion: string;
+  readonly house_name: string;
+  readonly position_class: string;
+  readonly provenance: string;
+}
+
+export interface QizhengSiyuHouse {
+  readonly index: number;
+  readonly name: string;
+  readonly start_longitude: number;
+  readonly end_longitude: number;
+  readonly body_keys: readonly QizhengSiyuBodyKey[];
+}
+
+export interface QizhengSiyuChartBasis {
+  readonly birth_utc: string;
+  readonly ascendant_longitude: number;
+  readonly day_night: 'day' | 'night';
+  readonly zodiac_model: string;
+  readonly house_model: string;
+  readonly mansion_model: string;
+  readonly siyu_model: string;
+  readonly ephemeris_version: string;
+}
+
+export interface QizhengSiyuSubjectChart {
+  readonly subject_ref: SubjectRef;
+  readonly canonicalization_hash: string;
+  readonly chart_basis: QizhengSiyuChartBasis;
+  readonly bodies: readonly QizhengSiyuBody[];
+  readonly houses: readonly QizhengSiyuHouse[];
+}
+
+export interface QizhengSiyuEvidence {
+  readonly self_subject: QizhengSiyuSubjectChart;
+  readonly related_persons: readonly QizhengSiyuSubjectChart[];
+}
+
 export interface YueJingTendencyDriver {
   readonly date: string;
   readonly concern_tag_ref: string;
@@ -469,7 +533,12 @@ export interface ZiweiMethodEvidence {
   readonly ziwei: ZiweiEvidence;
 }
 
-export type MethodEvidence = BaziMethodEvidence | ZiweiMethodEvidence;
+export interface QizhengSiyuMethodEvidence {
+  readonly method_id: typeof QIZHENG_SIYU_GUOLAO_V1;
+  readonly qizheng_siyu: QizhengSiyuEvidence;
+}
+
+export type MethodEvidence = BaziMethodEvidence | ZiweiMethodEvidence | QizhengSiyuMethodEvidence;
 
 export interface AstrologyFeatureSnapshot {
   readonly method_profile: MethodProfile;

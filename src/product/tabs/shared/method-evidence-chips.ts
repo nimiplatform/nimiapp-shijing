@@ -50,6 +50,13 @@ export function deriveMethodEvidenceChips(reading: Reading): MethodEvidenceChip[
     chips.push({ group: '命宫', value: `${self.soul_palace_branch}·${star}` });
     chips.push({ group: '命主', value: self.soul_star });
     chips.push({ group: '五行局', value: self.five_elements_class });
+  } else if (me.method_id === 'qizheng_siyu_guolao_v1') {
+    const self = me.qizheng_siyu.self_subject;
+    const sun = self.bodies.find((body) => body.key === 'taiyang');
+    const moon = self.bodies.find((body) => body.key === 'taiyin');
+    chips.push({ group: '上升度', value: `${self.chart_basis.ascendant_longitude.toFixed(1)}°` });
+    if (sun) chips.push({ group: '太阳', value: `${sun.house_name}·${sun.mansion}` });
+    if (moon) chips.push({ group: '太阴', value: `${moon.house_name}·${moon.mansion}` });
   }
   const firstStage = fs.common.stage_drivers[0]?.stage_label;
   if (firstStage) chips.push({ group: '阶段驱动', value: firstStage });

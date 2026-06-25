@@ -244,6 +244,47 @@ export interface MingJingZiweiNatalMirrorOutput {
   readonly citations: readonly MirrorCitation[];
 }
 
+export interface MingJingQizhengChartBasis {
+  readonly ascendant_longitude: number;
+  readonly day_night: 'day' | 'night';
+  readonly zodiac_model: string;
+  readonly house_model: string;
+  readonly mansion_model: string;
+  readonly siyu_model: string;
+  readonly ephemeris_version: string;
+  readonly key_body_refs: readonly string[];
+}
+
+export interface MingJingQizhengProfile {
+  readonly life_pattern: string;
+  readonly strengths: string;
+  readonly long_term_theme: string;
+  readonly relationship_pattern: string;
+  readonly career_inclination: string;
+}
+
+export interface MingJingQizhengStarGuidance {
+  readonly body_key: string;
+  readonly body_label: string;
+  readonly house_name: string;
+  readonly mansion: string;
+  readonly position_class: string;
+  readonly theme: string;
+  readonly strategy: string;
+}
+
+export interface MingJingQizhengNatalMirrorOutput {
+  readonly mirror_kind: 'mingjing';
+  readonly output_kind: 'qizheng_siyu_natal_brief';
+  readonly summary: string;
+  readonly chart_basis: MingJingQizhengChartBasis;
+  readonly profile: MingJingQizhengProfile;
+  readonly star_guidance: readonly MingJingQizhengStarGuidance[];
+  readonly cited_event_memory_refs: readonly string[];
+  readonly cited_plan_item_refs: readonly string[];
+  readonly citations: readonly MirrorCitation[];
+}
+
 export type MirrorOutput =
   | RiJingMirrorOutput
   | YueJingMirrorOutput
@@ -251,6 +292,7 @@ export type MirrorOutput =
   | MingJingMirrorOutput
   | MingJingRelationshipMirrorOutput
   | MingJingZiweiNatalMirrorOutput
+  | MingJingQizhengNatalMirrorOutput
   | ShiJingMirrorOutput;
 
 export function mirrorOutputKind(output: MirrorOutput): MirrorKind {

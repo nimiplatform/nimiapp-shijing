@@ -1,6 +1,7 @@
 import type {
   MingJingRelationshipMirrorOutput,
   MingJingMirrorOutput,
+  MingJingQizhengNatalMirrorOutput,
   MingJingZiweiNatalMirrorOutput,
   MirrorOutput,
   NianJingMirrorOutput,
@@ -13,6 +14,7 @@ import { RuntimeAiOutputValidationError } from '../runtime-ai-parse.ts';
 import type {
   MingJingRelationshipWordingPatch,
   MingJingWordingPatch,
+  MingJingQizhengNatalWordingPatch,
   MingJingZiweiNatalWordingPatch,
   NianJingWordingPatch,
   RiJingWordingPatch,
@@ -223,6 +225,20 @@ function isMingjingZiweiNatalOutput(
     (output as { output_kind?: unknown }).output_kind === 'ziwei_natal_brief';
 }
 
+function isMingjingQizhengNatalPatch(
+  patch: RuntimeAiWordingPatch,
+): patch is MingJingQizhengNatalWordingPatch {
+  return patch.mirror_kind === 'mingjing' &&
+    (patch as { output_kind?: unknown }).output_kind === 'qizheng_siyu_natal_brief';
+}
+
+function isMingjingQizhengNatalOutput(
+  output: MirrorOutput,
+): output is MingJingQizhengNatalMirrorOutput {
+  return output.mirror_kind === 'mingjing' &&
+    (output as { output_kind?: unknown }).output_kind === 'qizheng_siyu_natal_brief';
+}
+
 function applyMingjingRelationshipPatch(
   base: MingJingRelationshipMirrorOutput,
   patch: MingJingRelationshipWordingPatch,
@@ -317,6 +333,47 @@ function assertAllMingjingZiweiNatalPatchTargetsResolve(
   }
 }
 
+function applyMingjingQizhengNatalPatch(
+  base: MingJingQizhengNatalMirrorOutput,
+  patch: MingJingQizhengNatalWordingPatch,
+): MingJingQizhengNatalMirrorOutput {
+  return {
+    ...withSummary(base, patch),
+    profile: patch.profile,
+    star_guidance: base.star_guidance.map((item) => {
+      const wording = patch.star_guidance.find((candidate) => candidate.body_key === item.body_key);
+      return wording ? { ...item, theme: wording.theme, strategy: wording.strategy } : item;
+    }),
+  };
+}
+
+function assertAllMingjingQizhengNatalPatchTargetsResolve(
+  base: MingJingQizhengNatalMirrorOutput,
+  patch: MingJingQizhengNatalWordingPatch,
+): void {
+  const seenTargets = new Set<string>();
+  for (const item of patch.star_guidance) {
+    if (seenTargets.has(item.body_key)) {
+      throw new RuntimeAiWordingPatchValidationError(
+        'mingjing_qizheng_star_guidance_target_duplicate',
+      );
+    }
+    seenTargets.add(item.body_key);
+    if (!base.star_guidance.some((candidate) => candidate.body_key === item.body_key)) {
+      throw new RuntimeAiWordingPatchValidationError(
+        'mingjing_qizheng_star_guidance_target_unknown',
+      );
+    }
+  }
+  for (const item of base.star_guidance) {
+    if (!seenTargets.has(item.body_key)) {
+      throw new RuntimeAiWordingPatchValidationError(
+        'mingjing_qizheng_star_guidance_target_missing',
+      );
+    }
+  }
+}
+
 export function applyRuntimeAiWordingPatch(
   base: MirrorOutput,
   patch: RuntimeAiWordingPatch,
@@ -363,6 +420,16 @@ export function applyRuntimeAiWordingPatch(
         output = applyMingjingZiweiNatalPatch(base, patch);
         break;
       }
+      if (isMingjingQizhengNatalOutput(base)) {
+        if (!isMingjingQizhengNatalPatch(patch)) {
+          throw new RuntimeAiWordingPatchValidationError(
+            'mingjing_qizheng_patch_kind_required',
+          );
+        }
+        assertAllMingjingQizhengNatalPatchTargetsResolve(base, patch);
+        output = applyMingjingQizhengNatalPatch(base, patch);
+        break;
+      }
       if (isMingjingRelationshipPatch(patch)) {
         throw new RuntimeAiWordingPatchValidationError(
           'mingjing_natal_rejects_relationship_patch',
@@ -371,6 +438,11 @@ export function applyRuntimeAiWordingPatch(
       if (isMingjingZiweiNatalPatch(patch)) {
         throw new RuntimeAiWordingPatchValidationError(
           'mingjing_bazi_natal_rejects_ziwei_patch',
+        );
+      }
+      if (isMingjingQizhengNatalPatch(patch)) {
+        throw new RuntimeAiWordingPatchValidationError(
+          'mingjing_bazi_natal_rejects_qizheng_patch',
         );
       }
       const natalBase = base as MingJingMirrorOutput;

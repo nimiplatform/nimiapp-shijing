@@ -4,6 +4,8 @@ import type {
   MingJingRelationshipWordingPatch,
   MingJingWordingCorePatch,
   MingJingWordingPatch,
+  MingJingQizhengNatalWordingPatch,
+  MingJingQizhengProfilePatch,
   MingJingZiweiNatalWordingPatch,
   MingJingZiweiProfilePatch,
 } from './types.ts';
@@ -68,6 +70,29 @@ const MINGJING_ZIWEI_PROFILE_PATCH_KEYS = [
 const MINGJING_ZIWEI_DECADE_GUIDANCE_PATCH_KEYS = [
   'age_range',
   'palace_name',
+  'theme',
+  'strategy',
+] as const;
+
+const MINGJING_QIZHENG_TOP_LEVEL_PATCH_KEYS = [
+  'patch_kind',
+  'mirror_kind',
+  'output_kind',
+  'summary',
+  'profile',
+  'star_guidance',
+] as const;
+
+const MINGJING_QIZHENG_PROFILE_PATCH_KEYS = [
+  'life_pattern',
+  'strengths',
+  'long_term_theme',
+  'relationship_pattern',
+  'career_inclination',
+] as const;
+
+const MINGJING_QIZHENG_STAR_GUIDANCE_PATCH_KEYS = [
+  'body_key',
   'theme',
   'strategy',
 ] as const;
@@ -236,14 +261,70 @@ function validateMingjingZiweiNatalPatch(
   };
 }
 
+function validateMingjingQizhengProfilePatch(value: unknown): MingJingQizhengProfilePatch {
+  if (value === undefined) {
+    throw new RuntimeAiWordingPatchValidationError('mingjing_qizheng_profile_required');
+  }
+  if (!isRecord(value)) {
+    throw new RuntimeAiWordingPatchValidationError('profile_invalid');
+  }
+  assertOnlyAllowedKeys(
+    value,
+    MINGJING_QIZHENG_PROFILE_PATCH_KEYS,
+    'mingjing_qizheng_profile_forbidden_key',
+  );
+  const profile: Record<string, string> = {};
+  for (const key of MINGJING_QIZHENG_PROFILE_PATCH_KEYS) {
+    profile[key] = requireText(value, key);
+  }
+  return profile as MingJingQizhengProfilePatch;
+}
+
+function validateMingjingQizhengNatalPatch(
+  record: Record<string, unknown>,
+): MingJingQizhengNatalWordingPatch {
+  assertOnlyAllowedKeys(
+    record,
+    MINGJING_QIZHENG_TOP_LEVEL_PATCH_KEYS,
+    'mingjing_qizheng_patch_forbidden_key',
+  );
+  const rawGuidance = optionalRecordArray(record, 'star_guidance');
+  if (!rawGuidance || rawGuidance.length === 0) {
+    throw new RuntimeAiWordingPatchValidationError('mingjing_qizheng_star_guidance_required');
+  }
+  const starGuidance = rawGuidance.map((item) => {
+    assertOnlyAllowedKeys(
+      item,
+      MINGJING_QIZHENG_STAR_GUIDANCE_PATCH_KEYS,
+      'mingjing_qizheng_star_guidance_forbidden_key',
+    );
+    return {
+      body_key: requireText(item, 'body_key'),
+      theme: requireText(item, 'theme'),
+      strategy: requireText(item, 'strategy'),
+    };
+  });
+  return {
+    patch_kind: RUNTIME_AI_WORDING_PATCH_KIND,
+    mirror_kind: 'mingjing',
+    output_kind: 'qizheng_siyu_natal_brief',
+    summary: requireText(record, 'summary'),
+    profile: validateMingjingQizhengProfilePatch(record.profile),
+    star_guidance: starGuidance,
+  };
+}
+
 export function validateMingjingPatch(
   record: Record<string, unknown>,
-): MingJingWordingPatch | MingJingRelationshipWordingPatch | MingJingZiweiNatalWordingPatch {
+): MingJingWordingPatch | MingJingRelationshipWordingPatch | MingJingZiweiNatalWordingPatch | MingJingQizhengNatalWordingPatch {
   if (record.output_kind === 'relationship_hepan') {
     return validateMingjingRelationshipPatch(record);
   }
   if (record.output_kind === 'ziwei_natal_brief') {
     return validateMingjingZiweiNatalPatch(record);
+  }
+  if (record.output_kind === 'qizheng_siyu_natal_brief') {
+    return validateMingjingQizhengNatalPatch(record);
   }
   return validateMingjingNatalPatch(record);
 }

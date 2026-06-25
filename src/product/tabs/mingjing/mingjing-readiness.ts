@@ -6,7 +6,9 @@
 // severities) rather than inventing parallel ones.
 
 import type { ShiJingSpace } from '../../../domain/shijing-space.ts';
+import { DEFAULT_METHOD_PROFILE_ID } from '../../../domain/algorithm.ts';
 import { subjectNatalReadiness, type NatalReadiness } from '../../subjects/natal-readiness.ts';
+import { getMethodEngine } from '../../astrology/engines/registry.ts';
 import {
   mingJingRouteFailCloseDetail,
   validateMingJingRouteSupport,
@@ -35,11 +37,13 @@ export function mingJingReadiness(space: ShiJingSpace): NatalReadiness {
       detail: 'mingjing_requires_exact_birth_time',
     };
   }
-  if (base.inputs.calculation_sex === 'unspecified') {
+  const methodId = space.settings.method_profile_id ?? DEFAULT_METHOD_PROFILE_ID;
+  const capabilities = getMethodEngine(methodId)?.capabilities;
+  if (capabilities?.requires_calculation_sex !== false && base.inputs.calculation_sex === 'unspecified') {
     return {
       ok: false,
       reason: 'calculation_sex_unspecified_for_dayun',
-      detail: 'mingjing_requires_calculation_sex',
+      detail: `mingjing_requires_calculation_sex:${methodId}`,
     };
   }
   return base;

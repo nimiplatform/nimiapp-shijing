@@ -52,8 +52,9 @@ export interface MethodEngineCapabilities {
   // Engines that cannot place their primary structure without 时辰 (e.g. 紫微
   // 命宫) fail closed instead of degrading when the hour is unknown.
   readonly requires_birth_time: boolean;
-  // Long-horizon unit produced by this engine: 八字 大运 vs 紫微 大限.
-  readonly horizon_unit: 'dayun' | 'daxian';
+  // Long-horizon unit produced by this engine: 八字 大运, 紫微 大限,
+  // or route-owned star-period windows.
+  readonly horizon_unit: 'dayun' | 'daxian' | 'star_period';
 }
 
 // E is the engine-private evidence type (BaziEvidence, ZiweiEvidence, ...).

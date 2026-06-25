@@ -47,7 +47,11 @@ export type MirrorOutputValidationError =
   | { code: 'mirror_output_mingjing_ziwei_chart_basis_invalid'; field: string }
   | { code: 'mirror_output_mingjing_ziwei_profile_invalid'; field: string }
   | { code: 'mirror_output_mingjing_ziwei_decade_guidance_invalid' }
-  | { code: 'mirror_output_mingjing_ziwei_decade_guidance_item_invalid'; index: number; reason: string };
+  | { code: 'mirror_output_mingjing_ziwei_decade_guidance_item_invalid'; index: number; reason: string }
+  | { code: 'mirror_output_mingjing_qizheng_chart_basis_invalid'; field: string }
+  | { code: 'mirror_output_mingjing_qizheng_profile_invalid'; field: string }
+  | { code: 'mirror_output_mingjing_qizheng_star_guidance_invalid' }
+  | { code: 'mirror_output_mingjing_qizheng_star_guidance_item_invalid'; index: number; reason: string };
 
 export type MirrorOutputValidationResult =
   | { ok: true }

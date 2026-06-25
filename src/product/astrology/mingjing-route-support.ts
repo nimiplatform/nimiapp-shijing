@@ -4,6 +4,7 @@
 import {
   BAZI_ZIPING_V1,
   DEFAULT_METHOD_PROFILE_ID,
+  QIZHENG_SIYU_GUOLAO_V1,
   ZIWEI_SANHE_V1,
   isAdmittedMethodProfileId,
   type MethodProfileId,
@@ -12,7 +13,8 @@ import type { MirrorScope } from '../../domain/mirror-scope.ts';
 
 export type MingJingRouteId =
   | 'mingjing.route.bazi_ziping_v1'
-  | 'mingjing.route.ziwei_sanhe_v1';
+  | 'mingjing.route.ziwei_sanhe_v1'
+  | 'mingjing.route.qizheng_siyu_guolao_v1';
 
 export type MingJingRouteFeatureId =
   | 'natal_projection'
@@ -84,6 +86,21 @@ export const MINGJING_ROUTE_DECLARATIONS: readonly MingJingRouteDeclaration[] = 
       'ziwei.sanfang_sizheng',
       'ziwei.daxian',
       'ziwei.flying_transformations',
+    ],
+  },
+  {
+    id: 'mingjing.route.qizheng_siyu_guolao_v1',
+    method_profile_id: QIZHENG_SIYU_GUOLAO_V1,
+    label: 'QiZheng SiYu / GuoLao MingJing route',
+    status: 'implemented',
+    supported_features: ['natal_projection', 'natal_reading'],
+    module_ids: [
+      'qizheng_siyu.chart_basis',
+      'qizheng_siyu.seven_governors',
+      'qizheng_siyu.four_auxiliaries',
+      'qizheng_siyu.twelve_houses',
+      'qizheng_siyu.twenty_eight_mansions',
+      'qizheng_siyu.star_guidance',
     ],
   },
 ] as const;

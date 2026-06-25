@@ -1,6 +1,6 @@
 // Audit P2 — 八字 evidence (旺衰/用神) was only shown in the RiJing tab's bar.
 // The deriver is method-agnostic and now feeds the SHARED CitationDrawer, so
-// every mirror (月镜/年镜/时镜) shows the engine-specific evidence chips.
+// every mirror (月镜/年镜/问镜) shows the engine-specific evidence chips.
 
 import assert from 'node:assert/strict';
 import test from 'node:test';

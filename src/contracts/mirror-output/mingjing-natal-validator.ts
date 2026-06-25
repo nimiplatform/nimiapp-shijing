@@ -1,5 +1,6 @@
 import type {
   MingJingMirrorOutput,
+  MingJingQizhengNatalMirrorOutput,
   MingJingRelationshipMirrorOutput,
   MingJingZiweiNatalMirrorOutput,
 } from '../../domain/mirror-output.ts';
@@ -7,16 +8,24 @@ import type { MirrorOutputValidationResult } from '../mirror-output-validator.ts
 import { isAllowedTendencyClass, isGanzhiPillar, isRecord } from './common.ts';
 import { validateMingjingRelationship } from './mingjing-relationship-validator.ts';
 import { MINGJING_CORE_FIELDS } from './mingjing-shape-keys.ts';
+import { validateMingjingQizhengNatal } from './mingjing-qizheng-validator.ts';
 import { validateMingjingZiweiNatal } from './mingjing-ziwei-validator.ts';
 
 export function validateMingjing(
-  output: MingJingMirrorOutput | MingJingRelationshipMirrorOutput | MingJingZiweiNatalMirrorOutput,
+  output:
+    | MingJingMirrorOutput
+    | MingJingRelationshipMirrorOutput
+    | MingJingZiweiNatalMirrorOutput
+    | MingJingQizhengNatalMirrorOutput,
 ): MirrorOutputValidationResult {
   if ((output as { output_kind?: unknown }).output_kind === 'relationship_hepan') {
     return validateMingjingRelationship(output as MingJingRelationshipMirrorOutput);
   }
   if ((output as { output_kind?: unknown }).output_kind === 'ziwei_natal_brief') {
     return validateMingjingZiweiNatal(output as MingJingZiweiNatalMirrorOutput);
+  }
+  if ((output as { output_kind?: unknown }).output_kind === 'qizheng_siyu_natal_brief') {
+    return validateMingjingQizhengNatal(output as MingJingQizhengNatalMirrorOutput);
   }
 
   const natalOutput = output as MingJingMirrorOutput;
