@@ -11,6 +11,7 @@ import {
   getProductCopy,
   type ProductCopy,
 } from '../i18n/copy.ts';
+import { isScaffoldNatalInputs } from '../subjects/scaffold-natal-inputs.ts';
 
 // One labelled cell in the core birth-info grid (性别 / 出生日期 / 出生时间).
 export interface SelfProfileField {
@@ -70,10 +71,11 @@ export function summarizeSelfSubject(
   const inputs = space.self_subject.natal_inputs;
   const raw = inputs.raw_birth_input;
   const loc = inputs.birth_location;
+  const isScaffold = isScaffoldNatalInputs(inputs);
 
-  const dateText = raw.local_date_text.trim();
-  const timeText = (raw.local_time_text ?? '').trim();
-  const place = (loc.place_name ?? raw.place_text ?? '').trim();
+  const dateText = isScaffold ? '' : raw.local_date_text.trim();
+  const timeText = isScaffold ? '' : (raw.local_time_text ?? '').trim();
+  const place = isScaffold ? '' : (loc.place_name ?? raw.place_text ?? '').trim();
   const sex = inputs.calculation_sex;
   const sexMissing = sex === 'unspecified';
   const hasData = dateText.length > 0;
@@ -100,12 +102,12 @@ export function summarizeSelfSubject(
 
   // 历法 · 城市 · 时间准确度 — the wide meta cell. The precision label only
   // joins in when a birth time is actually recorded.
-  const metaParts: string[] = [copy.calendarSystemLabels[inputs.calendar_system]];
+  const metaParts: string[] = isScaffold ? [] : [copy.calendarSystemLabels[inputs.calendar_system]];
   if (place) metaParts.push(place);
   if (hasData && timeText) metaParts.push(copy.birthPrecisionLabels[inputs.birth_precision]);
-  const metaText = metaParts.join(' · ');
+  const metaText = metaParts.length > 0 ? metaParts.join(' · ') : copy.self.missing;
   // Muted unless the user has supplied something beyond the default 历法.
-  const metaMissing = !place && !(hasData && timeText);
+  const metaMissing = isScaffold || (!place && !(hasData && timeText));
 
   const calibrationParts: string[] = [];
   if (hasCalibration(loc.latitude, loc.longitude, loc.iana_time_zone)) {

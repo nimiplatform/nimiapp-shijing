@@ -7,20 +7,39 @@ import {
   protectSelfProfileSummary,
   selfProfilePresenceVerificationFailureReason,
 } from '../src/product/self/self-profile-privacy.ts';
+import { buildEmptyShiJingSpace } from '../src/product/dev/initial-space.ts';
 import { summarizeSelfSubject } from '../src/product/self/self-summary.ts';
 import { validShiJingSpace } from './_fixtures.mjs';
 
-test('locked self profile summary does not expose entered birth fields', () => {
+test('locked self profile summary masks entered birth fields with a neutral symbol', () => {
   const copy = getProductCopy('en');
   const summary = summarizeSelfSubject(validShiJingSpace(), copy);
-  const protectedSummary = protectSelfProfileSummary(summary, copy, false);
+  const maskedSummary = protectSelfProfileSummary(summary, copy, false);
 
-  assert.equal(protectedSummary.coreFields[1].value, copy.self.protectedValue);
-  assert.equal(protectedSummary.coreFields[2].value, copy.self.protectedValue);
-  assert.equal(protectedSummary.metaText, copy.self.protectedValue);
-  assert.equal(protectedSummary.calibrationText, copy.self.protectedValue);
-  assert.notEqual(JSON.stringify(protectedSummary), JSON.stringify(summary));
-  assert.doesNotMatch(JSON.stringify(protectedSummary), /1990|08:30|Shanghai|Asia\/Shanghai/);
+  assert.equal(copy.self.maskedValue, '*');
+  assert.equal(maskedSummary.coreFields[1].value, copy.self.maskedValue);
+  assert.equal(maskedSummary.coreFields[2].value, copy.self.maskedValue);
+  assert.equal(maskedSummary.metaText, copy.self.maskedValue);
+  assert.equal(maskedSummary.calibrationText, copy.self.maskedValue);
+  assert.notEqual(JSON.stringify(maskedSummary), JSON.stringify(summary));
+  assert.doesNotMatch(JSON.stringify(maskedSummary), /1990|08:30|Shanghai|Asia\/Shanghai/);
+  assert.doesNotMatch(JSON.stringify(maskedSummary), /Protected|已保护/);
+});
+
+test('initial scaffold self profile stays empty instead of protected', () => {
+  const copy = getProductCopy('en');
+  const summary = summarizeSelfSubject(buildEmptyShiJingSpace('u_empty'), copy);
+  const maskedSummary = protectSelfProfileSummary(summary, copy, false);
+
+  assert.equal(summary.hasData, false);
+  assert.equal(summary.isComplete, false);
+  assert.deepEqual(
+    maskedSummary.coreFields.map((field) => field.value),
+    [copy.self.missing, copy.self.missing, copy.self.missing],
+  );
+  assert.equal(maskedSummary.metaText, copy.self.missing);
+  assert.equal(maskedSummary.calibrationText, null);
+  assert.doesNotMatch(JSON.stringify(maskedSummary), /2000|Protected|\*/);
 });
 
 test('verified self profile summary preserves the real summary', () => {

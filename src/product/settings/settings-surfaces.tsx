@@ -11,6 +11,7 @@ import { SETTINGS_SURFACE_LABELS, useProductCopy } from '../i18n/copy.ts';
 import { ConcernTagControls } from '../concern-tags/concern-tag-controls.tsx';
 import { MemoryEditor } from '../memories/memory-editor.tsx';
 import { PersonEditor } from '../persons/person-editor.tsx';
+import type { ProfileSensitiveAccess } from '../privacy/profile-sensitive-access.ts';
 import { SelfEditor } from '../self/self-editor.tsx';
 import { ResponsePreferencesEditor } from './response-preferences-editor.tsx';
 import { MethodProfileEditor } from './method-profile-editor.tsx';
@@ -141,12 +142,18 @@ function DiagnosticsSection() {
 function SurfaceBody(props: {
   readonly surface: ShijingSettingsSurfaceId;
   readonly focusTarget?: ShijingSettingsFocusTarget | null;
+  readonly profileSensitiveAccess?: ProfileSensitiveAccess;
 }) {
   switch (props.surface) {
     case 'self':
-      return <SelfEditor autoOpenEditor={props.focusTarget === 'self_profile_editor'} />;
+      return (
+        <SelfEditor
+          autoOpenEditor={props.focusTarget === 'self_profile_editor'}
+          profileSensitiveAccess={props.profileSensitiveAccess}
+        />
+      );
     case 'people':
-      return <PersonEditor />;
+      return <PersonEditor profileSensitiveAccess={props.profileSensitiveAccess} />;
     case 'concern_tags':
       return <ConcernTagControls />;
     case 'memory_and_plans':
@@ -175,6 +182,7 @@ function SurfaceBody(props: {
 export interface SettingsSurfaceSectionProps {
   readonly surface: ShijingSettingsSurfaceId;
   readonly focusTarget?: ShijingSettingsFocusTarget | null;
+  readonly profileSensitiveAccess?: ProfileSensitiveAccess;
 }
 
 // Every settings surface renders its own self-contained `.sjp-card` with an
@@ -196,12 +204,22 @@ const SELF_CONTAINED_SURFACES: ReadonlySet<ShijingSettingsSurfaceId> = new Set([
 export function SettingsSurfaceSection(props: SettingsSurfaceSectionProps) {
   const { surface } = props;
   if (SELF_CONTAINED_SURFACES.has(surface)) {
-    return <SurfaceBody surface={surface} focusTarget={props.focusTarget} />;
+    return (
+      <SurfaceBody
+        surface={surface}
+        focusTarget={props.focusTarget}
+        profileSensitiveAccess={props.profileSensitiveAccess}
+      />
+    );
   }
   return (
     <section id={`settings-${surface}`} aria-label={SETTINGS_SURFACE_LABELS[surface]}>
       <h3>{SETTINGS_SURFACE_LABELS[surface]}</h3>
-      <SurfaceBody surface={surface} focusTarget={props.focusTarget} />
+      <SurfaceBody
+        surface={surface}
+        focusTarget={props.focusTarget}
+        profileSensitiveAccess={props.profileSensitiveAccess}
+      />
     </section>
   );
 }

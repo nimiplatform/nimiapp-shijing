@@ -11,8 +11,9 @@ import { useShijingStore } from '../state/shijing-store.tsx';
 import type { PersistenceError } from '../persistence/persistence-client.ts';
 import { describeNatalError } from '../natal/natal-error-copy.ts';
 import {
-  SHIJING_PROFILE_REVEAL_PRESENCE_REQUEST,
-} from '../privacy/presence-verification.ts';
+  LOCKED_PROFILE_SENSITIVE_ACCESS,
+  type ProfileSensitiveAccess,
+} from '../privacy/profile-sensitive-access.ts';
 import {
   commitSelfDraft,
   selfDraftFromSpace,
@@ -20,26 +21,24 @@ import {
 } from './self-editor-state.ts';
 import { SelfEditorFormFields } from './self-editor-form-fields.tsx';
 import { summarizeSelfSubject } from './self-summary.ts';
-import {
-  isPresenceVerificationForSelfProfile,
-  protectSelfProfileSummary,
-  selfProfilePresenceVerificationFailureReason,
-} from './self-profile-privacy.ts';
+import { protectSelfProfileSummary } from './self-profile-privacy.ts';
 import { useProductCopy, type ProductCopy } from '../i18n/copy.ts';
 
 export interface SelfEditorProps {
   readonly autoOpenEditor?: boolean;
   readonly mode?: 'summary' | 'inline-editor';
+  readonly profileSensitiveAccess?: ProfileSensitiveAccess;
 }
 
-export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEditorProps) {
-  const { state, replace_snapshot, presence_verification_client } = useShijingStore();
+export function SelfEditor({
+  autoOpenEditor = false,
+  mode = 'summary',
+  profileSensitiveAccess = LOCKED_PROFILE_SENSITIVE_ACCESS,
+}: SelfEditorProps) {
+  const { state, replace_snapshot } = useShijingStore();
   const copy = useProductCopy();
   const summary = summarizeSelfSubject(state.snapshot, copy);
   const inlineEditor = mode === 'inline-editor';
-  const [verifiedUntilMs, setVerifiedUntilMs] = useState(0);
-  const [verificationPending, setVerificationPending] = useState(false);
-  const [verificationError, setVerificationError] = useState<string | null>(null);
   const [draft, setDraft] = useState<SelfNatalDraft>(() => selfDraftFromSpace(state.snapshot));
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -47,7 +46,8 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
   const [savedNoticeVisible, setSavedNoticeVisible] = useState(false);
   const autoOpenedRef = useRef(false);
   const draftDirtyRef = useRef(false);
-  const revealSensitive = verifiedUntilMs > Date.now();
+  const revealSensitive = profileSensitiveAccess.revealSensitive;
+  const hasSensitiveProfileData = summary.hasData || state.snapshot.persons.length > 0;
   const displayedSummary = protectSelfProfileSummary(summary, copy, revealSensitive);
 
   // Close the editor drawer on Escape.
@@ -68,22 +68,12 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
 
   useEffect(() => {
     if (inlineEditor) return;
-    if (verifiedUntilMs <= Date.now()) return;
-    const timeout = window.setTimeout(() => {
-      setVerifiedUntilMs(0);
-      setVerificationError(null);
-      setEditing(false);
-    }, Math.max(0, verifiedUntilMs - Date.now()));
-    return () => window.clearTimeout(timeout);
-  }, [inlineEditor, verifiedUntilMs]);
-
-  useEffect(() => {
-    if (inlineEditor) return;
-    setVerifiedUntilMs(0);
-    setVerificationError(null);
-    setVerificationPending(false);
+    if (!editing) return;
+    if (!summary.hasData) return;
+    if (revealSensitive) return;
     setEditing(false);
-  }, [inlineEditor, state.snapshot.user_id]);
+    setErrorCode(null);
+  }, [editing, inlineEditor, revealSensitive, summary.hasData]);
 
   function update<K extends keyof SelfNatalDraft>(key: K, value: SelfNatalDraft[K]) {
     draftDirtyRef.current = true;
@@ -92,40 +82,20 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
   }
 
   function lockSensitiveProfile() {
-    setVerifiedUntilMs(0);
-    setVerificationError(null);
+    profileSensitiveAccess.lockSensitiveProfile();
     if (!inlineEditor) setEditing(false);
   }
 
   async function ensureSensitiveReveal(): Promise<boolean> {
+    if (!summary.hasData) return true;
     if (revealSensitive) return true;
-    if (verificationPending) return false;
-    setVerificationPending(true);
-    setVerificationError(null);
-    try {
-      const result = await presence_verification_client.requestPresenceVerification(
-        SHIJING_PROFILE_REVEAL_PRESENCE_REQUEST,
-      );
-      if (result.state === 'verified') {
-        if (isPresenceVerificationForSelfProfile(result, state.snapshot.user_id)) {
-          setVerifiedUntilMs(result.verifiedUntilMs);
-          return true;
-        }
-        setVerificationError(copy.self.revealSensitiveFailed(
-          selfProfilePresenceVerificationFailureReason(result, state.snapshot.user_id)
-            ?? 'presence_verification_failed',
-        ));
-        return false;
-      }
-      if (result.state === 'cancelled') return false;
-      setVerificationError(copy.self.revealSensitiveFailed(result.reason));
-      return false;
-    } catch (error) {
-      setVerificationError(copy.self.revealSensitiveFailed(error instanceof Error ? error.message : String(error)));
-      return false;
-    } finally {
-      setVerificationPending(false);
-    }
+    return profileSensitiveAccess.ensureSensitiveReveal();
+  }
+
+  async function revealProfileSensitiveData(): Promise<boolean> {
+    if (!hasSensitiveProfileData) return true;
+    if (revealSensitive) return true;
+    return profileSensitiveAccess.ensureSensitiveReveal();
   }
 
   async function openEdit() {
@@ -264,48 +234,50 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
           <p className="sjp-card-desc">{copy.self.description}</p>
         </div>
         <div className="sjp-card-actions">
-          <button
-            type="button"
-            className="sjp-btn sjp-card-action sjp-card-action--secondary"
-            onClick={() => {
-              if (revealSensitive) {
-                lockSensitiveProfile();
-                return;
-              }
-              void ensureSensitiveReveal();
-            }}
-            disabled={verificationPending}
-          >
-            <svg
-              className="sjp-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
+          {hasSensitiveProfileData ? (
+            <button
+              type="button"
+              className="sjp-btn sjp-card-action sjp-card-action--secondary"
+              onClick={() => {
+                if (revealSensitive) {
+                  lockSensitiveProfile();
+                  return;
+                }
+                void revealProfileSensitiveData();
+              }}
+              disabled={profileSensitiveAccess.verificationPending}
             >
-              {revealSensitive ? (
-                <path d="M17 11V7a5 5 0 00-9.9-1" />
-              ) : (
-                <path d="M7 11V7a5 5 0 0110 0v4" />
-              )}
-              <rect x="5" y="11" width="14" height="10" rx="2" />
-            </svg>
-            {verificationPending
-              ? copy.self.revealSensitivePending
-              : revealSensitive
-                ? copy.self.lockSensitive
-                : copy.self.revealSensitive}
-          </button>
+              <svg
+                className="sjp-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                {revealSensitive ? (
+                  <path d="M17 11V7a5 5 0 00-9.9-1" />
+                ) : (
+                  <path d="M7 11V7a5 5 0 0110 0v4" />
+                )}
+                <rect x="5" y="11" width="14" height="10" rx="2" />
+              </svg>
+              {profileSensitiveAccess.verificationPending
+                ? copy.self.revealSensitivePending
+                : revealSensitive
+                  ? copy.self.lockSensitive
+                  : copy.self.revealSensitive}
+            </button>
+          ) : null}
           <button
             type="button"
             className="sjp-btn sjp-card-action"
             onClick={() => {
               void openEdit();
             }}
-            disabled={verificationPending}
+            disabled={profileSensitiveAccess.verificationPending}
           >
             <svg
               className="sjp-icon"
@@ -344,13 +316,13 @@ export function SelfEditor({ autoOpenEditor = false, mode = 'summary' }: SelfEdi
         </div>
 
         {/* 地点与时区 — 单独弱化展示的一行. */}
-        {!revealSensitive ? (
+        {summary.hasData && !revealSensitive ? (
           <p className="sjp-profile__privacy-hint">{copy.self.revealSensitiveHint}</p>
         ) : null}
 
-        {verificationError ? (
+        {profileSensitiveAccess.verificationError ? (
           <p className="sjp-alert sjp-profile__privacy-error" role="alert">
-            {verificationError}
+            {profileSensitiveAccess.verificationError}
           </p>
         ) : null}
 

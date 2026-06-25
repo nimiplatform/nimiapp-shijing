@@ -5,21 +5,38 @@
 // page, which renders that page's surfaces. The `.shijing-settings` wrapper
 // keeps the existing surface/editor styling (h3 / button / recover) intact.
 
-import { useCallback, useEffect, useRef, useState, type TouchEvent, type WheelEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type TouchEvent,
+  type WheelEvent,
+} from 'react';
 import { PageDetailLayout } from '@nimiplatform/kit/ui';
 import {
   SHIJING_SETTINGS_PAGES,
   type ShijingSettingsPageId,
 } from '../../contracts/ia-contract.ts';
 import { useProductCopy } from '../i18n/copy.ts';
+import { SHIJING_PROFILE_REVEAL_PRESENCE_REQUEST } from '../privacy/presence-verification.ts';
+import type { ProfileSensitiveAccess } from '../privacy/profile-sensitive-access.ts';
+import {
+  isPresenceVerificationForSelfProfile,
+  selfProfilePresenceVerificationFailureReason,
+} from '../self/self-profile-privacy.ts';
+import { useShijingStore } from '../state/shijing-store.tsx';
 import { SettingsSurfaceSection } from './settings-surfaces.tsx';
 
 export type ShijingSettingsFocusTarget =
   | 'self_profile_editor'
+  | 'method_profile'
   | 'ai_model_config'
   | 'privacy_local_data';
 
 const SETTINGS_FOCUS_TARGET_IDS: Partial<Record<ShijingSettingsFocusTarget, string>> = {
+  method_profile: 'settings-method-profile',
   ai_model_config: 'settings-ai-model-config',
   privacy_local_data: 'settings-privacy-local-data',
 };
@@ -46,9 +63,13 @@ export function SettingsPageView({
   onNavigate,
 }: SettingsPageViewProps) {
   const copy = useProductCopy();
+  const { state, presence_verification_client } = useShijingStore();
   const settingsScrollRef = useRef<HTMLDivElement | null>(null);
   const settingsNavRef = useRef<HTMLElement | null>(null);
   const touchScrollRef = useRef<{ y: number; scrollTop: number } | null>(null);
+  const [verifiedUntilMs, setVerifiedUntilMs] = useState(0);
+  const [verificationPending, setVerificationPending] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
   const [activeSettingsModuleId, setActiveSettingsModuleId] = useState<string | null>(
     'settings-ui-language',
   );
@@ -71,6 +92,86 @@ export function SettingsPageView({
   const pageClassName = `shijing-settings-page shijing-settings-page--styled shijing-settings-page--${page.id}`;
 
   const isProfile = page.id === 'profile';
+  const revealSensitive = isProfile && verifiedUntilMs > Date.now();
+
+  useEffect(() => {
+    setVerifiedUntilMs(0);
+    setVerificationError(null);
+    setVerificationPending(false);
+  }, [page.id, state.snapshot.user_id]);
+
+  useEffect(() => {
+    if (!isProfile) return;
+    if (verifiedUntilMs <= Date.now()) return;
+    const timeout = window.setTimeout(() => {
+      setVerifiedUntilMs(0);
+      setVerificationError(null);
+    }, Math.max(0, verifiedUntilMs - Date.now()));
+    return () => window.clearTimeout(timeout);
+  }, [isProfile, verifiedUntilMs]);
+
+  const ensureSensitiveReveal = useCallback(async (): Promise<boolean> => {
+    if (revealSensitive) return true;
+    if (verificationPending) return false;
+    setVerificationPending(true);
+    setVerificationError(null);
+    try {
+      const result = await presence_verification_client.requestPresenceVerification(
+        SHIJING_PROFILE_REVEAL_PRESENCE_REQUEST,
+      );
+      if (result.state === 'verified') {
+        if (isPresenceVerificationForSelfProfile(result, state.snapshot.user_id)) {
+          setVerifiedUntilMs(result.verifiedUntilMs);
+          return true;
+        }
+        setVerificationError(
+          copy.self.revealSensitiveFailed(
+            selfProfilePresenceVerificationFailureReason(result, state.snapshot.user_id) ??
+              'presence_verification_failed',
+          ),
+        );
+        return false;
+      }
+      if (result.state === 'cancelled') return false;
+      setVerificationError(copy.self.revealSensitiveFailed(result.reason));
+      return false;
+    } catch (error) {
+      setVerificationError(
+        copy.self.revealSensitiveFailed(error instanceof Error ? error.message : String(error)),
+      );
+      return false;
+    } finally {
+      setVerificationPending(false);
+    }
+  }, [
+    copy,
+    presence_verification_client,
+    revealSensitive,
+    state.snapshot.user_id,
+    verificationPending,
+  ]);
+
+  const lockSensitiveProfile = useCallback(() => {
+    setVerifiedUntilMs(0);
+    setVerificationError(null);
+  }, []);
+
+  const profileSensitiveAccess = useMemo<ProfileSensitiveAccess>(
+    () => ({
+      revealSensitive,
+      verificationPending,
+      verificationError,
+      ensureSensitiveReveal,
+      lockSensitiveProfile,
+    }),
+    [
+      ensureSensitiveReveal,
+      lockSensitiveProfile,
+      revealSensitive,
+      verificationError,
+      verificationPending,
+    ],
+  );
 
   // Intro copy per sub-page. 关注 is the forward-looking lens; 发生过的事 is
   // the lifelong archive whose day-to-day entry lives on the time mirrors.
@@ -188,13 +289,23 @@ export function SettingsPageView({
         onScroll={handleSettingsContentScroll}
       >
         {page.surfaces.map((surface) => (
-          <SettingsSurfaceSection key={surface} surface={surface} focusTarget={focusTarget} />
+          <SettingsSurfaceSection
+            key={surface}
+            surface={surface}
+            focusTarget={focusTarget}
+            profileSensitiveAccess={profileSensitiveAccess}
+          />
         ))}
       </div>
     ) : (
       <div className="shijing-settings">
         {page.surfaces.map((surface) => (
-          <SettingsSurfaceSection key={surface} surface={surface} focusTarget={focusTarget} />
+          <SettingsSurfaceSection
+            key={surface}
+            surface={surface}
+            focusTarget={focusTarget}
+            profileSensitiveAccess={profileSensitiveAccess}
+          />
         ))}
       </div>
     );

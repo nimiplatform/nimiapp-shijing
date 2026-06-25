@@ -65,9 +65,32 @@ test('personDraftFromPerson seeds the editor from an existing Person', () => {
 });
 
 test('PersonEditor exposes an edit action for each existing person', () => {
-  assert.match(personEditorSource, /onClick=\{\(\) => openEdit\(p\)\}/);
-  assert.match(personEditorSource, /aria-label=\{copy\.people\.editPersonAria\(p\.display_name\)\}/);
+  assert.match(personEditorSource, /void openEdit\(p\)/);
+  assert.match(personEditorSource, /aria-label=\{copy\.people\.editPersonAria\(personListDisplayName\(p\)\)\}/);
   assert.match(personEditorSource, /\{copy\.common\.edit\}/);
+});
+
+test('PersonEditor masks relationship-person sensitive metadata until profile reveal succeeds', () => {
+  assert.match(personEditorSource, /profileSensitiveAccess/);
+  assert.match(personEditorSource, /personListDisplayName/);
+  assert.match(personEditorSource, /personListMeta/);
+  assert.match(personEditorSource, /copy\.self\.maskedValue/);
+  assert.doesNotMatch(personEditorSource, /<strong>\{p\.display_name\}<\/strong>/);
+  assert.doesNotMatch(personEditorSource, /\{p\.relation \? `\$\{p\.relation\} · ` : ''\}/);
+  assert.match(personEditorSource, /profileSensitiveAccess\.revealSensitive/);
+});
+
+test('PersonEditor edit action is gated by the shared profile reveal', () => {
+  assert.match(personEditorSource, /async function openEdit/);
+  assert.match(personEditorSource, /const verified = await profileSensitiveAccess\.ensureSensitiveReveal\(\)/);
+  assert.match(personEditorSource, /if \(!verified\) return;/);
+});
+
+test('PersonEditor delete confirmation is gated by the shared profile reveal', () => {
+  assert.match(personEditorSource, /async function openDeleteConfirm/);
+  assert.match(personEditorSource, /const verified = await profileSensitiveAccess\.ensureSensitiveReveal\(\)/);
+  assert.match(personEditorSource, /void openDeleteConfirm\(p\)/);
+  assert.doesNotMatch(personEditorSource, /onClick=\{\(\) => setConfirmingDelete\(p\)\}/);
 });
 
 test('deletePerson refuses when concern_tag mentions still reference the person', () => {

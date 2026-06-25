@@ -7,15 +7,15 @@ export function protectSelfProfileSummary(
   copy: ProductCopy,
   revealSensitive: boolean,
 ): SelfProfileSummary {
-  if (revealSensitive) return summary;
+  if (revealSensitive || !summary.hasData) return summary;
 
   return {
     ...summary,
     coreFields: summary.coreFields.map((field) =>
-      field.missing ? field : { ...field, value: copy.self.protectedValue },
+      field.missing ? field : { ...field, value: copy.self.maskedValue },
     ),
-    metaText: summary.metaMissing ? summary.metaText : copy.self.protectedValue,
-    calibrationText: summary.calibrationText ? copy.self.protectedValue : null,
+    metaText: summary.metaMissing ? summary.metaText : copy.self.maskedValue,
+    calibrationText: summary.calibrationText ? copy.self.maskedValue : null,
   };
 }
 

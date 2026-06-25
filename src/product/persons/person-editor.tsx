@@ -12,6 +12,10 @@ import { CONSENT_STATES, PERSON_RELATION_MAX_LENGTH } from '../../domain/person.
 import { CONSENT_STATE_ORDER, useProductCopy } from '../i18n/copy.ts';
 import { SjpSelect } from '../components/sjp-select.tsx';
 import { newUlid } from '../ids/index.ts';
+import {
+  LOCKED_PROFILE_SENSITIVE_ACCESS,
+  type ProfileSensitiveAccess,
+} from '../privacy/profile-sensitive-access.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { NatalFields } from '../natal/natal-fields.tsx';
 import {
@@ -40,7 +44,13 @@ function emptyMeta(): PersonMetaDraft {
   };
 }
 
-export function PersonEditor() {
+export interface PersonEditorProps {
+  readonly profileSensitiveAccess?: ProfileSensitiveAccess;
+}
+
+export function PersonEditor({
+  profileSensitiveAccess = LOCKED_PROFILE_SENSITIVE_ACCESS,
+}: PersonEditorProps) {
   const { state, dispatch } = useShijingStore();
   const copy = useProductCopy();
   const [meta, setMeta] = useState<PersonMetaDraft>(emptyMeta);
@@ -74,6 +84,15 @@ export function PersonEditor() {
     return () => document.removeEventListener('keydown', onKeyDown, true);
   }, [drawerOpen]);
 
+  useEffect(() => {
+    if (!drawerOpen) return;
+    if (!editingPersonId) return;
+    if (profileSensitiveAccess.revealSensitive) return;
+    setDrawerOpen(false);
+    setEditingPersonId(null);
+    setErrorCode(null);
+  }, [drawerOpen, editingPersonId, profileSensitiveAccess.revealSensitive]);
+
   function updateNatal<K extends keyof SelfNatalDraft>(key: K, value: SelfNatalDraft[K]) {
     setNatal((prev) => ({ ...prev, [key]: value }));
   }
@@ -86,13 +105,31 @@ export function PersonEditor() {
     setDrawerOpen(true);
   }
 
-  function openEdit(person: Person) {
+  async function openEdit(person: Person) {
+    const verified = await profileSensitiveAccess.ensureSensitiveReveal();
+    if (!verified) return;
     const draft = personDraftFromPerson(person);
     setMeta(draft.meta);
     setNatal(draft.natal);
     setEditingPersonId(person.id);
     setErrorCode(null);
     setDrawerOpen(true);
+  }
+
+  async function openDeleteConfirm(person: Person) {
+    const verified = await profileSensitiveAccess.ensureSensitiveReveal();
+    if (!verified) return;
+    setConfirmingDelete(person);
+  }
+
+  function personListDisplayName(person: Person): string {
+    return profileSensitiveAccess.revealSensitive ? person.display_name : copy.self.maskedValue;
+  }
+
+  function personListMeta(person: Person): string {
+    if (!profileSensitiveAccess.revealSensitive) return copy.self.maskedValue;
+    const relationText = person.relation ? `${person.relation} · ` : '';
+    return `${relationText}${copy.consentStateLabels[person.consent_state]}`;
   }
 
   function closeDrawer() {
@@ -197,18 +234,18 @@ export function PersonEditor() {
           {persons.map((p) => (
             <li className="sjp-people__item" key={p.id}>
               <span className="sjp-people__text">
-                <strong>{p.display_name}</strong>
-                <span className="sjp-people__meta">
-                  {p.relation ? `${p.relation} · ` : ''}
-                  {copy.consentStateLabels[p.consent_state]}
-                </span>
+                <strong>{personListDisplayName(p)}</strong>
+                <span className="sjp-people__meta">{personListMeta(p)}</span>
               </span>
               <div className="sjp-people__actions">
                 <button
                   type="button"
                   className="sjp-btn sjp-btn--ghost"
-                  onClick={() => openEdit(p)}
-                  aria-label={copy.people.editPersonAria(p.display_name)}
+                  onClick={() => {
+                    void openEdit(p);
+                  }}
+                  disabled={profileSensitiveAccess.verificationPending}
+                  aria-label={copy.people.editPersonAria(personListDisplayName(p))}
                 >
                   <svg
                     className="sjp-icon"
@@ -228,8 +265,11 @@ export function PersonEditor() {
                 <button
                   type="button"
                   className="sjp-btn sjp-btn--ghost"
-                  onClick={() => setConfirmingDelete(p)}
-                  aria-label={copy.people.deletePersonAria(p.display_name)}
+                  onClick={() => {
+                    void openDeleteConfirm(p);
+                  }}
+                  disabled={profileSensitiveAccess.verificationPending}
+                  aria-label={copy.people.deletePersonAria(personListDisplayName(p))}
                 >
                   {copy.common.delete}
                 </button>
@@ -242,9 +282,9 @@ export function PersonEditor() {
       )}
 
       {/* List-level error (e.g. delete blocked). The drawer shows its own. */}
-      {!drawerOpen && errorCode ? (
+      {!drawerOpen && (errorCode || profileSensitiveAccess.verificationError) ? (
         <p className="sjp-alert" role="alert">
-          {errorCode}
+          {errorCode ?? profileSensitiveAccess.verificationError}
         </p>
       ) : null}
 

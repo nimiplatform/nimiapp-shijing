@@ -113,6 +113,16 @@ test('settings detail page renders a module nav for the settings sub-page', () =
   assert.doesNotMatch(settingsPageSource, /href=\{`#\$\{item\.targetId\}`\}/);
 });
 
+test('profile settings page owns one shared sensitive-access gate for self and people', () => {
+  assert.match(settingsPageSource, /profileSensitiveAccess/);
+  assert.match(settingsPageSource, /presence_verification_client/);
+  assert.match(settingsPageSource, /SHIJING_PROFILE_REVEAL_PRESENCE_REQUEST/);
+  assert.match(settingsPageSource, /profileSensitiveAccess=\{profileSensitiveAccess\}/);
+  assert.match(settingsSurfacesSource, /profileSensitiveAccess/);
+  assert.match(settingsSurfacesSource, /<SelfEditor[^>]+profileSensitiveAccess=\{props\.profileSensitiveAccess\}/s);
+  assert.match(settingsSurfacesSource, /<PersonEditor[^>]+profileSensitiveAccess=\{props\.profileSensitiveAccess\}/s);
+});
+
 test('settings cards expose stable module anchors for left navigation', () => {
   assert.match(uiLanguageSource, /id="settings-ui-language"/);
   assert.match(methodProfileSource, /id="settings-method-profile"/);
