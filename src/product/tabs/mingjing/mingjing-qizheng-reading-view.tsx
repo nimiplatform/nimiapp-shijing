@@ -3,6 +3,7 @@ import type { MingJingQizhengNatalMirrorOutput } from '../../../domain/mirror-ou
 import type { ReadingGenerationFailure } from '../../../domain/reading.ts';
 import { FailureBanner } from '../shared/failure-banner.tsx';
 import { GeneratingButton } from '../shared/generating-button.tsx';
+import { SparkleIcon } from './qizheng-icons.tsx';
 
 const PROFILE_ORDER = [
   'life_pattern',
@@ -18,72 +19,84 @@ export function MingJingQizhengReadingView({
   loading,
   failure,
   onGenerate,
+  heroTitle,
 }: {
   readonly output: MingJingQizhengNatalMirrorOutput | null;
   readonly stale: boolean;
   readonly loading: boolean;
   readonly failure: ReadingGenerationFailure | null;
   readonly onGenerate: () => void;
+  readonly heroTitle: string;
 }) {
   const copy = useProductCopy();
   const r = copy.mingjing.reading;
   const q = copy.mingjing.qizhengReading;
+  const x = copy.mingjing.qizhengExplore;
 
   return (
-    <section className="shijing-mingjing-panel shijing-mingjing-reading" aria-label={q.aria}>
-      <header className="shijing-mingjing-panel__head shijing-mj-reading__head">
-        <div>
-          <p className="shijing-mingjing__eyebrow">{q.eyebrow}</p>
-          <h2 className="shijing-mingjing-panel__title">{q.title}</h2>
+    <div className="shijing-qz-reading" aria-label={q.aria}>
+      <section className="shijing-qz-cta">
+        <div className="shijing-qz-cta__copy">
+          <p className="shijing-qz-cta__eyebrow">{x.ctaEyebrow}</p>
+          <h3 className="shijing-qz-cta__title">{x.ctaTitle}</h3>
+          <p className="shijing-qz-cta__body">{x.ctaBody}</p>
         </div>
         <GeneratingButton
-          className="shijing-mj-reading__generate"
+          className="shijing-qz-cta__button"
           onClick={onGenerate}
           disabled={loading}
           busy={loading}
           busyLabel={r.generating}
         >
-          {output ? r.regenerate : r.generate}
+          {output ? r.regenerate : x.ctaButton}
         </GeneratingButton>
-      </header>
+      </section>
 
       {failure ? <FailureBanner failure={failure} /> : null}
 
-      {!output && !loading && !failure ? (
-        <p className="shijing-mj-reading__empty">{r.empty}</p>
-      ) : null}
-
       {output ? (
-        <>
-          {stale ? (
-            <p className="shijing-mj-reading__stale" role="status">{r.stale}</p>
-          ) : null}
-          <p className="shijing-mj-reading__summary">{output.summary}</p>
+        <section className="shijing-mingjing-panel shijing-qz-result">
+          <div className="shijing-qz-result__head">
+            <SparkleIcon className="shijing-qz-result__icon" />
+            <h3 className="shijing-qz-result__title">
+              {heroTitle} · {x.readingTitleSuffix}
+            </h3>
+          </div>
+          {stale ? <p className="shijing-qz-result__stale" role="status">{r.stale}</p> : null}
+          {output.summary ? <p className="shijing-qz-result__summary">{output.summary}</p> : null}
 
-          <dl className="shijing-mj-reading__core">
-            {PROFILE_ORDER.map((key) => (
-              <div key={key} className="shijing-mj-reading__core-item">
-                <dt>{q.profileLabels[key]}</dt>
-                <dd>{output.profile[key]}</dd>
-              </div>
-            ))}
+          <dl className="shijing-qz-result__profile">
+            {PROFILE_ORDER.map((key) =>
+              output.profile[key] ? (
+                <div key={key} className="shijing-qz-result__profile-item">
+                  <dt>{q.profileLabels[key]}</dt>
+                  <dd>{output.profile[key]}</dd>
+                </div>
+              ) : null,
+            )}
           </dl>
 
-          <h3 className="shijing-mj-reading__subtitle">{q.starGuidanceTitle}</h3>
-          <ol className="shijing-mj-reading__strategies">
-            {output.star_guidance.map((item) => (
-              <li key={item.body_key} className="shijing-mj-reading__strategy">
-                <div className="shijing-mj-reading__phase">
-                  <span className="shijing-mj-reading__pillar">{item.body_label}</span>
-                  <span className="shijing-mj-reading__age">{item.house_name} · {item.mansion}</span>
-                  <span className="shijing-mj-reading__theme">{item.theme}</span>
-                </div>
-                <p className="shijing-mj-reading__strategy-text">{item.strategy}</p>
-              </li>
-            ))}
-          </ol>
-        </>
+          {output.star_guidance.some((item) => item.theme || item.strategy) ? (
+            <>
+              <h4 className="shijing-qz-result__subtitle">{q.starGuidanceTitle}</h4>
+              <ol className="shijing-qz-result__guidance">
+                {output.star_guidance.map((item) => (
+                  <li key={item.body_key} className="shijing-qz-result__guide">
+                    <div className="shijing-qz-result__guide-head">
+                      <span className="shijing-qz-result__guide-star">{item.body_label}</span>
+                      <span className="shijing-qz-result__guide-where">
+                        {item.house_name} · {item.mansion}
+                      </span>
+                      {item.theme ? <span className="shijing-qz-result__guide-theme">{item.theme}</span> : null}
+                    </div>
+                    {item.strategy ? <p className="shijing-qz-result__guide-text">{item.strategy}</p> : null}
+                  </li>
+                ))}
+              </ol>
+            </>
+          ) : null}
+        </section>
       ) : null}
-    </section>
+    </div>
   );
 }

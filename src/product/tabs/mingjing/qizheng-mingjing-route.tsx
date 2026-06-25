@@ -1,11 +1,22 @@
-import type {
-  QizhengSiyuBody,
-  QizhengSiyuSubjectChart,
-} from '../../../domain/algorithm.ts';
+// 命镜 · 七政四余 / 果老星宗 route.
+//
+// Plain view: deterministic 命格概览 + 命盘星图 + 逐颗星曜 + 重点格局, composed by
+// qizheng-narrative.ts from the real chart. Data view: the raw 星盘依据 / 落宫 /
+// 十二宫 tables. The history-grounded AI 解读 stays the on-demand bottom layer.
+
+import { useMemo, useRef, useState } from 'react';
+import type { QizhengSiyuSubjectChart } from '../../../domain/algorithm.ts';
 import type { MingJingQizhengNatalMirrorOutput } from '../../../domain/mirror-output.ts';
 import type { ReadingGenerationFailure } from '../../../domain/reading.ts';
 import { useProductCopy } from '../../i18n/copy.ts';
 import { MingJingQizhengReadingView } from './mingjing-qizheng-reading-view.tsx';
+import { QizhengGlossaryProvider, GlossTerm } from './qizheng-glossary.tsx';
+import { useQizhengNarrative, type QizhengStarView } from './qizheng-narrative.ts';
+import { QizhengHero } from './qizheng-hero.tsx';
+import { QizhengExplainer } from './qizheng-explainer.tsx';
+import { QizhengChart } from './qizheng-chart.tsx';
+import { QizhengStars, type QizhengStarAi } from './qizheng-stars.tsx';
+import { QizhengPatterns } from './qizheng-patterns.tsx';
 
 export interface QizhengMingJingRouteProps {
   readonly chart: QizhengSiyuSubjectChart;
@@ -26,29 +37,18 @@ function dayNightLabel(value: 'day' | 'night', labels: { readonly day: string; r
   return value === 'day' ? labels.day : labels.night;
 }
 
-function bodyRows(bodies: readonly QizhengSiyuBody[]): readonly QizhengSiyuBody[] {
-  return [...bodies].sort((a, b) => {
-    if (a.kind !== b.kind) return a.kind === 'qizheng' ? -1 : 1;
-    return a.longitude - b.longitude;
-  });
-}
-
 function formatHouseModelLabel(
   value: string,
   labels: { readonly equalHouseFromAscendantV1: string },
 ): string {
-  return value === 'equal-house-from-ascendant-v1'
-    ? labels.equalHouseFromAscendantV1
-    : value;
+  return value === 'equal-house-from-ascendant-v1' ? labels.equalHouseFromAscendantV1 : value;
 }
 
 function formatMansionModelLabel(
   value: string,
   labels: { readonly equalMansionV1: string },
 ): string {
-  return value === '28-equal-mansion-v1'
-    ? labels.equalMansionV1
-    : value;
+  return value === '28-equal-mansion-v1' ? labels.equalMansionV1 : value;
 }
 
 function formatSiyuModelLabel(
@@ -60,113 +60,202 @@ function formatSiyuModelLabel(
     : value;
 }
 
-export function QizhengMingJingRoute({
-  chart,
-  natalReading,
-}: QizhengMingJingRouteProps) {
-  const copy = useProductCopy();
-  const q = copy.mingjing.qizhengRoute;
-  const basis = natalReading.output?.chart_basis ?? chart.chart_basis;
+export function QizhengMingJingRoute({ chart, natalReading }: QizhengMingJingRouteProps) {
+  const narrative = useQizhengNarrative();
+  const hero = useMemo(() => narrative.hero(chart), [narrative, chart]);
+  const palaces = useMemo(() => narrative.palaces(chart), [narrative, chart]);
+  const stars = useMemo(() => narrative.stars(chart), [narrative, chart]);
+  const patterns = useMemo(() => narrative.patterns(chart), [narrative, chart]);
+
+  const defaultIndex = useMemo(() => {
+    let best = palaces[0];
+    for (const palace of palaces) {
+      if (palace.occupants.length > (best?.occupants.length ?? -1)) best = palace;
+    }
+    return best?.index ?? 0;
+  }, [palaces]);
+
+  const [view, setView] = useState<'plain' | 'data'>('plain');
+  const [selectedIndex, setSelectedIndex] = useState(defaultIndex);
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  const aiByKey = useMemo<Record<string, QizhengStarAi>>(() => {
+    const map: Record<string, QizhengStarAi> = {};
+    for (const item of natalReading.output?.star_guidance ?? []) {
+      map[item.body_key] = { theme: item.theme, strategy: item.strategy };
+    }
+    return map;
+  }, [natalReading.output]);
+
+  const goPalace = (houseName: string) => {
+    const target = palaces.find((p) => p.name === houseName);
+    if (target) setSelectedIndex(target.index);
+    chartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
-    <div className="shijing-mingjing__panels" data-mingjing-route="qizheng_siyu_guolao_v1">
+    <QizhengGlossaryProvider gloss={narrative.gloss}>
+      <div className="shijing-mingjing__panels shijing-qz" data-mingjing-route="qizheng_siyu_guolao_v1">
+        <QizhengHero hero={hero} />
+
+        <QizhengViewToggle view={view} onChange={setView} />
+
+        {view === 'plain' ? (
+          <div className="shijing-qz-plain">
+            <QizhengExplainer />
+            <div ref={chartRef} className="shijing-mingjing__anchor">
+              <QizhengChart
+                palaces={palaces}
+                selectedIndex={selectedIndex}
+                onSelect={setSelectedIndex}
+                mingZhuLabel={hero.mingZhuLabel}
+                basisLabel={hero.basisLabel}
+              />
+            </div>
+            <QizhengStars stars={stars} aiByKey={aiByKey} onGoPalace={goPalace} />
+            <QizhengPatterns patterns={patterns} />
+          </div>
+        ) : (
+          <QizhengDataView chart={chart} stars={stars} />
+        )}
+
+        <MingJingQizhengReadingView
+          output={natalReading.output}
+          stale={natalReading.stale}
+          loading={natalReading.loading}
+          failure={natalReading.failure}
+          onGenerate={natalReading.onGenerate}
+          heroTitle={hero.title}
+        />
+      </div>
+    </QizhengGlossaryProvider>
+  );
+}
+
+function QizhengViewToggle({
+  view,
+  onChange,
+}: {
+  readonly view: 'plain' | 'data';
+  readonly onChange: (view: 'plain' | 'data') => void;
+}) {
+  const x = useProductCopy().mingjing.qizhengExplore;
+  return (
+    <div className="shijing-qz-view-toggle">
+      <p className="shijing-qz-view-toggle__intro">{x.viewIntro}</p>
+      <div className="shijing-qz-toggle" role="tablist" aria-label={x.viewToggleAria}>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === 'plain'}
+          className="shijing-qz-toggle__btn"
+          data-active={view === 'plain' ? '' : undefined}
+          onClick={() => onChange('plain')}
+        >
+          {x.viewPlain}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === 'data'}
+          className="shijing-qz-toggle__btn"
+          data-active={view === 'data' ? '' : undefined}
+          onClick={() => onChange('data')}
+        >
+          {x.viewData}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function QizhengDataView({
+  chart,
+  stars,
+}: {
+  readonly chart: QizhengSiyuSubjectChart;
+  readonly stars: readonly QizhengStarView[];
+}) {
+  const copy = useProductCopy();
+  const q = copy.mingjing.qizhengRoute;
+  const x = copy.mingjing.qizhengExplore;
+  const basis = chart.chart_basis;
+
+  const basisRows = [
+    { term: '上升度', k: q.ascendant, v: formatLongitude(basis.ascendant_longitude) },
+    { term: '昼夜盘', k: q.dayNight, v: dayNightLabel(basis.day_night, q.dayNightLabels) },
+    { term: '宫制', k: q.houseModel, v: formatHouseModelLabel(basis.house_model, q.houseModelValues) },
+    { term: '宿', k: q.mansionModel, v: formatMansionModelLabel(basis.mansion_model, q.mansionModelValues) },
+    { term: '四余', k: q.siyuModel, v: formatSiyuModelLabel(basis.siyu_model, q.siyuModelValues) },
+  ];
+
+  return (
+    <div className="shijing-qz-data">
       <section className="shijing-mingjing-panel" aria-label={q.chartAria}>
-        <header className="shijing-mingjing-panel__head">
-          <div>
-            <p className="shijing-mingjing__eyebrow">{q.eyebrow}</p>
-            <h2 className="shijing-mingjing-panel__title">{q.chartTitle}</h2>
-          </div>
-        </header>
-        <dl className="shijing-mj-reading__core">
-          <div className="shijing-mj-reading__core-item">
-            <dt>{q.ascendant}</dt>
-            <dd>{formatLongitude(basis.ascendant_longitude)}</dd>
-          </div>
-          <div className="shijing-mj-reading__core-item">
-            <dt>{q.dayNight}</dt>
-            <dd>{dayNightLabel(basis.day_night, q.dayNightLabels)}</dd>
-          </div>
-          <div className="shijing-mj-reading__core-item">
-            <dt>{q.houseModel}</dt>
-            <dd>{formatHouseModelLabel(basis.house_model, q.houseModelValues)}</dd>
-          </div>
-          <div className="shijing-mj-reading__core-item">
-            <dt>{q.mansionModel}</dt>
-            <dd>{formatMansionModelLabel(basis.mansion_model, q.mansionModelValues)}</dd>
-          </div>
-          <div className="shijing-mj-reading__core-item">
-            <dt>{q.siyuModel}</dt>
-            <dd>{formatSiyuModelLabel(basis.siyu_model, q.siyuModelValues)}</dd>
-          </div>
-        </dl>
+        <div className="shijing-qz-section-head">
+          <h3 className="shijing-qz-section-title">{x.basisSectionTitle}</h3>
+          <span className="shijing-qz-section-hint">{x.basisSectionHint}</span>
+        </div>
+        <div className="shijing-qz-basis">
+          {basisRows.map((row) => (
+            <div key={row.term} className="shijing-qz-basis__item">
+              <div className="shijing-qz-basis__k">
+                <GlossTerm termKey={row.term}>{row.k}</GlossTerm>
+              </div>
+              <div className="shijing-qz-basis__v">{row.v}</div>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="shijing-mingjing-panel" aria-label={q.bodiesTitle}>
-        <header className="shijing-mingjing-panel__head">
-          <h2 className="shijing-mingjing-panel__title">{q.bodiesTitle}</h2>
-        </header>
-        <div className="shijing-mingjing-table-wrap">
-          <table className="shijing-mingjing-table">
-            <thead>
-              <tr>
-                <th>{q.bodyColumns.body}</th>
-                <th>{q.bodyColumns.house}</th>
-                <th>{q.bodyColumns.mansion}</th>
-                <th>{q.bodyColumns.position}</th>
-                <th>{q.bodyColumns.longitude}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bodyRows(chart.bodies).map((body) => (
-                <tr key={body.key}>
-                  <td>{body.label}</td>
-                  <td>{body.house_name}</td>
-                  <td>{body.mansion}</td>
-                  <td>{body.position_class}</td>
-                  <td>{formatLongitude(body.longitude)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <h3 className="shijing-qz-section-title shijing-qz-section-title--solo">{q.bodiesTitle}</h3>
+        <div className="shijing-qz-luogong">
+          <div className="shijing-qz-luogong__head">
+            <span>{q.bodyColumns.body}</span>
+            <span>{q.bodyColumns.house}</span>
+            <span><GlossTerm termKey="宿">{q.bodyColumns.mansion}</GlossTerm></span>
+            <span><GlossTerm termKey="宫势">{q.bodyColumns.position}</GlossTerm></span>
+            <span><GlossTerm termKey="黄道度">{q.bodyColumns.longitude}</GlossTerm></span>
+          </div>
+          {stars.map((star) => (
+            <div key={star.key} className="shijing-qz-luogong__row">
+              <span className="shijing-qz-luogong__name">
+                <span className="shijing-qz-luogong__dot" style={{ background: star.color }} />
+                <b>{star.label}</b>
+              </span>
+              <span>{star.houseName}</span>
+              <span className="shijing-qz-luogong__mono">{star.mansion}</span>
+              <span>
+                <span className="shijing-qz-chip" data-strength={star.strength}>{star.strengthLabel}</span>
+              </span>
+              <span className="shijing-qz-luogong__mono">{star.degree}</span>
+            </div>
+          ))}
         </div>
       </section>
 
       <section className="shijing-mingjing-panel" aria-label={q.housesTitle}>
-        <header className="shijing-mingjing-panel__head">
-          <h2 className="shijing-mingjing-panel__title">{q.housesTitle}</h2>
-        </header>
-        <ul className="shijing-mj-reading__strategies">
+        <h3 className="shijing-qz-section-title shijing-qz-section-title--solo">{q.housesTitle}</h3>
+        <div className="shijing-qz-palace-list">
           {chart.houses.map((house) => {
-            const bodyLabels = house.body_keys
-              .map((key) => chart.bodies.find((body) => body.key === key)?.label ?? key);
+            const occ = house.body_keys
+              .map((key) => chart.bodies.find((body) => body.key === key)?.label ?? key)
+              .join(' · ');
             return (
-              <li
-                key={house.name}
-                className="shijing-mj-reading__strategy"
-                data-empty={bodyLabels.length === 0 ? 'true' : 'false'}
-              >
-                <div className="shijing-mj-reading__phase">
-                  <span className="shijing-mj-reading__pillar">{house.name}</span>
-                  <span className="shijing-mj-reading__age">
-                    {formatLongitude(house.start_longitude)} - {formatLongitude(house.end_longitude)}
-                  </span>
-                  <span className="shijing-mj-reading__theme">
-                    {bodyLabels.length > 0 ? bodyLabels.join(' · ') : q.emptyHouse}
-                  </span>
-                </div>
-              </li>
+              <div key={house.name} className="shijing-qz-palace-row">
+                <b className="shijing-qz-palace-row__name">{house.name}</b>
+                <span className="shijing-qz-palace-row__range">
+                  {formatLongitude(house.start_longitude)} – {formatLongitude(house.end_longitude)}
+                </span>
+                <span className="shijing-qz-palace-row__occ" data-empty={occ ? undefined : ''}>
+                  {occ || q.emptyHouse}
+                </span>
+              </div>
             );
           })}
-        </ul>
+        </div>
       </section>
-
-      <MingJingQizhengReadingView
-        output={natalReading.output}
-        stale={natalReading.stale}
-        loading={natalReading.loading}
-        failure={natalReading.failure}
-        onGenerate={natalReading.onGenerate}
-      />
     </div>
   );
 }

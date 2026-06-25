@@ -238,6 +238,47 @@ export interface MingJingCopy {
       readonly career_inclination: string;
     };
   };
+  readonly qizhengExplore: {
+    readonly methodChip: string;
+    readonly heroEyebrow: string;
+    readonly favorableTitle: string;
+    readonly watchTitle: string;
+    readonly basisTitle: string;
+    readonly viewIntro: string;
+    readonly viewPlain: string;
+    readonly viewData: string;
+    readonly viewToggleAria: string;
+    readonly explainerTitle: string;
+    readonly explainerBody: string;
+    readonly qizhengCardTitle: string;
+    readonly qizhengCardBody: string;
+    readonly siyuCardTitle: string;
+    readonly siyuCardBody: string;
+    readonly explainerHint: string;
+    readonly chartTitle: string;
+    readonly chartHint: string;
+    readonly wheelCenterEyebrow: string;
+    readonly deepTitle: string;
+    readonly starsTitle: string;
+    readonly starsHint: string;
+    readonly starGoPalace: string;
+    readonly patternsTitle: string;
+    readonly patternsHint: string;
+    readonly basisSectionTitle: string;
+    readonly basisSectionHint: string;
+    readonly ctaEyebrow: string;
+    readonly ctaTitle: string;
+    readonly ctaBody: string;
+    readonly ctaButton: string;
+    readonly readingTitleSuffix: string;
+    readonly emptyDetail: string;
+    readonly terms: {
+      readonly mingZhu: string;
+      readonly qizheng: string;
+      readonly siyu: string;
+      readonly emptyHouse: string;
+    };
+  };
   readonly events: {
     readonly title: string;
     readonly intro: string;
