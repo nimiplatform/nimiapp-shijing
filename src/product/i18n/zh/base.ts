@@ -11,14 +11,15 @@ mirrorKindLabels: {
   yuejing: '月镜',
   nianjing: '年镜',
   mingjing: '命镜',
-  shijing: '时镜',
+  shijing: '问镜',
 },
 tabLabels: {
   rijing: '日镜',
   yuejing: '月镜',
   nianjing: '年镜',
   mingjing: '命镜',
-  shijing: '时镜',
+  hejing: '合镜',
+  shijing: '问镜',
 },
 tendencyClassLabels: {
   supportive: '助力',
@@ -82,7 +83,7 @@ recordSourceLabels: {
   rijing: '来自日镜',
   yuejing: '来自月镜',
   nianjing: '来自年镜',
-  shijing: '来自时镜',
+  shijing: '来自问镜',
 },
 memoryUseLabels: {
   record_only: '只自己留个底',
@@ -131,7 +132,7 @@ common: {
   loading: '加载中',
 },
 shell: {
-  navAriaLabel: '时镜五镜',
+  navAriaLabel: '时镜六镜',
   accountMenu: '账户菜单',
   settingsMenu: '设置',
   languageSwitch: '界面语言',
@@ -178,7 +179,7 @@ self: {
   notes: '备注',
   notesPlaceholder: '补充说明，例如生辰来源、出生证明备注…',
   missing: '未填写',
-  protectedValue: '已保护',
+  maskedValue: '*',
   revealSensitive: '查看完整资料',
   revealSensitiveHint: '需要通过 Nimi 本人确认后短时显示。',
   revealSensitivePending: '正在确认…',
@@ -321,13 +322,13 @@ diagnostics: {
 },
 methodProfile: {
   title: '推演方法',
-  description: '选择命理算法引擎,新生成的日/月/年镜与时镜将采用此方法',
+  description: '选择命理算法引擎,新生成的日/月/年镜与问镜将采用此方法',
   algorithm: '命理算法',
   note: '切换后立即生效;已生成的解读保留各自方法,可并排对照。',
   switchedAt: (savedAt) => `已切换 (${savedAt})`,
   capabilities: {
     title: '功能支持声明',
-    description: '切换算法前先确认各镜面能力。日/月/年/时镜使用统一产品接口;命镜按算法路线分别呈现。',
+    description: '切换算法前先确认各镜面能力。日/月/年/问镜使用统一产品接口;命镜按算法路线分别呈现。',
     current: '当前',
     algorithmNeutralTitle: '统一镜面',
     mingjingRouteTitle: '命镜路线',
@@ -339,7 +340,7 @@ methodProfile: {
       'rijing.daily_reading': '日镜',
       'yuejing.rolling_30_day_reading': '月镜',
       'nianjing.long_horizon_reading': '年镜',
-      'shijing.consultation': '时镜问答',
+      'shijing.consultation': '问镜问答',
     },
     routeFeatureLabels: {
       natal_projection: '命盘总览',
@@ -369,6 +370,7 @@ readingFailure: {
     hash_mismatch: '生成失败:哈希校验未通过,请重新生成。',
     algorithm_fail_closed: '生成失败:当前资料精度不足以生成该镜面解读(SJG-ALGO-10 已按规则收口)。',
   },
+  methodFeatureUnsupported: '生成失败:当前选择的推演方法暂不支持该镜面,请切换到支持此镜面的推演方法后再生成。',
 },
 citationDrawer: {
   ariaLabel: '生成依据',
@@ -378,9 +380,9 @@ citationDrawer: {
   citedPlans: '引用计划',
 },
 importToShijing: {
-  label: '导入到时镜咨询',
-  pendingLabel: '已加入时镜咨询',
-  ariaLabel: '导入到时镜咨询',
+  label: '导入到问镜咨询',
+  pendingLabel: '已加入问镜咨询',
+  ariaLabel: '导入到问镜咨询',
 },
 natalErrors: {
   birth_location_required: '请选择出生地。系统会自动匹配经纬度和时区。',

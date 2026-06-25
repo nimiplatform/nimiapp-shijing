@@ -1,0 +1,144 @@
+/* HeJing 关系指数 — radar chart + metric readouts. */
+
+.shijing-hejing__index-body {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.78fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: center;
+}
+
+/* Radar ------------------------------------------------------------------- */
+
+.shijing-hejing__radar-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.shijing-hejing__radar {
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+}
+
+.shijing-hejing__radar-grid polygon {
+  fill: none;
+  stroke: rgba(28, 43, 36, 0.12);
+  stroke-width: 1;
+}
+
+.shijing-hejing__radar-grid line {
+  stroke: rgba(28, 43, 36, 0.1);
+  stroke-width: 1;
+}
+
+.shijing-hejing__radar-area {
+  fill: rgba(61, 122, 90, 0.18);
+  stroke: var(--hejing-acc);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.shijing-hejing__radar-dot {
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+.shijing-hejing__radar-dot[data-tone="green"] {
+  fill: var(--hejing-green);
+}
+
+.shijing-hejing__radar-dot[data-tone="gold"] {
+  fill: var(--hejing-gold);
+}
+
+.shijing-hejing__radar-dot[data-tone="blue"] {
+  fill: var(--hejing-blue);
+}
+
+.shijing-hejing__radar-dot[data-tone="red"] {
+  fill: var(--hejing-red);
+}
+
+.shijing-hejing__radar-label {
+  fill: var(--hejing-ink2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Metric readouts --------------------------------------------------------- */
+
+.shijing-hejing__metric-readouts {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.shijing-hejing__metric {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 2px;
+}
+
+.shijing-hejing__metric-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.shijing-hejing__metric-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--metric-color);
+}
+
+.shijing-hejing__metric-head h3 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--hejing-ink2);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.shijing-hejing__metric-value {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.shijing-hejing__metric-value strong {
+  color: var(--metric-color);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.shijing-hejing__metric-value span {
+  color: var(--hejing-ink3);
+  font-size: 12px;
+}
+
+.shijing-hejing__metric[data-tone="green"] {
+  --metric-color: var(--hejing-green);
+}
+
+.shijing-hejing__metric[data-tone="gold"] {
+  --metric-color: var(--hejing-gold);
+}
+
+.shijing-hejing__metric[data-tone="blue"] {
+  --metric-color: var(--hejing-blue);
+}
+
+.shijing-hejing__metric[data-tone="red"] {
+  --metric-color: var(--hejing-red);
+}

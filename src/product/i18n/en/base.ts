@@ -18,6 +18,7 @@ tabLabels: {
   yuejing: 'Monthly Mirror',
   nianjing: 'Yearly Mirror',
   mingjing: 'Destiny Mirror',
+  hejing: 'Relationship Mirror',
   shijing: 'Consultation Mirror',
 },
 tendencyClassLabels: {
@@ -178,7 +179,7 @@ self: {
   notes: 'Notes',
   notesPlaceholder: 'Add context such as birth-data source or birth certificate notes...',
   missing: 'Missing',
-  protectedValue: 'Protected',
+  maskedValue: '*',
   revealSensitive: 'Reveal full profile',
   revealSensitiveHint: 'Requires Nimi presence verification before showing sensitive fields.',
   revealSensitivePending: 'Verifying...',
@@ -369,6 +370,7 @@ readingFailure: {
     hash_mismatch: 'Generation failed: hash verification failed. Regenerate the reading.',
     algorithm_fail_closed: 'Generation failed: current data precision is insufficient for this mirror reading (closed by SJG-ALGO-10).',
   },
+  methodFeatureUnsupported: 'Generation failed: the selected method does not support this mirror yet. Switch to a supported calculation method and regenerate.',
 },
 citationDrawer: {
   ariaLabel: 'Generation evidence',

@@ -1,24 +1,31 @@
-// SJG-IA-01..07 — Information architecture contract.
+// SJG-IA-01..07 - Information architecture contract.
 // Renderer surfaces must consume SHIJING_IA_TABS instead of hardcoding
 // parallel tab lists.
 
-export type ShijingTabId = 'rijing' | 'yuejing' | 'nianjing' | 'mingjing' | 'shijing';
+export type ShijingTabId =
+  | 'rijing'
+  | 'yuejing'
+  | 'nianjing'
+  | 'mingjing'
+  | 'hejing'
+  | 'shijing';
 
 export interface ShijingTabDescriptor {
   readonly id: ShijingTabId;
-  readonly order: 1 | 2 | 3 | 4 | 5;
+  readonly order: 1 | 2 | 3 | 4 | 5 | 6;
   readonly chinese_label: string;
   readonly english_anchor: string;
 }
 
-// SJG-IA-01 — widening-horizon order: day → month → decade → whole-life natal →
-// consultation. 命镜 (mingjing) is the natal projection surface (SJG-IA-08).
+// SJG-IA-01 - widening-horizon order: day -> month -> decade ->
+// whole-life natal -> relationship -> consultation.
 export const SHIJING_IA_TABS: readonly ShijingTabDescriptor[] = [
   { id: 'rijing', order: 1, chinese_label: '日镜', english_anchor: 'Daily Mirror' },
   { id: 'yuejing', order: 2, chinese_label: '月镜', english_anchor: 'Monthly Mirror' },
   { id: 'nianjing', order: 3, chinese_label: '年镜', english_anchor: 'Yearly Mirror' },
   { id: 'mingjing', order: 4, chinese_label: '命镜', english_anchor: 'Destiny Mirror' },
-  { id: 'shijing', order: 5, chinese_label: '时镜', english_anchor: 'Consultation Mirror' },
+  { id: 'hejing', order: 5, chinese_label: '合镜', english_anchor: 'Relationship Mirror' },
+  { id: 'shijing', order: 6, chinese_label: '问镜', english_anchor: 'Consultation Mirror' },
 ] as const;
 
 export const SHIJING_PRIMARY_TAB_COUNT = SHIJING_IA_TABS.length;
@@ -71,23 +78,11 @@ export const SHIJING_SECONDARY_SETTINGS_SURFACES: readonly ShijingSettingsSurfac
   'diagnostics',
 ] as const;
 
-// SJG-IA-04 — the seven settings surfaces are grouped into ordered sub-pages
+// SJG-IA-04 - the seven settings surfaces are grouped into ordered sub-pages
 // inside the secondary Settings surface. This is a presentation grouping only:
 // every surface in `SHIJING_SECONDARY_SETTINGS_SURFACES` appears in exactly one
 // page (the union is total and disjoint). Renderer code must consume this
 // constant rather than hardcoding a parallel page list (SJG-IA-07).
-//
-//   profile  (档案)        — identity & natal data the user maintains once
-//   concerns (关注)        — ongoing concern tags (the forward-looking lens)
-//   memory   (发生过的事)  — the lifelong EventMemory archive / backfill entry
-//   settings (设置)        — app preferences and system / data hygiene
-//
-// `concern_tags` is a cross-cutting lens (low-frequency config), so it lives in
-// its own `concerns` page. `memory_and_plans` is timeline content keyed to when
-// an event occurred — its primary entry/display is on the time mirrors (RiJing
-// event input, YueJing day panel, NianJing phase/inflection recorder); the
-// `memory` settings page is the full-life archive + backfill for events that
-// fall outside any open mirror window.
 export type ShijingSettingsPageId = 'profile' | 'concerns' | 'memory' | 'settings';
 
 export interface ShijingSettingsPageDescriptor {

@@ -1,0 +1,87 @@
+/* HeJing 关系复盘 — shared-history vertical timeline. */
+
+.shijing-hejing__history {
+  position: relative;
+  margin: 0;
+  padding: 4px 0 0;
+  list-style: none;
+}
+
+.shijing-hejing__history::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 12px;
+  bottom: 16px;
+  width: 2px;
+  background: rgba(61, 122, 90, 0.3);
+}
+
+.shijing-hejing__record {
+  position: relative;
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr);
+  gap: 18px;
+  padding: 6px 0 22px 28px;
+}
+
+.shijing-hejing__record:last-child {
+  padding-bottom: 2px;
+}
+
+.shijing-hejing__record::before {
+  content: "";
+  position: absolute;
+  left: 1px;
+  top: 9px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--hejing-acc);
+  border-radius: 50%;
+  background: #fff;
+}
+
+.shijing-hejing__record time {
+  color: var(--hejing-ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.shijing-hejing__record-body {
+  min-width: 0;
+}
+
+.shijing-hejing__record-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.shijing-hejing__record-head h3 {
+  margin: 0;
+  color: var(--hejing-ink);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.shijing-hejing__record-tag {
+  border: 1px solid rgba(61, 122, 90, 0.26);
+  border-radius: 999px;
+  padding: 2px 10px;
+  color: var(--hejing-acc-deep);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shijing-hejing__record p {
+  color: var(--hejing-ink2);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.shijing-hejing__record p strong {
+  color: var(--hejing-acc-deep);
+  font-weight: 700;
+}

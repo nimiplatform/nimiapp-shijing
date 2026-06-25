@@ -1,0 +1,178 @@
+/* HeJing 命理交汇 (chart intersection) + 相处语言 (ways of relating). */
+
+.shijing-hejing__structure-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(240px, 1.1fr) minmax(180px, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.shijing-hejing__profile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+  padding: 20px;
+  border: 1px solid var(--hejing-line);
+  border-radius: 16px;
+}
+
+.shijing-hejing__profile-card[data-tone="self"] {
+  --profile-color: var(--hejing-acc-deep);
+  --profile-dot: var(--hejing-acc);
+  background: linear-gradient(160deg, rgba(61, 122, 90, 0.12), rgba(255, 255, 255, 0.4));
+}
+
+.shijing-hejing__profile-card[data-tone="other"] {
+  --profile-color: var(--hejing-blue-deep);
+  --profile-dot: var(--hejing-blue);
+  background: linear-gradient(160deg, rgba(91, 127, 166, 0.12), rgba(255, 255, 255, 0.4));
+}
+
+.shijing-hejing__profile-card h3 {
+  margin: 0;
+  color: var(--profile-color);
+  font-family: var(--hejing-font-serif);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.shijing-hejing__profile-card ul,
+.shijing-hejing__cross-block ul {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shijing-hejing__profile-card li,
+.shijing-hejing__cross-block li {
+  position: relative;
+  padding-left: 16px;
+  color: var(--hejing-ink2);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.shijing-hejing__profile-card li::before,
+.shijing-hejing__cross-block li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--profile-dot, var(--hejing-acc));
+}
+
+/* Center column — resonance / friction */
+
+.shijing-hejing__cross-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--hejing-line);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(61, 122, 90, 0.1), rgba(176, 138, 62, 0.1));
+}
+
+.shijing-hejing__cross-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.shijing-hejing__cross-block h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.shijing-hejing__cross-block[data-kind="convergence"] {
+  --profile-dot: var(--hejing-acc);
+}
+
+.shijing-hejing__cross-block[data-kind="convergence"] h3 {
+  color: var(--hejing-acc-deep);
+}
+
+.shijing-hejing__cross-block[data-kind="friction"] {
+  --profile-dot: var(--hejing-gold);
+}
+
+.shijing-hejing__cross-block[data-kind="friction"] h3 {
+  color: var(--hejing-gold-deep);
+}
+
+/* 相处语言 — ways of relating */
+
+.shijing-hejing__ways-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shijing-hejing__ways {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 16px 18px;
+  border: 1px solid var(--hejing-line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.shijing-hejing__ways-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: var(--ways-soft);
+  color: var(--ways-color);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.shijing-hejing__ways-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.shijing-hejing__ways-copy h3 {
+  margin: 0;
+  color: var(--hejing-ink);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.shijing-hejing__ways-copy p {
+  color: var(--hejing-ink2);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.shijing-hejing__ways[data-tone="green"] {
+  --ways-color: var(--hejing-acc-deep);
+  --ways-soft: rgba(61, 122, 90, 0.14);
+}
+
+.shijing-hejing__ways[data-tone="gold"] {
+  --ways-color: var(--hejing-gold-deep);
+  --ways-soft: rgba(176, 138, 62, 0.16);
+}
+
+.shijing-hejing__ways[data-tone="red"] {
+  --ways-color: var(--hejing-red-deep);
+  --ways-soft: rgba(184, 105, 79, 0.16);
+}

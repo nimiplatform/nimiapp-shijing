@@ -1,0 +1,221 @@
+/* HeJing relationship mirror — shell, page intro, section heads, footer.
+ * Palette mirrors the 合镜 reference: forest-green hero over a soft layered
+ * green/cream field, with green/gold/blue/red analysis accents.
+ *
+ * Rich selectors are scoped under `.shijing-hejing` so they out-specify the
+ * shared `.shijing-tab` element baselines in styles-mirror-v1.css. */
+
+.shijing-shell[data-active-tab="hejing"] {
+  background:
+    radial-gradient(ellipse 70% 55% at 0% 0%, rgba(167, 215, 192, 0.55), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 100% 5%, rgba(200, 228, 212, 0.5), transparent 55%),
+    radial-gradient(ellipse 65% 55% at 100% 100%, rgba(244, 238, 222, 0.55), transparent 60%),
+    radial-gradient(ellipse 60% 55% at 0% 100%, rgba(180, 222, 200, 0.4), transparent 55%),
+    linear-gradient(160deg, #f5f8f4 0%, #eef3ee 100%);
+}
+
+.shijing-shell[data-active-tab="hejing"] .shijing-topbar {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom-color: rgba(40, 92, 68, 0.12);
+}
+
+.shijing-hejing {
+  --hejing-acc: #3d7a5a;
+  --hejing-acc-deep: #285c44;
+  --hejing-acc-mid: #4f9070;
+  --hejing-acc-soft: rgba(61, 122, 90, 0.1);
+  --hejing-green: #3d7a5a;
+  --hejing-green-soft: rgba(61, 122, 90, 0.12);
+  --hejing-gold: #b08a3e;
+  --hejing-gold-deep: #8a6c24;
+  --hejing-gold-soft: rgba(176, 138, 62, 0.14);
+  --hejing-blue: #5b7fa6;
+  --hejing-blue-deep: #3f6087;
+  --hejing-blue-soft: rgba(91, 127, 166, 0.14);
+  --hejing-red: #b8694f;
+  --hejing-red-deep: #a3543c;
+  --hejing-red-soft: rgba(184, 105, 79, 0.14);
+  --hejing-ink: #1c2b24;
+  --hejing-ink2: #54655c;
+  --hejing-ink3: #8b988f;
+  --hejing-line: rgba(28, 43, 36, 0.08);
+  --hejing-card: rgba(255, 255, 255, 0.92);
+  --hejing-card-border: rgba(28, 43, 36, 0.07);
+  --hejing-shadow: 0 1px 2px rgba(19, 38, 32, 0.04), 0 18px 40px -28px rgba(19, 38, 32, 0.3);
+  --hejing-font-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, serif;
+
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  gap: 16px;
+  padding: 10px clamp(18px, 4vw, 44px) 40px;
+  box-sizing: border-box;
+  color: var(--hejing-ink);
+}
+
+/* Each analysis block is a transparent wrapper: the bilingual title sits
+ * outside, above the white card panel that holds the content. The extra
+ * `.shijing-hejing` scope neutralizes the shared `.shijing-tab > section`
+ * card baseline so the wrapper itself stays transparent. */
+.shijing-hejing .shijing-hejing__section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Page intro --------------------------------------------------------------- */
+
+.shijing-hejing__intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 24px;
+  padding: 8px 8px 4px;
+}
+
+.shijing-hejing__intro-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shijing-hejing__eyebrow {
+  color: var(--hejing-acc);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.shijing-hejing .shijing-hejing__intro-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  color: var(--hejing-ink);
+  font-family: var(--hejing-font-serif);
+  font-size: clamp(30px, 4vw, 42px);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: 0.01em;
+}
+
+.shijing-hejing .shijing-hejing__intro-lead {
+  max-width: 560px;
+  color: var(--hejing-ink2);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.shijing-hejing .shijing-hejing__new-button {
+  flex: 0 0 auto;
+  align-self: end;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 22px;
+  background: linear-gradient(140deg, var(--hejing-acc-mid), var(--hejing-acc-deep));
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 14px 28px -16px rgba(21, 64, 50, 0.6);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.shijing-hejing .shijing-hejing__new-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 32px -16px rgba(21, 64, 50, 0.66);
+}
+
+/* Section heads ------------------------------------------------------------ */
+
+.shijing-hejing .shijing-hejing__card {
+  border: 1px solid var(--hejing-card-border);
+  border-radius: 20px;
+  background: var(--hejing-card);
+  box-shadow: var(--hejing-shadow);
+  box-sizing: border-box;
+  padding: 24px 26px;
+}
+
+.shijing-hejing__section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 0;
+  padding: 0 6px;
+}
+
+.shijing-hejing__section-title {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+}
+
+.shijing-hejing__section-title h2 {
+  margin: 0;
+  color: var(--hejing-ink);
+  font-family: var(--hejing-font-serif);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.shijing-hejing__section-title span {
+  color: var(--hejing-ink3);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.shijing-hejing .shijing-hejing__head-action {
+  flex: 0 0 auto;
+  border: 1px solid rgba(61, 122, 90, 0.28);
+  border-radius: 999px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--hejing-acc-deep);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.shijing-hejing .shijing-hejing__head-action:hover {
+  border-color: rgba(61, 122, 90, 0.5);
+  background: rgba(61, 122, 90, 0.08);
+}
+
+/* Status + footer ---------------------------------------------------------- */
+
+.shijing-hejing .shijing-hejing__status {
+  padding: 13px 18px;
+  border: 1px solid rgba(61, 122, 90, 0.22);
+  border-radius: 14px;
+  background: rgba(61, 122, 90, 0.1);
+  color: var(--hejing-acc-deep);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.shijing-hejing__footer {
+  padding: 10px 14px 0;
+  text-align: center;
+}
+
+.shijing-hejing__footer p {
+  color: var(--hejing-ink3);
+  font-size: 13px;
+  line-height: 1.7;
+}

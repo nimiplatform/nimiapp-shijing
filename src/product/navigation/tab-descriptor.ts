@@ -10,7 +10,7 @@ export interface PrimaryTabDescriptor {
   readonly id: ShijingPrimaryTabId;
   readonly chinese_label: string;
   readonly english_anchor: string;
-  readonly order: 1 | 2 | 3 | 4 | 5;
+  readonly order: 1 | 2 | 3 | 4 | 5 | 6;
 }
 
 export const SHIJING_PRIMARY_TAB_DESCRIPTORS: readonly PrimaryTabDescriptor[] = SHIJING_IA_TABS;

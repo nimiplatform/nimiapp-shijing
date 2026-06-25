@@ -1,7 +1,8 @@
-// W05 — four-mirror shell.
+// W05 - six-mirror shell.
 //
 // Wires the integrated top bar (brand + the contract-locked primary tab
-// bar rijing / yuejing / nianjing / shijing + account). The account cluster
+// bar rijing / yuejing / nianjing / mingjing / hejing / shijing + account).
+// The account cluster
 // shows the user's avatar + name; clicking it opens a compact menu (Nimi
 // ActionMenu) listing the settings sub-pages; selecting an entry opens a
 // full-surface detail page for that page.
@@ -30,6 +31,9 @@ const NianJingTab = lazy(() =>
 );
 const MingJingTab = lazy(() =>
   import('../tabs/mingjing-tab.tsx').then((module) => ({ default: module.MingJingTab })),
+);
+const HeJingTab = lazy(() =>
+  import('../tabs/hejing-tab.tsx').then((module) => ({ default: module.HeJingTab })),
 );
 const ShiJingTab = lazy(() =>
   import('../tabs/shijing-tab.tsx').then((module) => ({ default: module.ShiJingTab })),
@@ -226,6 +230,8 @@ function renderActiveTab(
           onStartupGuideComplete={onStartupGuideComplete}
         />
       );
+    case 'hejing':
+      return <HeJingTab />;
     case 'shijing':
       return <ShiJingTab onRequestOpenSettings={onRequestOpenSettings} />;
     default:

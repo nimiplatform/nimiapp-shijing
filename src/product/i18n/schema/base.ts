@@ -132,7 +132,7 @@ readonly self: {
   readonly notes: string;
   readonly notesPlaceholder: string;
   readonly missing: string;
-  readonly protectedValue: string;
+  readonly maskedValue: string;
   readonly revealSensitive: string;
   readonly revealSensitiveHint: string;
   readonly revealSensitivePending: string;
@@ -315,6 +315,7 @@ readonly aiConfig: {
 };
 readonly readingFailure: {
   readonly headlines: LabelMap<ReadingGenerationFailure['kind']>;
+  readonly methodFeatureUnsupported: string;
 };
 readonly citationDrawer: {
   readonly ariaLabel: string;

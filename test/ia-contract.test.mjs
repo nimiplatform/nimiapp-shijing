@@ -1,4 +1,4 @@
-// SJG-IA-01..08 — IA tab contract tests for the five-mirror IA (命镜 added).
+// SJG-IA-01..08 - IA tab contract tests for the six-mirror IA.
 
 import assert from 'node:assert/strict';
 import test from 'node:test';
@@ -15,26 +15,26 @@ import {
   isForbiddenTabLabel,
 } from '../src/contracts/ia-contract.ts';
 
-test('exactly five primary tabs', () => {
-  assert.equal(SHIJING_PRIMARY_TAB_COUNT, 5);
-  assert.equal(SHIJING_IA_TABS.length, 5);
+test('exactly six primary tabs', () => {
+  assert.equal(SHIJING_PRIMARY_TAB_COUNT, 6);
+  assert.equal(SHIJING_IA_TABS.length, 6);
 });
 
-test('canonical ordered ids are RiJing/YueJing/NianJing/MingJing/ShiJing', () => {
+test('canonical ordered ids are RiJing/YueJing/NianJing/MingJing/HeJing/ShiJing', () => {
   assert.deepEqual(
     SHIJING_IA_TABS.map((tab) => tab.id),
-    ['rijing', 'yuejing', 'nianjing', 'mingjing', 'shijing'],
+    ['rijing', 'yuejing', 'nianjing', 'mingjing', 'hejing', 'shijing'],
   );
   assert.deepEqual(
     SHIJING_IA_TABS.map((tab) => tab.order),
-    [1, 2, 3, 4, 5],
+    [1, 2, 3, 4, 5, 6],
   );
 });
 
-test('canonical chinese labels are 日镜/月镜/年镜/命镜/时镜', () => {
+test('canonical chinese labels are Ri/Yue/Nian/Ming/He/Shi mirrors', () => {
   assert.deepEqual(
     SHIJING_IA_TABS.map((tab) => tab.chinese_label),
-    ['日镜', '月镜', '年镜', '命镜', '时镜'],
+    ['日镜', '月镜', '年镜', '命镜', '合镜', '问镜'],
   );
 });
 
@@ -57,7 +57,7 @@ test('forbidden tab ids include all removed surfaces', () => {
   }
 });
 
-test('forbidden labels include old chinese primary labels', () => {
+test('forbidden labels include removed chinese primary labels', () => {
   for (const label of ['今日', '关注', '问时镜', '我']) {
     assert.equal(isForbiddenTabLabel(label), true, `expected forbidden label: ${label}`);
     assert.ok(SHIJING_FORBIDDEN_TAB_LABELS.has(label));
@@ -103,11 +103,9 @@ test('settings pages partition the seven surfaces exactly', () => {
   );
 
   const grouped = SHIJING_SETTINGS_PAGES.flatMap((page) => page.surfaces);
-  // Total: every required surface is placed in some page.
   for (const surface of SHIJING_SECONDARY_SETTINGS_SURFACES) {
     assert.ok(grouped.includes(surface), `surface not placed in any page: ${surface}`);
   }
-  // Disjoint + no extras: the union equals the surface set with no duplicates.
   assert.equal(grouped.length, SHIJING_SECONDARY_SETTINGS_SURFACES.length);
   assert.equal(new Set(grouped).size, grouped.length, 'a surface appears in more than one page');
 });
