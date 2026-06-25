@@ -21,14 +21,14 @@ test('method profile capabilities disclose generic mirrors and MingJing route su
   );
 
   for (const row of rows) {
-    const expectedSupported = row.method_profile_id === 'qizheng_siyu_guolao_v1' ? false : true;
+    const isQizheng = row.method_profile_id === 'qizheng_siyu_guolao_v1';
     assert.deepEqual(
       row.algorithm_neutral_features.map((feature) => [feature.id, feature.supported]),
       [
-        ['rijing.daily_reading', expectedSupported],
-        ['yuejing.rolling_30_day_reading', expectedSupported],
-        ['nianjing.long_horizon_reading', expectedSupported],
-        ['shijing.consultation', expectedSupported],
+        ['rijing.daily_reading', true],
+        ['yuejing.rolling_30_day_reading', true],
+        ['nianjing.long_horizon_reading', true],
+        ['shijing.consultation', !isQizheng],
       ],
     );
   }
@@ -51,6 +51,7 @@ test('method profile capabilities disclose generic mirrors and MingJing route su
   assert.deepEqual(ziwei.mingjing_route.supported_features, [
     'natal_projection',
     'natal_reading',
+    'relationship_hepan',
   ]);
   assert.equal(ziwei.mingjing_route.fail_close_detail, null);
 
@@ -59,6 +60,7 @@ test('method profile capabilities disclose generic mirrors and MingJing route su
   assert.deepEqual(qizheng.mingjing_route.supported_features, [
     'natal_projection',
     'natal_reading',
+    'relationship_hepan',
   ]);
   assert.equal(qizheng.mingjing_route.fail_close_detail, null);
 });

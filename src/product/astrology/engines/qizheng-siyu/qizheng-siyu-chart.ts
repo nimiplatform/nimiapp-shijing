@@ -84,6 +84,10 @@ const HOUSE_NAMES = [
 const ANGULAR_HOUSES = new Set(['命宫', '田宅', '夫妻', '官禄']);
 const SUCCEDENT_HOUSES = new Set(['财帛', '男女', '疾厄', '福德']);
 
+export const QIZHENG_POSITION_CLASS_STRONG = '七强' as const;
+export const QIZHENG_POSITION_CLASS_SUCCEDENT = '次强' as const;
+export const QIZHENG_POSITION_CLASS_IDLE = '闲宫' as const;
+
 const REAL_BODIES: readonly {
   readonly key: QizhengSiyuBodyKey;
   readonly label: string;
@@ -124,9 +128,9 @@ function houseIndexFor(longitude: number, ascendant: number): number {
 }
 
 function positionClass(houseName: string): string {
-  if (ANGULAR_HOUSES.has(houseName)) return '七强';
-  if (SUCCEDENT_HOUSES.has(houseName)) return '次强';
-  return '闲宫';
+  if (ANGULAR_HOUSES.has(houseName)) return QIZHENG_POSITION_CLASS_STRONG;
+  if (SUCCEDENT_HOUSES.has(houseName)) return QIZHENG_POSITION_CLASS_SUCCEDENT;
+  return QIZHENG_POSITION_CLASS_IDLE;
 }
 
 function bodyHouseName(longitude: number, ascendant: number): string {
@@ -263,6 +267,85 @@ function isDayChart(sun: QizhengSiyuBody): boolean {
   return ['命宫', '财帛', '兄弟', '田宅', '男女', '奴仆'].includes(sun.house_name);
 }
 
+function validateLocation(
+  natalInputs: NatalInputs,
+  subjectRef: SubjectRef,
+  detail: string,
+): StageResult<NatalInputs['birth_location']> {
+  const location = natalInputs.birth_location;
+  if (
+    !Number.isFinite(location.latitude) ||
+    !Number.isFinite(location.longitude) ||
+    location.iana_time_zone.length === 0
+  ) {
+    return {
+      ok: false,
+      error: {
+        stage: 'build_natal_chart',
+        kind: 'stage_missing_input',
+        subject_ref: subjectRef,
+        detail,
+      },
+    };
+  }
+  return { ok: true, value: location };
+}
+
+export function buildQizhengSiyuDateChart(input: {
+  readonly subject_ref: SubjectRef;
+  readonly natal_inputs: NatalInputs;
+  readonly target_datetime_utc: string;
+}): StageResult<QizhengSiyuSubjectChart> {
+  const date = new Date(input.target_datetime_utc);
+  if (Number.isNaN(date.getTime())) {
+    return {
+      ok: false,
+      error: {
+        stage: 'build_natal_chart',
+        kind: 'stage_invalid_input',
+        subject_ref: input.subject_ref,
+        detail: '七政四余/果老星宗日月镜 requires a valid target UTC instant',
+      },
+    };
+  }
+  const location = validateLocation(
+    input.natal_inputs,
+    input.subject_ref,
+    '七政四余/果老星宗日月镜 requires resolved birth location and timezone',
+  );
+  if (!location.ok) return location;
+
+  const ascendant = ascendantLongitude(date, location.value.latitude, location.value.longitude);
+  const bodies = buildBodies(date, ascendant);
+  const sun = bodies.find((body) => body.key === 'taiyang')!;
+  return {
+    ok: true,
+    value: {
+      subject_ref: input.subject_ref,
+      canonicalization_hash: computeCanonicalHash({
+        kind: 'qizheng_siyu_target_date_chart_v1',
+        subject_ref: input.subject_ref,
+        target_datetime_utc: date.toISOString(),
+        latitude: location.value.latitude,
+        longitude: location.value.longitude,
+        iana_time_zone: location.value.iana_time_zone,
+      }),
+      chart_basis: {
+        birth_utc: date.toISOString(),
+        ascendant_longitude: ascendant,
+        day_night: isDayChart(sun) ? 'day' as const : 'night' as const,
+        zodiac_model: 'tropical-ecliptic-of-date',
+        house_model: 'equal-house-from-ascendant-v1',
+        mansion_model: '28-equal-mansion-v1',
+        siyu_model: 'luohou-ascending-node;jidu-descending-node;ziqi-28-year-j2000;yuebei-mean-lunar-apogee',
+        ephemeris_version: QIZHENG_SIYU_EPHEMERIS_VERSION,
+      },
+      bodies,
+      houses: buildHouses(ascendant, bodies),
+    },
+  };
+}
+
 export function buildQizhengSiyuSubjectChart(input: {
   readonly subject_ref: SubjectRef;
   readonly canonicalization: NatalCanonicalization;
@@ -291,24 +374,14 @@ export function buildQizhengSiyuSubjectChart(input: {
       },
     };
   }
-  const location = input.natal_inputs.birth_location;
-  if (
-    !Number.isFinite(location.latitude) ||
-    !Number.isFinite(location.longitude) ||
-    location.iana_time_zone.length === 0
-  ) {
-    return {
-      ok: false,
-      error: {
-        stage: 'build_natal_chart',
-        kind: 'stage_missing_input',
-        subject_ref: input.subject_ref,
-        detail: '七政四余/果老星宗命镜 requires resolved birth location and timezone',
-      },
-    };
-  }
+  const location = validateLocation(
+    input.natal_inputs,
+    input.subject_ref,
+    '七政四余/果老星宗命镜 requires resolved birth location and timezone',
+  );
+  if (!location.ok) return location;
 
-  const ascendant = ascendantLongitude(date, location.latitude, location.longitude);
+  const ascendant = ascendantLongitude(date, location.value.latitude, location.value.longitude);
   const bodies = buildBodies(date, ascendant);
   const sun = bodies.find((body) => body.key === 'taiyang')!;
   const basis = {

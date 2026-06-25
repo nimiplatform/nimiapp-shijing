@@ -17,12 +17,16 @@ import type {
 import type { StageResult } from '../../stage-result.ts';
 import {
   buildQizhengSiyuSubjectChart,
+  buildQizhengSiyuDateChart,
   QIZHENG_SIYU_EPHEMERIS_VERSION,
 } from './qizheng-siyu-chart.ts';
 import { deriveQizhengSiyuCommonDrivers } from './qizheng-siyu-derive.ts';
+import { localWallClockToUtcInstant } from '../../local-wall-clock.ts';
 
 export interface QizhengSiyuEngineEvidence {
   readonly chart: QizhengSiyuEvidence;
+  readonly dated_tendency_chart?: QizhengSiyuSubjectChart;
+  readonly dated_tendency_date?: string;
   readonly base_uncertainty: readonly UncertaintyInput[];
 }
 
@@ -40,6 +44,12 @@ const CAPABILITIES: MethodEngineCapabilities = {
   horizon_unit: 'star_period',
 };
 
+function datedTendencyDate(input: EngineComputeInput): string | null {
+  if (input.mirror_kind === 'rijing' && input.mirror_scope.kind === 'daily') return input.mirror_scope.date;
+  if (input.mirror_kind === 'yuejing' && input.mirror_scope.kind === 'rolling_30_day') return input.mirror_scope.start_date;
+  return null;
+}
+
 export const qizhengSiyuEngine: MethodEngine<QizhengSiyuEngineEvidence> = {
   id: QIZHENG_SIYU_GUOLAO_V1,
   profile: PROFILE,
@@ -55,6 +65,30 @@ export const qizhengSiyuEngine: MethodEngine<QizhengSiyuEngineEvidence> = {
       natal_inputs: input.self_subject.natal_inputs,
     });
     if (!selfChart.ok) return selfChart;
+
+    const targetDate = datedTendencyDate(input);
+    let datedChart: QizhengSiyuSubjectChart | undefined;
+    if (targetDate) {
+      const targetInstant = localWallClockToUtcInstant(`${targetDate}T12:00:00`, input.mirror_scope.basis_time_zone);
+      if (!targetInstant) {
+        return {
+          ok: false,
+          error: {
+            stage: 'build_natal_chart',
+            kind: 'stage_invalid_input',
+            subject_ref: input.self_subject.subject_ref,
+            detail: `七政四余/果老星宗日月镜 target date invalid: ${targetDate}`,
+          },
+        };
+      }
+      const targetChart = buildQizhengSiyuDateChart({
+        subject_ref: input.self_subject.subject_ref,
+        natal_inputs: input.self_subject.natal_inputs,
+        target_datetime_utc: targetInstant.toISOString(),
+      });
+      if (!targetChart.ok) return targetChart;
+      datedChart = targetChart.value;
+    }
 
     const related: QizhengSiyuSubjectChart[] = [];
     for (const rp of input.related_persons) {
@@ -74,6 +108,7 @@ export const qizhengSiyuEngine: MethodEngine<QizhengSiyuEngineEvidence> = {
       ok: true,
       value: {
         chart: { self_subject: selfChart.value, related_persons: related },
+        ...(datedChart ? { dated_tendency_chart: datedChart, dated_tendency_date: targetDate ?? undefined } : {}),
         base_uncertainty: uncertainty,
       },
     };
@@ -84,6 +119,7 @@ export const qizhengSiyuEngine: MethodEngine<QizhengSiyuEngineEvidence> = {
       ok: true,
       value: deriveQizhengSiyuCommonDrivers({
         evidence: input.evidence.chart,
+        dated_tendency_chart: input.evidence.dated_tendency_chart,
         base_uncertainty: input.evidence.base_uncertainty,
         mirror_kind: input.mirror_kind,
         mirror_scope: input.mirror_scope,

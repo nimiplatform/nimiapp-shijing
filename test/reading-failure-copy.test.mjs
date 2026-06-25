@@ -6,21 +6,21 @@ import {
   readingFailureHeadline,
 } from '../src/product/tabs/shared/reading-failure-copy.ts';
 import { getProductCopy } from '../src/product/i18n/copy.ts';
-import { dailyMirrorScope } from './_fixtures.mjs';
+import { consultationMirrorScope, rolling30DayMirrorScope } from './_fixtures.mjs';
 
-function unsupportedRiJingMethodFailure() {
+function unsupportedConsultationMethodFailure() {
   return {
     kind: 'algorithm_fail_closed',
-    mirror_kind: 'rijing',
-    mirror_scope: dailyMirrorScope(),
+    mirror_kind: 'shijing',
+    mirror_scope: consultationMirrorScope(),
     stage: 'method_feature_support',
     detail:
-      'method_feature_not_supported:rijing.daily_reading:qizheng_siyu_guolao_v1:supported=bazi_ziping_v1,ziwei_sanhe_v1',
+      'method_feature_not_supported:shijing.consultation:qizheng_siyu_guolao_v1:supported=bazi_ziping_v1,ziwei_sanhe_v1',
   };
 }
 
 test('method feature support failures are not presented as data precision gaps', () => {
-  const failure = unsupportedRiJingMethodFailure();
+  const failure = unsupportedConsultationMethodFailure();
 
   assert.equal(isMethodFeatureUnsupportedFailure(failure), true);
 
@@ -36,8 +36,8 @@ test('method feature support failures are not presented as data precision gaps',
 test('ordinary algorithm fail-close keeps the generic SJG-ALGO-10 headline', () => {
   const failure = {
     kind: 'algorithm_fail_closed',
-    mirror_kind: 'rijing',
-    mirror_scope: dailyMirrorScope(),
+    mirror_kind: 'yuejing',
+    mirror_scope: rolling30DayMirrorScope(),
     stage: 'uncertainty_decision',
     detail: 'SJG-ALGO-10 fail-closed: no_active_concern_tags',
   };

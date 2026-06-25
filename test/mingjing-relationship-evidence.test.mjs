@@ -52,7 +52,7 @@ function relationshipSnapshot(overrides = {}) {
     space: relationshipSpace(overrides.personOverrides),
     related_person_refs: [ALICE_REF],
     active_concern_tags: [],
-    method_profile_id: 'bazi_ziping_v1',
+    method_profile_id: overrides.method_profile_id ?? 'bazi_ziping_v1',
     ...overrides,
   });
 }
@@ -85,11 +85,25 @@ test('relationship_natal feature snapshot is MingJing-owned', () => {
   assert.match(result.error.detail ?? '', /mirror_kind_scope_forbidden:rijing:relationship_natal/u);
 });
 
-test('relationship_natal fails closed when method cannot produce relationship evidence', () => {
-  const result = relationshipSnapshot({ method_profile_id: 'ziwei_sanhe_v1' });
-  assert.equal(result.ok, false);
-  assert.equal(result.error.kind, 'stage_invalid_input');
-  assert.match(result.error.detail ?? '', /relationship_hepan.*method.*not_supported|unsupported_method/u);
+test('relationship_natal feature snapshot carries method-backed evidence for every admitted MingJing route', () => {
+  for (const method_profile_id of [
+    'bazi_ziping_v1',
+    'ziwei_sanhe_v1',
+    'qizheng_siyu_guolao_v1',
+  ]) {
+    const result = relationshipSnapshot({ method_profile_id });
+    assert.equal(result.ok, true, JSON.stringify(result));
+    assert.equal(result.value.common.relationship_hepan.related_person_ref.id, 'p_alice');
+    assert.equal(result.value.common.relationship_hepan.display_name_snapshot, 'Alice');
+    assert.ok(
+      result.value.common.relationship_hepan.timing_windows.every(
+        (window) =>
+          window.driver_refs.length > 0 &&
+          window.driver_refs.every((ref) => ref.startsWith(method_profile_id === 'bazi_ziping_v1' ? 'bazi:' : method_profile_id === 'ziwei_sanhe_v1' ? 'ziwei:' : 'qizheng_siyu:')),
+      ),
+      JSON.stringify(result.value.common.relationship_hepan.timing_windows, null, 2),
+    );
+  }
 });
 
 test('relationship_natal timing windows include both subjects period evidence or explicit fallback', () => {

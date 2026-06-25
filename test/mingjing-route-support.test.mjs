@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  mingJingRouteFailCloseDetail,
   mingJingRouteFeatureIdForScope,
   resolveMingJingRouteForMethod,
   validateMingJingRouteSupport,
@@ -50,7 +49,7 @@ function spaceWithMethod(methodProfileId) {
   });
 }
 
-test('MingJing route registry declares BaZi full route plus Ziwei and QiZheng natal-only routes', () => {
+test('MingJing route registry declares relationship HePan for every implemented route', () => {
   const bazi = resolveMingJingRouteForMethod('bazi_ziping_v1');
   assert.equal(bazi.id, 'mingjing.route.bazi_ziping_v1');
   assert.equal(bazi.status, 'implemented');
@@ -59,12 +58,12 @@ test('MingJing route registry declares BaZi full route plus Ziwei and QiZheng na
   const ziwei = resolveMingJingRouteForMethod('ziwei_sanhe_v1');
   assert.equal(ziwei.id, 'mingjing.route.ziwei_sanhe_v1');
   assert.equal(ziwei.status, 'implemented');
-  assert.deepEqual(ziwei.supported_features, ['natal_projection', 'natal_reading']);
+  assert.deepEqual(ziwei.supported_features, ['natal_projection', 'natal_reading', 'relationship_hepan']);
 
   const qizheng = resolveMingJingRouteForMethod('qizheng_siyu_guolao_v1');
   assert.equal(qizheng.id, 'mingjing.route.qizheng_siyu_guolao_v1');
   assert.equal(qizheng.status, 'implemented');
-  assert.deepEqual(qizheng.supported_features, ['natal_projection', 'natal_reading']);
+  assert.deepEqual(qizheng.supported_features, ['natal_projection', 'natal_reading', 'relationship_hepan']);
 });
 
 test('MingJing route feature mapping is scope-specific', () => {
@@ -72,44 +71,18 @@ test('MingJing route feature mapping is scope-specific', () => {
   assert.equal(mingJingRouteFeatureIdForScope(relationshipNatalMirrorScope()), 'relationship_hepan');
 });
 
-test('Ziwei MingJing route supports natal projection but not relationship HePan', () => {
-  const natal = validateMingJingRouteSupport({
-    method_profile_id: 'ziwei_sanhe_v1',
-    feature_id: 'natal_projection',
-  });
-  assert.equal(natal.ok, true, JSON.stringify(natal));
-
-  const result = validateMingJingRouteSupport({
-    method_profile_id: 'ziwei_sanhe_v1',
-    feature_id: 'relationship_hepan',
-  });
-
-  assert.equal(result.ok, false);
-  assert.equal(result.error.code, 'mingjing_route_feature_not_supported');
-  assert.equal(result.error.route_id, 'mingjing.route.ziwei_sanhe_v1');
-  assert.equal(result.error.method_profile_id, 'ziwei_sanhe_v1');
-  assert.match(
-    mingJingRouteFailCloseDetail(result.error),
-    /mingjing_route_feature_not_supported:mingjing\.route\.ziwei_sanhe_v1:relationship_hepan:supported=natal_projection,natal_reading/u,
-  );
-});
-
-test('QiZheng SiYu MingJing route supports natal projection but not relationship HePan', () => {
-  const natal = validateMingJingRouteSupport({
-    method_profile_id: 'qizheng_siyu_guolao_v1',
-    feature_id: 'natal_projection',
-  });
-  assert.equal(natal.ok, true, JSON.stringify(natal));
-
-  const result = validateMingJingRouteSupport({
-    method_profile_id: 'qizheng_siyu_guolao_v1',
-    feature_id: 'relationship_hepan',
-  });
-
-  assert.equal(result.ok, false);
-  assert.equal(result.error.code, 'mingjing_route_feature_not_supported');
-  assert.equal(result.error.route_id, 'mingjing.route.qizheng_siyu_guolao_v1');
-  assert.equal(result.error.method_profile_id, 'qizheng_siyu_guolao_v1');
+test('every implemented MingJing route supports relationship HePan', () => {
+  for (const method_profile_id of [
+    'bazi_ziping_v1',
+    'ziwei_sanhe_v1',
+    'qizheng_siyu_guolao_v1',
+  ]) {
+    const result = validateMingJingRouteSupport({
+      method_profile_id,
+      feature_id: 'relationship_hepan',
+    });
+    assert.equal(result.ok, true, JSON.stringify(result));
+  }
 });
 
 test('MingJing readiness accepts the Ziwei natal route', () => {
@@ -130,38 +103,45 @@ test('MingJing readiness accepts QiZheng route without calculation sex', () => {
   assert.equal(result.ok, true, JSON.stringify(result));
 });
 
-test('generateReading fails before Runtime AI when selected MingJing route lacks relationship HePan', async () => {
+test('generateReading reaches Runtime AI for relationship HePan on every implemented MingJing route', async () => {
   let runtimeCalled = false;
-  const result = await generateReading(
-    {
-      id: 'rdg_mj_ziwei_hepan_unavailable',
-      created_at: '2026-06-22T00:00:00Z',
-      mirror_kind: 'mingjing',
-      mirror_scope: relationshipNatalMirrorScope({ anchor_year: 2026, basis_time_zone: TZ }),
-      related_person_refs: [{ kind: 'person', id: 'p_alice' }],
-      concern_tag_refs: [],
-      cited_reading_ids: [],
-      cited_event_memory_refs: [],
-      cited_plan_item_refs: [],
-      space: spaceWithMethod('ziwei_sanhe_v1'),
-    },
-    {
-      now: new Date('2026-06-22T01:00:00Z'),
-      runtime_ai_client: {
-        async generate() {
-          runtimeCalled = true;
-          throw new Error('unsupported relationship route should not call Runtime AI');
+  for (const method_profile_id of [
+    'bazi_ziping_v1',
+    'ziwei_sanhe_v1',
+    'qizheng_siyu_guolao_v1',
+  ]) {
+    const result = await generateReading(
+      {
+        id: `rdg_mj_${method_profile_id}_hepan`,
+        created_at: '2026-06-22T00:00:00Z',
+        mirror_kind: 'mingjing',
+        mirror_scope: relationshipNatalMirrorScope({ anchor_year: 2026, basis_time_zone: TZ }),
+        related_person_refs: [{ kind: 'person', id: 'p_alice' }],
+        concern_tag_refs: [],
+        cited_reading_ids: [],
+        cited_event_memory_refs: [],
+        cited_plan_item_refs: [],
+        space: spaceWithMethod(method_profile_id),
+      },
+      {
+        now: new Date('2026-06-22T01:00:00Z'),
+        runtime_ai_client: {
+          async generate() {
+            runtimeCalled = true;
+            return {
+              ok: false,
+              failure: {
+                kind: 'runtime_unavailable',
+                detail: 'runtime intentionally unavailable after deterministic relationship evidence',
+              },
+            };
+          },
         },
       },
-    },
-  );
+    );
 
-  assert.equal(runtimeCalled, false);
-  assert.equal(result.ok, false);
-  assert.equal(result.failure.kind, 'algorithm_fail_closed');
-  assert.equal(result.failure.stage, 'mingjing_route_support');
-  assert.match(
-    result.failure.detail ?? '',
-    /mingjing_route_feature_not_supported:mingjing\.route\.ziwei_sanhe_v1:relationship_hepan/u,
-  );
+    assert.equal(result.ok, false);
+    assert.equal(result.failure.kind, 'runtime_ai_failed', JSON.stringify(result));
+  }
+  assert.equal(runtimeCalled, true);
 });

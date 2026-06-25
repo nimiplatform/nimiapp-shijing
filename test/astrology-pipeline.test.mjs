@@ -98,6 +98,252 @@ test('buildAstrologyFeatureSnapshot: rijing daily snapshot uses rijing mirror_ki
   }
 });
 
+test('buildAstrologyFeatureSnapshot: qizheng rijing emits daily tendency drivers per concern tag', () => {
+  const space = validShiJingSpace({
+    concern_tags: [
+      validConcernTag('tag_love', {
+        parsed_topics: ['love'],
+        prompt_text: 'love relationship reflection',
+        sort_order: 0,
+      }),
+      validConcernTag('tag_career', {
+        label: '#浜嬩笟',
+        parsed_topics: ['career'],
+        prompt_text: 'career work reflection',
+        sort_order: 1,
+      }),
+    ],
+    settings: {
+      ui_language: 'zh',
+      response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' },
+      method_profile_id: 'qizheng_siyu_guolao_v1',
+    },
+  });
+  const scope = dailyMirrorScope({ date: '2026-06-25', basis_time_zone: TZ });
+  const result = buildAstrologyFeatureSnapshot({
+    mirror_kind: 'rijing',
+    mirror_scope: scope,
+    space,
+    related_person_refs: [],
+    active_concern_tags: space.concern_tags,
+  });
+  assert.equal(result.ok, true, JSON.stringify(result));
+  if (!result.ok) return;
+  assert.equal(result.value.method_evidence.method_id, 'qizheng_siyu_guolao_v1');
+  const drivers = result.value.common.yuejing_tendency_drivers;
+  assert.equal(drivers.length, space.concern_tags.length);
+  assert.deepEqual(drivers.map((driver) => driver.date), ['2026-06-25', '2026-06-25']);
+  assert.deepEqual(drivers.map((driver) => driver.concern_tag_ref), ['tag_love', 'tag_career']);
+  for (const driver of drivers) {
+    assert.ok(driver.driver_refs.some((ref) => ref.startsWith('qizheng_siyu:domain.')));
+    assert.ok(driver.driver_refs.some((ref) => ref.startsWith('qizheng_siyu:body.')));
+  }
+});
+
+test('buildAstrologyFeatureSnapshot: qizheng yuejing emits rolling start-date tendency drivers per concern tag', () => {
+  const space = validShiJingSpace({
+    concern_tags: [
+      validConcernTag('tag_love', {
+        parsed_topics: ['love'],
+        prompt_text: 'love relationship reflection',
+        sort_order: 0,
+      }),
+      validConcernTag('tag_career', {
+        label: '#浜嬩笟',
+        parsed_topics: ['career'],
+        prompt_text: 'career work reflection',
+        sort_order: 1,
+      }),
+    ],
+    settings: {
+      ui_language: 'zh',
+      response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' },
+      method_profile_id: 'qizheng_siyu_guolao_v1',
+    },
+  });
+  const scope = rolling30DayMirrorScope({
+    start_date: '2026-06-25',
+    end_date: '2026-07-24',
+    basis_time_zone: TZ,
+  });
+  const result = buildAstrologyFeatureSnapshot({
+    mirror_kind: 'yuejing',
+    mirror_scope: scope,
+    space,
+    related_person_refs: [],
+    active_concern_tags: space.concern_tags,
+  });
+  assert.equal(result.ok, true, JSON.stringify(result));
+  if (!result.ok) return;
+  assert.equal(result.value.method_evidence.method_id, 'qizheng_siyu_guolao_v1');
+  const drivers = result.value.common.yuejing_tendency_drivers;
+  assert.equal(drivers.length, space.concern_tags.length);
+  assert.deepEqual(drivers.map((driver) => driver.date), ['2026-06-25', '2026-06-25']);
+  assert.deepEqual(drivers.map((driver) => driver.concern_tag_ref), ['tag_love', 'tag_career']);
+  for (const driver of drivers) {
+    assert.ok(driver.driver_refs.some((ref) => ref.startsWith('qizheng_siyu:domain.')));
+    assert.ok(driver.driver_refs.some((ref) => ref.startsWith('qizheng_siyu:body.')));
+    assert.ok(driver.driver_refs.some((ref) => ref.startsWith('qizheng_siyu:house.')));
+    assert.ok(driver.driver_refs.some((ref) => ref.startsWith('qizheng_siyu:position_class.')));
+  }
+});
+
+test('buildAstrologyFeatureSnapshot: qizheng nianjing emits long-horizon phase and inflection drivers', () => {
+  const tag = validConcernTag('tag_career', {
+    label: '#career',
+    parsed_topics: ['career'],
+    prompt_text: 'career direction',
+  });
+  const scope = longHorizonMirrorScope({
+    start_date: '2026-01-01',
+    end_date: '2035-12-31',
+  });
+  const result = buildAstrologyFeatureSnapshot({
+    mirror_kind: 'nianjing',
+    mirror_scope: scope,
+    space: validShiJingSpace({
+      self_subject: {
+        natal_inputs: validNatalInputs({ calculation_sex: 'male' }),
+      },
+      settings: {
+        ui_language: 'zh',
+        response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' },
+        method_profile_id: 'qizheng_siyu_guolao_v1',
+      },
+      concern_tags: [tag],
+    }),
+    related_person_refs: [],
+    active_concern_tags: [tag],
+    method_profile_id: 'qizheng_siyu_guolao_v1',
+  });
+
+  assert.equal(result.ok, true, result.ok ? '' : result.error.detail);
+  assert.equal(result.value.method_evidence.method_id, 'qizheng_siyu_guolao_v1');
+  assert.ok(result.value.common.nianjing_phase_drivers.length > 0);
+  assert.ok(result.value.common.nianjing_inflection_drivers.length > 0);
+  assert.ok(
+    result.value.common.nianjing_phase_drivers.every((driver) =>
+      driver.driver_refs.some((ref) => ref.startsWith('qizheng_siyu:period.')),
+    ),
+  );
+});
+
+test('buildAstrologyFeatureSnapshot: qizheng yuejing maps body position classes into varied tendency drivers', () => {
+  const space = validShiJingSpace({
+    concern_tags: [
+      validConcernTag('tag_love', {
+        parsed_topics: ['love'],
+        prompt_text: 'love relationship reflection',
+        sort_order: 0,
+      }),
+      validConcernTag('tag_career', {
+        label: '#career',
+        parsed_topics: ['career'],
+        prompt_text: 'career work reflection',
+        sort_order: 1,
+      }),
+      validConcernTag('tag_body', {
+        label: '#body',
+        parsed_topics: ['health'],
+        prompt_text: 'body health reflection',
+        sort_order: 2,
+      }),
+      validConcernTag('tag_wealth', {
+        label: '#wealth',
+        parsed_topics: ['wealth'],
+        prompt_text: 'money wealth reflection',
+        sort_order: 3,
+      }),
+    ],
+    settings: {
+      ui_language: 'zh',
+      response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' },
+      method_profile_id: 'qizheng_siyu_guolao_v1',
+    },
+  });
+  const scope = rolling30DayMirrorScope({
+    start_date: '2026-06-25',
+    end_date: '2026-07-24',
+    basis_time_zone: TZ,
+  });
+  const result = buildAstrologyFeatureSnapshot({
+    mirror_kind: 'yuejing',
+    mirror_scope: scope,
+    space,
+    related_person_refs: [],
+    active_concern_tags: space.concern_tags,
+  });
+  assert.equal(result.ok, true, JSON.stringify(result));
+  if (!result.ok) return;
+
+  const byTag = new Map(result.value.common.yuejing_tendency_drivers.map((driver) => [
+    driver.concern_tag_ref,
+    driver.tendency_class,
+  ]));
+  assert.deepEqual([...byTag.values()], ['steady', 'watch', 'steady', 'supportive']);
+  assert.ok(
+    result.value.common.yuejing_tendency_drivers.every((driver) =>
+      driver.driver_refs.includes('qizheng_siyu:target_date.2026-06-25')),
+    'qizheng date tendency drivers must cite the target date chart',
+  );
+  assert.ok(new Set(byTag.values()).size > 1, 'qizheng tendency drivers must not collapse to all watch');
+});
+
+test('buildAstrologyFeatureSnapshot: qizheng yuejing tendency drivers vary across target dates', () => {
+  const space = validShiJingSpace({
+    concern_tags: [
+      validConcernTag('tag_love', {
+        parsed_topics: ['family'],
+        prompt_text: 'family relationship reflection',
+        sort_order: 0,
+      }),
+      validConcernTag('tag_career', {
+        label: '#career',
+        parsed_topics: ['career'],
+        prompt_text: 'career work reflection',
+        sort_order: 1,
+      }),
+      validConcernTag('tag_body', {
+        label: '#body',
+        parsed_topics: ['health'],
+        prompt_text: 'body health reflection',
+        sort_order: 2,
+      }),
+      validConcernTag('tag_wealth', {
+        label: '#wealth',
+        parsed_topics: ['wealth'],
+        prompt_text: 'money wealth reflection',
+        sort_order: 3,
+      }),
+    ],
+    settings: {
+      ui_language: 'zh',
+      response_preferences: { tone: 'neutral', length: 'standard', language: 'zh-Hans' },
+      method_profile_id: 'qizheng_siyu_guolao_v1',
+    },
+  });
+  const signatures = ['2026-06-25', '2026-06-30', '2026-07-07', '2026-07-14', '2026-07-23'].map((date) => {
+    const endDate = new Date(Date.parse(`${date}T00:00:00Z`) + 29 * 86_400_000).toISOString().slice(0, 10);
+    const result = buildAstrologyFeatureSnapshot({
+      mirror_kind: 'yuejing',
+      mirror_scope: rolling30DayMirrorScope({
+        start_date: date,
+        end_date: endDate,
+        basis_time_zone: TZ,
+      }),
+      space,
+      related_person_refs: [],
+      active_concern_tags: space.concern_tags,
+    });
+    assert.equal(result.ok, true, JSON.stringify(result));
+    if (!result.ok) return '';
+    return result.value.common.yuejing_tendency_drivers
+      .map((driver) => `${driver.concern_tag_ref}:${driver.tendency_class}:${driver.driver_refs.find((ref) => ref.startsWith('qizheng_siyu:position_class.'))}`)
+      .join('|');
+  });
+  assert.ok(new Set(signatures).size > 1, 'qizheng YueJing drivers must use the target date, not repeat the natal chart for every day');
+});
+
 test('buildAstrologyFeatureSnapshot: yuejing emits start-date tendency drivers per concern tag', () => {
   const space = spaceWithActiveTag();
   const scope = rolling30DayMirrorScope();
@@ -366,6 +612,47 @@ test('generateReading: yuejing rolling_30_day end-to-end', async () => {
     { runtime_ai_client: ai },
   );
   assert.equal(result.ok, true, JSON.stringify(result));
+});
+
+test('generateReading: qizheng yuejing rolling_30_day end-to-end', async () => {
+  const baseSpace = spaceWithActiveTag();
+  const space = {
+    ...baseSpace,
+    settings: {
+      ...baseSpace.settings,
+      method_profile_id: 'qizheng_siyu_guolao_v1',
+    },
+  };
+  const today = new Date();
+  const start = today.toISOString().slice(0, 10);
+  const endDate = new Date(today.getTime() + 29 * 86_400_000);
+  const scope = rolling30DayMirrorScope({
+      start_date: start,
+      end_date: endDate.toISOString().slice(0, 10),
+      basis_time_zone: TZ,
+    });
+  const ai = new MockRuntimeAiClient({
+    canned_output_by_kind: { yuejing: validYuejingOutput(scope) },
+  });
+  const result = await generateReading(
+    {
+      id: 'r_yuejing_qizheng_01',
+      created_at: today.toISOString().replace(/\.\d{3}Z$/, 'Z'),
+      mirror_kind: 'yuejing',
+      mirror_scope: scope,
+      related_person_refs: [],
+      concern_tag_refs: ['tag_love'],
+      cited_reading_ids: [],
+      cited_event_memory_refs: [],
+      cited_plan_item_refs: [],
+      space,
+    },
+    { runtime_ai_client: ai },
+  );
+  assert.equal(result.ok, true, JSON.stringify(result));
+  if (result.ok) {
+    assert.equal(result.reading.inputs_summary.feature_snapshot.method_evidence.method_id, 'qizheng_siyu_guolao_v1');
+  }
 });
 
 test('generateReading: rejects forbidden output coming from runtime AI', async () => {

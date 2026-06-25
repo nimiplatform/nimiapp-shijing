@@ -41,11 +41,11 @@ Saturn; 四余 is admitted as a v1 virtual-point model: 罗喉 is the ascending 
 node, 计都 is the descending lunar node, 月孛 is mean lunar apogee, and 紫气 is a
 28-year virtual point with explicit epoch provenance. 宿度 is `28-equal-mansion-v1`,
 an explicit v1 approximation and not a full traditional 距星 / 距度入宿 model.
-Its implemented v1 product scope is the MingJing natal route only. It strictly
-requires exact birth time and resolved birth location/timezone. RiJing,
-YueJing, NianJing, ShiJing consultation, and Relationship HePan remain
-unsupported until route-specific common-driver and relationship evidence rules
-are admitted.
+Its implemented v1 product scope covers the MingJing natal route, RiJing,
+YueJing, and NianJing common driver mappings, plus Relationship HePan
+deterministic evidence. It strictly requires exact birth time and resolved birth
+location/timezone. ShiJing consultation remains unsupported until its
+method-specific deterministic driver mapping is admitted.
 
 Each profile is realized by a `MethodEngine` that (1) computes a method-private
 deterministic chart (`method_evidence`) and (2) projects it onto the
@@ -433,11 +433,14 @@ related Person. The minimum evidence set is:
 
 - both subject charts;
 - pairwise branch interactions across year, month, day, and hour positions when
-  available;
-- day-master element relation;
-- ten-god relation direction when the method provides it;
-- yong-shen complement and depletion direction when the method provides it;
-- anchor-year timing windows from both subjects' period markers;
+  available for the selected method;
+- method-specific relationship direction evidence. For BaZi this is
+  day-master element relation, ten-god direction, and yong-shen complement /
+  depletion. For Ziwei this is 命宫 / 身宫 / 主星 / 五行局 relationship
+  direction. For QiZheng SiYu this is ascendant, day/night luminary, house, and
+  mansion relationship direction;
+- anchor-year timing windows from both subjects' period markers when the method
+  exposes them, or an explicit method-namespaced anchor-year fallback driver;
 - uncertainty inputs for precision, location, consent, and related-person data.
 
 Runtime AI must not compute or alter these evidence fields.
@@ -452,9 +455,9 @@ is allowed only inside these declared boundaries.
 
 | Feature id | Product surface | Mirror kind | Scope kind | Supported method_profile_id values |
 | --- | --- | --- | --- | --- |
-| `rijing.daily_reading` | RiJing daily reading | `rijing` | `daily` | `bazi_ziping_v1`, `ziwei_sanhe_v1` |
-| `yuejing.rolling_30_day_reading` | YueJing rolling-30-day reading | `yuejing` | `rolling_30_day` | `bazi_ziping_v1`, `ziwei_sanhe_v1` |
-| `nianjing.long_horizon_reading` | NianJing long-horizon reading | `nianjing` | `long_horizon` | `bazi_ziping_v1`, `ziwei_sanhe_v1` |
+| `rijing.daily_reading` | RiJing daily reading | `rijing` | `daily` | `bazi_ziping_v1`, `ziwei_sanhe_v1`, `qizheng_siyu_guolao_v1` |
+| `yuejing.rolling_30_day_reading` | YueJing rolling-30-day reading | `yuejing` | `rolling_30_day` | `bazi_ziping_v1`, `ziwei_sanhe_v1`, `qizheng_siyu_guolao_v1` |
+| `nianjing.long_horizon_reading` | NianJing long-horizon reading | `nianjing` | `long_horizon` | `bazi_ziping_v1`, `ziwei_sanhe_v1`, `qizheng_siyu_guolao_v1` |
 | `shijing.consultation` | ShiJing consultation grounded in cited readings | `shijing` | `consultation` | `bazi_ziping_v1`, `ziwei_sanhe_v1` |
 
 MingJing route registry:
@@ -462,8 +465,8 @@ MingJing route registry:
 | Route id | Method profile | Status | Supported route features |
 | --- | --- | --- | --- |
 | `mingjing.route.bazi_ziping_v1` | `bazi_ziping_v1` | `implemented` | `natal_projection`, `natal_reading`, `relationship_hepan` |
-| `mingjing.route.ziwei_sanhe_v1` | `ziwei_sanhe_v1` | `implemented` | `natal_projection`, `natal_reading` |
-| `mingjing.route.qizheng_siyu_guolao_v1` | `qizheng_siyu_guolao_v1` | `implemented` | `natal_projection`, `natal_reading` |
+| `mingjing.route.ziwei_sanhe_v1` | `ziwei_sanhe_v1` | `implemented` | `natal_projection`, `natal_reading`, `relationship_hepan` |
+| `mingjing.route.qizheng_siyu_guolao_v1` | `qizheng_siyu_guolao_v1` | `implemented` | `natal_projection`, `natal_reading`, `relationship_hepan` |
 
 Rules:
 
@@ -496,22 +499,34 @@ Rules:
 - Historical Readings keep their frozen `inputs_summary.method_profile` and
   hashes. Switching the active method affects only new generation and live
   projections after the switch.
-- `ziwei_sanhe_v1` is admitted for the three time-mirror readings and
-  consultation over already-cited Ziwei readings. Its MingJing route is
-  implemented only for natal projection and natal reading: deterministic route
-  evidence comes from `ZiweiEvidence.self_subject`, renderer modules may display
-  the twelve-palace natal chart and decadal palace ranges, and Runtime AI may
-  word only the admitted `ziwei_natal_brief` fields. `relationship_hepan`
-  remains unsupported for this route until Ziwei-specific self-plus-person
-  relationship evidence, validators, renderer modules, and Runtime AI schemas
-  are explicitly admitted here.
-- `qizheng_siyu_guolao_v1` is admitted as a MingJing natal route only in this
-  iteration. Its route evidence comes from `QizhengSiyuEvidence.self_subject`,
+- `ziwei_sanhe_v1` is admitted for the three time-mirror readings,
+  consultation over already-cited Ziwei readings, and MingJing Relationship
+  HePan. Its MingJing route evidence comes from `ZiweiEvidence.self_subject`
+  plus exactly one related `ZiweiSubjectChart`. Renderer modules may display
+  the twelve-palace natal chart, decadal palace ranges, and method-namespaced
+  `ziwei:relationship.*` HePan driver refs. Runtime AI may word only the
+  admitted `ziwei_natal_brief` and `relationship_hepan` prose fields; it must
+  not compute palaces, stars, 四化, 大限, or relationship evidence.
+- `qizheng_siyu_guolao_v1` is admitted as a MingJing natal route and as a
+  RiJing daily-reading and YueJing rolling-30-day method in this iteration. Its
+  route evidence comes from
+  `QizhengSiyuEvidence.self_subject`,
   renderer modules may display 七政四余星曜、十二宫落位、二十八宿区间 and the
   explicit 四余 model provenance. Renderer copy must translate raw model ids such
   as `equal-house-from-ascendant-v1` and `28-equal-mansion-v1` into product-facing
   labels, and must label `position_class` as 宫势 rather than a generic luck or
   score-like strength. Runtime AI may word only the admitted
-  `qizheng_siyu_natal_brief` fields. All algorithm-neutral time mirrors,
-  consultation generation, and `relationship_hepan` fail closed until their
-  method-specific deterministic driver mappings are admitted.
+  `qizheng_siyu_natal_brief` fields for MingJing. For RiJing and YueJing,
+  `qizheng_siyu_guolao_v1` must derive deterministic per-concern tendency
+  drivers from the selected concern domain's 七政四余 body, house, and 宫势.
+  RiJing drivers target the daily scope date; YueJing drivers target the
+  rolling-30-day scope `start_date` because YueJing generation is
+  one-local-date-per-reading. NianJing drivers derive long-horizon phase bands
+  and annual inflection markers from the selected concern domain's body, house,
+  and position class without scores, curves, or rankable numeric series. These
+  mirrors expose only method-namespaced opaque refs on the common driver
+  surface. Relationship HePan derives deterministic
+  `qizheng_siyu:relationship.*` driver refs from both subjects' ascendant,
+  day/night luminary, houses, mansions, and key body evidence. Consultation
+  generation fails closed until its method-specific deterministic driver mapping
+  is admitted.

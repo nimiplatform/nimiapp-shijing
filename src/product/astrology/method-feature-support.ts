@@ -5,6 +5,7 @@
 import {
   BAZI_ZIPING_V1,
   DEFAULT_METHOD_PROFILE_ID,
+  QIZHENG_SIYU_GUOLAO_V1,
   ZIWEI_SANHE_V1,
   isAdmittedMethodProfileId,
   type MethodProfileId,
@@ -43,13 +44,31 @@ const BOTH_CORE_METHODS: readonly MethodProfileId[] = [
   ZIWEI_SANHE_V1,
 ] as const;
 
+const RIJING_METHODS: readonly MethodProfileId[] = [
+  BAZI_ZIPING_V1,
+  ZIWEI_SANHE_V1,
+  QIZHENG_SIYU_GUOLAO_V1,
+] as const;
+
+const YUEJING_METHODS: readonly MethodProfileId[] = [
+  BAZI_ZIPING_V1,
+  ZIWEI_SANHE_V1,
+  QIZHENG_SIYU_GUOLAO_V1,
+] as const;
+
+const NIANJING_METHODS: readonly MethodProfileId[] = [
+  BAZI_ZIPING_V1,
+  ZIWEI_SANHE_V1,
+  QIZHENG_SIYU_GUOLAO_V1,
+] as const;
+
 export const SHIJING_METHOD_FEATURE_DECLARATIONS: readonly ShijingMethodFeatureDeclaration[] = [
   {
     id: 'rijing.daily_reading',
     label: 'RiJing daily reading',
     mirror_kind: 'rijing',
     scope_kind: 'daily',
-    supported_method_profile_ids: BOTH_CORE_METHODS,
+    supported_method_profile_ids: RIJING_METHODS,
     fail_close_reason: 'RiJing requires a method that can derive daily tendency drivers.',
   },
   {
@@ -57,7 +76,7 @@ export const SHIJING_METHOD_FEATURE_DECLARATIONS: readonly ShijingMethodFeatureD
     label: 'YueJing rolling-30-day reading',
     mirror_kind: 'yuejing',
     scope_kind: 'rolling_30_day',
-    supported_method_profile_ids: BOTH_CORE_METHODS,
+    supported_method_profile_ids: YUEJING_METHODS,
     fail_close_reason: 'YueJing requires a method that can derive per-day tendency drivers.',
   },
   {
@@ -65,7 +84,7 @@ export const SHIJING_METHOD_FEATURE_DECLARATIONS: readonly ShijingMethodFeatureD
     label: 'NianJing long-horizon reading',
     mirror_kind: 'nianjing',
     scope_kind: 'long_horizon',
-    supported_method_profile_ids: BOTH_CORE_METHODS,
+    supported_method_profile_ids: NIANJING_METHODS,
     fail_close_reason: 'NianJing requires a method that can derive long-horizon phases and inflections.',
   },
   {

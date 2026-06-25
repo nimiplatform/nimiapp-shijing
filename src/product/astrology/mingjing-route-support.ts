@@ -76,7 +76,7 @@ export const MINGJING_ROUTE_DECLARATIONS: readonly MingJingRouteDeclaration[] = 
     method_profile_id: ZIWEI_SANHE_V1,
     label: 'Ziwei Sanhe MingJing route',
     status: 'implemented',
-    supported_features: ['natal_projection', 'natal_reading'],
+    supported_features: ['natal_projection', 'natal_reading', 'relationship_hepan'],
     module_ids: [
       'ziwei.minggong',
       'ziwei.shengong',
@@ -86,6 +86,7 @@ export const MINGJING_ROUTE_DECLARATIONS: readonly MingJingRouteDeclaration[] = 
       'ziwei.sanfang_sizheng',
       'ziwei.daxian',
       'ziwei.flying_transformations',
+      'ziwei.relationship_hepan',
     ],
   },
   {
@@ -93,7 +94,7 @@ export const MINGJING_ROUTE_DECLARATIONS: readonly MingJingRouteDeclaration[] = 
     method_profile_id: QIZHENG_SIYU_GUOLAO_V1,
     label: 'QiZheng SiYu / GuoLao MingJing route',
     status: 'implemented',
-    supported_features: ['natal_projection', 'natal_reading'],
+    supported_features: ['natal_projection', 'natal_reading', 'relationship_hepan'],
     module_ids: [
       'qizheng_siyu.chart_basis',
       'qizheng_siyu.seven_governors',
@@ -101,6 +102,7 @@ export const MINGJING_ROUTE_DECLARATIONS: readonly MingJingRouteDeclaration[] = 
       'qizheng_siyu.twelve_houses',
       'qizheng_siyu.twenty_eight_mansions',
       'qizheng_siyu.star_guidance',
+      'qizheng_siyu.relationship_hepan',
     ],
   },
 ] as const;

@@ -16,11 +16,12 @@ This directory is the normative authority landing for ShiJing (时镜).
   structure including relationship analysis output, forbidden outputs,
   uncertainty surface, inputs snapshots, and Runtime boundary.
 - `algorithm-contract.md` (`SJG-ALGO-*`): method profile registry
-  (`bazi_ziping_v1`; `ziwei_sanhe_v1`), the MethodEngine port,
+  (`bazi_ziping_v1`; `ziwei_sanhe_v1`; `qizheng_siyu_guolao_v1`), the MethodEngine port,
   mirror-window canonicalization, DaYun predicate, the feature snapshot envelope
   (`common` + `method_evidence`), memory policy boundary, canonical hashing, and
-  Runtime AI wording boundary, feature-method support matrix, plus
-  Relationship HePan deterministic evidence.
+  Runtime AI wording boundary, feature-method support matrix including
+  QiZheng SiYu RiJing/YueJing tendency drivers, plus Relationship HePan
+  deterministic evidence.
 - `algorithm-feature-snapshot-shape.md`: normative SJG-ALGO-08 field-level
   shape appendix for `AstrologyFeatureSnapshot`; no independent rule id.
 - `ia-contract.md` (`SJG-IA-*`): exactly six primary tabs: `日镜`, `月镜`,
