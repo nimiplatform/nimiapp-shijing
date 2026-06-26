@@ -34,6 +34,9 @@ export function QizhengStars({
         {stars.map((star) => {
           const expanded = !!open[star.key];
           const ai = aiByKey[star.key];
+          const glyphChars = Array.from(star.label);
+          const glyphHead = glyphChars[0] ?? '';
+          const glyphTail = glyphChars.slice(1).join('');
           return (
             <article key={star.key} className="shijing-qz-star" data-expanded={expanded ? '' : undefined}>
               <button
@@ -42,8 +45,11 @@ export function QizhengStars({
                 aria-expanded={expanded}
                 onClick={() => setOpen((prev) => ({ ...prev, [star.key]: !prev[star.key] }))}
               >
-                <span className="shijing-qz-glyph" style={{ background: star.bg, color: star.color }}>
-                  {star.label}
+                <span className="shijing-qz-glyph" style={{ color: star.color }}>
+                  <span className="shijing-qz-glyph__swatch" style={{ background: star.bg }}>
+                    {glyphHead}
+                  </span>
+                  {glyphTail ? <span className="shijing-qz-glyph__tail">{glyphTail}</span> : null}
                 </span>
                 <span className="shijing-qz-star__body">
                   <span className="shijing-qz-star__title">

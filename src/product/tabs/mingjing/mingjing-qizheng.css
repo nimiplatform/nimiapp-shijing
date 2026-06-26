@@ -417,18 +417,41 @@
 .shijing-qz-glyph {
   flex-shrink: 0;
   width: 46px;
+  min-height: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  font-family: var(--qz-serif);
+  font-weight: 700;
+}
+.shijing-qz-glyph__swatch {
+  width: 46px;
   height: 46px;
   border-radius: 13px;
   display: grid;
-  place-items: center;
-  font-family: var(--qz-serif);
+  /* head glyph hugs the module's left edge, vertically centred in its tile */
+  place-items: center start;
   font-size: 23px;
-  font-weight: 700;
+  line-height: 1;
+}
+.shijing-qz-glyph__tail {
+  /* shrink-wrap so the tail glyph left-aligns under the head (left edges match) */
+  display: grid;
+  place-items: center;
+  font-size: 23px;
+  line-height: 1.05;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
 }
 .shijing-qz-glyph--sm {
   width: 40px;
   height: 40px;
+  min-height: 40px;
   border-radius: 12px;
+  display: grid;
+  place-items: center;
   font-size: 20px;
 }
 .shijing-qz-tag {
