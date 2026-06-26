@@ -7,6 +7,7 @@ import { isRuntimeAiWordingPatchAppliedSource } from '../runtime-ai-client.ts';
 import { buildRuntimeAiPromptRequest } from '../runtime-ai-prompt.ts';
 import type { EventMemory } from '../../../domain/event-memory.ts';
 import type { GenerateReadingInput } from './types.ts';
+import { resolveSourceReadings } from './context.ts';
 
 type RuntimeFinalOutputResult =
   | { readonly ok: true; readonly output: MirrorOutput }
@@ -63,6 +64,22 @@ export async function buildRuntimeFinalOutput(
   }
   let promptRequest: ReturnType<typeof buildRuntimeAiPromptRequest>;
   try {
+    const sourceReadings =
+      input.mirror_kind === 'shijing' && input.mirror_scope.kind === 'consultation'
+        ? resolveSourceReadings(input.mirror_scope.source_reading_ids, input.space)
+        : null;
+    if (sourceReadings && !sourceReadings.ok) {
+      return {
+        ok: false,
+        failure: {
+          kind: 'validation_failed',
+          mirror_kind: input.mirror_kind,
+          mirror_scope: input.mirror_scope,
+          stage: 'orchestrator',
+          detail: `source reading ${sourceReadings.missing} does not resolve`,
+        },
+      };
+    }
     promptRequest = buildRuntimeAiPromptRequest({
       mirror_kind: input.mirror_kind,
       feature_snapshot: build.feature_snapshot,
@@ -70,7 +87,9 @@ export async function buildRuntimeFinalOutput(
       deterministic_output: build.deterministic_output,
       response_preferences: input.space.settings.response_preferences,
       cited_event_memories: build.event_memories,
+      current_time: input.created_at,
       ...(input.question ? { question: input.question } : {}),
+      ...(sourceReadings?.ok ? { source_readings: sourceReadings.readings } : {}),
     });
   } catch (error) {
     return {

@@ -8,6 +8,7 @@ import {
 } from '../src/product/astrology/runtime-ai-prompt.ts';
 import {
   dailyMirrorScope,
+  consultationMirrorScope,
   rolling30DayMirrorScope,
   relationshipNatalMirrorScope,
   validConcernTagSnapshot,
@@ -15,6 +16,7 @@ import {
   validInputsSummary,
   validMingjingRelationshipOutput,
   validRijingOutput,
+  validShijingOutput,
   validYuejingOutput,
 } from './_fixtures.mjs';
 
@@ -122,6 +124,57 @@ test('buildRuntimeAiPromptRequest tells RiJing how to handle missing reference e
   assert.ok(request.user_prompt.includes('整体能量和生活哲理'));
   assert.ok(request.user_prompt.includes('今日事件解析'));
   assert.ok(request.user_prompt.includes('不要 invent uncited events'));
+});
+
+test('buildRuntimeAiPromptRequest gives ShiJing consultation a structured mobile answer brief', () => {
+  const scope = consultationMirrorScope(['r_source_01'], { basis_time_zone: TZ });
+  const summary = validInputsSummary({ mirrorKind: 'shijing', scope });
+  const request = buildRuntimeAiPromptRequest({
+    mirror_kind: 'shijing',
+    feature_snapshot: summary.feature_snapshot,
+    mirror_context: {
+      mirror_kind: 'shijing',
+      mirror_scope: scope,
+      active_concern_tags: [
+        validConcernTagSnapshot('tag_career', {
+          label: '#事业',
+          parsed_topics: ['career'],
+        }),
+      ],
+      resolved_person_refs: [],
+      cited_event_memory_refs: ['mem_recent'],
+      cited_plan_item_refs: ['plan_next'],
+      response_preferences_hash: 'sha256:prefs',
+    },
+    deterministic_output: validShijingOutput(['r_source_01']),
+    cited_event_memories: [
+      validEventMemory('mem_recent', {
+        occurred_at: '2026-05-29T06:00:00Z',
+        body: '最近正在考虑是否换团队，担心影响收入节奏。',
+      }),
+    ],
+    question: '接下来三个月适合换工作吗？',
+    response_preferences: { tone: 'warm', length: 'long', language: 'zh-Hans' },
+  });
+
+  assert.ok(request.user_prompt.includes('ShiJing 问镜回答 writing requirements'));
+  assert.ok(request.user_prompt.includes('用户问题'));
+  assert.ok(request.user_prompt.includes('接下来三个月适合换工作吗？'));
+  assert.ok(request.user_prompt.includes('未来一段时间、关系、事业、财务、健康、决策'));
+  assert.ok(request.user_prompt.includes('不要机械罗列「姻缘、事业、身体、财运」四个固定模块'));
+  assert.ok(request.user_prompt.includes('适合前端渲染的结构化回答'));
+  assert.ok(request.user_prompt.includes('重点卡片'));
+  assert.ok(request.user_prompt.includes('风险等级'));
+  assert.ok(request.user_prompt.includes('为什么需要注意'));
+  assert.ok(request.user_prompt.includes('建议做什么'));
+  assert.ok(request.user_prompt.includes('避免做什么'));
+  assert.ok(request.user_prompt.includes('只输出 1～3 个重点卡片'));
+  assert.equal(request.user_prompt.includes('重点提醒一：'), false);
+  assert.equal(request.user_prompt.includes('接下来30天最值得做的3件事：'), false);
+  assert.ok(request.user_prompt.includes('不要使用「已有解读中提到」「系统记录显示」这类内部表达'));
+  assert.ok(request.user_prompt.includes('不要提及 source_readings、Reading、系统记录、已有解读、现有信息、当前信息显示'));
+  assert.ok(request.user_prompt.includes('健康相关内容只能提醒作息、饮食、压力、休息'));
+  assert.ok(request.user_prompt.includes('最近正在考虑是否换团队'));
 });
 
 test('buildRuntimeAiPromptRequest limits yuejing wording target to the window start date', () => {

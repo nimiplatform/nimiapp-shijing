@@ -13,6 +13,7 @@ import type {
   MirrorOutput,
 } from '../../domain/mirror-output.ts';
 import type { ResponsePreferences } from '../../domain/settings.ts';
+import { buildShiJingAnswerBrief } from '../conversations/shijing-answer-brief.ts';
 
 export interface RuntimeAiPromptRequest {
   readonly mirror_kind: MirrorKind;
@@ -388,6 +389,7 @@ export function buildRuntimeAiPromptRequest(args: {
   readonly response_preferences: ResponsePreferences;
   readonly cited_event_memories?: readonly EventMemory[];
   readonly question?: string;
+  readonly current_time?: string;
   readonly source_readings?: readonly Reading[];
 }): RuntimeAiPromptRequest {
   const userPromptLines = [
@@ -432,6 +434,18 @@ export function buildRuntimeAiPromptRequest(args: {
       '用户已有事件记忆和未来计划 may be used only when present in cited_event_memory_refs / cited_plan_item_refs or the supplied summaries; never invent missing context.',
       '不要输出底层技术字段, driver refs, schema names, tendency_class literals, JSON keys, or method ids in user-facing prose.',
       'Do not use absolute prediction language; keep the tone warm, restrained, and credible.',
+    ].join('\n'));
+  }
+  if (args.mirror_kind === 'shijing') {
+    userPromptLines.push(buildShiJingAnswerBrief('json_answer_field'));
+    userPromptLines.push([
+      '问镜可参考信息：',
+      `用户问题：${args.question ?? '(none)'}`,
+      `当前时间：${args.current_time ?? '(not supplied)'}`,
+      '命盘信息：见 feature_snapshot.common 与 interpretive_evidence，只可作为只读依据。',
+      '当前日镜/月镜/年镜解读：见 reference_reading_summaries 与 wording_patch_target_json.cited_reading_ids。',
+      '用户已记录的重要事件和计划：见 cited_event_memory_summaries / cited_plan_item_refs。',
+      '回答前先判断用户真正问的是时间判断、关系互动、事业选择、财务安排、健康作息还是决策取舍；只保留最相关的 1～3 个提醒。',
     ].join('\n'));
   }
   if (args.mirror_kind === 'mingjing' && isMingjingRelationshipOutput(args.deterministic_output)) {
@@ -506,7 +520,15 @@ export function buildRuntimeAiPromptRequest(args: {
   }
   if (args.source_readings && args.source_readings.length > 0) {
     userPromptLines.push(
-      `source_readings: ${args.source_readings.map((r) => `${r.mirror_kind}:${r.id}`).join(', ')}`,
+      [
+        'reference_reading_summaries:',
+        ...args.source_readings.map((reading) => [
+          `- id=${reading.id}`,
+          `mirror_kind=${reading.mirror_kind}`,
+          `mirror_scope=${JSON.stringify(reading.mirror_scope)}`,
+          `summary=${conciseHumanSummary(reading.output.summary, 220)}`,
+        ].join('; ')),
+      ].join('\n'),
     );
   }
   if (args.response_preferences.extra_instructions) {
