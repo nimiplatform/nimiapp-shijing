@@ -17,9 +17,11 @@ import {
 } from '../src/shell/ai/shijing-conversation-chat-bridge.ts';
 import {
   SHIJING_AI_CONFIG_INDEX_KEY,
+  SHIJING_AI_CONFIG_QUARANTINE_PREFIX,
   SHIJING_AI_CONFIG_STORAGE_PREFIX,
   createShijingReadingAIScopeRef,
   loadShijingAIConfig,
+  repairShijingAIConfigStorageForScope,
   saveShijingAIConfig,
 } from '../src/shell/ai/shijing-ai-config.ts';
 import {
@@ -103,6 +105,21 @@ function emptyAIConfig() {
   };
 }
 
+function createMemoryStorage() {
+  const items = new Map();
+  return {
+    getItem(key) {
+      return items.has(key) ? items.get(key) : null;
+    },
+    setItem(key, value) {
+      items.set(key, String(value));
+    },
+    removeItem(key) {
+      items.delete(key);
+    },
+  };
+}
+
 function readyAIProfile() {
   return {
     profileId: 'profile-shijing-ready',
@@ -111,8 +128,7 @@ function readyAIProfile() {
       'text.generate': {
         targetRef: {
           kind: 'local-runtime',
-          targetId: 'local',
-          profileId: 'runtime-baseline:ready',
+          version: 'v2',
           readinessRef: 'execution_evidence_ready',
         },
         params: {
@@ -163,6 +179,44 @@ test('ShiJing AIConfig store keys persisted configs by scope', () => {
   assert.deepEqual(loaded, createEmptyNimiAIConfig(readingScope));
 });
 
+test('ShiJing AIConfig repair quarantines retired persisted target refs before SDK load', () => {
+  const storage = createMemoryStorage();
+  const scopeRef = createShijingReadingAIScopeRef();
+  const scopeKey = encodeNimiAIScopeRef(scopeRef);
+  const storageKey = `${SHIJING_AI_CONFIG_STORAGE_PREFIX}:${scopeKey}`;
+  const raw = JSON.stringify({
+    scopeRef,
+    capabilities: {
+      targetRefs: {
+        'text.generate': {
+          kind: 'local-runtime',
+          targetId: 'local-qwen',
+          profileId: 'runtime-baseline:ready',
+        },
+      },
+      selectedParams: {},
+    },
+    profileOrigin: null,
+  });
+  storage.setItem(SHIJING_AI_CONFIG_INDEX_KEY, JSON.stringify([scopeKey]));
+  storage.setItem(storageKey, raw);
+
+  const result = repairShijingAIConfigStorageForScope(scopeRef, storage, {
+    now: () => '2026-06-26T00:00:00.000Z',
+  });
+
+  assert.equal(result.scanned, 1);
+  assert.equal(result.quarantined, 1);
+  assert.deepEqual(result.removedScopeKeys, [scopeKey]);
+  assert.equal(storage.getItem(storageKey), null);
+  assert.deepEqual(JSON.parse(storage.getItem(SHIJING_AI_CONFIG_INDEX_KEY)), []);
+  assert.equal(result.quarantineKeys.length, 1);
+  assert.match(result.quarantineKeys[0], new RegExp(`^${SHIJING_AI_CONFIG_QUARANTINE_PREFIX}`));
+  const quarantine = JSON.parse(storage.getItem(result.quarantineKeys[0]));
+  assert.match(quarantine.reason, /targetId is retired/);
+  assert.equal(quarantine.raw, raw);
+});
+
 test('first-launch profile initializes ShiJing text.generate AIConfig targetRef', async () => {
   let savedConfig = null;
   const result = await ensureShijingReadingAIConfigFromFirstLaunchProfile({
@@ -182,8 +236,7 @@ test('first-launch profile initializes ShiJing text.generate AIConfig targetRef'
   assert.equal(result.profileId, 'profile-shijing-ready');
   assert.equal(result.profileSource, 'recommended-profile');
   assert.equal(savedConfig.capabilities.targetRefs['text.generate'].kind, 'local-runtime');
-  assert.equal(savedConfig.capabilities.targetRefs['text.generate'].targetId, 'local');
-  assert.equal(savedConfig.capabilities.targetRefs['text.generate'].profileId, 'runtime-baseline:ready');
+  assert.equal(savedConfig.capabilities.targetRefs['text.generate'].version, 'v2');
   assert.equal(savedConfig.capabilities.targetRefs['text.generate'].readinessRef, 'execution_evidence_ready');
   assert.equal(savedConfig.capabilities.selectedParams['text.generate'].temperature, 0.2);
   assert.equal(savedConfig.profileOrigin.profileId, 'profile-shijing-ready');
@@ -199,6 +252,7 @@ test('first-launch profile init does not overwrite an existing ShiJing text.gene
         'text.generate': {
           kind: 'cloud-connector',
           connectorId: 'connector-openai',
+          remoteModelCatalogId: 'remote-catalog:connector-openai:gpt-runtime',
           providerModelId: 'gpt-runtime',
           provider: 'openai',
         },
@@ -255,6 +309,7 @@ test('AIConfig-backed RuntimeAiClient routes text.generate through configured cl
         'text.generate': {
           kind: 'cloud-connector',
           connectorId: 'connector-openai',
+          remoteModelCatalogId: 'remote-catalog:connector-openai:gpt-runtime',
           providerModelId: 'gpt-runtime',
           provider: 'openai',
         },
@@ -324,6 +379,7 @@ test('AIConfig-backed conversation bridge routes follow-up text.generate through
         'text.generate': {
           kind: 'cloud-connector',
           connectorId: 'connector-openai',
+          remoteModelCatalogId: 'remote-catalog:connector-openai:gpt-runtime',
           providerModelId: 'gpt-runtime',
           provider: 'openai',
         },

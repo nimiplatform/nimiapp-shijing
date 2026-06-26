@@ -101,6 +101,7 @@ export function createShijingConversationTextGenerator(
       connectorId: resolved.connectorId,
       subjectUserId,
       timeoutMs: resolved.params.timeoutMs,
+      targetRef: resolved.targetRef,
       model: {
         modelId: resolved.model,
         ...(resolved.connectorId ? { providerId: resolved.connectorId } : {}),
