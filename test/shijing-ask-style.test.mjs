@@ -259,6 +259,15 @@ test('Ask ShiJing composer textarea stays at two rows', () => {
   assert.match(chatTextarea, /max-height:\s*calc\(2 \* 1\.8em\)/);
 });
 
+test('Ask ShiJing composer submits on plain Enter from the textarea', () => {
+  assert.match(shijingTabSource, /onKeyDown=\{handleTextareaKeyDown\}/);
+  assert.match(shijingTabSource, /event\.key !== 'Enter'/);
+  assert.match(shijingTabSource, /event\.shiftKey/);
+  assert.match(shijingTabSource, /event\.nativeEvent\.isComposing/);
+  assert.match(shijingTabSource, /event\.preventDefault\(\)/);
+  assert.match(shijingTabSource, /event\.currentTarget\.form\?\.requestSubmit\(\)/);
+});
+
 test('Ask ShiJing chat controls match the Codex-style compact composer chrome', () => {
   assert.match(shijingTabSource, /const \[draftingNewQuestion, setDraftingNewQuestion\]/);
   assert.match(shijingTabSource, /className="shijing-ask__new-question"/);
@@ -403,9 +412,45 @@ test('Ask ShiJing conversation thread uses right-user and left-answer chat bubbl
   assert.match(body, /max-width:\s*min\(72%, 720px\)/);
   assert.match(body, /padding:\s*10px 14px/);
   assert.match(body, /border-radius:\s*22px 22px 22px 6px/);
+  assert.match(body, /white-space:\s*pre-wrap/);
   assert.match(userBody, /border-radius:\s*22px 22px 6px 22px/);
   assert.match(userBody, /background:\s*linear-gradient\(135deg, #43c6a5, #1fae91\)/);
   assert.match(userBody, /color:\s*#fff/);
   assert.match(aiBody, /background:\s*rgba\(255, 255, 255, 0\.78\)/);
   assert.match(userRole, /text-align:\s*right/);
+});
+
+test('Ask ShiJing formats structured AI answers with readable hierarchy', () => {
+  assert.match(shijingTabSource, /function ShiJingAnswerBody\(/);
+  assert.match(shijingTabSource, /parseShiJingAnswerText\(text\)/);
+  assert.match(shijingTabSource, /className="shijing-ask__answer-title"/);
+  assert.match(shijingTabSource, /className="shijing-ask__answer-card"/);
+  assert.match(shijingTabSource, /className="shijing-ask__answer-field-label"/);
+
+  const aiBody = cssBlock(
+    shijingStyles,
+    '.shijing-ask__turn[data-role="ai"] .shijing-ask__turn-body',
+  );
+  const answer = cssBlock(shijingStyles, '.shijing-ask__answer');
+  const title = cssBlock(shijingStyles, '.shijing-ask__answer-title');
+  const conclusion = cssBlock(shijingStyles, '.shijing-ask__answer-conclusion');
+  const cards = cssBlock(shijingStyles, '.shijing-ask__answer-cards');
+  const card = cssBlock(shijingStyles, '.shijing-ask__answer-card');
+  const cardTitle = cssBlock(shijingStyles, '.shijing-ask__answer-card-title');
+  const fieldLabel = cssBlock(shijingStyles, '.shijing-ask__answer-field-label');
+  const summary = cssBlock(shijingStyles, '.shijing-ask__answer-summary');
+
+  assert.match(aiBody, /max-width:\s*min\(84%, 780px\)/);
+  assert.match(answer, /display:\s*grid/);
+  assert.match(answer, /gap:\s*12px/);
+  assert.match(title, /font-size:\s*18px/);
+  assert.match(title, /font-weight:\s*760/);
+  assert.match(conclusion, /font-size:\s*15px/);
+  assert.match(cards, /display:\s*grid/);
+  assert.match(card, /border:\s*1px solid/);
+  assert.match(card, /border-radius:\s*16px/);
+  assert.match(cardTitle, /font-size:\s*15px/);
+  assert.match(fieldLabel, /font-size:\s*12px/);
+  assert.match(fieldLabel, /color:\s*#64748b/);
+  assert.match(summary, /border-top:\s*1px solid/);
 });

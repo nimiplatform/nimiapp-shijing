@@ -68,5 +68,11 @@ export const ZH_SHIJING_COPY: ProductCopy['shijing'] = {
     manage: '编辑关注',
     editorSubtitle: '激活的关注会进入本次问镜上下文，生成时作为引用语境冻结。',
   },
+  answerFields: {
+    riskLevel: '风险等级',
+    why: '为什么需要注意',
+    suggestion: '建议做什么',
+    avoid: '避免做什么',
+  },
   citedReadings: (count) => `引用解读 ${count} 份`,
 };

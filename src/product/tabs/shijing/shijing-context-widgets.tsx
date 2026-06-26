@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Conversation } from '../../../domain/conversation.ts';
 import type { ConcernTag } from '../../../domain/concern-tag.ts';
+import { parseShiJingAnswerText } from '../../conversations/shijing-answer-format.ts';
 import { InlineConcernEditorPopover } from '../../concern-tags/inline-concern-editor.tsx';
 import { trimmedConcernLabel } from '../../concern-tags/concern-presets.ts';
 import { useProductCopy } from '../../i18n/copy.ts';
@@ -175,7 +176,7 @@ export function ConversationThread(props: {
             data-pending={isPending ? 'true' : undefined}
           >
             <span className="shijing-ask__turn-role">{copy.conversationRoleLabels[turn.role]}</span>
-            <p className="shijing-ask__turn-body" aria-live={isPending ? 'polite' : undefined}>
+            <div className="shijing-ask__turn-body" aria-live={isPending ? 'polite' : undefined}>
               {isPending ? (
                 <>
                   <span className="shijing-ask__thinking-dots" aria-hidden="true">
@@ -185,10 +186,12 @@ export function ConversationThread(props: {
                   </span>
                   <span>{props.thinkingLabel ?? turn.body}</span>
                 </>
+              ) : turn.role === 'ai' ? (
+                <ShiJingAnswerBody text={turn.body} />
               ) : (
                 turn.body
               )}
-            </p>
+            </div>
             {turn.cited_reading_ids.length > 0 && !isPending ? (
               <small className="shijing-ask__turn-cite">
                 {copy.shijing.citedReadings(turn.cited_reading_ids.length)}
@@ -198,5 +201,63 @@ export function ConversationThread(props: {
         );
       })}
     </ol>
+  );
+}
+
+function ShiJingAnswerBody(props: { readonly text: string }) {
+  const { text } = props;
+  const copy = useProductCopy();
+  const parsed = parseShiJingAnswerText(text);
+  if (parsed.kind === 'plain') {
+    return (
+      <div className="shijing-ask__answer shijing-ask__answer--plain">
+        {parsed.paragraphs.length > 0
+          ? parsed.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)
+          : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="shijing-ask__answer">
+      {parsed.title ? <h3 className="shijing-ask__answer-title">{parsed.title}</h3> : null}
+      {parsed.conclusion ? (
+        <p className="shijing-ask__answer-conclusion">{parsed.conclusion}</p>
+      ) : null}
+      {parsed.cards.length > 0 ? (
+        <div className="shijing-ask__answer-cards">
+          {parsed.cards.map((card, index) => (
+            <article className="shijing-ask__answer-card" key={`${card.title ?? 'card'}-${index}`}>
+              {card.title ? <h4 className="shijing-ask__answer-card-title">{card.title}</h4> : null}
+              {card.riskLevel ? (
+                <p className="shijing-ask__answer-risk" data-risk={card.riskLevel}>
+                  <span className="shijing-ask__answer-field-label">
+                    {copy.shijing.answerFields.riskLevel}
+                  </span>
+                  <span>{card.riskLevel}</span>
+                </p>
+              ) : null}
+              <ShiJingAnswerField label={copy.shijing.answerFields.why} value={card.why} />
+              <ShiJingAnswerField
+                label={copy.shijing.answerFields.suggestion}
+                value={card.suggestion}
+              />
+              <ShiJingAnswerField label={copy.shijing.answerFields.avoid} value={card.avoid} />
+            </article>
+          ))}
+        </div>
+      ) : null}
+      {parsed.summary ? <p className="shijing-ask__answer-summary">{parsed.summary}</p> : null}
+    </div>
+  );
+}
+
+function ShiJingAnswerField(props: { readonly label: string; readonly value?: string }) {
+  if (!props.value) return null;
+  return (
+    <p className="shijing-ask__answer-field">
+      <span className="shijing-ask__answer-field-label">{props.label}</span>
+      <span>{props.value}</span>
+    </p>
   );
 }

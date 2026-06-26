@@ -58,5 +58,11 @@ export interface ShiJingConsultationCopy {
     readonly manage: string;
     readonly editorSubtitle: string;
   };
+  readonly answerFields: {
+    readonly riskLevel: string;
+    readonly why: string;
+    readonly suggestion: string;
+    readonly avoid: string;
+  };
   readonly citedReadings: (count: number) => string;
 }

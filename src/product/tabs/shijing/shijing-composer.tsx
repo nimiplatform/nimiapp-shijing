@@ -1,4 +1,4 @@
-import type { FormEventHandler, RefObject } from 'react';
+import type { FormEventHandler, KeyboardEvent, RefObject } from 'react';
 import { Tooltip } from '@nimiplatform/kit/ui';
 import { useProductCopy } from '../../i18n/copy.ts';
 import { GeneratingButton } from '../shared/generating-button.tsx';
@@ -23,6 +23,23 @@ export interface ShiJingComposerProps {
 
 export function ShiJingComposer(props: ShiJingComposerProps) {
   const copy = useProductCopy();
+
+  function handleTextareaKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (
+      event.key !== 'Enter' ||
+      event.shiftKey ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.altKey ||
+      event.nativeEvent.isComposing
+    ) {
+      return;
+    }
+    event.preventDefault();
+    if (props.canAsk) {
+      event.currentTarget.form?.requestSubmit();
+    }
+  }
 
   return (
     <form
@@ -64,6 +81,7 @@ export function ShiJingComposer(props: ShiJingComposerProps) {
         rows={2}
         value={props.question}
         onChange={(e) => props.onQuestionChange(e.currentTarget.value)}
+        onKeyDown={handleTextareaKeyDown}
         placeholder={props.composerPlaceholder}
         aria-label={copy.shijing.questionAria}
       />

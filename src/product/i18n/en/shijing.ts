@@ -68,5 +68,11 @@ export const EN_SHIJING_COPY: ProductCopy['shijing'] = {
     manage: 'Edit concerns',
     editorSubtitle: 'Active concerns enter this Consultation Mirror context and are frozen as cited wording context at generation time.',
   },
+  answerFields: {
+    riskLevel: 'Risk level',
+    why: 'Why it matters',
+    suggestion: 'What to do',
+    avoid: 'What to avoid',
+  },
   citedReadings: (count) => `${count} cited reading${count === 1 ? '' : 's'}`,
 };
