@@ -41,6 +41,7 @@ export type ResolvedShijingTextGenerateBinding =
       model: string;
       route: NimiRuntimeAIRoutePolicy;
       connectorId?: string;
+      targetRef: NimiAIConfigTargetRef;
       params: RuntimeTextParams;
       metadata: Record<string, string>;
       schedulingTarget: NimiAISchedulingTargetInput | null;
@@ -61,7 +62,7 @@ function targetRefModel(targetRef: NimiAIConfigTargetRef): string {
     return String(targetRef.providerModelId || '').trim();
   }
   if (targetRef.kind === 'local-runtime') {
-    return String(targetRef.profileId || targetRef.targetId || targetRef.readinessRef || '').trim();
+    return String(targetRef.profileBindingId || targetRef.readinessRef || '').trim();
   }
   return '';
 }
@@ -132,6 +133,7 @@ export function resolveShijingTextGenerateBinding(
     model,
     route,
     ...(connectorId ? { connectorId } : {}),
+    targetRef,
     params: extractTextParams(paramsRecord(config.capabilities.selectedParams[SHIJING_TEXT_GENERATE_CAPABILITY_ID])),
     schedulingTarget: schedulingTargetFor(SHIJING_TEXT_GENERATE_CAPABILITY_ID, targetRef),
     metadata: {
@@ -259,6 +261,7 @@ class AIConfigBackedRuntimeAiClient implements RuntimeAiClient {
       connectorId: resolved.connectorId,
       subjectUserId,
       timeoutMs: resolved.params.timeoutMs,
+      targetRef: resolved.targetRef,
       model: {
         modelId: resolved.model,
         ...(resolved.connectorId ? { providerId: resolved.connectorId } : {}),
