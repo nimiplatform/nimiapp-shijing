@@ -1,171 +1,140 @@
-/* HeJing 未来窗口 (repair banner + timeline) + 关系指引 (guidance). */
-
-.shijing-hejing__repair {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 24px;
-  padding: 18px 20px;
-  border: 1px solid rgba(61, 122, 90, 0.18);
-  border-radius: 16px;
-  background: linear-gradient(120deg, rgba(61, 122, 90, 0.13), rgba(244, 238, 222, 0.55));
-}
-
-.shijing-hejing__repair-head {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.shijing-hejing__repair-head strong {
-  color: var(--hejing-acc-deep);
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.shijing-hejing__repair-head span {
-  color: var(--hejing-gold-deep);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.shijing-hejing__repair p {
-  color: var(--hejing-ink2);
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-/* Horizontal timeline ----------------------------------------------------- */
+/* HeJing 未来时间窗口 — horizontal Q1–Q4 timeline. */
 
 .shijing-hejing__timeline {
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
   margin: 0;
-  padding: 4px 2px 0;
+  padding: 8px 0 0;
   list-style: none;
 }
 
-.shijing-hejing__node {
+/* Connecting rail behind the quarter markers. */
+.shijing-hejing__timeline::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 13px;
+  height: 2px;
+  background: rgba(61, 122, 90, 0.18);
+}
+
+.shijing-hejing__quarter {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.shijing-hejing__quarter[data-tone="green"] {
+  --q-color: var(--hejing-green);
+  --q-soft: rgba(61, 122, 90, 0.08);
+  --q-border: rgba(61, 122, 90, 0.18);
+}
+
+.shijing-hejing__quarter[data-tone="gold"] {
+  --q-color: var(--hejing-gold);
+  --q-soft: rgba(176, 138, 62, 0.1);
+  --q-border: rgba(176, 138, 62, 0.22);
+}
+
+.shijing-hejing__quarter[data-tone="red"] {
+  --q-color: var(--hejing-red);
+  --q-soft: rgba(184, 105, 79, 0.1);
+  --q-border: rgba(184, 105, 79, 0.22);
+}
+
+.shijing-hejing__quarter[data-tone="blue"] {
+  --q-color: var(--hejing-blue);
+  --q-soft: rgba(91, 127, 166, 0.1);
+  --q-border: rgba(91, 127, 166, 0.22);
+}
+
+.shijing-hejing__quarter-head {
   position: relative;
-  display: grid;
-  grid-template-columns: 14px minmax(0, 1fr);
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    "marker label"
-    "card card";
+  display: flex;
   align-items: center;
-  gap: 0 10px;
+  gap: 8px;
 }
 
-.shijing-hejing__node[data-tone="green"] {
-  --node-color: var(--hejing-acc);
-  --node-soft: rgba(61, 122, 90, 0.1);
-  --node-border: rgba(61, 122, 90, 0.2);
-}
-
-.shijing-hejing__node[data-tone="gold"] {
-  --node-color: var(--hejing-gold);
-  --node-soft: rgba(176, 138, 62, 0.12);
-  --node-border: rgba(176, 138, 62, 0.24);
-}
-
-.shijing-hejing__node[data-tone="blue"] {
-  --node-color: var(--hejing-blue);
-  --node-soft: rgba(91, 127, 166, 0.12);
-  --node-border: rgba(91, 127, 166, 0.24);
-}
-
-.shijing-hejing__node-marker {
-  grid-area: marker;
+.shijing-hejing__quarter-marker {
   position: relative;
   z-index: 1;
+  flex: 0 0 auto;
   width: 12px;
   height: 12px;
-  border: 2px solid var(--node-color);
+  border: 2px solid var(--q-color);
   border-radius: 50%;
   background: #fff;
 }
 
-.shijing-hejing__node-label {
-  grid-area: label;
+.shijing-hejing__quarter-label {
   color: var(--hejing-ink);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 
-.shijing-hejing__node-card {
-  grid-area: card;
-  align-self: stretch;
+.shijing-hejing__quarter-label small {
+  color: var(--hejing-ink3);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.shijing-hejing__quarter-season {
+  display: grid;
+  place-items: center;
+  margin-left: auto;
+  color: var(--q-color);
+}
+
+.shijing-hejing__quarter-season svg {
+  width: 18px;
+  height: 18px;
+}
+
+.shijing-hejing__quarter-card {
+  flex: 1;
+  padding: 14px 16px;
+  border: 1px solid var(--q-border);
+  border-radius: 14px;
+  background: var(--q-soft);
+}
+
+.shijing-hejing__quarter-card dl {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 14px;
-  padding: 16px;
-  border: 1px solid var(--node-border);
-  border-radius: 14px;
-  background: var(--node-soft);
+  margin: 0;
 }
 
-.shijing-hejing__node-badge {
-  align-self: flex-start;
-  border-radius: 999px;
-  padding: 4px 12px;
-  background: #fff;
-  color: var(--node-color);
+.shijing-hejing__quarter-card dl > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+
+.shijing-hejing__quarter-card dt {
+  flex: 0 0 auto;
+  color: var(--hejing-acc-deep);
   font-size: 12px;
   font-weight: 700;
+  white-space: nowrap;
 }
 
-.shijing-hejing__node-card p {
+.shijing-hejing__quarter-card dt[data-kind="watch"] {
+  color: var(--hejing-gold-deep);
+}
+
+.shijing-hejing__quarter-card dt[data-kind="action"] {
+  color: var(--hejing-acc);
+}
+
+.shijing-hejing__quarter-card dd {
+  margin: 0;
   color: var(--hejing-ink2);
-  font-size: 13.5px;
-  line-height: 1.65;
-}
-
-/* 关系指引 — guidance ------------------------------------------------------ */
-
-.shijing-hejing__advice-box {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 18px;
-  align-items: center;
-  padding: 20px 22px;
-  border: 1px solid rgba(61, 122, 90, 0.16);
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(61, 122, 90, 0.1), rgba(255, 255, 255, 0.4));
-}
-
-.shijing-hejing__advice-text span {
-  color: var(--hejing-acc-deep);
   font-size: 13px;
-  font-weight: 700;
-}
-
-.shijing-hejing__advice-text p {
-  margin-top: 8px;
-  color: var(--hejing-ink);
-  font-size: 15px;
-  line-height: 1.7;
-}
-
-.shijing-hejing__advice button {
-  flex: 0 0 auto;
-  border: 0;
-  border-radius: 999px;
-  padding: 12px 22px;
-  background: linear-gradient(140deg, var(--hejing-acc-mid), var(--hejing-acc-deep));
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 14px 28px -16px rgba(21, 64, 50, 0.6);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.shijing-hejing__advice button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 18px 32px -16px rgba(21, 64, 50, 0.66);
+  line-height: 1.55;
 }

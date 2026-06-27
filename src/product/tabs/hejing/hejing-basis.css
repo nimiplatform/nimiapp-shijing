@@ -1,0 +1,143 @@
+/* HeJing 命理依据 — collapsed astrology-evidence drawer at the page bottom. */
+
+.shijing-hejing__basis {
+  border: 1px solid var(--hejing-card-border);
+  border-radius: 20px;
+  background: var(--hejing-card);
+  box-shadow: var(--hejing-shadow);
+  overflow: hidden;
+}
+
+.shijing-hejing__basis > summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 16px 22px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.shijing-hejing__basis > summary::-webkit-details-marker {
+  display: none;
+}
+
+.shijing-hejing__basis-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.shijing-hejing__basis-title {
+  color: var(--hejing-ink);
+  font-family: var(--hejing-font-serif);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.shijing-hejing__basis-hint {
+  color: var(--hejing-ink3);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.shijing-hejing .shijing-hejing__basis-chips {
+  display: flex;
+  flex-flow: row wrap;
+  gap: 7px;
+  margin: 0 0 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.shijing-hejing__basis-chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(61, 122, 90, 0.2);
+  border-radius: 999px;
+  padding: 4px 11px;
+  background: rgba(61, 122, 90, 0.07);
+  color: var(--hejing-acc-deep);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.shijing-hejing__basis-caret {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  color: var(--hejing-ink3);
+  transition: transform 0.2s ease;
+}
+
+.shijing-hejing__basis-caret svg {
+  width: 16px;
+  height: 16px;
+}
+
+.shijing-hejing__basis[open] .shijing-hejing__basis-caret {
+  transform: rotate(90deg);
+}
+
+.shijing-hejing__basis-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 4px 22px 22px;
+}
+
+.shijing-hejing__basis-block {
+  padding: 16px;
+  border: 1px solid var(--hejing-line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.shijing-hejing__basis-block[data-kind="convergence"] {
+  --basis-dot: var(--hejing-acc);
+  background: linear-gradient(160deg, rgba(61, 122, 90, 0.08), rgba(255, 255, 255, 0.4));
+}
+
+.shijing-hejing__basis-block[data-kind="friction"] {
+  --basis-dot: var(--hejing-gold);
+  background: linear-gradient(160deg, rgba(176, 138, 62, 0.1), rgba(255, 255, 255, 0.4));
+}
+
+.shijing-hejing__basis-block h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--hejing-ink);
+}
+
+.shijing-hejing__basis-block ul {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shijing-hejing__basis-block li {
+  position: relative;
+  padding-left: 16px;
+  color: var(--hejing-ink2);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.shijing-hejing__basis-block li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--basis-dot, var(--hejing-acc));
+}

@@ -1,8 +1,8 @@
-/* HeJing 关系指数 — radar chart + metric readouts. */
+/* HeJing 关系雷达 — radar chart + metric readouts, each with a one-line note. */
 
 .shijing-hejing__index-body {
   display: grid;
-  grid-template-columns: minmax(260px, 0.78fr) minmax(0, 1fr);
+  grid-template-columns: minmax(260px, 0.82fr) minmax(0, 1.18fr);
   gap: 28px;
   align-items: center;
 }
@@ -18,7 +18,7 @@
 
 .shijing-hejing__radar {
   width: 100%;
-  max-width: 340px;
+  max-width: 320px;
   height: auto;
 }
 
@@ -34,7 +34,7 @@
 }
 
 .shijing-hejing__radar-area {
-  fill: rgba(61, 122, 90, 0.18);
+  fill: rgba(61, 122, 90, 0.16);
   stroke: var(--hejing-acc);
   stroke-width: 2;
   stroke-linejoin: round;
@@ -63,7 +63,7 @@
 
 .shijing-hejing__radar-label {
   fill: var(--hejing-ink2);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
 }
 
@@ -71,74 +71,89 @@
 
 .shijing-hejing__metric-readouts {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 22px;
   min-width: 0;
 }
 
 .shijing-hejing__metric {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 12px;
-  padding: 4px 2px;
+  align-items: start;
+  min-width: 0;
+}
+
+.shijing-hejing__metric-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--metric-soft);
+  color: var(--metric-color);
+}
+
+.shijing-hejing__metric-icon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.shijing-hejing__metric-body {
+  min-width: 0;
 }
 
 .shijing-hejing__metric-head {
   display: flex;
-  align-items: center;
-  gap: 7px;
-  min-width: 0;
-}
-
-.shijing-hejing__metric-dot {
-  flex: 0 0 auto;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--metric-color);
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .shijing-hejing__metric-head h3 {
   margin: 0;
-  overflow: hidden;
-  color: var(--hejing-ink2);
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  color: var(--hejing-ink);
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .shijing-hejing__metric-value {
-  display: flex;
-  align-items: baseline;
-  gap: 3px;
-}
-
-.shijing-hejing__metric-value strong {
-  color: var(--metric-color);
-  font-size: 30px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.shijing-hejing__metric-value span {
+  flex: 0 0 auto;
   color: var(--hejing-ink3);
   font-size: 12px;
 }
 
+.shijing-hejing__metric-value strong {
+  color: var(--metric-color);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.shijing-hejing__metric-body p {
+  margin: 4px 0 0;
+  color: var(--hejing-ink2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .shijing-hejing__metric[data-tone="green"] {
   --metric-color: var(--hejing-green);
+  --metric-soft: var(--hejing-green-soft);
 }
 
 .shijing-hejing__metric[data-tone="gold"] {
-  --metric-color: var(--hejing-gold);
+  --metric-color: var(--hejing-gold-deep);
+  --metric-soft: var(--hejing-gold-soft);
 }
 
 .shijing-hejing__metric[data-tone="blue"] {
-  --metric-color: var(--hejing-blue);
+  --metric-color: var(--hejing-blue-deep);
+  --metric-soft: var(--hejing-blue-soft);
 }
 
 .shijing-hejing__metric[data-tone="red"] {
-  --metric-color: var(--hejing-red);
+  --metric-color: var(--hejing-red-deep);
+  --metric-soft: var(--hejing-red-soft);
 }

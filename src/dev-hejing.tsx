@@ -7,20 +7,27 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { NimiThemeProvider, TooltipProvider } from '@nimiplatform/kit/ui';
+import { buildHeJingPreviewSpace } from './product/dev/hejing-sample-space.ts';
+import { ShijingStoreProvider } from './product/state/shijing-store.tsx';
 import { HeJingTab } from './product/tabs/hejing-tab.tsx';
 import { i18n } from './shell/i18n/index.js';
 import './styles.css';
 
 function DevHeJing() {
+  const snapshot = React.useMemo(() => buildHeJingPreviewSpace('dev-hejing-user'), []);
+
   React.useEffect(() => {
     void i18n.changeLanguage('zh');
   }, []);
+
   return (
-    <div className="shijing-shell" data-active-tab="hejing">
-      <div className="shijing-shell__main">
-        <HeJingTab />
+    <ShijingStoreProvider snapshot={snapshot}>
+      <div className="shijing-shell" data-active-tab="hejing">
+        <div className="shijing-shell__main">
+          <HeJingTab />
+        </div>
       </div>
-    </div>
+    </ShijingStoreProvider>
   );
 }
 

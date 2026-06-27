@@ -1,10 +1,8 @@
 /* HeJing responsive layout. */
 
 @media (max-width: 960px) {
-  .shijing-hejing__hero-body,
-  .shijing-hejing__index-body,
-  .shijing-hejing__generated-grid,
-  .shijing-hejing__structure-grid {
+  .shijing-hejing__overview-card,
+  .shijing-hejing__index-body {
     grid-template-columns: 1fr;
     gap: 22px;
   }
@@ -17,6 +15,27 @@
   .shijing-hejing__radar {
     max-width: 300px;
   }
+
+  .shijing-hejing__timeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .shijing-hejing__timeline::before {
+    display: none;
+  }
+
+  .shijing-hejing .shijing-hejing__value-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-hejing__empty-card {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-hejing__empty-visual {
+    border-right: 0;
+    border-bottom: 1px solid var(--hejing-line);
+  }
 }
 
 @media (max-width: 760px) {
@@ -25,67 +44,83 @@
   }
 
   .shijing-hejing .shijing-hejing__card,
-  .shijing-hejing .shijing-hejing__hero {
+  .shijing-hejing__overview-card {
     padding: 18px;
   }
 
-  .shijing-hejing__intro {
+  .shijing-hejing__overview-head {
     grid-template-columns: 1fr;
     align-items: start;
-    gap: 14px;
   }
 
-  .shijing-hejing__new-button {
+  .shijing-hejing__hero-actions {
     justify-self: start;
   }
 
-  .shijing-hejing__hero-head {
+  .shijing-hejing__controls {
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
   }
 
-  .shijing-hejing__object-select select {
+  .shijing-hejing__object-select .sjp-select-trigger {
     max-width: none;
     width: 100%;
   }
 
+  .shijing-hejing__status-row {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-hejing__focus-grid {
+    grid-template-columns: 1fr;
+  }
+
   .shijing-hejing__metric-readouts {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px 12px;
-  }
-
-  .shijing-hejing__timeline {
     grid-template-columns: 1fr;
-    gap: 14px;
   }
 
-  .shijing-hejing__node::before {
-    display: none;
-  }
-
-  .shijing-hejing__node-card {
-    margin-top: 10px;
-  }
-
-  .shijing-hejing__advice-box {
+  .shijing-hejing__basis-body {
     grid-template-columns: 1fr;
-    align-items: stretch;
   }
 
-  .shijing-hejing__advice button {
-    justify-self: start;
+  .shijing-hejing__basis-chips {
+    margin-left: 0;
   }
 
   .shijing-hejing__record {
     grid-template-columns: 1fr;
     gap: 4px;
   }
+
+  .shijing-hejing__record-author {
+    justify-self: start;
+  }
+
+  .shijing-hejing__type-empty {
+    grid-template-columns: 1fr;
+    align-items: start;
+    min-height: 0;
+    padding: 22px;
+  }
+
+  .shijing-hejing__empty-intro {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 14px;
+  }
+
+  .shijing-hejing__empty-intro .shijing-hejing__new-button {
+    justify-self: start;
+  }
+
+  .shijing-hejing__empty-panel {
+    padding: 24px;
+  }
 }
 
 @media (max-width: 460px) {
-  .shijing-hejing__metric-readouts {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .shijing-hejing__timeline {
+    grid-template-columns: 1fr;
   }
 
   .shijing-hejing__type-tabs > span {

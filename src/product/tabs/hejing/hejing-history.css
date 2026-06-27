@@ -1,27 +1,35 @@
-/* HeJing 关系复盘 — shared-history vertical timeline. */
+/* HeJing 共同记录 — shared-record timeline. */
 
-.shijing-hejing__history {
+.shijing-hejing__records-lead {
+  margin: 0 0 16px;
+  color: var(--hejing-ink2);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.shijing-hejing__record-list {
   position: relative;
   margin: 0;
   padding: 4px 0 0;
   list-style: none;
 }
 
-.shijing-hejing__history::before {
+.shijing-hejing__record-list::before {
   content: "";
   position: absolute;
   left: 6px;
   top: 12px;
   bottom: 16px;
   width: 2px;
-  background: rgba(61, 122, 90, 0.3);
+  background: rgba(61, 122, 90, 0.28);
 }
 
 .shijing-hejing__record {
   position: relative;
   display: grid;
-  grid-template-columns: 116px minmax(0, 1fr);
+  grid-template-columns: 116px minmax(0, 1fr) auto;
   gap: 18px;
+  align-items: start;
   padding: 6px 0 22px 28px;
 }
 
@@ -33,7 +41,7 @@
   content: "";
   position: absolute;
   left: 1px;
-  top: 9px;
+  top: 8px;
   width: 12px;
   height: 12px;
   border: 2px solid var(--hejing-acc);
@@ -56,7 +64,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 7px;
 }
 
 .shijing-hejing__record-head h3 {
@@ -67,21 +75,53 @@
 }
 
 .shijing-hejing__record-tag {
-  border: 1px solid rgba(61, 122, 90, 0.26);
   border-radius: 999px;
   padding: 2px 10px;
-  color: var(--hejing-acc-deep);
   font-size: 12px;
   font-weight: 700;
 }
 
+.shijing-hejing__record-tag[data-tone="red"] {
+  border: 1px solid rgba(184, 105, 79, 0.3);
+  background: var(--hejing-red-soft);
+  color: var(--hejing-red-deep);
+}
+
+.shijing-hejing__record-tag[data-tone="green"] {
+  border: 1px solid rgba(61, 122, 90, 0.3);
+  background: var(--hejing-green-soft);
+  color: var(--hejing-acc-deep);
+}
+
+.shijing-hejing__record-tag[data-tone="gold"] {
+  border: 1px solid rgba(176, 138, 62, 0.3);
+  background: var(--hejing-gold-soft);
+  color: var(--hejing-gold-deep);
+}
+
 .shijing-hejing__record p {
+  margin: 0;
   color: var(--hejing-ink2);
   font-size: 14px;
   line-height: 1.65;
 }
 
-.shijing-hejing__record p strong {
-  color: var(--hejing-acc-deep);
-  font-weight: 700;
+.shijing-hejing__record-author {
+  align-self: start;
+  flex: 0 0 auto;
+  color: var(--hejing-ink3);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.shijing-hejing__records-empty {
+  margin: 0;
+  padding: 22px;
+  border: 1px dashed rgba(61, 122, 90, 0.26);
+  border-radius: 14px;
+  background: rgba(61, 122, 90, 0.04);
+  color: var(--hejing-ink2);
+  font-size: 14px;
+  line-height: 1.7;
+  text-align: center;
 }

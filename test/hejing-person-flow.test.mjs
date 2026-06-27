@@ -15,6 +15,15 @@ const hejingTabSource = readFileSync(
   'utf8',
 );
 
+function collectStringValues(value) {
+  if (typeof value === 'string') return [value];
+  if (Array.isArray(value)) return value.flatMap((item) => collectStringValues(item));
+  if (value && typeof value === 'object') {
+    return Object.values(value).flatMap((item) => collectStringValues(item));
+  }
+  return [];
+}
+
 test('HeJing workspace id is stable for a related person', async () => {
   const model = await import('../src/product/tabs/hejing/hejing-model.ts');
 
@@ -39,6 +48,71 @@ test('HeJing builds a self-plus-person workspace from a newly added Person', asy
   assert.equal(workspace.self.label, '我');
   assert.equal(workspace.other.label, 'TA');
   assert.equal(workspace.other.name, '阿楠');
+  assert.deepEqual(workspace.metrics, []);
+  assert.deepEqual(workspace.futureWindows, []);
+});
+
+test('HeJing side profile copy is user-facing Ziwei relationship structure', async () => {
+  const model = await import('../src/product/tabs/hejing/hejing-model.ts');
+
+  const workspace = model.buildHeJingWorkspaceFromPerson(
+    validPerson('p_snow', {
+      display_name: 'Snow',
+      relation: '儿子',
+    }),
+  );
+  const sideCopy = [...workspace.self.traits, ...workspace.other.traits].join('\n');
+  const workspaceCopy = collectStringValues(workspace).join('\n');
+
+  assert.match(sideCopy, /紫微斗数/u);
+  assert.match(sideCopy, /命宫|身宫|主星|四化|亲子宫位/u);
+  assert.doesNotMatch(workspaceCopy, /self \+ one Person|Reading|Relation|fail-close|Runtime AI wording/u);
+  assert.doesNotMatch(sideCopy, /出生资料已录入人物档案|生成合镜后再呈现/u);
+});
+
+test('HeJing profile headings avoid repeating the same self label and name', async () => {
+  const model = await import('../src/product/tabs/hejing/hejing-model.ts');
+  const workspace = model.buildHeJingWorkspaceFromPerson(
+    validPerson('p_snow_heading', {
+      display_name: 'Snow',
+      relation: '儿子',
+    }),
+  );
+
+  assert.equal(model.hejingPersonProfileHeading(workspace.self), '我');
+  assert.equal(model.hejingPersonProfileHeading(workspace.other), 'TA · Snow');
+});
+
+test('HeJing relationship type tabs follow the admitted display order', async () => {
+  const model = await import('../src/product/tabs/hejing/hejing-model.ts');
+
+  assert.deepEqual(
+    model.HEJING_RELATIONSHIP_TYPES.map((type) => [type.id, type.label]),
+    [
+      ['partner', '伴侣'],
+      ['family', '家人'],
+      ['parent_child', '亲子'],
+      ['friend', '朋友'],
+      ['collaboration', '合作'],
+    ],
+  );
+});
+
+test('HeJing filters workspaces by relationship type without fabricating fallback data', async () => {
+  const model = await import('../src/product/tabs/hejing/hejing-model.ts');
+
+  assert.equal(typeof model.hejingWorkspacesForRelationshipType, 'function');
+  const workspaces = [
+    model.buildHeJingWorkspaceFromPerson(validPerson('p_partner', { relation: '伴侣' })),
+    model.buildHeJingWorkspaceFromPerson(validPerson('p_family', { relation: '家人' })),
+    model.buildHeJingWorkspaceFromPerson(validPerson('p_child', { relation: '亲子' })),
+  ];
+
+  assert.deepEqual(
+    model.hejingWorkspacesForRelationshipType(workspaces, 'family').map((workspace) => workspace.id),
+    ['person:p_family'],
+  );
+  assert.deepEqual(model.hejingWorkspacesForRelationshipType(workspaces, 'collaboration'), []);
 });
 
 test('HeJing projects generated relationship Reading into the workbench modules', async () => {
@@ -150,12 +224,70 @@ test('HeJing projects generated relationship Reading into the workbench modules'
   assert.equal(workspace.weeklyAdvice, output.practice.communication);
 });
 
+test('HeJing restores the latest generated relationship workspace on page open', async () => {
+  const model = await import('../src/product/tabs/hejing/hejing-model.ts');
+
+  assert.equal(typeof model.initialHeJingWorkspaceIdFromReadings, 'function');
+  const firstPerson = validPerson('p_first_01', { display_name: 'First' });
+  const latestPerson = validPerson('p_latest_01', { display_name: 'Latest' });
+  const firstScope = relationshipNatalMirrorScope({
+    related_person_ref: { kind: 'person', id: firstPerson.id },
+  });
+  const latestScope = relationshipNatalMirrorScope({
+    related_person_ref: { kind: 'person', id: latestPerson.id },
+  });
+
+  const selectedWorkspaceId = model.initialHeJingWorkspaceIdFromReadings({
+    workspaces: [
+      model.buildHeJingWorkspaceFromPerson(firstPerson),
+      model.buildHeJingWorkspaceFromPerson(latestPerson),
+    ],
+    readings: [
+      validReading({
+        id: 'r_first_relationship',
+        created_at: '2026-04-01T00:00:00Z',
+        mirror_kind: 'mingjing',
+        mirror_scope: firstScope,
+      }),
+      validReading({
+        id: 'r_latest_relationship',
+        created_at: '2026-06-01T00:00:00Z',
+        mirror_kind: 'mingjing',
+        mirror_scope: latestScope,
+      }),
+    ],
+  });
+
+  assert.equal(selectedWorkspaceId, 'person:p_latest_01');
+});
+
 test('HeJing new-flow opens the add-person dialog and selects the saved person', () => {
   assert.match(hejingTabSource, /AddPersonDialog/u);
   assert.match(hejingTabSource, /handleCreateHejing/u);
   assert.match(hejingTabSource, /setAddPersonOpen\(true\)/u);
   assert.match(hejingTabSource, /handleRelationshipPersonSaved/u);
   assert.match(hejingTabSource, /hejingWorkspaceIdForPerson\(person\.id\)/u);
+});
+
+test('HeJing keeps generated-only modules behind relationship output', () => {
+  assert.match(hejingTabSource, /const hasGeneratedRelationship\s*=\s*Boolean\(relationshipOutput\)/u);
+  assert.match(hejingTabSource, /hasGeneratedRelationship\s*&&\s*methodSupport\.supported/u);
+  assert.match(hejingTabSource, /className="shijing-hejing__hero-actions"/u);
+  assert.doesNotMatch(hejingTabSource, /methodSupport\.supported\s*\?\s*\(\s*<>\s*<AnalysisSection[\s\S]*className="shijing-hejing__metrics"/u);
+});
+
+test('HeJing shows an add prompt for relationship types without workspaces', () => {
+  assert.match(hejingTabSource, /const filteredWorkspaces\s*=\s*useMemo/u);
+  assert.match(hejingTabSource, /const hasSelectedTypeWorkspaces\s*=\s*filteredWorkspaces\.length\s*>\s*0/u);
+  assert.match(hejingTabSource, /<HeJingRelationshipTypeEmpty/u);
+  assert.match(hejingTabSource, /options=\{filteredWorkspaces\.map/u);
+});
+
+test('HeJing page restores cached generated readings and waits for persistence', () => {
+  assert.match(hejingTabSource, /initialHeJingWorkspaceIdFromReadings/u);
+  assert.match(hejingTabSource, /restoredGeneratedWorkspaceRef/u);
+  assert.match(hejingTabSource, /await replace_snapshot\(outcome\.next_space\)/u);
+  assert.doesNotMatch(hejingTabSource, /dispatch\(\{\s*type:\s*'snapshot\/replace'/u);
 });
 
 test('HeJing reports route support from the active method profile', async () => {

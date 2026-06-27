@@ -27,14 +27,25 @@ function cssBlock(selector) {
   return block;
 }
 
-test('HeJing self and other profile card copy is centered as a left-aligned text group', () => {
-  assert.match(hejingSource, /className="shijing-hejing__profile-content"/);
+test('HeJing first screen pairs the two charts above status and reminder', () => {
+  assert.match(hejingSource, /<HeJingOverview/);
 
-  const card = cssBlock('.shijing-hejing__profile-card');
-  const content = cssBlock('.shijing-hejing__profile-content');
+  const overviewCard = cssBlock('.shijing-hejing__overview-card');
+  const pair = cssBlock('.shijing-hejing__pair');
+  const statusRow = cssBlock('.shijing-hejing__status-row');
 
-  assert.match(card, /align-items:\s*center/);
-  assert.match(content, /width:\s*fit-content/);
-  assert.match(content, /max-width:\s*100%/);
-  assert.match(content, /text-align:\s*left/);
+  assert.match(overviewCard, /display:\s*grid/);
+  assert.match(pair, /grid-template-columns:\s*1fr auto 1fr/);
+  assert.match(statusRow, /border-bottom:\s*1px solid/);
+});
+
+test('HeJing focus cards and metric readouts use multi-column, bounded layouts', () => {
+  const focusGrid = cssBlock('.shijing-hejing__focus-grid');
+  const metricReadouts = cssBlock('.shijing-hejing__metric-readouts');
+  const metricBody = cssBlock('.shijing-hejing__metric-body p');
+
+  assert.match(focusGrid, /grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(metricReadouts, /grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+  // The metric explanation line is present and styled.
+  assert.notEqual(metricBody, '');
 });

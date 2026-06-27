@@ -53,6 +53,7 @@ export const hejingCssFiles = [
   '../src/product/tabs/hejing/hejing-intersection.css',
   '../src/product/tabs/hejing/hejing-future.css',
   '../src/product/tabs/hejing/hejing-history.css',
+  '../src/product/tabs/hejing/hejing-basis.css',
   '../src/product/tabs/hejing/hejing-responsive.css',
 ];
 

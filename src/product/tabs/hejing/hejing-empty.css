@@ -1,0 +1,289 @@
+/* HeJing first-run empty state — a welcoming page that explains what a
+ * 合镜 is, what it surfaces, and how to create one. Relationship type is
+ * moved into the creation flow rather than acting as an empty-state filter.
+ * Scoped under `.shijing-hejing` to out-specify shared `.shijing-tab`. */
+
+.shijing-hejing__empty {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Title area --------------------------------------------------------------- */
+
+.shijing-hejing__empty-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 24px;
+  padding: 8px 8px 0;
+}
+
+.shijing-hejing__empty-intro-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.shijing-hejing .shijing-hejing__empty-title {
+  margin: 0;
+  color: var(--hejing-ink);
+  font-family: var(--hejing-font-serif);
+  font-size: clamp(30px, 4vw, 44px);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: 0.01em;
+}
+
+.shijing-hejing .shijing-hejing__empty-lead {
+  max-width: 600px;
+  color: var(--hejing-ink2);
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+/* Value cards -------------------------------------------------------------- */
+
+.shijing-hejing .shijing-hejing__value-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shijing-hejing__value-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  overflow: hidden;
+  padding: 22px 22px 24px;
+  border: 1px solid var(--hejing-card-border);
+  border-radius: 24px;
+  background:
+    radial-gradient(ellipse 90% 70% at 100% 0%, rgba(61, 122, 90, 0.05), transparent 60%),
+    var(--hejing-card);
+  box-shadow: var(--hejing-shadow);
+}
+
+.shijing-hejing__value-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--hejing-green-soft);
+  color: var(--hejing-acc-deep);
+}
+
+.shijing-hejing__value-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.shijing-hejing__value-copy {
+  min-width: 0;
+}
+
+.shijing-hejing .shijing-hejing__value-copy h3 {
+  margin: 2px 0 8px;
+  color: var(--hejing-ink);
+  font-family: var(--hejing-font-serif);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.shijing-hejing .shijing-hejing__value-copy p {
+  margin: 0;
+  color: var(--hejing-ink2);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+
+.shijing-hejing__value-index {
+  position: absolute;
+  right: 18px;
+  bottom: 12px;
+  color: var(--hejing-ink3);
+  opacity: 0.45;
+  font-family: var(--hejing-font-serif);
+  font-size: 22px;
+  font-style: italic;
+  font-weight: 700;
+}
+
+/* Main create card --------------------------------------------------------- */
+
+.shijing-hejing__empty-card {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  overflow: hidden;
+  border: 1px solid var(--hejing-card-border);
+  border-radius: 24px;
+  background: var(--hejing-card);
+  box-shadow: var(--hejing-shadow);
+}
+
+.shijing-hejing__empty-visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  border-right: 1px solid var(--hejing-line);
+  background:
+    radial-gradient(ellipse 58% 50% at 30% 24%, rgba(255, 255, 255, 0.7), transparent 62%),
+    radial-gradient(ellipse 50% 46% at 78% 80%, rgba(236, 224, 194, 0.3), transparent 64%),
+    linear-gradient(150deg, #f3f8f3 0%, #eaf2ec 100%);
+}
+
+.shijing-hejing__empty-venn {
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+}
+
+.shijing-hejing__empty-venn-side {
+  font-family: var(--hejing-font-serif);
+  font-size: 34px;
+  font-weight: 700;
+}
+
+.shijing-hejing__empty-venn-core {
+  font-family: var(--hejing-font-serif);
+  font-size: 46px;
+  font-weight: 700;
+}
+
+.shijing-hejing__empty-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 36px clamp(24px, 3vw, 40px);
+}
+
+.shijing-hejing .shijing-hejing__empty-panel h2 {
+  margin: 0;
+  color: var(--hejing-ink);
+  font-family: var(--hejing-font-serif);
+  font-size: clamp(24px, 2.6vw, 30px);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.shijing-hejing .shijing-hejing__empty-panel > p {
+  margin: 0;
+  max-width: 460px;
+  color: var(--hejing-ink2);
+  font-size: 14.5px;
+  line-height: 1.8;
+}
+
+/* Flow steps */
+
+.shijing-hejing .shijing-hejing__empty-steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--hejing-line);
+  border-radius: 16px;
+  background: rgba(61, 122, 90, 0.04);
+  list-style: none;
+  counter-reset: hejing-step;
+}
+
+.shijing-hejing__empty-steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--hejing-ink2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.shijing-hejing__empty-steps li::before {
+  counter-increment: hejing-step;
+  content: counter(hejing-step);
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--hejing-green-soft);
+  color: var(--hejing-acc-deep);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shijing-hejing__empty-steps li:not(:last-child)::after {
+  content: "→";
+  margin-left: 4px;
+  color: var(--hejing-ink3);
+  font-weight: 700;
+}
+
+/* Actions */
+
+.shijing-hejing__empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+.shijing-hejing .shijing-hejing__empty-actions button {
+  border-radius: 999px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.shijing-hejing .shijing-hejing__empty-actions .is-primary {
+  border: 0;
+  background: linear-gradient(140deg, var(--hejing-acc-mid), var(--hejing-acc-deep));
+  color: #fff;
+  box-shadow: 0 14px 28px -16px rgba(21, 64, 50, 0.6);
+}
+
+.shijing-hejing .shijing-hejing__empty-actions .is-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 32px -16px rgba(21, 64, 50, 0.66);
+}
+
+.shijing-hejing .shijing-hejing__empty-actions .is-secondary {
+  border: 1px solid rgba(61, 122, 90, 0.28);
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--hejing-acc-deep);
+}
+
+.shijing-hejing .shijing-hejing__empty-actions .is-secondary:hover {
+  border-color: rgba(61, 122, 90, 0.5);
+  background: rgba(61, 122, 90, 0.08);
+}
+
+/* Privacy note */
+
+.shijing-hejing .shijing-hejing__empty-privacy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 0;
+  color: var(--hejing-ink3);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.shijing-hejing__empty-privacy svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
