@@ -78,3 +78,11 @@ test('ShiJing does not own Runtime developer-registration gate or local auth tok
   assert.doesNotMatch(TAURI_MAIN_SOURCE, /runtime_bridge::runtime_bridge_start|runtime_bridge::runtime_bridge_stop|runtime_bridge::runtime_bridge_restart/);
   assert.doesNotMatch(TAURI_MAIN_SOURCE, /runtime_bridge::runtime_bridge_config_get|runtime_bridge::runtime_bridge_config_set/);
 });
+
+test('ShiJing registers standard shell UI command aliases used by Nimi Kit auth flows', () => {
+  assert.match(TAURI_MAIN_SOURCE, /confirm_dialog/);
+  assert.match(TAURI_MAIN_SOURCE, /start_window_drag/);
+  assert.match(TAURI_MAIN_SOURCE, /focus_main_window/);
+  assert.match(TAURI_MAIN_SOURCE, /standard_shell_error/);
+  assert.doesNotMatch(TAURI_MAIN_SOURCE, /shijing_start_window_drag/);
+});

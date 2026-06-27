@@ -16,12 +16,18 @@ function blockAfter(label) {
 test('dev resolver treats local Nimi SDK and Kit source as the only platform contract surface', () => {
   assert.match(viteConfig, /const nimiSdkSourceRoot = path\.resolve\(nimiRepoRoot, 'sdks\/typescript'\);/);
   assert.match(viteConfig, /const nimiKitSourceRoot = path\.resolve\(nimiRepoRoot, 'kit'\);/);
+  assert.match(viteConfig, /const appTauriApiCore = fileURLToPath\(new URL\('\.\/node_modules\/@tauri-apps\/api\/core\.js', import\.meta\.url\)\);/);
+  assert.match(viteConfig, /const appTauriApiEvent = fileURLToPath\(new URL\('\.\/node_modules\/@tauri-apps\/api\/event\.js', import\.meta\.url\)\);/);
   assert.ok(viteConfig.includes('find: /^@nimiplatform\\/sdk\\/runtime$/'));
   assert.ok(viteConfig.includes("replacement: path.resolve(nimiSdkSourceRoot, 'runtime/index.ts')"));
   assert.ok(viteConfig.includes('find: /^@nimiplatform\\/sdk\\/features\\/evaluation$/'));
   assert.ok(viteConfig.includes("replacement: path.resolve(nimiSdkSourceRoot, 'features/evaluation/index.ts')"));
   assert.ok(viteConfig.includes('find: /^@nimiplatform\\/kit\\/features\\/model-config\\/headless$/'));
   assert.ok(viteConfig.includes("replacement: path.resolve(nimiKitSourceRoot, 'features/model-config/src/headless.ts')"));
+  assert.ok(viteConfig.includes('find: /^@tauri-apps\\/api\\/core$/'));
+  assert.ok(viteConfig.includes('replacement: appTauriApiCore'));
+  assert.ok(viteConfig.includes('find: /^@tauri-apps\\/api\\/event$/'));
+  assert.ok(viteConfig.includes('replacement: appTauriApiEvent'));
   assert.match(blockAfter('exclude'), /'@nimiplatform\/sdk\/runtime'/);
   assert.match(blockAfter('exclude'), /'@nimiplatform\/kit\/features\/model-config\/headless'/);
   assert.doesNotMatch(blockAfter('include'), /@nimiplatform\/(?:sdk|kit)/);
