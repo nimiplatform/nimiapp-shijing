@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "identifier": "nimi.shijing",
   "build": {
-    "beforeDevCommand": "pnpm run dev:renderer",
+    "beforeDevCommand": "node ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port 1430 --strictPort",
     "beforeBuildCommand": "pnpm run build",
     "devUrl": "http://127.0.0.1:1430",
     "frontendDist": "../dist"

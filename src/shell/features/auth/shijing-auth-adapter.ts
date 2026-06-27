@@ -2,6 +2,8 @@ import {
   createRuntimeAccountBrowserBroker,
   type AuthPlatformAdapter,
 } from '@nimiplatform/kit/auth';
+import { withNimiRuntimeIdempotencyMetadata } from '@nimiplatform/sdk/runtime';
+import { createNimiClientId } from '@nimiplatform/sdk/types';
 import { shijingTauriOAuthBridge } from '../../bridge/index.js';
 import {
   ensureShijingRuntimeClientReady,
@@ -41,6 +43,34 @@ async function syncAuthSessionFromRuntime(): Promise<void> {
   }
 }
 
+function createShijingRuntimeAccountBrowserBrokerClient() {
+  const client = getShijingRuntimeSession().client;
+  return {
+    runtime: {
+      account: {
+        beginLogin: (
+          request: Parameters<typeof client.runtime.account.beginLogin>[0],
+        ) => {
+          const beginOptions = withNimiRuntimeIdempotencyMetadata(
+            undefined,
+            createNimiClientId('shijing-runtime-account-begin-login'),
+          );
+          return client.runtime.account.beginLogin(request, beginOptions);
+        },
+        completeLogin: (
+          request: Parameters<typeof client.runtime.account.completeLogin>[0],
+        ) => {
+          const completeOptions = withNimiRuntimeIdempotencyMetadata(
+            undefined,
+            createNimiClientId('shijing-runtime-account-complete-login'),
+          );
+          return client.runtime.account.completeLogin(request, completeOptions);
+        },
+      },
+    },
+  };
+}
+
 export function createShijingDesktopBrowserAuthAdapter(): AuthPlatformAdapter {
   return {
     checkEmail: unsupported,
@@ -73,7 +103,7 @@ export function createShijingRuntimeAccountBrowserBroker() {
   return createRuntimeAccountBrowserBroker({
     caller: shijingRuntimeAccountCaller,
     beforeRequest: ensureShijingRuntimeClientReady,
-    getClient: () => getShijingRuntimeSession().client,
+    getClient: createShijingRuntimeAccountBrowserBrokerClient,
     projectUser: (projection) => {
       const accountId = String(projection.accountId || '').trim();
       return accountId

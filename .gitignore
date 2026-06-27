@@ -25,3 +25,4 @@ src-tauri/gen/schemas/
 .nimi/cache/
 .nimi/topics/
 docs/
+.superpowers/

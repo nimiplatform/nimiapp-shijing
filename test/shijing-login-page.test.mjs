@@ -27,7 +27,13 @@ test('ShiJing login keeps the Nimi Tester Runtime account broker path', () => {
   assert.match(AUTH_ADAPTER_SOURCE, /createRuntimeAccountBrowserBroker\(\{/);
   assert.match(AUTH_ADAPTER_SOURCE, /caller: shijingRuntimeAccountCaller/);
   assert.match(AUTH_ADAPTER_SOURCE, /beforeRequest: ensureShijingRuntimeClientReady/);
-  assert.match(AUTH_ADAPTER_SOURCE, /getClient: \(\) => getShijingRuntimeSession\(\)\.client/);
-  assert.doesNotMatch(AUTH_ADAPTER_SOURCE, /runtime\.account\.beginLogin\(/);
-  assert.doesNotMatch(AUTH_ADAPTER_SOURCE, /runtime\.account\.completeLogin\(/);
+  assert.match(AUTH_ADAPTER_SOURCE, /getClient: createShijingRuntimeAccountBrowserBrokerClient/);
+});
+
+test('ShiJing Runtime account browser login supplies idempotency metadata', () => {
+  assert.match(AUTH_ADAPTER_SOURCE, /withNimiRuntimeIdempotencyMetadata/);
+  assert.match(AUTH_ADAPTER_SOURCE, /createNimiClientId\('shijing-runtime-account-begin-login'\)/);
+  assert.match(AUTH_ADAPTER_SOURCE, /createNimiClientId\('shijing-runtime-account-complete-login'\)/);
+  assert.match(AUTH_ADAPTER_SOURCE, /client\.runtime\.account\.beginLogin\(request, beginOptions\)/);
+  assert.match(AUTH_ADAPTER_SOURCE, /client\.runtime\.account\.completeLogin\(request, completeOptions\)/);
 });

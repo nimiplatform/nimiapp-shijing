@@ -38,6 +38,10 @@ test('dev resolver treats local Nimi SDK and Kit source as the only platform con
 test('tauri dev shell loads the exact IPv4 Vite endpoint that dev:renderer binds', () => {
   const devRenderer = packageJson.scripts['dev:renderer'];
   assert.match(devRenderer, /vite --host 127\.0\.0\.1 --port 1430 --strictPort/);
-  assert.equal(tauriConfig.build.beforeDevCommand, 'pnpm run dev:renderer');
+  assert.equal(
+    tauriConfig.build.beforeDevCommand,
+    'node ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port 1430 --strictPort',
+  );
+  assert.doesNotMatch(tauriConfig.build.beforeDevCommand, /\bpnpm\s+run\b/);
   assert.equal(tauriConfig.build.devUrl, 'http://127.0.0.1:1430');
 });

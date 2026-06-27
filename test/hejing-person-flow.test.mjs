@@ -222,6 +222,16 @@ test('HeJing projects generated relationship Reading into the workbench modules'
     ['适合建立亲子沟通约定。'],
   );
   assert.equal(workspace.weeklyAdvice, output.practice.communication);
+
+  // The future-window timeline always presents a full Q1–Q4 year view. The one
+  // evidenced window (starts 2026-03 → Q1) uses the real summary; the remaining
+  // quarters fall back to general year-arc guidance rather than disappearing.
+  assert.deepEqual(
+    workspace.quarters.map((quarter) => quarter.label),
+    ['Q1', 'Q2', 'Q3', 'Q4'],
+  );
+  assert.equal(workspace.quarters[0].action, '适合建立亲子沟通约定。');
+  assert.ok(workspace.quarters[3].action.length > 0);
 });
 
 test('HeJing restores the latest generated relationship workspace on page open', async () => {

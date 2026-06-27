@@ -51,34 +51,37 @@ const RELATIONSHIP_OUTPUT: MingJingRelationshipMirrorOutput = {
     communication_rhythm: '先共情、后引导。多用开放式提问，给选择而不是直接下命令。',
     boundary_advice: '规则清晰、后果一致。尊重他的空间，也守住彼此的底线。',
   },
+  // A reading may evidence anywhere from one to four windows. The Q1–Q4
+  // timeline places each evidenced window into its quarter and fills any
+  // un-evidenced quarter with general year-arc guidance (see buildGeneratedQuarters).
   timing_windows: [
     {
       start_date: '2026-02-01',
       end_date: '2026-03-31',
       nature: 'supportive',
       driver_refs: ['bazi:relationship.window.q1'],
-      summary: '建立稳定的日常节奏',
+      summary: '建立稳定的日常节奏，安排固定的亲子时间。',
     },
     {
       start_date: '2026-04-15',
       end_date: '2026-06-30',
       nature: 'steady',
       driver_refs: ['bazi:relationship.window.q2'],
-      summary: '设定小目标，陪伴复盘',
+      summary: '设定可达成的小目标，每周一起复盘进展。',
     },
     {
       start_date: '2026-07-15',
       end_date: '2026-09-15',
       nature: 'watch',
       driver_refs: ['bazi:relationship.window.q3'],
-      summary: '给选择，少说教',
+      summary: '自我意识增强的阶段，多给选择、少一些说教。',
     },
     {
       start_date: '2026-10-01',
       end_date: '2026-12-20',
       nature: 'supportive',
       driver_refs: ['bazi:relationship.window.q4'],
-      summary: '复盘成长，正向收尾',
+      summary: '复盘这一年的成长，以正向的方式收尾。',
     },
   ],
   practice: {

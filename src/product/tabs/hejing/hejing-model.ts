@@ -3,7 +3,11 @@ import type {
   RelationshipElementDirection,
   RelationshipHePanEvidence,
 } from '../../../domain/algorithm.ts';
-import type { MingJingRelationshipMirrorOutput, TendencyClass } from '../../../domain/mirror-output.ts';
+import type {
+  MingJingRelationshipMirrorOutput,
+  RelationshipTimingWindow,
+  TendencyClass,
+} from '../../../domain/mirror-output.ts';
 import type { Person } from '../../../domain/person.ts';
 import type { Reading } from '../../../domain/reading.ts';
 import {
@@ -407,10 +411,13 @@ function quarterToneFor(nature: TendencyClass): HeJingQuarterWindow['tone'] {
 }
 
 const QUARTER_META = [
-  { label: 'Q1', range: '1-3 月', season: 'spring' as const },
-  { label: 'Q2', range: '4-6 月', season: 'summer' as const },
-  { label: 'Q3', range: '7-9 月', season: 'autumn' as const },
-  { label: 'Q4', range: '10-12 月', season: 'winter' as const },
+  // `outlook` is the general year-arc 建议行动 shown for a quarter that has no
+  // evidenced timing window of its own — forward-looking relationship guidance,
+  // not an invented event.
+  { label: 'Q1', range: '1-3 月', season: 'spring' as const, outlook: '为这一年定下相处的节奏与基本约定。' },
+  { label: 'Q2', range: '4-6 月', season: 'summer' as const, outlook: '在日常里累积信任，把好的相处方式固定下来。' },
+  { label: 'Q3', range: '7-9 月', season: 'autumn' as const, outlook: '留意需求的变化，及时调整规则与边界。' },
+  { label: 'Q4', range: '10-12 月', season: 'winter' as const, outlook: '回顾这一年的相处，把有效的方式延续到明年。' },
 ];
 
 function quarterIndexFromDate(date: string): number {
@@ -482,21 +489,32 @@ function buildGeneratedMetrics(
   }));
 }
 
+// The future-window timeline always presents a full Q1–Q4 year view. Each
+// evidenced timing window is placed into its quarter (state/watch/action from
+// the real window); quarters without their own window fall back to the overall
+// relationship tendency plus a general year-arc 建议行动 — no invented events.
 function buildGeneratedQuarters(
   output: MingJingRelationshipMirrorOutput,
 ): readonly HeJingQuarterWindow[] {
-  return output.timing_windows.map((window, index) => {
+  const byQuarter = new Map<number, RelationshipTimingWindow>();
+  for (const window of output.timing_windows) {
     const quarterIndex = quarterIndexFromDate(window.start_date);
-    const meta = QUARTER_META[quarterIndex] ?? QUARTER_META[index % QUARTER_META.length];
+    if (!byQuarter.has(quarterIndex)) byQuarter.set(quarterIndex, window);
+  }
+  const overallNature = output.timing_windows[0]?.nature ?? 'steady';
+
+  return QUARTER_META.map((meta, index) => {
+    const window = byQuarter.get(index);
+    const nature = window?.nature ?? overallNature;
     return {
-      id: `${window.start_date}:${window.end_date}`,
+      id: `q${index + 1}`,
       label: meta.label,
       range: meta.range,
       season: meta.season,
-      state: natureLabel(window.nature),
-      watch: natureWatch(window.nature),
-      action: window.summary,
-      tone: quarterToneFor(window.nature),
+      state: natureLabel(nature),
+      watch: natureWatch(nature),
+      action: window?.summary ?? meta.outlook,
+      tone: quarterToneFor(nature),
     };
   });
 }
