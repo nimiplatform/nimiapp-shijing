@@ -50,6 +50,7 @@ export const ZH_SHIJING_COPY: ProductCopy['shijing'] = {
   archive: {
     aria: '提问归入关注',
     addPrefix: '归入关注',
+    addAria: (label) => `归入关注 ${label}`,
     removeAria: (label) => `移除归入关注 ${label}`,
     filterButton: '筛选关注',
     filterButtonActive: (count) => `筛选关注，已选 ${count} 项`,

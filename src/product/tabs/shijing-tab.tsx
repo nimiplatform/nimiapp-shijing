@@ -44,7 +44,6 @@ import { ShiJingHistoryRail } from './shijing/shijing-history-rail.tsx';
 import {
   activateArchiveConcernOption,
   buildPendingConversationPreview,
-  concernMatchesQuestion,
   conversationMatchesQuestionArchive,
   conversationMatchesConcernFilter,
   followUpFailureAsReadingFailure,
@@ -135,15 +134,6 @@ export function ShiJingTab(_props: ShiJingTabProps) {
     () => new Set(state.snapshot.concern_tags.map((tag) => tag.id)),
     [state.snapshot.concern_tags],
   );
-  const suggestedArchiveConcernIds = useMemo(
-    () =>
-      activeConcernTags
-        .filter((tag) => !dismissedArchiveConcernIds.includes(tag.id))
-        .filter((tag) => concernMatchesQuestion(question, tag))
-        .map((tag) => tag.id)
-        .slice(0, 2),
-    [activeConcernTags, dismissedArchiveConcernIds, question],
-  );
   const archiveTrayOptions = useMemo(
     () =>
       suggestArchiveConcernOptions({
@@ -162,8 +152,7 @@ export function ShiJingTab(_props: ShiJingTabProps) {
 
   useEffect(() => {
     setSelectedArchiveConcernIds((ids) => {
-      const surviving = ids.filter((id) => activeConcernIds.has(id));
-      const next = surviving.length > 0 ? surviving : suggestedArchiveConcernIds;
+      const next = ids.filter((id) => activeConcernIds.has(id));
       return sameStringArray(ids, next) ? ids : next;
     });
     setSelectedFilterConcernIds((ids) => {
@@ -174,7 +163,7 @@ export function ShiJingTab(_props: ShiJingTabProps) {
       const next = ids.filter((id) => id.startsWith('preset:') || concernIds.has(id));
       return sameStringArray(ids, next) ? ids : next;
     });
-  }, [activeConcernIds, concernIds, suggestedArchiveConcernIds]);
+  }, [activeConcernIds, concernIds]);
 
   // History rail, newest first.
   const conversations = useMemo(

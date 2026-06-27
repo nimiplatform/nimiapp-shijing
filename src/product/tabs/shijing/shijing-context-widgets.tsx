@@ -43,10 +43,14 @@ export function ArchiveTray(props: {
               <button
                 type="button"
                 className="shijing-archive__close"
-                aria-label={copy.shijing.archive.removeAria(label)}
-                onClick={() => props.onRemoveOption(option)}
+                aria-label={
+                  selected
+                    ? copy.shijing.archive.removeAria(label)
+                    : copy.shijing.archive.addAria(label)
+                }
+                onClick={() => (selected ? props.onRemoveOption(option) : props.onToggleOption(option))}
               >
-                x
+                {selected ? 'x' : '+'}
               </button>
             </span>
           );

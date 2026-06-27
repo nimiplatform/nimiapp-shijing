@@ -17,32 +17,53 @@ export function nowIso(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
+const LOVE_ALIASES = ['姻缘', '感情', '关系', '恋爱', '伴侣', '婚姻', 'love', 'relationship'] as const;
+const CAREER_ALIASES = [
+  '事业',
+  '工作',
+  '职场',
+  '职业',
+  '项目',
+  '产出',
+  '上班',
+  '换工作',
+  '跳槽',
+  '升职',
+  '创业',
+  'career',
+  'work',
+  'job',
+  'office',
+  'profession',
+  'business',
+] as const;
+const BODY_ALIASES = ['身体', '健康', '状态', '睡眠', '精力', '休整', 'body', 'health'] as const;
+const WEALTH_ALIASES = ['财富', '财运', '钱', '收入', '现金流', '回报', 'wealth', 'finance', 'money'] as const;
+const STUDY_ALIASES = ['学业', '学习', '考试', '研究', '课程', 'study', 'school', 'exam'] as const;
+const FAMILY_ALIASES = ['家人', '家庭', '父母', '伴侣', '孩子', 'family', 'home'] as const;
+
 const CONCERN_TOPIC_ALIASES: Record<string, readonly string[]> = {
-  love: ['姻缘', '感情', '关系', '恋爱', '伴侣', '婚姻', 'love', 'relationship'],
-  career: [
-    '事业',
-    '工作',
-    '职场',
-    '职业',
-    '项目',
-    '产出',
-    '上班',
-    '换工作',
-    '跳槽',
-    '升职',
-    '创业',
-    'career',
-    'work',
-    'job',
-    'office',
-    'profession',
-    'business',
-  ],
-  body: ['身体', '健康', '状态', '睡眠', '精力', '休整', 'body', 'health'],
-  health: ['身体', '健康', '状态', '睡眠', '精力', '休整', 'body', 'health'],
-  wealth: ['财富', '财运', '钱', '收入', '现金流', '回报', 'wealth', 'finance', 'money'],
-  study: ['学业', '学习', '考试', '研究', '课程', 'study', 'school', 'exam'],
-  family: ['家人', '家庭', '父母', '伴侣', '孩子', 'family', 'home'],
+  love: LOVE_ALIASES,
+  姻缘: LOVE_ALIASES,
+  婚姻: LOVE_ALIASES,
+  感情: LOVE_ALIASES,
+  关系: LOVE_ALIASES,
+  career: CAREER_ALIASES,
+  事业: CAREER_ALIASES,
+  工作: CAREER_ALIASES,
+  body: BODY_ALIASES,
+  身体: BODY_ALIASES,
+  health: BODY_ALIASES,
+  健康: BODY_ALIASES,
+  wealth: WEALTH_ALIASES,
+  财富: WEALTH_ALIASES,
+  财运: WEALTH_ALIASES,
+  study: STUDY_ALIASES,
+  学业: STUDY_ALIASES,
+  学习: STUDY_ALIASES,
+  family: FAMILY_ALIASES,
+  家人: FAMILY_ALIASES,
+  家庭: FAMILY_ALIASES,
 };
 
 function normalizedText(value: string): string {
@@ -61,6 +82,18 @@ function tokenMatchesQuestion(question: string, token: string): boolean {
 
 function tokensMatchQuestion(question: string, tokens: readonly string[]): boolean {
   return tokens.some((token) => tokenMatchesQuestion(question, token));
+}
+
+function concernSearchTokens(tag: ConcernTag): readonly string[] {
+  return [
+    tag.label,
+    trimmedConcernLabel(tag),
+    tag.prompt_text,
+    ...tag.parsed_topics,
+    ...topicAliases(tag.parsed_topics),
+  ]
+    .map((item) => item.trim().toLocaleLowerCase())
+    .filter((item) => item.length > 0);
 }
 
 export function firstUserQuestion(conv: Conversation, copy: ProductCopy): string {
@@ -82,14 +115,8 @@ export function concernMatchesQuestion(question: string, tag: ConcernTag): boole
   return tokens.some((token) => q.includes(token) || token.includes(q));
 }
 
-function concernMatchesArchiveSuggestion(question: string, tag: ConcernTag): boolean {
-  return tokensMatchQuestion(question, [
-    tag.label,
-    trimmedConcernLabel(tag),
-    tag.prompt_text,
-    ...tag.parsed_topics,
-    ...topicAliases(tag.parsed_topics),
-  ]);
+export function concernMatchesArchiveSuggestion(question: string, tag: ConcernTag): boolean {
+  return tokensMatchQuestion(question, concernSearchTokens(tag));
 }
 
 function presetMatchesQuestion(question: string, preset: ConcernPreset): boolean {
@@ -190,14 +217,11 @@ export function suggestArchiveConcernOptions(
         .filter((preset) => presetMatchesQuestion(input.question, preset))
         .map(archiveOptionFromPreset)
     : [];
-  const fallbackActive = matchedActive.length === 0 ? active.map(archiveOptionFromTag) : [];
-
   return uniqueArchiveOptions([
     ...selected,
     ...matchedActive,
     ...matchedArchived,
     ...matchedPresets,
-    ...fallbackActive,
   ])
     .filter(
       (option) =>

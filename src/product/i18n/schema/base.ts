@@ -321,6 +321,17 @@ readonly citationDrawer: {
   readonly ariaLabel: string;
   readonly summary: string;
   readonly method: string;
+  readonly referenceRange: string;
+  readonly consultationBasis: string;
+  readonly capturedAt: string;
+  readonly localIntegrity: string;
+  readonly localIntegrityValue: string;
+  readonly scopeDate: (date: string, timeZone: string) => string;
+  readonly scopeRange: (startDate: string, endDate: string, timeZone: string) => string;
+  readonly natalAnchor: (anchorYear: number, timeZone: string) => string;
+  readonly relationshipAnchor: (anchorYear: number, timeZone: string) => string;
+  readonly consultationSourceCount: (count: number) => string;
+  readonly questionWindow: (startDate: string, endDate: string, timeZone: string) => string;
   readonly citedMemories: string;
   readonly citedPlans: string;
 };

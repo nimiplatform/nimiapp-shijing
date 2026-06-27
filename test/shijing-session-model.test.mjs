@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   conversationMatchesQuestionArchive,
   questionArchiveMatches,
+  suggestArchiveConcernOptions,
 } from '../src/product/tabs/shijing/shijing-session-model.ts';
 import { validConcernTag, validConversation } from './_fixtures.mjs';
 
@@ -117,10 +118,7 @@ test('questionArchiveMatches returns matching conversations in existing newest-f
 });
 
 test('archive concern suggestions include a matching built-in preset before it exists in space', async () => {
-  const model = await import('../src/product/tabs/shijing/shijing-session-model.ts');
-
-  assert.equal(typeof model.suggestArchiveConcernOptions, 'function');
-  const [option] = model.suggestArchiveConcernOptions({
+  const [option] = suggestArchiveConcernOptions({
     question: '事业相关的选择要不要推进？',
     tags: [],
     dismissedOptionIds: [],
@@ -130,6 +128,76 @@ test('archive concern suggestions include a matching built-in preset before it e
   assert.equal(option?.source, 'preset');
   assert.equal(option?.label, '事业');
   assert.match(option?.option_id ?? '', /^preset:/);
+});
+
+test('archive concern suggestions match Chinese topic aliases on existing concern tags', () => {
+  const careerTag = validConcernTag('tag_career', {
+    label: '#事业',
+    sort_order: 0,
+    parsed_topics: ['事业'],
+    prompt_text: '工作 项目',
+  });
+  const loveTag = validConcernTag('tag_love', {
+    label: '#姻缘',
+    sort_order: 1,
+    parsed_topics: ['姻缘'],
+    prompt_text: '感情 关系',
+  });
+
+  const [option] = suggestArchiveConcernOptions({
+    question: '婚姻怎么样',
+    tags: [careerTag, loveTag],
+    dismissedOptionIds: [],
+    selectedTagIds: [],
+  });
+
+  assert.equal(option?.source, 'active');
+  assert.equal(option?.tag_id, 'tag_love');
+  assert.equal(option?.label, '姻缘');
+});
+
+test('archive concern suggestions stay hidden until the question matches a concern', () => {
+  const careerTag = validConcernTag('tag_career', {
+    label: '#事业',
+    sort_order: 0,
+    parsed_topics: ['事业'],
+    prompt_text: '工作 项目',
+  });
+  const loveTag = validConcernTag('tag_love', {
+    label: '#姻缘',
+    sort_order: 1,
+    parsed_topics: ['姻缘'],
+    prompt_text: '感情 关系',
+  });
+  const tags = [careerTag, loveTag];
+
+  assert.deepEqual(
+    suggestArchiveConcernOptions({
+      question: '',
+      tags,
+      dismissedOptionIds: [],
+      selectedTagIds: [],
+    }),
+    [],
+  );
+  assert.deepEqual(
+    suggestArchiveConcernOptions({
+      question: '今天适合做什么',
+      tags,
+      dismissedOptionIds: [],
+      selectedTagIds: [],
+    }),
+    [],
+  );
+  assert.equal(
+    suggestArchiveConcernOptions({
+      question: '婚姻怎么样',
+      tags,
+      dismissedOptionIds: [],
+      selectedTagIds: [],
+    })[0]?.tag_id,
+    'tag_love',
+  );
 });
 
 test('archive concern preset activation creates a real concern tag id for conversation refs', async () => {

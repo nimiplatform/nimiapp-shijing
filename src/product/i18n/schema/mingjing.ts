@@ -183,7 +183,6 @@ export interface MingJingCopy {
     readonly aria: string;
     readonly eyebrow: string;
     readonly title: string;
-    readonly decadeGuidanceTitle: string;
     readonly profileLabels: {
       readonly life_pattern: string;
       readonly strengths: string;

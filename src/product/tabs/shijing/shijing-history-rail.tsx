@@ -84,7 +84,6 @@ export function ShiJingHistoryRail(props: ShiJingHistoryRailProps) {
                     onClick={props.onClearFilter}
                   >
                     <span>{copy.shijing.archive.filterAll}</span>
-                    <span aria-hidden>{props.selectedFilterConcernIds.length === 0 ? 'x' : ''}</span>
                   </button>
                   {props.activeConcernTags.length === 0 ? (
                     <p className="shijing-ask__filter-empty">{copy.shijing.archive.filterEmpty}</p>
@@ -101,7 +100,6 @@ export function ShiJingHistoryRail(props: ShiJingHistoryRailProps) {
                           onClick={() => props.onToggleFilterConcern(tag.id)}
                         >
                           <span>{trimmedConcernLabel(tag)}</span>
-                          <span aria-hidden>{selected ? 'x' : ''}</span>
                         </button>
                       );
                     })

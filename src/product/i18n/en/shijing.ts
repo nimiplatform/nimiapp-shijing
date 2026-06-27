@@ -50,6 +50,7 @@ export const EN_SHIJING_COPY: ProductCopy['shijing'] = {
   archive: {
     aria: 'Question archive lens',
     addPrefix: 'Add to concern',
+    addAria: (label) => `Add concern archive ${label}`,
     removeAria: (label) => `Remove concern archive ${label}`,
     filterButton: 'Filter concerns',
     filterButtonActive: (count) => `Filter concerns, ${count} selected`,

@@ -142,7 +142,7 @@ test('Ask ShiJing concern sync effect preserves identical array state', () => {
   assert.match(shijingTabSource, /function sameStringArray\(/);
   assert.match(
     shijingTabSource,
-    /const next = surviving\.length > 0 \? surviving : suggestedArchiveConcernIds;[\s\S]*?return sameStringArray\(ids, next\) \? ids : next;/,
+    /setSelectedArchiveConcernIds\(\(ids\) => \{[\s\S]*?const next = ids\.filter\(\(id\) => activeConcernIds\.has\(id\)\);[\s\S]*?return sameStringArray\(ids, next\) \? ids : next;/,
   );
   assert.match(
     shijingTabSource,
@@ -342,12 +342,22 @@ test('Ask ShiJing new-question archive chips can materialize built-in preset con
   assert.match(shijingTabSource, /replace_snapshot\(\{\s*\.\.\.state\.snapshot,\s*concern_tags:\s*activation\.tags\s*\}\)/);
 });
 
+test('Ask ShiJing archive suggestions are explicit and not auto-selected from typing', () => {
+  assert.doesNotMatch(shijingTabSource, /suggestedArchiveConcernIds/);
+  assert.doesNotMatch(shijingTabSource, /surviving\.length > 0 \? surviving :/);
+  assert.match(shijingTabSource, /selectedIds=\{selectedArchiveConcernIds\}/);
+  assert.match(shijingTabSource, /copy\.shijing\.archive\.addAria\(label\)/);
+  assert.match(shijingTabSource, /selected \? 'x' : '\+'/);
+});
+
 test('Ask ShiJing rail has concern filter controls before history sessions', () => {
   assert.match(shijingTabSource, /const \[filterOpen, setFilterOpen\]/);
   assert.match(shijingTabSource, /const \[selectedFilterConcernIds, setSelectedFilterConcernIds\]/);
   assert.match(shijingTabSource, /className="shijing-ask__filter-button"/);
   assert.match(shijingTabSource, /className="shijing-ask__filter-menu"/);
   assert.match(shijingTabSource, /conversationMatchesConcernFilter/);
+  assert.doesNotMatch(shijingTabSource, /selectedFilterConcernIds\.length === 0 \? 'x' : ''/);
+  assert.doesNotMatch(shijingTabSource, /selected \? 'x' : ''/);
 
   const searchRow = cssBlock(shijingStyles, '.shijing-ask__search-row');
   const filterButton = cssBlock(shijingStyles, '.shijing-ask .shijing-ask__filter-button');

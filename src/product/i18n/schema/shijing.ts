@@ -40,6 +40,7 @@ export interface ShiJingConsultationCopy {
   readonly archive: {
     readonly aria: string;
     readonly addPrefix: string;
+    readonly addAria: (label: string) => string;
     readonly removeAria: (label: string) => string;
     readonly filterButton: string;
     readonly filterButtonActive: (count: number) => string;

@@ -232,7 +232,6 @@ export const EN_MINGJING_COPY: ProductCopy['mingjing'] = {
     aria: 'Ziwei MingJing reading',
     eyebrow: 'Ziwei Sanhe',
     title: 'Natal brief',
-    decadeGuidanceTitle: 'Decade guidance',
     profileLabels: {
       life_pattern: 'Life pattern',
       strengths: 'Strengths',

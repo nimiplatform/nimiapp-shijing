@@ -3,6 +3,7 @@
 import type { Reading } from '../../../domain/reading.ts';
 import { ZiweiAstrolabe } from './ziwei-astrolabe.tsx';
 import { deriveMethodEvidenceChips } from './method-evidence-chips.ts';
+import { buildCitationBasisRows, formatCitationMethod, formatCitationReference } from './citation-basis.ts';
 import { useProductCopy } from '../../i18n/copy.ts';
 
 export interface CitationDrawerProps {
@@ -13,6 +14,7 @@ export function CitationDrawer(props: CitationDrawerProps) {
   const copy = useProductCopy();
   const { reading } = props;
   const evidenceChips = deriveMethodEvidenceChips(reading);
+  const basisRows = buildCitationBasisRows(reading, copy.citationDrawer);
   return (
     <details className="shijing-citation-drawer" aria-label={copy.citationDrawer.ariaLabel}>
       <summary>{copy.citationDrawer.summary}</summary>
@@ -27,29 +29,12 @@ export function CitationDrawer(props: CitationDrawerProps) {
         </ul>
       ) : null}
       <dl>
-        <div>
-          <dt>{copy.citationDrawer.method}</dt>
-          <dd>{reading.inputs_summary.method_profile.id}</dd>
-        </div>
-        <div>
-          <dt>input_hash</dt>
-          <dd>
-            <code>{reading.inputs_summary.input_hash.slice(0, 16)}…</code>
-          </dd>
-        </div>
-        <div>
-          <dt>feature_snapshot_hash</dt>
-          <dd>
-            <code>{reading.inputs_summary.feature_snapshot_hash.slice(0, 16)}…</code>
-          </dd>
-        </div>
-        <div>
-          <dt>canonical_window</dt>
-          <dd>
-            {reading.inputs_summary.feature_snapshot.canonical_window.start_utc} →{' '}
-            {reading.inputs_summary.feature_snapshot.canonical_window.end_utc}
-          </dd>
-        </div>
+        {basisRows.map((row) => (
+          <div key={row.label}>
+            <dt>{row.label}</dt>
+            <dd>{row.value}</dd>
+          </div>
+        ))}
       </dl>
       {reading.inputs_summary.feature_snapshot.method_evidence.method_id === 'ziwei_sanhe_v1' ? (
         <div style={{ margin: '12px 0' }}>
@@ -60,7 +45,7 @@ export function CitationDrawer(props: CitationDrawerProps) {
         <ul>
           {reading.output.citations.map((c, i) => (
             <li key={i}>
-              <strong>{c.method}</strong> · {c.reference}
+              <strong>{formatCitationMethod(c.method)}</strong> · {formatCitationReference(c.reference)}
             </li>
           ))}
         </ul>

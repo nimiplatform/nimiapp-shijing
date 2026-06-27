@@ -231,7 +231,6 @@ export const ZH_MINGJING_COPY: ProductCopy['mingjing'] = {
     aria: '紫微命镜解读',
     eyebrow: 'ZIWEI · 三合派',
     title: '本命简析',
-    decadeGuidanceTitle: '大限指引',
     profileLabels: {
       life_pattern: '生命格局',
       strengths: '核心优势',
