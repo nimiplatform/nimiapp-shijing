@@ -125,8 +125,7 @@
 
 .shijing-ziwei-chart { padding: 24px; }
 
-.shijing-ziwei-chart__head,
-.shijing-ziwei-decade__head {
+.shijing-ziwei-chart__head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -134,8 +133,7 @@
   margin-bottom: 18px;
 }
 
-.shijing-ziwei-chart__head p,
-.shijing-ziwei-decade__head p { margin: 5px 0 0; font-size: 12px; color: var(--zw-ink-400); }
+.shijing-ziwei-chart__head p { margin: 5px 0 0; font-size: 12px; color: var(--zw-ink-400); }
 
 .shijing-ziwei-chart__legend {
   display: flex;

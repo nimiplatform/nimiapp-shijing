@@ -396,7 +396,6 @@ test('MingJing hover blocks use the same light green wash as RiJing concern fram
     '.shijing-dayun__row:hover',
     '.shijing-dayun__row:hover .shijing-dayun__row-toggle',
     '.shijing-mingjing .shijing-ziwei-palace:hover',
-    '.shijing-mingjing .shijing-ziwei-decade__card:hover',
     '.shijing-mingjing .shijing-paipan__toggle:hover',
     '.shijing-mingjing .shijing-mingjing-info__button:hover',
   ]) {

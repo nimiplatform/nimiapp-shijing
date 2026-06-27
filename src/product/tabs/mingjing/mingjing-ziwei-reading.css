@@ -1,23 +1,12 @@
 /* Ziwei Sanhe detail, natal brief, and decade guidance panels. */
 
-.shijing-ziwei-detail { display: flex; flex-direction: column; }
+.shijing-ziwei-detail { display: flex; flex-direction: column; gap: 18px; }
 
-.shijing-ziwei-detail__title-row {
+.shijing-ziwei-detail__head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
-}
-
-.shijing-ziwei-detail__title-row h2 {
-  margin: 0;
-  font-family: var(--zw-serif);
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--zw-ink-900);
 }
 
 .shijing-ziwei-detail__roles {
@@ -36,190 +25,205 @@
   font-weight: 700;
 }
 
-.shijing-ziwei-detail__meta {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  padding: 16px 0;
+.shijing-ziwei-detail__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 16px;
   border-bottom: 1px solid rgba(15, 23, 42, 0.07);
 }
 
-.shijing-ziwei-detail__meta dt {
-  font-size: 11px;
+.shijing-ziwei-detail__heading h2 {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-family: var(--zw-serif);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--zw-ink-900);
+}
+
+.shijing-ziwei-detail__age {
+  font-family: var(--zw-mono);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   color: var(--zw-ink-400);
 }
 
-.shijing-ziwei-detail__meta dd {
-  margin-top: 4px;
-  font-family: var(--zw-mono);
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--zw-ink-900);
+.shijing-ziwei-detail__tagline {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--zw-ink-500);
 }
 
 .shijing-ziwei-detail__stars {
-  padding: 16px 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  padding-bottom: 18px;
   border-bottom: 1px solid rgba(15, 23, 42, 0.07);
 }
 
-.shijing-ziwei-detail__stars h3,
-.shijing-ziwei-detail__interpretation h3,
-.shijing-ziwei-detail__interpretation h4 {
+.shijing-ziwei-detail__star-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shijing-ziwei-detail__star-col h3 {
   margin: 0;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--zw-ink-900);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--zw-ink-400);
 }
 
-.shijing-ziwei-detail__stars h3 + .shijing-ziwei-palace__stars,
-.shijing-ziwei-detail__stars .shijing-ziwei-palace__stars + h3 { margin-top: 10px; }
-
-.shijing-ziwei-detail__interpretation {
-  padding-top: 16px;
-  display: grid;
-  gap: 13px;
+.shijing-ziwei-detail__minor {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
 }
 
-.shijing-ziwei-detail__interpretation p {
-  margin: 5px 0 0;
-  font-size: 13px;
-  line-height: 1.7;
+.shijing-ziwei-detail__dash { color: var(--zw-ink-300); }
+
+.shijing-ziwei-detail__branch {
+  font-family: var(--zw-mono);
+  font-size: 14px;
+  font-weight: 600;
   color: var(--zw-ink-600);
 }
 
-.shijing-ziwei-brief__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.shijing-ziwei-detail__interpretation {
+  display: grid;
+  gap: 12px;
+}
 
-.shijing-ziwei-brief .shijing-mj-reading__summary {
+.shijing-ziwei-detail__interpretation h3 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--zw-ink-400);
+}
+
+.shijing-ziwei-detail__interpretation p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--zw-ink-600);
+}
+
+.shijing-ziwei-brief .shijing-ziwei-brief__summary {
+  margin: 6px 0 48px;
+  padding: 4px 0 4px 22px;
+  background-image: linear-gradient(
+    to bottom,
+    var(--zw-accent),
+    color-mix(in srgb, var(--zw-accent) 8%, transparent)
+  );
+  background-repeat: no-repeat;
+  background-position: left top;
+  background-size: 3px 100%;
   font-size: 15px;
   line-height: 2;
   color: var(--zw-ink-700);
 }
 
-.shijing-ziwei-brief__grid .shijing-mj-reading__core-item {
-  padding: 18px 20px;
+.shijing-ziwei-brief__grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+}
+
+.shijing-ziwei-brief__grid .shijing-ziwei-brief__card:nth-child(-n + 2) { grid-column: span 3; }
+.shijing-ziwei-brief__grid .shijing-ziwei-brief__card:nth-child(n + 3) { grid-column: span 2; }
+
+.shijing-ziwei-brief__card {
+  position: relative;
+  padding: 20px 22px;
   background: var(--zw-inner-bg);
-  border-color: var(--zw-inner-border);
+  border: 1px solid var(--zw-inner-border);
   border-radius: 16px;
 }
 
-.shijing-ziwei-brief__grid .shijing-mj-reading__core-item dt {
-  margin-bottom: 10px;
+.shijing-ziwei-brief__numeral {
+  display: block;
   font-family: var(--zw-serif);
-  font-size: 15px;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  color: color-mix(in srgb, var(--zw-accent) 52%, transparent);
+}
+
+.shijing-ziwei-brief__grid .shijing-ziwei-brief__card dt {
+  margin: 8px 0;
+  font-family: var(--zw-serif);
+  font-size: 16px;
   font-weight: 700;
   color: var(--zw-ink-900);
 }
 
-.shijing-ziwei-brief__grid .shijing-mj-reading__core-item dd {
+.shijing-ziwei-brief__grid .shijing-ziwei-brief__card dd {
+  margin: 0;
   font-size: 13.5px;
   line-height: 1.9;
   color: var(--zw-ink-600);
 }
 
-.shijing-ziwei-brief__quote {
-  background: linear-gradient(160deg, rgba(236, 247, 242, 0.6), rgba(255, 255, 255, 0.4));
-}
-
-.shijing-ziwei-decade__grid {
+.shijing-ziwei-detail__decade {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(15, 23, 42, 0.07);
 }
 
-.shijing-mingjing .shijing-ziwei-decade__card {
-  appearance: none;
-  min-height: 86px;
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  border-radius: 14px;
-  padding: 13px 14px;
-  background: rgba(255, 255, 255, 0.5);
-  color: var(--mingjing-ink-strong);
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
-}
-
-.shijing-mingjing .shijing-ziwei-decade__card:hover {
-  border-color: rgba(148, 163, 184, 0.55);
-  background: color-mix(in srgb, var(--mingjing-accent) 10%, rgba(255, 255, 255, 0.72));
-  box-shadow: 0 10px 22px -20px rgba(15, 23, 42, 0.28);
-  transform: translateY(-1px);
-}
-
-.shijing-ziwei-decade__card[data-selected] {
-  border-color: color-mix(in srgb, var(--mingjing-accent) 58%, rgba(226, 232, 240, 0.8));
-  background: var(--zw-accent-soft);
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
-}
-
-.shijing-ziwei-decade__card span {
-  display: block;
-  font-family: var(--zw-mono);
-  font-size: 12px;
+.shijing-ziwei-detail__decade h3 {
+  margin: 0;
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.06em;
   color: var(--zw-ink-400);
 }
 
-.shijing-ziwei-decade__card[data-selected] span { color: var(--zw-accent-ink); }
+.shijing-ziwei-detail__decade-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 
-.shijing-ziwei-decade__card strong {
-  display: block;
-  margin: 5px 0;
+.shijing-ziwei-detail__decade-head span {
+  font-family: var(--zw-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--zw-accent-ink);
+}
+
+.shijing-ziwei-detail__decade-head strong {
   font-family: var(--zw-serif);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.03em;
   color: var(--zw-ink-900);
 }
 
-.shijing-ziwei-decade__card small {
-  display: block;
-  font-size: 10.5px;
-  color: var(--zw-ink-400);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.shijing-ziwei-decade__selected {
-  margin-top: 20px;
-  padding: 20px 22px;
-  border: 1px solid var(--zw-inner-border);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.6);
-}
-
-.shijing-ziwei-decade__selected span {
-  display: inline-block;
-  border-radius: 999px;
-  padding: 4px 11px;
-  background: var(--zw-accent-soft);
-  color: var(--zw-accent-ink);
-  font-family: var(--zw-mono);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.shijing-ziwei-decade__selected h3 {
-  margin: 10px 0 8px;
-  font-family: var(--zw-serif);
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--zw-ink-900);
-}
-
-.shijing-ziwei-decade__selected p {
+.shijing-ziwei-detail__decade p {
   margin: 0;
+  font-size: 13.5px;
+  line-height: 1.75;
   color: var(--zw-ink-600);
-  line-height: 2;
 }
 
 @media (max-width: 1120px) {
-  .shijing-ziwei-decade__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .shijing-ziwei-brief__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .shijing-ziwei-brief__grid .shijing-ziwei-brief__card { grid-column: auto; }
 }
 
 @media (max-width: 720.98px) {
-  .shijing-ziwei-decade__head { flex-direction: column; }
-  .shijing-ziwei-brief__grid,
-  .shijing-ziwei-decade__grid { grid-template-columns: 1fr; }
+  .shijing-ziwei-brief__grid { grid-template-columns: 1fr; }
 }

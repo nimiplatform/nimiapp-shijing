@@ -217,16 +217,16 @@ test('Ziwei MingJing route matches the attachment-style palace workspace structu
   assert.match(route, /shijing-ziwei-palace/u);
   assert.match(route, /aria-pressed=\{selected\}/u);
   assert.match(route, /shijing-ziwei-detail/u);
-  assert.match(readingView, /decadePalaces/u);
+  assert.match(route, /shijing-ziwei-detail__decade/u);
   assert.match(readingView, /shijing-ziwei-brief/u);
-  assert.match(readingView, /shijing-ziwei-decade/u);
+  assert.doesNotMatch(readingView, /shijing-ziwei-decade/u);
   assert.match(ziweiStyles, /\.shijing-mingjing__panels--ziwei/u);
   assert.match(ziweiStyles, /\.shijing-ziwei-workspace/u);
   assert.match(ziweiStyles, /\.shijing-ziwei-brief/u);
-  assert.match(ziweiStyles, /\.shijing-ziwei-decade/u);
+  assert.match(ziweiStyles, /\.shijing-ziwei-detail__decade/u);
 });
 
-test('Ziwei palace and decade cards only tint the selected item green', () => {
+test('Ziwei palace cards only tint the selected item green', () => {
   const ziweiStyles = readCssBundle(mingjingCssFiles);
 
   assert.doesNotMatch(
@@ -240,10 +240,6 @@ test('Ziwei palace and decade cards only tint the selected item green', () => {
   assert.match(
     ziweiStyles,
     /\.shijing-ziwei-palace\[data-selected\]\s*\{[^}]*border-color:\s*color-mix\(in srgb, var\(--mingjing-accent\)/u,
-  );
-  assert.match(
-    ziweiStyles,
-    /\.shijing-ziwei-decade__card\[data-selected\]\s*\{[^}]*border-color:\s*color-mix\(in srgb, var\(--mingjing-accent\)/u,
   );
 });
 
