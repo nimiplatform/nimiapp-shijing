@@ -291,3 +291,139 @@ test('NianJing selected year detail is derived from phase bands and inflections'
   );
   assert.equal(JSON.stringify(detail).includes('score'), false);
 });
+
+test('NianJing selected year detail derives card guidance from each phase driver refs', async () => {
+  const {
+    buildNianJingSelectedYearDetail,
+    buildNianJingYearModules,
+  } = await loadYearModules();
+
+  const sameNatureOutput = {
+    ...output,
+    phase_bands: [
+      {
+        concern_tag_ref: 'tag_body',
+        start_date: '2026-01-01',
+        end_date: '2026-12-31',
+        nature: 'steady',
+        driver_refs: [
+          'qizheng_siyu:period.long_horizon@2026-01-01..2026-12-31',
+          'qizheng_siyu:domain.health',
+          'qizheng_siyu:body.taiyin',
+          'qizheng_siyu:house.疾厄',
+          'qizheng_siyu:position_class.七强',
+        ],
+        summary: 'health moon house',
+      },
+      {
+        concern_tag_ref: 'tag_family',
+        start_date: '2026-01-01',
+        end_date: '2026-12-31',
+        nature: 'steady',
+        driver_refs: [
+          'qizheng_siyu:period.long_horizon@2026-01-01..2026-12-31',
+          'qizheng_siyu:domain.family',
+          'qizheng_siyu:body.taiyin',
+          'qizheng_siyu:house.田宅',
+          'qizheng_siyu:position_class.七强',
+        ],
+        summary: 'family moon house',
+      },
+    ],
+    inflection_points: [],
+    citations: [{ method: 'qizheng_siyu_guolao_v1', reference: 'fixture' }],
+  };
+  const modules = buildNianJingYearModules({
+    output: sameNatureOutput,
+    active_concern_tags: activeTags,
+    today: '2026-08-15',
+  });
+  const detail = buildNianJingSelectedYearDetail({
+    module: modules[0],
+    active_concern_tags: activeTags,
+  });
+
+  assert.equal(detail.concern_cards[0].primary_nature, detail.concern_cards[1].primary_nature);
+  assert.notDeepEqual(
+    detail.concern_cards[0].driver_guidance,
+    detail.concern_cards[1].driver_guidance,
+    'same-nature cards should still carry concern-specific guidance from their driver refs',
+  );
+});
+
+test('NianJing bazi guidance varies the yi/ji actions by concern domain', async () => {
+  const {
+    buildNianJingSelectedYearDetail,
+    buildNianJingYearModules,
+  } = await loadYearModules();
+
+  const tags = [
+    { id: 'tag_love', label: '#姻缘', status: 'active' },
+    { id: 'tag_career', label: '#事业', status: 'active' },
+    { id: 'tag_health', label: '#身体', status: 'active' },
+    { id: 'tag_wealth', label: '#财运', status: 'active' },
+  ];
+  const domains = ['love', 'career', 'health', 'wealth'];
+  const baziOutput = {
+    ...output,
+    phase_bands: tags.map((tag, index) => ({
+      concern_tag_ref: tag.id,
+      start_date: '2026-01-01',
+      end_date: '2026-12-31',
+      nature: index === 0 || index === 2 ? 'supportive' : 'steady',
+      driver_refs: [
+        'bazi:annual_transition@2026-02-04T00:00:00.000Z',
+        'bazi:period.喜@fire',
+        `bazi:domain.${domains[index]}`,
+        index === 1 ? 'bazi:tenGod.constraint' : index === 3 ? 'bazi:tenGod.wealth' : 'bazi:tenGod.resource',
+        'bazi:domain_relevance.focused',
+      ],
+      summary: `${tag.label} bazi phase`,
+    })),
+    inflection_points: [],
+    citations: [{ method: 'bazi_ziping_v1', reference: 'fixture' }],
+  };
+
+  const modules = buildNianJingYearModules({
+    output: baziOutput,
+    active_concern_tags: tags,
+    today: '2026-08-15',
+  });
+  const detail = buildNianJingSelectedYearDetail({
+    module: modules[0],
+    active_concern_tags: tags,
+  });
+
+  const favorableFirstLines = detail.concern_cards.map((card) => card.driver_guidance.favorable[0]);
+  const guardedFirstLines = detail.concern_cards.map((card) => card.driver_guidance.guarded[0]);
+
+  assert.equal(new Set(favorableFirstLines).size, 4, 'each concern needs a different first yi line');
+  assert.equal(new Set(guardedFirstLines).size, 4, 'each concern needs a different first ji line');
+  assert.ok(favorableFirstLines[0].includes('姻缘'));
+  assert.ok(favorableFirstLines[1].includes('事业'));
+  assert.ok(favorableFirstLines[2].includes('身体'));
+  assert.ok(favorableFirstLines[3].includes('财运'));
+});
+test('NianJing phase drawer copy is generated from the selected band summary and driver refs', async () => {
+  const { buildNianJingPhaseDetailCopy } = await import('../src/product/astrology/nianjing-driver-copy.ts');
+
+  const copy = buildNianJingPhaseDetailCopy({
+    concern_label: '#Body',
+    nature: 'supportive',
+    summary: 'supportive body phase from period evidence',
+    driver_refs: [
+      'bazi:period.喜@fire',
+      'bazi:domain.health',
+      'bazi:tenGod.resource',
+      'bazi:domain_relevance.focused',
+    ],
+  });
+
+  assert.equal(copy.one_line, 'supportive body phase from period evidence');
+  assert.match(copy.mainline, /supportive body phase from period evidence/);
+  assert.match(copy.mainline, /Body/);
+  assert.ok(copy.keywords.some((keyword) => /health|身体|韬綋/.test(keyword)));
+  assert.ok(copy.suggestions.length >= 3);
+  assert.ok(copy.cautions.length >= 2);
+  assert.notEqual(copy.suggestions[0].title, '启动新项目');
+});

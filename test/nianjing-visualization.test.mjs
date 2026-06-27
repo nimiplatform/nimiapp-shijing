@@ -178,6 +178,25 @@ test('NianJing annual path renders every active concern when no single focus is 
   );
 });
 
+test('NianJing hero rows keep only user-facing concern labels and status chips', () => {
+  const source = readFileSync(
+    new URL('../src/product/tabs/nianjing/nianjing-ready-view.tsx', import.meta.url),
+    'utf8',
+  );
+  const css = stripCssComments(readCssBundle(nianjingCssFiles));
+  const row = cssBlock(css, '.shijing-nianjing .shijing-nianjing__hero-rows li');
+
+  assert.match(source, /className="shijing-nianjing__hero-row-label"/);
+  assert.match(source, /className="shijing-nianjing__hero-row-chip"/);
+  assert.doesNotMatch(source, /className="shijing-nianjing__hero-row-detail"/);
+  assert.doesNotMatch(
+    source,
+    /lane\.current\.summary \|\| bandYearRangeLabel\(lane\.current\)/,
+    'hero should not expose per-concern calculation summaries in the top card',
+  );
+  assert.match(row, /grid-template-columns:\s*minmax\(0,\s*1fr\) auto/);
+});
+
 test('NianJing annual module CSS is a selected-year workbench, not a score chart', () => {
   const css = stripCssComments(readCssBundle(nianjingCssFiles));
   const overview = cssBlock(css, '.shijing-nianjing__year-overview');
@@ -199,6 +218,35 @@ test('NianJing annual module CSS is a selected-year workbench, not a score chart
   assert.match(concernGrid, /grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
   assert.match(monthButton, /min-height:\s*32px/);
   assert.match(basisGrid, /grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+});
+
+test('NianJing recorder docks an arrow submit button inside the textarea', () => {
+  const source = readFileSync(
+    new URL('../src/product/tabs/nianjing/nianjing-event-recorder.tsx', import.meta.url),
+    'utf8',
+  );
+  const css = stripCssComments(readCssBundle(nianjingCssFiles));
+  const compose = cssBlock(css, '.shijing-nianjing__rec-compose');
+  const textarea = cssBlock(css, '.shijing-nianjing__rec-textarea');
+  const dateHidden = cssBlock(css, '.shijing-nianjing__rec-date');
+  const fixedDateHidden = cssBlock(css, '.shijing-nianjing__rec-date-fixed');
+  const save = cssBlock(css, '.shijing-nianjing__rec-save');
+  const saveIcon = cssBlock(css, '.shijing-nianjing__rec-save-icon');
+
+  assert.match(source, /import \{ ArrowUpIcon \} from '\.\.\/shijing\/shijing-icons\.tsx';/);
+  assert.match(source, /<ArrowUpIcon className="shijing-nianjing__rec-save-icon" \/>/);
+  assert.doesNotMatch(source, /className="shijing-nianjing__rec-compose-foot"/);
+
+  assert.match(compose, /position:\s*relative/);
+  assert.match(textarea, /padding:\s*10px 54px 42px 12px/);
+  assert.match(dateHidden, /display:\s*none/);
+  assert.match(fixedDateHidden, /display:\s*none/);
+  assert.match(save, /position:\s*absolute/);
+  assert.match(save, /right:\s*8px/);
+  assert.match(save, /bottom:\s*8px/);
+  assert.match(save, /border-radius:\s*50%/);
+  assert.match(saveIcon, /width:\s*18px/);
+  assert.match(saveIcon, /height:\s*18px/);
 });
 
 test('NianJing CSS lane classes are present', () => {

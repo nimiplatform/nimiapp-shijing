@@ -1,4 +1,4 @@
-// SJG-ASTRO-06 + SJG-ALGO-11 — NianJing phase-band and inflection-point
+// SJG-ASTRO-06 + SJG-ALGO-11 - NianJing phase-band and inflection-point
 // generator.
 //
 // Consumes nianjing_phase_drivers and nianjing_inflection_drivers from
@@ -14,11 +14,11 @@ import type {
   NianJingMirrorOutput,
   NianJingPhaseBand,
 } from '../../domain/mirror-output.ts';
-import { type StageResult } from './stage-result.ts';
 import {
-  NIANJING_INFLECTION_KIND_LABELS,
-  TENDENCY_CLASS_LABELS,
-} from '../i18n/copy.ts';
+  summarizeNianJingInflectionDrivers,
+  summarizeNianJingPhaseDrivers,
+} from './nianjing-driver-copy.ts';
+import { type StageResult } from './stage-result.ts';
 
 export interface NianJingGenerateInput {
   readonly feature_snapshot: AstrologyFeatureSnapshot;
@@ -53,16 +53,19 @@ export function generateNianJingOutput(
       },
     };
   }
+
+  const methodId = input.feature_snapshot.method_profile.id;
   const phaseBands: NianJingPhaseBand[] = phaseDrivers.map((driver) => ({
     concern_tag_ref: driver.concern_tag_ref,
     start_date: driver.start_date,
     end_date: driver.end_date,
     nature: driver.nature,
     driver_refs: [...driver.driver_refs],
-    // Human-facing stage name (e.g.「平稳期」「建设期」) so the 年镜
-    // hero rows + lane labels read in Chinese.
-    // Must NOT be the raw English `nature` enum.
-    summary: `${TENDENCY_CLASS_LABELS[driver.nature]}期`,
+    summary: summarizeNianJingPhaseDrivers({
+      nature: driver.nature,
+      driver_refs: driver.driver_refs,
+      method_id: methodId,
+    }),
   }));
   const inflectionPoints: NianJingInflectionPoint[] = inflectionDrivers.map((driver) => ({
     concern_tag_ref: driver.concern_tag_ref,
@@ -70,19 +73,23 @@ export function generateNianJingOutput(
     ...(driver.date_window ? { date_window: { ...driver.date_window } } : {}),
     kind: driver.kind,
     driver_refs: [...driver.driver_refs],
-    // Chinese kind label (e.g.「流年切换」) — not the raw enum.
-    summary: `${NIANJING_INFLECTION_KIND_LABELS[driver.kind]} · ${driver.date}`,
+    summary: summarizeNianJingInflectionDrivers({
+      kind: driver.kind,
+      date: driver.date,
+      driver_refs: driver.driver_refs,
+      method_id: methodId,
+    }),
   }));
   const output: NianJingMirrorOutput = {
     mirror_kind: 'nianjing',
-    summary: `长程相位窗 (${input.mirror_scope.start_date} → ${input.mirror_scope.end_date})`,
+    summary: `长程相位窗口 (${input.mirror_scope.start_date} -> ${input.mirror_scope.end_date})`,
     horizon: { start_date: input.mirror_scope.start_date, end_date: input.mirror_scope.end_date },
     phase_bands: phaseBands,
     inflection_points: inflectionPoints,
     cited_event_memory_refs: [...input.cited_event_memory_refs],
     cited_plan_item_refs: [...input.cited_plan_item_refs],
     citations: [
-      { method: input.feature_snapshot.method_profile.id, reference: 'nianjing.phase_inflection_derivation' },
+      { method: methodId, reference: 'nianjing.phase_inflection_derivation' },
     ],
   };
   return { ok: true, value: output };

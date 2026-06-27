@@ -11,7 +11,6 @@ import { NianJingYearOverview } from './nianjing-year-overview.tsx';
 import { NianJingTimeline } from './nianjing-timeline.tsx';
 import {
   HERO_BODY_BY_NATURE,
-  bandYearRangeLabel,
   buildLanes,
   dateToMs,
   dominantCurrentNature,
@@ -188,14 +187,6 @@ function NianJingPhaseHero(props: {
       <ul className="shijing-nianjing__hero-rows" aria-label={NIANJING_COPY.hero.rowsAriaLabel}>
         {props.lanes.map((lane) => {
           const nature = lane.current?.nature ?? 'steady';
-          // Prefer the band's stage-name summary (e.g. "建设期",
-          // "观察期") over the bare year range — the stage name is
-          // what the mockup leads with and what the user recognizes.
-          // Fall back to the year range, then to em-dash if no
-          // current band exists for this concern.
-          const detail = lane.current
-            ? lane.current.summary || bandYearRangeLabel(lane.current)
-            : '—';
           return (
             <li key={lane.tag.id}>
               <span className="shijing-nianjing__hero-row-label">
@@ -208,7 +199,6 @@ function NianJingPhaseHero(props: {
                 <span className="shijing-nianjing__hero-row-chip-dot" aria-hidden />
                 {TENDENCY_CLASS_LABELS[nature]}
               </span>
-              <span className="shijing-nianjing__hero-row-detail">{detail}</span>
             </li>
           );
         })}

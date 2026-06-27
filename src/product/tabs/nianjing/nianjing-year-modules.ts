@@ -4,6 +4,10 @@ import type {
   NianJingNature,
   NianJingPhaseBand,
 } from '../../../domain/mirror-output.ts';
+import {
+  buildNianJingDriverGuidance,
+  type NianJingDriverGuidance,
+} from '../../astrology/nianjing-driver-copy.ts';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -72,6 +76,7 @@ export interface NianJingSelectedYearConcernCard {
   readonly primary_nature: NianJingNature | null;
   readonly primary_segment: NianJingYearSegment | null;
   readonly primary_summary: string;
+  readonly driver_guidance: NianJingDriverGuidance;
   readonly segments: readonly NianJingYearSegment[];
   readonly month_markers: readonly NianJingSelectedYearMonthMarker[];
 }
@@ -350,6 +355,10 @@ export function buildNianJingSelectedYearDetail(input: {
       cell.primary_segment?.band.summary ??
       cell.primary_segment?.band.driver_refs[0] ??
       '';
+    const driverGuidance = buildNianJingDriverGuidance({
+      nature: cell.primary_nature,
+      driver_refs: cell.primary_segment?.band.driver_refs ?? [],
+    });
     return {
       concern_tag_ref: cell.concern_tag_ref,
       label: tag?.label ?? cell.label,
@@ -357,6 +366,7 @@ export function buildNianJingSelectedYearDetail(input: {
       primary_nature: cell.primary_nature,
       primary_segment: cell.primary_segment,
       primary_summary: primarySummary,
+      driver_guidance: driverGuidance,
       segments: cell.segments,
       month_markers: cell.inflections.map((inflection) => ({
         month: monthOf(inflection.date),

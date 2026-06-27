@@ -28,6 +28,7 @@ import {
   upsertEventMemory,
 } from '../../memories/memory-editor-state.ts';
 import { useShijingStore } from '../../state/shijing-store.tsx';
+import { ArrowUpIcon } from '../shijing/shijing-icons.tsx';
 
 function nowIso(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -194,7 +195,7 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
                 if (error) setError(null);
               }}
             />
-            <div className="shijing-nianjing__rec-compose-foot">
+            <div className="shijing-nianjing__rec-compose-control">
               {props.fixedDate ? (
                 <span className="shijing-nianjing__rec-date-fixed">
                   {dateLabel(`${props.fixedDate}T00:00:00Z`)}
@@ -218,17 +219,7 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
                   disabled={draft.trim().length === 0}
                   aria-label="保存事件"
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M5 12l5 5L20 7" />
-                  </svg>
+                  <ArrowUpIcon className="shijing-nianjing__rec-save-icon" />
                 </button>
               </Tooltip>
             </div>

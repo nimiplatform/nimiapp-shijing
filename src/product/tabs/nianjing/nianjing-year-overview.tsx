@@ -347,8 +347,14 @@ function ConcernYearCard(props: {
   const label = props.tag ? trimmedConcernLabel(props.tag) : props.card.label.replace(/^#/, '');
   const natureLabel = yearNatureLabel(props.card.primary_nature);
   const guidance = props.card.primary_nature ? NATURE_GUIDANCE[props.card.primary_nature] : null;
-  const favorable = guidance?.suggestions.slice(0, 3) ?? [];
-  const guarded = guidance?.cautions.slice(0, 2) ?? [];
+  const favorable =
+    props.card.driver_guidance.favorable.length > 0
+      ? props.card.driver_guidance.favorable.slice(0, 3)
+      : guidance?.suggestions.slice(0, 3).map((item) => item.title) ?? [];
+  const guarded =
+    props.card.driver_guidance.guarded.length > 0
+      ? props.card.driver_guidance.guarded.slice(0, 2)
+      : guidance?.cautions.slice(0, 2).map((item) => item.title) ?? [];
   const canOpenBand = Boolean(props.card.primary_segment && props.tag);
 
   return (
@@ -388,7 +394,7 @@ function ConcernYearCard(props: {
           <strong>{NIANJING_COPY.yearOverview.favorable}</strong>
           <ul>
             {favorable.map((item) => (
-              <li key={item.title}>{substituteConcernPlaceholder(item.title, label)}</li>
+              <li key={item}>{substituteConcernPlaceholder(item, label)}</li>
             ))}
           </ul>
         </section>
@@ -396,7 +402,7 @@ function ConcernYearCard(props: {
           <strong>{NIANJING_COPY.yearOverview.guarded}</strong>
           <ul>
             {guarded.map((item) => (
-              <li key={item.title}>{substituteConcernPlaceholder(item.title, label)}</li>
+              <li key={item}>{substituteConcernPlaceholder(item, label)}</li>
             ))}
           </ul>
         </section>

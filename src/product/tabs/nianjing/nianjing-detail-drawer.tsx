@@ -3,15 +3,14 @@ import type { NianJingInflectionPoint, NianJingPhaseBand } from '../../../domain
 import type { ConcernTag } from '../../../domain/concern-tag.ts';
 import { TENDENCY_CLASS_LABELS } from '../../i18n/copy.ts';
 import { trimmedConcernLabel } from '../../concern-tags/concern-presets.ts';
+import { buildNianJingPhaseDetailCopy } from '../../astrology/nianjing-driver-copy.ts';
 import { NianJingEventRecorder } from './nianjing-event-recorder.tsx';
 import {
   INFLECTION_KIND_DESCRIPTIONS,
   INFLECTION_KIND_LABELS,
-  NATURE_GUIDANCE,
   bandDurationLabel,
   bandYearRangeLabel,
   formatDateDots,
-  substituteConcernPlaceholder,
   type SelectedDetail,
 } from './nianjing-view-model.ts';
 import { NIANJING_COPY } from './nianjing-copy.ts';
@@ -87,9 +86,13 @@ function renderBandContent(
 ) {
   const natureLabel = TENDENCY_CLASS_LABELS[band.nature];
   const concernLabel = trimmedConcernLabel(tag);
-  const guidance = NATURE_GUIDANCE[band.nature];
-  const subst = (s: string): string => substituteConcernPlaceholder(s, concernLabel);
   const durationLabel = bandDurationLabel(band);
+  const detailCopy = buildNianJingPhaseDetailCopy({
+    concern_label: concernLabel,
+    nature: band.nature,
+    summary: band.summary,
+    driver_refs: band.driver_refs,
+  });
 
   return (
     <>
@@ -113,13 +116,13 @@ function renderBandContent(
           >
             ✦
           </span>
-          {subst(guidance.oneLine)}
+          {detailCopy.one_line}
         </p>
       </header>
 
       <section className="shijing-nianjing__band-detail-story">
         <span className="shijing-nianjing__band-detail-kicker">{NIANJING_COPY.detailDrawer.mainline}</span>
-        <p>{subst(guidance.meaning)}</p>
+        <p>{detailCopy.mainline}</p>
       </section>
 
       <section className="shijing-nianjing__band-detail-signals" aria-label={NIANJING_COPY.detailDrawer.signalsAriaLabel}>
@@ -127,7 +130,7 @@ function renderBandContent(
           {NIANJING_COPY.detailDrawer.worthRemembering(durationLabel)}
         </span>
         <ul className="shijing-nianjing__band-detail-keyword-pills">
-          {guidance.keywords.map((kw) => (
+          {detailCopy.keywords.map((kw) => (
             <li key={kw}>{kw}</li>
           ))}
         </ul>
@@ -136,7 +139,7 @@ function renderBandContent(
       <section className="shijing-nianjing__band-detail-guidance">
         <h3>{NIANJING_COPY.detailDrawer.guidanceTitle}</h3>
         <ol className="shijing-nianjing__band-detail-guidance-list">
-          {guidance.suggestions.map((item, i) => (
+          {detailCopy.suggestions.map((item, i) => (
             <li key={item.title}>
               <span
                 className="shijing-nianjing__band-detail-guidance-index"
@@ -145,8 +148,8 @@ function renderBandContent(
                 {String(i + 1).padStart(2, '0')}
               </span>
               <div>
-                <strong>{subst(item.title)}</strong>
-                <p>{subst(item.description)}</p>
+                <strong>{item.title}</strong>
+                <p>{item.description}</p>
               </div>
             </li>
           ))}
@@ -155,10 +158,10 @@ function renderBandContent(
           <span className="shijing-nianjing__band-detail-guardrails-label">
             {NIANJING_COPY.detailDrawer.guardrailsTitle}
           </span>
-          {guidance.cautions.map((item) => (
+          {detailCopy.cautions.map((item) => (
             <p key={item.title}>
-              <strong>{subst(item.title)}</strong>
-              <span>{subst(item.description)}</span>
+              <strong>{item.title}</strong>
+              <span>{item.description}</span>
             </p>
           ))}
         </div>

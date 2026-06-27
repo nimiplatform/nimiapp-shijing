@@ -40,6 +40,7 @@
 .shijing-nianjing__rec-compose {
   display: flex;
   flex-direction: column;
+  position: relative;
   background: #ffffff;
   border: 1px solid rgba(15, 23, 38, 0.12);
   border-radius: 12px;
@@ -55,7 +56,7 @@
   box-sizing: border-box;
   resize: vertical;
   min-height: 52px;
-  padding: 10px 12px 4px;
+  padding: 10px 54px 42px 12px;
   font: inherit;
   font-size: 13.5px;
   line-height: 1.6;
@@ -88,43 +89,20 @@
   border-color: color-mix(in srgb, var(--shijing-text-primary) 30%, transparent);
 }
 
-/* Bottom row docked inside the input box: date at the left, save at the right. */
-.shijing-nianjing__rec-compose-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 4px 8px 6px;
+.shijing-nianjing__rec-compose-control {
+  display: contents;
 }
 
-.shijing-nianjing__rec-date {
-  padding: 4px 6px;
-  font: inherit;
-  font-size: 12px;
-  color: var(--shijing-text-secondary);
-  background: transparent;
-  border: 0;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.shijing-nianjing__rec-date::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  opacity: 0.6;
-}
-
-.shijing-nianjing__rec-date:hover {
-  background: rgba(15, 23, 38, 0.05);
-}
-
+.shijing-nianjing__rec-date,
 .shijing-nianjing__rec-date-fixed {
-  padding: 4px 6px;
-  font-size: 12px;
-  color: var(--shijing-text-muted);
+  display: none;
 }
 
 .shijing-nianjing__rec-save {
   appearance: none;
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
   margin-left: auto;
   display: inline-flex;
   align-items: center;
@@ -140,9 +118,9 @@
   transition: background 120ms ease, opacity 120ms ease;
 }
 
-.shijing-nianjing__rec-save svg {
-  width: 16px;
-  height: 16px;
+.shijing-nianjing__rec-save-icon {
+  width: 18px;
+  height: 18px;
   display: block;
 }
 

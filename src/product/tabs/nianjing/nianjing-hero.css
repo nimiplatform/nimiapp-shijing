@@ -130,7 +130,7 @@
 
 .shijing-nianjing .shijing-nianjing__hero-rows li {
   display: grid;
-  grid-template-columns: 72px auto 1fr;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   column-gap: 14px;
   font-size: 14px;
@@ -176,10 +176,3 @@
 .shijing-nianjing__hero-row-chip[data-nature="watch"]      .shijing-nianjing__hero-row-chip-dot { background: var(--nianjing-watch); }
 .shijing-nianjing__hero-row-chip[data-nature="blocked"]    .shijing-nianjing__hero-row-chip-dot { background: var(--nianjing-blocked); }
 .shijing-nianjing__hero-row-chip[data-nature="turning"]    .shijing-nianjing__hero-row-chip-dot { background: var(--nianjing-turning); }
-
-.shijing-nianjing__hero-row-detail {
-  color: rgba(255, 255, 255, 0.94);
-  font-size: 13.5px;
-  letter-spacing: 0.02em;
-  justify-self: start;
-}
