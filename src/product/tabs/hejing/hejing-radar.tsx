@@ -1,7 +1,8 @@
 import type { HeJingMetric } from './hejing-model.ts';
 
-// Self-contained pentagon radar for the relationship index. Geometry is derived
-// from the metric values so the same component handles any 5-axis workspace.
+// Self-contained polygon radar for the relationship index. Geometry is derived
+// from the metric values so the same component handles any N-axis workspace.
+// A dashed reference polygon (参考均值) sits behind the value polygon.
 
 const VIEW_WIDTH = 300;
 const VIEW_HEIGHT = 240;
@@ -10,6 +11,7 @@ const CENTER_Y = 110;
 const RADIUS = 76;
 const LABEL_RADIUS = RADIUS + 21;
 const GRID_RINGS = [0.25, 0.5, 0.75, 1] as const;
+const REFERENCE_RATIO = 0.7;
 
 function polar(distance: number, index: number, count: number): readonly [number, number] {
   const angle = ((-90 + (index * 360) / count) * Math.PI) / 180;
@@ -27,15 +29,21 @@ function ratio(metric: HeJingMetric): number {
 export function HeJingRadar({
   metrics,
   label,
+  referenceRatio = REFERENCE_RATIO,
 }: {
   readonly metrics: readonly HeJingMetric[];
   readonly label: string;
+  readonly referenceRatio?: number;
 }) {
   const count = metrics.length;
   if (count < 3) return null;
 
   const valuePolygon = points(
     metrics.map((metric) => RADIUS * ratio(metric)),
+    count,
+  );
+  const referencePolygon = points(
+    metrics.map(() => RADIUS * referenceRatio),
     count,
   );
 
@@ -62,19 +70,13 @@ export function HeJingRadar({
         })}
       </g>
 
+      <polygon className="shijing-hejing__radar-reference" points={referencePolygon} />
       <polygon className="shijing-hejing__radar-area" points={valuePolygon} />
 
       {metrics.map((metric, index) => {
         const [x, y] = polar(RADIUS * ratio(metric), index, count);
         return (
-          <circle
-            key={metric.id}
-            className="shijing-hejing__radar-dot"
-            data-tone={metric.tone}
-            cx={x}
-            cy={y}
-            r={4}
-          />
+          <circle key={metric.id} className="shijing-hejing__radar-dot" cx={x} cy={y} r={3.4} />
         );
       })}
 

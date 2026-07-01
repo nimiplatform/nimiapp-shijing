@@ -232,6 +232,16 @@ test('HeJing projects generated relationship Reading into the workbench modules'
   );
   assert.equal(workspace.quarters[0].action, '适合建立亲子沟通约定。');
   assert.ok(workspace.quarters[3].action.length > 0);
+  assert.notEqual(
+    workspace.quarters[0].state,
+    workspace.quarters[1].state,
+    'an evidenced quarter must not make every unevidenced quarter inherit the same state label',
+  );
+  assert.notEqual(
+    workspace.quarters[0].watch,
+    workspace.quarters[1].watch,
+    'an evidenced quarter must not make every unevidenced quarter inherit the same watch copy',
+  );
 });
 
 test('HeJing restores the latest generated relationship workspace on page open', async () => {

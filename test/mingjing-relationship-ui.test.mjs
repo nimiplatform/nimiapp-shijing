@@ -78,6 +78,14 @@ test('HeJing renders the redesigned relationship sections in order', () => {
   }
 });
 
+test('HeJing record action scrolls to the shared records section', () => {
+  assert.match(hejingTabSource, /const recordsSectionRef = useRef<HTMLElement \| null>\(null\)/u);
+  assert.match(hejingTabSource, /recordsSectionRef\.current\?\.scrollIntoView\(\{\s*behavior: 'smooth',\s*block: 'start',?\s*\}\)/u);
+  assert.match(hejingTabSource, /<HeJingRecordsSection records=\{displayWorkspace\.records\} onWrite=\{handleWriteRecord\} rootRef=\{recordsSectionRef\} \/>/u);
+  assert.match(hejingSectionsSource, /id="hejing-records"/u);
+  assert.match(hejingSectionsSource, /sectionRef=\{rootRef\}/u);
+});
+
 test('HeJing overview leads with relationship status, keywords, reminder and today actions', () => {
   assert.match(hejingSectionsSource, /shijing-hejing__overview/u);
   assert.match(hejingSectionsSource, /shijing-hejing__pair-link/u);

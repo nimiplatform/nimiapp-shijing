@@ -1,7 +1,19 @@
 /* HeJing 共同记录 — shared-record timeline. */
 
+.shijing-hejing__records-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--hejing-line);
+}
+
 .shijing-hejing__records-lead {
-  margin: 0 0 16px;
+  margin: 0;
+  max-width: 540px;
   color: var(--hejing-ink2);
   font-size: 14px;
   line-height: 1.65;
@@ -106,12 +118,38 @@
   line-height: 1.65;
 }
 
-.shijing-hejing__record-author {
+.shijing-hejing__record-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   align-self: start;
+}
+
+.shijing-hejing__record-author {
   flex: 0 0 auto;
   color: var(--hejing-ink3);
   font-size: 12.5px;
   white-space: nowrap;
+}
+
+.shijing-hejing .shijing-hejing__record-menu {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--hejing-ink3);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.shijing-hejing .shijing-hejing__record-menu:hover {
+  background: rgba(61, 122, 90, 0.08);
+  color: var(--hejing-acc-deep);
 }
 
 .shijing-hejing__records-empty {

@@ -245,11 +245,27 @@
 .shijing-hejing__status-block strong {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   color: var(--hejing-ink);
   font-family: var(--hejing-font-serif);
   font-size: 22px;
   font-weight: 700;
+}
+
+.shijing-hejing__status-badge {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--hejing-green-soft);
+  color: var(--hejing-acc);
+}
+
+.shijing-hejing__status-badge svg {
+  width: 17px;
+  height: 17px;
 }
 
 .shijing-hejing__keywords ul {

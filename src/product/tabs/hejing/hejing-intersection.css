@@ -84,8 +84,8 @@
 }
 
 .shijing-hejing__focus-card[data-kind="weekly"] {
-  --focus-color: var(--hejing-gold-deep);
-  --focus-soft: var(--hejing-gold-soft);
+  --focus-color: var(--hejing-acc-deep);
+  --focus-soft: var(--hejing-green-soft);
 }
 
 /* 相处方式 — ways of relating --------------------------------------------- */
@@ -98,13 +98,31 @@
 
 .shijing-hejing__ways {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   gap: 16px;
   align-items: center;
   padding: 16px 18px;
   border: 1px solid var(--hejing-line);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.6);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.shijing-hejing__ways:hover {
+  border-color: rgba(61, 122, 90, 0.28);
+  background: #fff;
+}
+
+.shijing-hejing__ways-caret {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: var(--hejing-ink3);
+}
+
+.shijing-hejing__ways-caret svg {
+  width: 18px;
+  height: 18px;
 }
 
 .shijing-hejing__ways-icon {

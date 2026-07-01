@@ -414,10 +414,42 @@ const QUARTER_META = [
   // `outlook` is the general year-arc 建议行动 shown for a quarter that has no
   // evidenced timing window of its own — forward-looking relationship guidance,
   // not an invented event.
-  { label: 'Q1', range: '1-3 月', season: 'spring' as const, outlook: '为这一年定下相处的节奏与基本约定。' },
-  { label: 'Q2', range: '4-6 月', season: 'summer' as const, outlook: '在日常里累积信任，把好的相处方式固定下来。' },
-  { label: 'Q3', range: '7-9 月', season: 'autumn' as const, outlook: '留意需求的变化，及时调整规则与边界。' },
-  { label: 'Q4', range: '10-12 月', season: 'winter' as const, outlook: '回顾这一年的相处，把有效的方式延续到明年。' },
+  {
+    label: 'Q1',
+    range: '1-3 月',
+    season: 'spring' as const,
+    fallbackState: '年初定调',
+    fallbackWatch: '先建立共同节奏，不急着给关系定性',
+    fallbackTone: 'green' as const,
+    outlook: '为这一年定下相处的节奏与基本约定。',
+  },
+  {
+    label: 'Q2',
+    range: '4-6 月',
+    season: 'summer' as const,
+    fallbackState: '日常沉淀',
+    fallbackWatch: '观察约定是否真的进入日常执行',
+    fallbackTone: 'gold' as const,
+    outlook: '在日常里累积信任，把好的相处方式固定下来。',
+  },
+  {
+    label: 'Q3',
+    range: '7-9 月',
+    season: 'autumn' as const,
+    fallbackState: '中段校准',
+    fallbackWatch: '留意需求变化，及时重谈边界',
+    fallbackTone: 'blue' as const,
+    outlook: '留意需求的变化，及时调整规则与边界。',
+  },
+  {
+    label: 'Q4',
+    range: '10-12 月',
+    season: 'winter' as const,
+    fallbackState: '年末复盘',
+    fallbackWatch: '把有效方式沉淀下来，避免旧问题循环',
+    fallbackTone: 'gold' as const,
+    outlook: '回顾这一年的相处，把有效的方式延续到明年。',
+  },
 ];
 
 function quarterIndexFromDate(date: string): number {
@@ -452,10 +484,10 @@ const METRIC_BLUEPRINT: readonly {
   readonly explanation: string;
 }[] = [
   { id: 'understanding', label: '理解度', tone: 'green', explanation: '能站在对方角度看问题。' },
-  { id: 'communication', label: '沟通顺畅度', tone: 'blue', explanation: '整体顺畅，偶有情绪打断。' },
-  { id: 'consistency', label: '规则一致性', tone: 'gold', explanation: '约定清晰，执行需更稳定。' },
+  { id: 'communication', label: '沟通顺畅度', tone: 'green', explanation: '整体顺畅，偶有情绪打断。' },
+  { id: 'consistency', label: '规则一致性', tone: 'green', explanation: '约定清晰，执行需更稳定。' },
   { id: 'safety', label: '情绪安全感', tone: 'green', explanation: '彼此感到被接纳与支持。' },
-  { id: 'growth', label: '成长支持度', tone: 'green', explanation: '持续鼓励，支持彼此探索。' },
+  { id: 'growth', label: '成长支持度', tone: 'gold', explanation: '持续鼓励，支持彼此探索。' },
   { id: 'repair', label: '修复能力', tone: 'red', explanation: '冲突后能修复，时长可缩短。' },
 ];
 
@@ -491,8 +523,8 @@ function buildGeneratedMetrics(
 
 // The future-window timeline always presents a full Q1–Q4 year view. Each
 // evidenced timing window is placed into its quarter (state/watch/action from
-// the real window); quarters without their own window fall back to the overall
-// relationship tendency plus a general year-arc 建议行动 — no invented events.
+// the real window); quarters without their own window fall back to quarter-level
+// year-arc copy — no invented deterministic events and no first-window carryover.
 function buildGeneratedQuarters(
   output: MingJingRelationshipMirrorOutput,
 ): readonly HeJingQuarterWindow[] {
@@ -501,11 +533,22 @@ function buildGeneratedQuarters(
     const quarterIndex = quarterIndexFromDate(window.start_date);
     if (!byQuarter.has(quarterIndex)) byQuarter.set(quarterIndex, window);
   }
-  const overallNature = output.timing_windows[0]?.nature ?? 'steady';
 
   return QUARTER_META.map((meta, index) => {
     const window = byQuarter.get(index);
-    const nature = window?.nature ?? overallNature;
+    if (!window) {
+      return {
+        id: `q${index + 1}`,
+        label: meta.label,
+        range: meta.range,
+        season: meta.season,
+        state: meta.fallbackState,
+        watch: meta.fallbackWatch,
+        action: meta.outlook,
+        tone: meta.fallbackTone,
+      };
+    }
+    const nature = window.nature;
     return {
       id: `q${index + 1}`,
       label: meta.label,
@@ -601,7 +644,7 @@ export function buildGeneratedHeJingWorkspace(input: {
         id: 'generated-boundary',
         iconLabel: '界',
         title: '边界提醒',
-        tone: 'gold',
+        tone: 'green',
         body: output.practice.boundary,
       },
       {

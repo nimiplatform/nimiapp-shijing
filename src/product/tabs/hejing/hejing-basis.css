@@ -45,7 +45,7 @@
 .shijing-hejing .shijing-hejing__basis-chips {
   display: flex;
   flex-flow: row wrap;
-  gap: 7px;
+  gap: 8px;
   margin: 0 0 0 auto;
   padding: 0;
   list-style: none;
@@ -54,14 +54,25 @@
 .shijing-hejing__basis-chips li {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  border: 1px solid rgba(61, 122, 90, 0.2);
+  gap: 6px;
+  border: 1px solid rgba(61, 122, 90, 0.18);
   border-radius: 999px;
-  padding: 4px 11px;
-  background: rgba(61, 122, 90, 0.07);
+  padding: 5px 12px;
+  background: rgba(61, 122, 90, 0.06);
   color: var(--hejing-acc-deep);
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
+}
+
+.shijing-hejing__basis-chip-icon {
+  display: grid;
+  place-items: center;
+  color: var(--hejing-acc);
+}
+
+.shijing-hejing__basis-chip-icon svg {
+  width: 14px;
+  height: 14px;
 }
 
 .shijing-hejing__basis-caret {

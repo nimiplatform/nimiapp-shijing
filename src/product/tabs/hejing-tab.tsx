@@ -108,6 +108,7 @@ export function HeJingTab() {
   const [loading, setLoading] = useState(false);
   const [failure, setFailure] = useState<ReadingGenerationFailure | null>(null);
   const [addPersonOpen, setAddPersonOpen] = useState(false);
+  const recordsSectionRef = useRef<HTMLElement | null>(null);
   const methodSupport = useMemo(
     () => hejingMethodSupportState(currentMethodProfileId),
     [currentMethodProfileId],
@@ -227,6 +228,9 @@ export function HeJingTab() {
 
   function handleWriteRecord() {
     setStatusMessage(copy.recordStatus);
+    window.requestAnimationFrame(() => {
+      recordsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   function handleChat() {
@@ -310,7 +314,7 @@ export function HeJingTab() {
                   <HeJingRadarSection workspace={displayWorkspace} />
                   <HeJingWindowsSection quarters={displayWorkspace.quarters} />
                   <HeJingWaysSection insights={displayWorkspace.insights} />
-                  <HeJingRecordsSection records={displayWorkspace.records} onWrite={handleWriteRecord} />
+                  <HeJingRecordsSection records={displayWorkspace.records} onWrite={handleWriteRecord} rootRef={recordsSectionRef} />
                   <HeJingBasisSection workspace={displayWorkspace} />
                 </>
               ) : null}

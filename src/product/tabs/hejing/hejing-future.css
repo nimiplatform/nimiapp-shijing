@@ -118,7 +118,7 @@
 
 .shijing-hejing__quarter-card dt {
   flex: 0 0 auto;
-  color: var(--hejing-acc-deep);
+  color: var(--hejing-ink3);
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;

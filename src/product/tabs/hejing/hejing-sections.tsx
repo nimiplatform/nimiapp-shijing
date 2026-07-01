@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 
 import { HeJingRadar } from './hejing-radar.tsx';
 import {
@@ -173,6 +173,43 @@ const SEASON_ICONS: Record<HeJingQuarterWindow['season'], ReactNode> = {
   ),
 };
 
+const BASIS_ICONS: Record<string, ReactNode> = {
+  wuxing: (
+    <Icon>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 4v16M5.1 8 18.9 16M18.9 8 5.1 16" />
+    </Icon>
+  ),
+  shishen: (
+    <Icon>
+      <circle cx="12" cy="8" r="3" />
+      <path d="M6 19a6 6 0 0 1 12 0" />
+    </Icon>
+  ),
+  chonghe: (
+    <Icon>
+      <circle cx="9" cy="12" r="5" />
+      <circle cx="15" cy="12" r="5" />
+    </Icon>
+  ),
+  liunian: (
+    <Icon>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v4l2.6 2.6" />
+    </Icon>
+  ),
+  dayun: (
+    <Icon>
+      <path d="M4 15.5 9 10l3.5 3.5L20 6" />
+      <path d="M15 6h5v5" />
+    </Icon>
+  ),
+};
+
+function basisIcon(id: string): ReactNode {
+  return BASIS_ICONS[id] ?? BASIS_ICONS.wuxing;
+}
+
 function metricIcon(id: string): ReactNode {
   return ICONS[id as keyof typeof ICONS] ?? ICONS.understanding;
 }
@@ -187,9 +224,8 @@ function wayKind(insightId: string): 'communication' | 'boundary' | 'repair' {
   return 'communication';
 }
 
-function recordTagTone(tag: string): 'red' | 'green' | 'gold' {
-  if (/冲突|争执|矛盾/u.test(tag)) return 'red';
-  if (/合作|旅行|改善|和好|相处/u.test(tag)) return 'green';
+function recordTagTone(tag: string): 'green' | 'gold' {
+  if (/合作|旅行|改善|和好|相处|谈话|成长/u.test(tag)) return 'green';
   return 'gold';
 }
 
@@ -197,19 +233,23 @@ function recordTagTone(tag: string): 'red' | 'green' | 'gold' {
 
 export function HeJingSection({
   className,
+  id,
   icon,
+  sectionRef,
   title,
   action,
   children,
 }: {
   readonly className: string;
+  readonly id?: string;
   readonly icon: ReactNode;
+  readonly sectionRef?: Ref<HTMLElement>;
   readonly title: string;
   readonly action?: ReactNode;
   readonly children: ReactNode;
 }) {
   return (
-    <section className={`shijing-hejing__section ${className}`}>
+    <section ref={sectionRef} id={id} className={`shijing-hejing__section ${className}`}>
       <header className="shijing-hejing__section-head">
         <h2 className="shijing-hejing__section-title">
           <span className="shijing-hejing__section-icon" aria-hidden>
@@ -278,7 +318,12 @@ export function HeJingOverview({
           <div className="shijing-hejing__status-row">
             <div className="shijing-hejing__status-block">
               <span className="shijing-hejing__detail-label">{copy.statusLabel}</span>
-              <strong>{workspace.relationshipStatus}</strong>
+              <strong>
+                {workspace.relationshipStatus}
+                <span className="shijing-hejing__status-badge" aria-hidden>
+                  {ICONS.safety}
+                </span>
+              </strong>
             </div>
             <div className="shijing-hejing__keywords">
               <span className="shijing-hejing__detail-label">{copy.keywordsLabel}</span>
@@ -384,6 +429,16 @@ export function HeJingRadarSection({ workspace }: { readonly workspace: HeJingWo
       <div className="shijing-hejing__index-body">
         <div className="shijing-hejing__radar-frame">
           <HeJingRadar metrics={workspace.metrics} label={`${workspace.relationshipTypeLabel}${copy.radarTitleSuffix}`} />
+          <ul className="shijing-hejing__radar-legend" aria-hidden>
+            <li data-kind="value">
+              <span className="shijing-hejing__radar-swatch" />
+              我与 {workspace.other.name}
+            </li>
+            <li data-kind="reference">
+              <span className="shijing-hejing__radar-swatch" />
+              {copy.radarReferenceLabel}
+            </li>
+          </ul>
         </div>
         <div className="shijing-hejing__metric-readouts">
           {workspace.metrics.map((metric) => (
@@ -450,6 +505,9 @@ export function HeJingWaysSection({ insights }: { readonly insights: readonly He
               <h3>{insight.title}</h3>
               <p>{insight.body}</p>
             </div>
+            <span className="shijing-hejing__ways-caret" aria-hidden>
+              {ICONS.chevron}
+            </span>
           </article>
         ))}
       </div>
@@ -462,23 +520,27 @@ export function HeJingWaysSection({ insights }: { readonly insights: readonly He
 export function HeJingRecordsSection({
   records,
   onWrite,
+  rootRef,
 }: {
   readonly records: readonly HeJingTimelineRecord[];
   readonly onWrite: () => void;
+  readonly rootRef?: Ref<HTMLElement>;
 }) {
   return (
     <HeJingSection
       className="shijing-hejing__records"
+      id="hejing-records"
       icon={ICONS.records}
+      sectionRef={rootRef}
       title={copy.recordsTitle}
-      action={
+    >
+      <div className="shijing-hejing__records-bar">
+        <p className="shijing-hejing__records-lead">{copy.recordsLead}</p>
         <button type="button" className="shijing-hejing__head-action is-solid" onClick={onWrite}>
           {ICONS.pencil}
           {copy.writeRecord}
         </button>
-      }
-    >
-      <p className="shijing-hejing__records-lead">{copy.recordsLead}</p>
+      </div>
       {records.length > 0 ? (
         <ol className="shijing-hejing__record-list">
           {records.map((record) => (
@@ -493,7 +555,17 @@ export function HeJingRecordsSection({
                 </div>
                 <p>{record.description}</p>
               </div>
-              <span className="shijing-hejing__record-author">{copy.recordsAuthor}</span>
+              <div className="shijing-hejing__record-meta">
+                <span className="shijing-hejing__record-author">{copy.recordsAuthor}</span>
+                <button
+                  type="button"
+                  className="shijing-hejing__record-menu"
+                  aria-label={copy.recordsMenuAria}
+                  onClick={onWrite}
+                >
+                  <span aria-hidden>···</span>
+                </button>
+              </div>
             </li>
           ))}
         </ol>
@@ -519,7 +591,10 @@ export function HeJingBasisSection({ workspace }: { readonly workspace: HeJingWo
         </span>
         <ul className="shijing-hejing__basis-chips" aria-hidden>
           {workspace.astrologyBasis.map((chip) => (
-            <li key={chip.id}>{chip.label}</li>
+            <li key={chip.id}>
+              <span className="shijing-hejing__basis-chip-icon">{basisIcon(chip.id)}</span>
+              {chip.label}
+            </li>
           ))}
         </ul>
         <span className="shijing-hejing__basis-caret" aria-hidden>
