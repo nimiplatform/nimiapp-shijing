@@ -14,6 +14,10 @@ const hejingTabSource = readFileSync(
   new URL('../src/product/tabs/hejing-tab.tsx', import.meta.url),
   'utf8',
 );
+const hejingEmptyStateSource = readFileSync(
+  new URL('../src/product/tabs/hejing/hejing-empty-state.tsx', import.meta.url),
+  'utf8',
+);
 
 function collectStringValues(value) {
   if (typeof value === 'string') return [value];
@@ -300,7 +304,16 @@ test('HeJing shows an add prompt for relationship types without workspaces', () 
   assert.match(hejingTabSource, /const filteredWorkspaces\s*=\s*useMemo/u);
   assert.match(hejingTabSource, /const hasSelectedTypeWorkspaces\s*=\s*filteredWorkspaces\.length\s*>\s*0/u);
   assert.match(hejingTabSource, /<HeJingRelationshipTypeEmpty/u);
+  assert.match(hejingTabSource, /onSelectExisting=\{handleCreateHejing\}/u);
   assert.match(hejingTabSource, /options=\{filteredWorkspaces\.map/u);
+});
+
+test('HeJing relationship-type empty state reuses the first-run empty page', () => {
+  assert.match(hejingEmptyStateSource, /copyOverride/u);
+  assert.match(hejingEmptyStateSource, /return \(\s*<HeJingEmptyState/u);
+  assert.match(hejingEmptyStateSource, /title: copy\.emptyTypeTitle\(typeLabel\)/u);
+  assert.match(hejingEmptyStateSource, /existingCta: copy\.addPersonDialogTitle/u);
+  assert.doesNotMatch(hejingEmptyStateSource, /shijing-hejing__type-empty/u);
 });
 
 test('HeJing page restores cached generated readings and waits for persistence', () => {

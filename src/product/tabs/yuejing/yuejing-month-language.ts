@@ -4,6 +4,8 @@ export interface TendencyLanguage {
   readonly tagline: string;
   readonly body: string;
   readonly mainline: string;
+  readonly best_for: readonly string[];
+  readonly avoid_tags: readonly string[];
   readonly suitable: string;
   readonly unsuitable: string;
   readonly review: string;
@@ -12,9 +14,11 @@ export interface TendencyLanguage {
 
 export const TENDENCY_LANGUAGE: Record<TendencyClass, TendencyLanguage> = {
   supportive: {
-    tagline: '顺势推进，把握窗口',
-    body: '本期助力窗口较多，适合把已经确认过的事情放到前台主动推进。',
+    tagline: '稳步推进，不急换向',
+    body: '接下来30天适合稳步推进已确认的事情，不要急着换方向。',
     mainline: '本轮助力窗口较多，适合把已经确认过的事情放到前台推进。',
+    best_for: ['推进', '整理', '复盘', '建立节奏'],
+    avoid_tags: ['冲动决策', '临时转向', '同时开太多新坑'],
     suitable: '适合推进需要表达、确认资源、见面沟通或提交成果的动作。',
     unsuitable: '不适合把所有关键动作挤在同一天，仍要给观察日和阻滞日留缓冲。',
     review: '哪些动作在助力日得到真实反馈，哪些只是因为一时顺手才被放大？',
@@ -24,6 +28,8 @@ export const TENDENCY_LANGUAGE: Record<TendencyClass, TendencyLanguage> = {
     tagline: '连续推进，小步见效',
     body: '本期整体节奏平稳，适合有节奏地推进，小步积累看得见的结果。',
     mainline: '本轮主节奏偏稳，适合用连续的小步换取可确认的结果。',
+    best_for: ['维持节奏', '例行推进', '整理细节', '轻量复盘'],
+    avoid_tags: ['突然加码', '短期冲刺', '节奏未稳就定案'],
     suitable: '适合固定节奏、维护长期动作、复盘既有安排并小幅推进。',
     unsuitable: '不适合因为单日助力就突然加码，低损耗比短期冲刺更重要。',
     review: '这一阶段最值得保留下来的稳定动作是什么，哪些消耗可以删掉？',
@@ -33,6 +39,8 @@ export const TENDENCY_LANGUAGE: Record<TendencyClass, TendencyLanguage> = {
     tagline: '先看清楚，再决定',
     body: '本期更适合校准节奏，先看清反馈与细节，再决定是否加速。',
     mainline: '本轮更适合校准节奏，先看清反馈再决定是否加速。',
+    best_for: ['观察反馈', '检查风险', '补齐信息', '放慢判断'],
+    avoid_tags: ['急下结论', '催促结果', '单点放大'],
     suitable: '适合检查沟通、承诺、身体负荷和资源安排里的不确定点。',
     unsuitable: '不适合急着定性、催促结果或把一次反馈当成长期判断。',
     review: '哪些信号重复出现了两次以上，哪些只是单日情绪或环境干扰？',
@@ -42,6 +50,8 @@ export const TENDENCY_LANGUAGE: Record<TendencyClass, TendencyLanguage> = {
     tagline: '留意拐点，预留调整',
     body: '本期有转向信号，旧节奏可能需要重新评估，调整时记得预留空间。',
     mainline: '本轮有转向信号，旧节奏可能需要被重新评估。',
+    best_for: ['复盘方向', '调整策略', '记录变化', '重排节奏'],
+    avoid_tags: ['沿用旧办法', '仓促承诺', '忽略变化信号'],
     suitable: '适合记录变化点，判断它来自机会、边界变化还是节奏切换。',
     unsuitable: '不适合用过去的处理方式硬套新局面，调整要预留空间。',
     review: '转向日前后，自己的选择、他人的回应或外部条件哪里发生了变化？',
@@ -51,6 +61,8 @@ export const TENDENCY_LANGUAGE: Record<TendencyClass, TendencyLanguage> = {
     tagline: '稳住为先，收束止损',
     body: '本期阻力偏重，优先把重心放在止损、复核和保留余地上。',
     mainline: '本轮阻力偏重，优先级应放在止损、复核和保存余地。',
+    best_for: ['止损', '复核', '降负荷', '保留余地'],
+    avoid_tags: ['硬碰硬', '冲动承诺', '高消耗投入'],
     suitable: '适合收束高消耗事项、复核关键材料、延后非必要承诺。',
     unsuitable: '不适合硬碰硬、逼问、冲动承诺或一次性投入过多资源。',
     review: '哪些阻力来自外部条件，哪些来自自己本来就可以提前收束的消耗？',
@@ -97,12 +109,12 @@ export const PHASE_ARC: readonly PhaseArcRole[] = [
   },
 ];
 
-// Short briefs for the ② 关键日期窗口 cards. One concise line each, distinct
+// Short briefs for the ② 三个关键窗口 cards. One concise line each, distinct
 // from the longer TENDENCY_LANGUAGE.suitable used elsewhere.
 export const KEY_WINDOW_BRIEF = {
-  push: '适合推进重要事项，主动沟通协作。',
-  slow: '适合放慢节奏，谨慎判断关键决定。',
-  turn: '适合记录变化，判断下一步方向。',
+  push: '适合沟通、提交、落实已确认事项。',
+  slow: '不急着下结论，先观察反馈。',
+  turn: '适合复盘与调整策略。',
 } as const;
 
 export interface ConcernLanguage {
@@ -173,17 +185,33 @@ export const CONCERN_LANGUAGE_BY_LABEL: Record<string, ConcernLanguage> = {
 export interface ConcernAction {
   readonly axis: string;
   readonly summary: string;
-  readonly checklist: readonly string[];
+  readonly actions: readonly {
+    readonly source:
+      | 'primary'
+      | 'supportive'
+      | 'caution'
+      | 'turning'
+      | 'after_opening'
+      | 'first_supportive'
+      | 'middle_watch'
+      | 'middle_turning';
+    readonly label: string;
+  }[];
+  readonly reminders: readonly string[];
 }
 
 export const GENERIC_CONCERN_ACTION: ConcernAction = {
   axis: '节奏',
   summary: '以稳定节奏为主，把这个关注的关键动作安排在合适的窗口。',
-  checklist: [
-    '明确这个关注本期最想推进的一件事',
-    '把关键动作安排在助力日',
-    '在观察日先观察再决定',
-    '避免在阻力日硬推或下定论',
+  actions: [
+    { source: 'primary', label: '推进本期最重要的一件事' },
+    { source: 'caution', label: '先观察反馈再做判断' },
+    { source: 'turning', label: '复盘是否需要调整节奏' },
+  ],
+  reminders: [
+    '明确主动作',
+    '减少切换',
+    '观察反馈',
   ],
 };
 
@@ -191,61 +219,85 @@ export const CONCERN_ACTION_BY_LABEL: Record<string, ConcernAction> = {
   姻缘: {
     axis: '沟通',
     summary: '以真实沟通为主，让关系在合适的节奏里自然推进。',
-    checklist: [
-      '安排一次真实接触或深入对话',
-      '把重要表达放在助力日',
-      '先观察对方回应再下判断',
-      '避免在观察日追问或施压',
+    actions: [
+      { source: 'supportive', label: '安排真实接触或深入对话' },
+      { source: 'caution', label: '先观察对方回应再下判断' },
+      { source: 'turning', label: '复盘关系角色或表达方式变化' },
+    ],
+    reminders: [
+      '真实沟通',
+      '减少施压',
+      '保留边界',
     ],
   },
   事业: {
     axis: '推进',
-    summary: '以稳步推进为主，把想法落到可执行、可确认的安排上。',
-    checklist: [
-      '拆出一个本期最想推进的关键动作',
-      '把对外沟通安排在助力日',
-      '在观察日先复核排期与依赖',
-      '避免在阻力日强行推进硬碰',
+    summary: '把已明确的事项往前推，不要临时换方向。',
+    actions: [
+      { source: 'after_opening', label: '持续推进已确定事项' },
+      { source: 'middle_watch', label: '避免做关键决策' },
+      { source: 'middle_turning', label: '复盘当前方向是否需要调整' },
+    ],
+    reminders: [
+      '保持节奏推进',
+      '减少不必要切换',
+      '聚焦关键结果',
     ],
   },
   身体: {
-    axis: '节律',
-    summary: '以恢复节律为主，维持可持续的作息与精力管理。',
-    checklist: [
-      '固定一项可持续的作息或运动',
-      '把高强度安排避开观察日',
-      '记录一次明显的状态变化',
-      '避免在阻力日熬夜或硬扛',
+    axis: '平衡',
+    summary: '以恢复节律为主，维持可持续的作息与活动量。',
+    actions: [
+      { source: 'first_supportive', label: '恢复规律作息与轻运动' },
+      { source: 'middle_watch', label: '避免突然加量或过度消耗' },
+      { source: 'middle_turning', label: '观察睡眠、饮食与疲劳变化' },
+    ],
+    reminders: [
+      '规律作息',
+      '适度活动',
+      '关注恢复与能量',
     ],
   },
   财运: {
     axis: '稳健',
     summary: '以稳健为主，理性安排现金流与重要的资源决定。',
-    checklist: [
-      '梳理一次现金流与近期收支',
-      '把重要的资源决定放在助力日',
-      '在观察日复核合同与报价',
-      '避免在阻力日做大额承诺',
+    actions: [
+      { source: 'supportive', label: '推进稳妥回款与资源整理' },
+      { source: 'caution', label: '复核合同、报价与冲动消费' },
+      { source: 'turning', label: '复盘收入结构或分配方式变化' },
+    ],
+    reminders: [
+      '现金流优先',
+      '复核承诺',
+      '避免冲动投入',
     ],
   },
   学业: {
     axis: '积累',
     summary: '以持续积累为主，把学习落到可检查的成果上。',
-    checklist: [
-      '固定一段连续的学习时间',
-      '把需要产出的任务放在助力日',
-      '在观察日补齐理解盲区',
-      '避免在阻力日临时抱佛脚',
+    actions: [
+      { source: 'supportive', label: '推进复习、提交材料或讨论' },
+      { source: 'caution', label: '补齐理解盲区再加量' },
+      { source: 'turning', label: '复盘方向、反馈或研究重点变化' },
+    ],
+    reminders: [
+      '连续积累',
+      '检查盲区',
+      '产出可验',
     ],
   },
   家人: {
     axis: '陪伴',
     summary: '以陪伴和理解为主，维持关系温度与信任感。',
-    checklist: [
-      '安排一次轻量陪伴',
-      '记录一次明显情绪变化',
-      '把重要沟通放在助力日',
-      '避免在观察日做关系定性',
+    actions: [
+      { source: 'supportive', label: '安排一次具体沟通或照料动作' },
+      { source: 'caution', label: '先听清楚再回应' },
+      { source: 'turning', label: '复盘家庭分工或相处方式变化' },
+    ],
+    reminders: [
+      '稳定陪伴',
+      '减少硬劝',
+      '重排期待',
     ],
   },
 };

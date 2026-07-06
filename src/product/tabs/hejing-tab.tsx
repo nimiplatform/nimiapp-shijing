@@ -320,7 +320,11 @@ export function HeJingTab() {
               ) : null}
             </>
           ) : (
-            <HeJingRelationshipTypeEmpty typeLabel={selectedTypeLabel} onCreate={handleCreateHejing} />
+            <HeJingRelationshipTypeEmpty
+              typeLabel={selectedTypeLabel}
+              onCreate={handleCreateHejing}
+              onSelectExisting={handleCreateHejing}
+            />
           )}
 
           <footer className="shijing-hejing__footer">

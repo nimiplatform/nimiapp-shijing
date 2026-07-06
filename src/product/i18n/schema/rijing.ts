@@ -23,6 +23,7 @@ export interface RiJingCopy {
   readonly emptyActions: Record<Exclude<RiJingEmptyStateCopyKind, 'persistence_pending'>, string>;
   readonly failureActions: {
     readonly runtimeAi: string;
+    readonly runtimeProviderProductActivation: string;
     readonly methodProfile: string;
   };
   readonly refreshAria: {

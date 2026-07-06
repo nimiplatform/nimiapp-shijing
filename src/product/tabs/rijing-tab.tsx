@@ -41,7 +41,10 @@ import { FailureBanner } from './shared/failure-banner.tsx';
 import { GeneratingButton } from './shared/generating-button.tsx';
 import { ImportToShiJingButton } from './shared/import-to-shijing-button.tsx';
 import { MirrorPageHeader } from './shared/mirror-page-header.tsx';
-import { isMethodFeatureUnsupportedFailure } from './shared/reading-failure-copy.ts';
+import {
+  isMethodFeatureUnsupportedFailure,
+  runtimeAiFailureRecoveryKind,
+} from './shared/reading-failure-copy.ts';
 import {
   deriveRiJingActions,
   deriveRiJingDataPanel,
@@ -137,6 +140,12 @@ function failureActionFor(
     };
   }
   if (failure.kind !== 'runtime_ai_failed') return undefined;
+  if (runtimeAiFailureRecoveryKind(failure) === 'provider_product_activation') {
+    return {
+      label: copy.rijing.failureActions.runtimeProviderProductActivation,
+      onClick: () => onRequestOpenSettings?.('settings', 'ai_model_config'),
+    };
+  }
   return {
     label: copy.rijing.failureActions.runtimeAi,
     onClick: () => onRequestOpenSettings?.('settings', 'ai_model_config'),

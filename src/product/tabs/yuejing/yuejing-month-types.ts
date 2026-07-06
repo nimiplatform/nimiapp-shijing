@@ -9,6 +9,13 @@ export interface YueJingMonthAdvice {
   readonly unsuitable: string;
 }
 
+export interface YueJingMonthDateRange {
+  readonly label: string;
+  readonly start_date: string;
+  readonly end_date: string;
+  readonly dates: readonly string[];
+}
+
 // One local date's dominant tendency, used to paint the rhythm strip in
 // the monthly mainline. `tendency` is null for dates without generated cells.
 export interface YueJingDayTendency {
@@ -26,7 +33,15 @@ export interface YueJingMonthPhase extends YueJingMonthAdvice {
 export interface YueJingMonthKeyWindow extends YueJingMonthAdvice {
   readonly title: string;
   readonly brief: string;
+  readonly date_ranges: readonly YueJingMonthDateRange[];
+  readonly target_dates: readonly string[];
   readonly tendency?: TendencyClass;
+}
+
+export interface YueJingMonthActionItem {
+  readonly window: string;
+  readonly label: string;
+  readonly target_dates: readonly string[];
 }
 
 export interface YueJingMonthConcernInterpretation {
@@ -39,6 +54,8 @@ export interface YueJingMonthConcernInterpretation {
   readonly summary: string;
   readonly action: YueJingMonthAdvice;
   readonly key_windows: readonly YueJingMonthKeyWindow[];
+  readonly action_items: readonly YueJingMonthActionItem[];
+  readonly reminders: readonly string[];
   readonly checklist: readonly string[];
   readonly counts: YueJingTendencyCounts;
   readonly detail_examples: readonly string[];
@@ -49,6 +66,8 @@ export interface YueJingMonthMainline {
   readonly window: string;
   readonly tagline: string;
   readonly body: string;
+  readonly best_for: readonly string[];
+  readonly avoid_tags: readonly string[];
 }
 
 export interface YueJingMonthInterpretation {
@@ -64,9 +83,6 @@ export interface YueJingMonthInterpretation {
   readonly mainline: YueJingMonthMainline;
   readonly phases: readonly YueJingMonthPhase[];
   readonly key_windows: readonly YueJingMonthKeyWindow[];
-  readonly context_windows: readonly YueJingMonthKeyWindow[];
-  readonly closing_avoid: readonly string[];
-  readonly review_prompts: readonly string[];
   readonly concern_interpretations: readonly YueJingMonthConcernInterpretation[];
   readonly basis_items: readonly string[];
 }

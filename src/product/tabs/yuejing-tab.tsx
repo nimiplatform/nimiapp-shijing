@@ -85,6 +85,7 @@ export function YueJingTab(props: YueJingTabProps) {
   const [failure, setFailure] = useState<ReadingGenerationFailure | null>(null);
   const [filterTagId, setFilterTagId] = useState<string | null>(null);
   const [monthPanelOpen, setMonthPanelOpen] = useState(false);
+  const [highlightedDates, setHighlightedDates] = useState<readonly string[]>([]);
   // Lifted so the day-detail panel can render at the YueJingTab level
   // (full-viewport right-side drawer) instead of being trapped inside
   // the calendar grid as an inline row-spanning element.
@@ -284,6 +285,7 @@ export function YueJingTab(props: YueJingTabProps) {
   function handleFilterChange(nextTagId: string | null) {
     setFilterTagId(nextTagId);
     setSelectedDate(null);
+    setHighlightedDates([]);
     setMonthPanelOpen(false);
   }
 
@@ -417,13 +419,14 @@ export function YueJingTab(props: YueJingTabProps) {
         cellsByDate={scopedCellsByDate}
         today={today}
         selectedDate={selectedDate}
+        highlightedDates={highlightedDates}
         onSelectDate={setSelectedDate}
       />
 
       {/* Details — only when a reading exists (has summary + cite). */}
       {isReady && latestReading && output && filterTagId === null ? (
         <details className="shijing-yuejing__details">
-          <summary>30 日解读摘要与生成依据</summary>
+          <summary>30日行动指南摘要与生成依据</summary>
           <p className="shijing-yuejing__summary">{output.summary}</p>
           <CitationDrawer reading={latestReading} />
         </details>
@@ -451,6 +454,11 @@ export function YueJingTab(props: YueJingTabProps) {
           activeTags={scopedActiveTags}
           eventMemories={state.snapshot.event_memories}
           planItems={state.snapshot.plan_items}
+          onHighlightDates={setHighlightedDates}
+          onSelectDate={(date) => {
+            setSelectedDate(date);
+            setMonthPanelOpen(false);
+          }}
           onClose={() => setMonthPanelOpen(false)}
         />
       ) : null}

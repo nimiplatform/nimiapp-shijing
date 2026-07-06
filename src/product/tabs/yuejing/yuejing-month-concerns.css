@@ -1,5 +1,3 @@
-/* ----- ④ 关注行动 ------------------------------------------------ */
-
 .shijing-yuejing .shijing-yuejing__month-concerns {
   list-style: none;
   margin: 0;
@@ -10,22 +8,22 @@
 }
 
 .shijing-yuejing .shijing-yuejing__month-concerns > li {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 18px;
-  background: #ffffff;
+  display: grid;
+  grid-template-columns: 170px minmax(150px, 0.85fr) minmax(230px, 1.15fr);
+  gap: 18px;
+  align-items: start;
+  padding: 20px 20px 16px;
+  background: rgba(255, 255, 255, 0.82);
   border: 1px solid rgba(15, 23, 38, 0.06);
-  border-left: 3px solid var(--shijing-text-disabled);
   border-radius: 16px;
-  box-shadow: 0 1px 4px rgba(15, 23, 38, 0.04);
+  box-shadow: 0 12px 28px -24px rgba(15, 23, 38, 0.24);
 }
 
-.shijing-yuejing .shijing-yuejing__month-concerns > li[data-primary="supportive"] { border-left-color: var(--yuejing-supportive); }
-.shijing-yuejing .shijing-yuejing__month-concerns > li[data-primary="steady"] { border-left-color: var(--yuejing-steady); }
-.shijing-yuejing .shijing-yuejing__month-concerns > li[data-primary="watch"] { border-left-color: var(--yuejing-watch); }
-.shijing-yuejing .shijing-yuejing__month-concerns > li[data-primary="blocked"] { border-left-color: var(--yuejing-blocked); }
-.shijing-yuejing .shijing-yuejing__month-concerns > li[data-primary="turning"] { border-left-color: var(--yuejing-turning); }
+.shijing-yuejing .shijing-yuejing__month-concerns > li[data-primary="supportive"] { border-color: color-mix(in srgb, var(--yuejing-supportive) 22%, transparent); }
+.shijing-yuejing .shijing-yuejing__month-concerns > li[data-primary="steady"] { border-color: color-mix(in srgb, var(--yuejing-steady) 22%, transparent); }
+.shijing-yuejing .shijing-yuejing__month-concerns > li[data-primary="watch"] { border-color: color-mix(in srgb, var(--yuejing-watch) 22%, transparent); }
+.shijing-yuejing .shijing-yuejing__month-concerns > li[data-primary="blocked"] { border-color: color-mix(in srgb, var(--yuejing-blocked) 22%, transparent); }
+.shijing-yuejing .shijing-yuejing__month-concerns > li[data-primary="turning"] { border-color: color-mix(in srgb, var(--yuejing-turning) 22%, transparent); }
 
 .shijing-yuejing__month-concern-head {
   display: flex;
@@ -37,130 +35,120 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 5px;
+  gap: 6px;
   min-width: 0;
 }
 
 .shijing-yuejing__month-concern-head strong {
-  font-size: 16px;
-  font-weight: 600;
   color: var(--shijing-text-primary);
-  line-height: 1.25;
+  font-size: 17px;
+  font-weight: 750;
+  line-height: 1.2;
 }
 
 .shijing-yuejing__month-concern-axis {
   display: inline-flex;
   align-items: center;
-  padding: 2px 11px;
+  min-height: 24px;
+  padding: 3px 10px;
   border-radius: 999px;
-  background: var(--shijing-brand-soft);
-  color: var(--shijing-brand-primary);
+  background: color-mix(in srgb, var(--yuejing-supportive) 14%, white);
+  color: color-mix(in srgb, var(--yuejing-supportive) 66%, #1f3d2d);
+  border: 1px solid color-mix(in srgb, var(--yuejing-supportive) 18%, transparent);
   font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .shijing-yuejing__month-concern-axis[data-pending="true"] {
   background: rgba(15, 23, 38, 0.06);
   color: var(--shijing-text-muted);
+  border-color: transparent;
 }
 
 .shijing-yuejing__month-concern-summary {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.72;
-  color: var(--shijing-text-secondary);
-}
-
-.shijing-yuejing .shijing-yuejing__month-concern-windows {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.shijing-yuejing .shijing-yuejing__month-concern-windows li {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 12px;
-  border-radius: 12px;
-  background: rgba(15, 23, 38, 0.025);
-  border-top: 2px solid var(--shijing-text-disabled);
-}
-
-.shijing-yuejing__month-concern-windows li[data-tendency="supportive"] { background: color-mix(in srgb, var(--yuejing-supportive) 8%, #fff); border-top-color: var(--yuejing-supportive); }
-.shijing-yuejing__month-concern-windows li[data-tendency="steady"]     { background: color-mix(in srgb, var(--yuejing-steady) 8%, #fff);     border-top-color: var(--yuejing-steady); }
-.shijing-yuejing__month-concern-windows li[data-tendency="watch"]      { background: color-mix(in srgb, var(--yuejing-watch) 8%, #fff);      border-top-color: var(--yuejing-watch); }
-.shijing-yuejing__month-concern-windows li[data-tendency="blocked"]    { background: color-mix(in srgb, var(--yuejing-blocked) 8%, #fff);    border-top-color: var(--yuejing-blocked); }
-.shijing-yuejing__month-concern-windows li[data-tendency="turning"]    { background: color-mix(in srgb, var(--yuejing-turning) 8%, #fff);    border-top-color: var(--yuejing-turning); }
-
-.shijing-yuejing__month-concern-window-label {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--shijing-text-muted);
-}
-
-.shijing-yuejing__month-concern-windows li[data-tendency="supportive"] .shijing-yuejing__month-concern-window-label { color: color-mix(in srgb, var(--yuejing-supportive) 72%, #1f3d2d); }
-.shijing-yuejing__month-concern-windows li[data-tendency="watch"] .shijing-yuejing__month-concern-window-label { color: color-mix(in srgb, var(--yuejing-watch) 78%, #5a3d12); }
-.shijing-yuejing__month-concern-windows li[data-tendency="turning"] .shijing-yuejing__month-concern-window-label { color: color-mix(in srgb, var(--yuejing-turning) 80%, #2c2452); }
-
-.shijing-yuejing__month-concern-windows li strong {
-  font-size: 12.5px;
-  font-weight: 600;
+  margin: 2px 0 0;
   color: var(--shijing-text-primary);
-}
-
-.shijing-yuejing__month-concern-windows li p {
-  margin: 0;
-  font-size: 11.5px;
-  line-height: 1.55;
-  color: var(--shijing-text-secondary);
+  font-size: 13.5px;
+  line-height: 1.78;
 }
 
 .shijing-yuejing__month-concern-checklist {
-  padding-top: 13px;
-  border-top: 1px solid rgba(15, 23, 38, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .shijing-yuejing__month-concern-checklist h5 {
-  margin: 0 0 10px;
-  font-size: 12.5px;
-  font-weight: 600;
+  margin: 0;
   color: var(--shijing-text-primary);
+  font-size: 12.5px;
+  font-weight: 750;
 }
 
 .shijing-yuejing .shijing-yuejing__month-concern-checklist ul {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
 }
 
 .shijing-yuejing .shijing-yuejing__month-concern-checklist li {
-  display: flex;
-  align-items: flex-start;
+  min-width: 0;
+}
+
+.shijing-yuejing .shijing-yuejing__month-concern-checklist button {
+  appearance: none;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
   gap: 8px;
+  align-items: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--shijing-text-secondary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.shijing-yuejing .shijing-yuejing__month-concern-checklist button:hover,
+.shijing-yuejing .shijing-yuejing__month-concern-checklist button:focus-visible {
+  color: var(--shijing-text-primary);
+  outline: none;
+}
+
+.shijing-yuejing .shijing-yuejing__month-concern-checklist button > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
   font-size: 12.5px;
   line-height: 1.5;
-  color: var(--shijing-text-secondary);
+}
+
+.shijing-yuejing .shijing-yuejing__month-concern-checklist button strong {
+  color: var(--shijing-text-primary);
+  font-size: 12.5px;
+  font-weight: 750;
+  line-height: 1.4;
 }
 
 .shijing-yuejing__month-check {
-  flex-shrink: 0;
-  margin-top: 1px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 18px;
   height: 18px;
+  margin-top: 1px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--yuejing-supportive) 18%, transparent);
+  background: color-mix(in srgb, var(--yuejing-supportive) 16%, white);
   color: color-mix(in srgb, var(--yuejing-supportive) 68%, #1f3d2d);
+  border: 1px solid color-mix(in srgb, var(--yuejing-supportive) 20%, transparent);
 }
 
 .shijing-yuejing__month-check svg {
@@ -169,4 +157,46 @@
   display: block;
 }
 
-/* ----- ⑤ 收尾提醒 ------------------------------------------------ */
+.shijing-yuejing .shijing-yuejing__month-reminders {
+  grid-column: 1 / -1;
+  list-style: none;
+  margin: 0;
+  padding: 14px 0 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  border-top: 1px solid rgba(15, 23, 38, 0.06);
+}
+
+.shijing-yuejing__month-reminders li {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 0 10px;
+  color: color-mix(in srgb, var(--yuejing-supportive) 64%, #1f3d2d);
+  font-size: 12px;
+  font-weight: 650;
+  text-align: center;
+  border-right: 1px solid rgba(15, 23, 38, 0.06);
+}
+
+.shijing-yuejing__month-reminders li:last-child {
+  border-right: 0;
+}
+
+@media (max-width: 720px) {
+  .shijing-yuejing .shijing-yuejing__month-concerns > li {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-yuejing .shijing-yuejing__month-reminders {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .shijing-yuejing__month-reminders li {
+    justify-content: flex-start;
+    border-right: 0;
+  }
+}

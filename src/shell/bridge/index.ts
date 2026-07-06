@@ -23,7 +23,7 @@ export type {
   JsonPrimitive,
 } from '@nimiplatform/kit/shell/renderer/bridge';
 
-import type { TauriOAuthBridge } from '@nimiplatform/kit/core/oauth';
+import type { ShellOAuthBridge } from '@nimiplatform/kit/core/oauth';
 import {
   focusMainWindow,
   hasTauriInvoke,
@@ -34,8 +34,8 @@ import {
 export const SHIJING_TOKEN_EXCHANGE_FORBIDDEN =
   'ShiJing does not expose OAuth token exchange; Runtime account service owns token custody.';
 
-export const shijingTauriOAuthBridge: TauriOAuthBridge = {
-  hasTauriInvoke,
+export const shijingTauriOAuthBridge: ShellOAuthBridge = {
+  hasShellHostInvoke: hasTauriInvoke,
   oauthListenForCode,
   openExternalUrl,
   focusMainWindow,

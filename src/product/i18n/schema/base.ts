@@ -316,6 +316,7 @@ readonly aiConfig: {
 readonly readingFailure: {
   readonly headlines: LabelMap<ReadingGenerationFailure['kind']>;
   readonly methodFeatureUnsupported: string;
+  readonly runtimeProviderProductNotActivated: string;
 };
 readonly citationDrawer: {
   readonly ariaLabel: string;

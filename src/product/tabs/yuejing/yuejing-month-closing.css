@@ -1,86 +1,74 @@
-.shijing-yuejing__month-closing {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.shijing-yuejing__month-avoid,
-.shijing-yuejing__month-review {
-  padding: 16px 18px;
-  border-radius: 14px;
-}
-
-.shijing-yuejing__month-avoid {
-  background: color-mix(in srgb, var(--shijing-status-warning) 8%, #fff);
-  border: 1px solid color-mix(in srgb, var(--shijing-status-warning) 22%, transparent);
-}
-
-.shijing-yuejing__month-review {
-  background: color-mix(in srgb, var(--shijing-status-info) 8%, #fff);
-  border: 1px solid color-mix(in srgb, var(--shijing-status-info) 22%, transparent);
-}
-
-.shijing-yuejing__month-avoid header,
-.shijing-yuejing__month-review header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  font-size: 13.5px;
-  font-weight: 600;
-}
-
-.shijing-yuejing__month-avoid header { color: var(--shijing-status-warning); }
-.shijing-yuejing__month-review header { color: var(--shijing-status-info); }
-
-.shijing-yuejing__month-closing-icon {
-  display: inline-flex;
-}
-
-.shijing-yuejing__month-closing-icon svg {
-  width: 17px;
-  height: 17px;
-  display: block;
-}
-
-.shijing-yuejing .shijing-yuejing__month-avoid ul,
-.shijing-yuejing .shijing-yuejing__month-review ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.shijing-yuejing__month-accordion-list {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 10px;
 }
 
-.shijing-yuejing .shijing-yuejing__month-avoid li,
-.shijing-yuejing .shijing-yuejing__month-review li {
-  position: relative;
-  padding-left: 17px;
-  font-size: 12.5px;
-  line-height: 1.6;
+.shijing-yuejing__month-accordion {
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(15, 23, 38, 0.07);
+  overflow: clip;
+}
+
+.shijing-yuejing__month-accordion summary {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 15px;
+  color: var(--shijing-text-primary);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.shijing-yuejing__month-accordion summary::-webkit-details-marker {
+  display: none;
+}
+
+.shijing-yuejing__month-accordion-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: rgba(15, 23, 38, 0.04);
   color: var(--shijing-text-secondary);
 }
 
-.shijing-yuejing .shijing-yuejing__month-avoid li::before,
-.shijing-yuejing .shijing-yuejing__month-review li::before {
-  content: "";
-  position: absolute;
-  left: 2px;
-  top: 8px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+.shijing-yuejing__month-accordion-icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
-.shijing-yuejing .shijing-yuejing__month-avoid li::before { background: var(--shijing-status-warning); }
-.shijing-yuejing .shijing-yuejing__month-review li::before { background: var(--shijing-status-info); }
+.shijing-yuejing__month-accordion-chevron {
+  color: var(--shijing-text-muted);
+  font-size: 22px;
+  line-height: 1;
+  transform: rotate(0deg);
+  transition: transform 140ms ease;
+}
 
-/* ----- generation basis counts ----------------------------------- */
+.shijing-yuejing__month-accordion[open] .shijing-yuejing__month-accordion-chevron {
+  transform: rotate(90deg);
+}
+
+.shijing-yuejing__month-accordion[open] {
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.shijing-yuejing__month-accordion > :not(summary) {
+  margin: 0 15px 16px;
+}
 
 .shijing-yuejing .shijing-yuejing__month-counts {
   list-style: none;
-  margin: 2px 0 0;
+  margin: 10px 15px 16px;
   padding: 0;
   display: flex;
   flex-direction: row;
@@ -111,24 +99,10 @@
 .shijing-yuejing__month-counts li[data-tendency="blocked"]    .shijing-yuejing__panel-tend-dot { background: var(--yuejing-blocked); }
 .shijing-yuejing__month-counts li[data-tendency="turning"]    .shijing-yuejing__panel-tend-dot { background: var(--yuejing-turning); }
 
-.shijing-yuejing__month-evidence {
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.68);
-  border: 1px solid rgba(15, 23, 38, 0.06);
-}
-
-.shijing-yuejing__month-evidence summary {
-  cursor: pointer;
-  color: var(--shijing-text-primary);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.shijing-yuejing__month-evidence ul {
-  margin: 12px 0 0;
+.shijing-yuejing .shijing-yuejing__month-evidence-list {
+  margin: 0 15px 0;
   padding-left: 18px;
   color: var(--shijing-text-secondary);
   font-size: 12.5px;
-  line-height: 1.7;
+  line-height: 1.75;
 }

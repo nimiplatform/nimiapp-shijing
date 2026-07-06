@@ -40,7 +40,7 @@ export const ZH_RIJING_COPY: ProductCopy['rijing'] = {
     runtime_ai_failed: {
       description: 'Runtime AI wording 未完成，当前不会生成替代解读。',
       confidence_note: 'AI 生成失败，日镜按 fail-close 规则停止。',
-      reminder: '请先确认 AI 模型配置，再重新生成今日日镜。',
+      reminder: '请检查模型绑定、云厂商开通状态，或切换到可用模型后重新生成今日日镜。',
     },
     persistence_pending: {
       description: '正在加载本地数据，完成后才能生成今日日镜。',
@@ -57,11 +57,12 @@ export const ZH_RIJING_COPY: ProductCopy['rijing'] = {
     ready_to_generate: '生成今日日镜',
     profile_incomplete: '完善资料',
     missing_focus: '管理关注',
-    runtime_ai_failed: '配置 AI 模型',
+    runtime_ai_failed: '检查 AI / 云模型',
     persistence_failed: '管理本地数据',
   },
   failureActions: {
-    runtimeAi: '配置 AI 模型',
+    runtimeAi: '检查 AI 模型',
+    runtimeProviderProductActivation: '开通或更换云模型',
     methodProfile: '切换推演方法',
   },
   refreshAria: {

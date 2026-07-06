@@ -40,7 +40,7 @@ export const EN_RIJING_COPY: ProductCopy['rijing'] = {
     runtime_ai_failed: {
       description: 'Runtime AI wording did not complete, so no substitute reading is generated.',
       confidence_note: 'AI generation failed; Daily Mirror stopped by fail-close rules.',
-      reminder: 'Check AI model configuration, then regenerate Daily Mirror.',
+      reminder: 'Check the model binding and provider activation state, or switch to an available model before regenerating Daily Mirror.',
     },
     persistence_pending: {
       description: 'Loading local data. Daily Mirror can be generated after it is ready.',
@@ -57,11 +57,12 @@ export const EN_RIJING_COPY: ProductCopy['rijing'] = {
     ready_to_generate: 'Generate Daily Mirror',
     profile_incomplete: 'Complete profile',
     missing_focus: 'Manage concerns',
-    runtime_ai_failed: 'Configure AI model',
+    runtime_ai_failed: 'Check AI / cloud model',
     persistence_failed: 'Manage local data',
   },
   failureActions: {
-    runtimeAi: 'Configure AI model',
+    runtimeAi: 'Check AI model',
+    runtimeProviderProductActivation: 'Activate or switch cloud model',
     methodProfile: 'Switch calculation method',
   },
   refreshAria: {

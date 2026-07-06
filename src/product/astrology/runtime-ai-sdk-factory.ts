@@ -179,6 +179,49 @@ function parseRuntimeAiWordingPatch(
   return { ok: true, value: normalized };
 }
 
+function recordValue(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function textValue(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function parseJsonRecord(raw: string): Record<string, unknown> | null {
+  if (!raw.trim().startsWith('{')) return null;
+  try {
+    return recordValue(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
+function providerMessageFromRuntimeError(message: string): string {
+  const envelope = parseJsonRecord(message);
+  const details = recordValue(envelope?.details);
+  return textValue(details?.provider_message)
+    || textValue(details?.providerMessage)
+    || '';
+}
+
+function isProviderProductNotActivated(providerMessage: string): boolean {
+  return /product\b[\s\S]{0,120}\bnot activated/i.test(providerMessage)
+    || /not activated\b[\s\S]{0,120}\bproducts?/i.test(providerMessage)
+    || /activated products/i.test(providerMessage);
+}
+
+function runtimeTextGenerateFailureDetail(error: { readonly code?: string; readonly message?: string }): string {
+  const message = textValue(error.message) || textValue(error.code) || 'Runtime text generation failed';
+  const providerMessage = providerMessageFromRuntimeError(message);
+  if (!providerMessage) return message;
+  if (isProviderProductNotActivated(providerMessage)) {
+    return `provider_product_not_activated:provider_message=${providerMessage}`;
+  }
+  return `provider_request_failed:provider_message=${providerMessage}`;
+}
+
 class SdkRuntimeAiClient implements RuntimeAiClient {
   private readonly runtime: NimiRuntimeLike | undefined;
   private readonly options: SdkRuntimeFactoryOptions;
@@ -230,7 +273,7 @@ class SdkRuntimeAiClient implements RuntimeAiClient {
         ok: false,
         failure: {
           kind: 'runtime_unavailable',
-          detail: result.error.message || result.error.code || 'Runtime text generation failed',
+          detail: runtimeTextGenerateFailureDetail(result.error),
         },
       };
     }

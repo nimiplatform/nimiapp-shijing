@@ -51,7 +51,7 @@ export function MonthTendencyGlyph({ tendency }: { readonly tendency: TendencyCl
   );
 }
 
-// ② 关键日期窗口 — paper-plane / pause / cycle by window index.
+// ② 三个关键窗口 — paper-plane / pause / cycle by window index.
 export function MonthWindowGlyph({ index }: { readonly index: number }) {
   return (
     <svg {...monthIconProps()} aria-hidden>

@@ -4,6 +4,16 @@ import { HEJING_PAGE_COPY } from './hejing-model.ts';
 
 const copy = HEJING_PAGE_COPY;
 
+interface HeJingEmptyStateCopyOverride {
+  readonly title?: string;
+  readonly lead?: string;
+  readonly primaryCta?: string;
+  readonly cardTitle?: string;
+  readonly cardBody?: string;
+  readonly startCta?: string;
+  readonly existingCta?: string;
+}
+
 const HEJING_VALUE_ICONS: Record<string, ReactNode> = {
   baseline: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -64,11 +74,13 @@ function HeJingMirrorVisual() {
 export function HeJingEmptyState({
   onCreate,
   onSelectExisting,
+  copyOverride,
 }: {
   readonly onCreate: () => void;
   readonly onSelectExisting: () => void;
+  readonly copyOverride?: HeJingEmptyStateCopyOverride;
 }) {
-  const c = copy.empty;
+  const c = { ...copy.empty, ...copyOverride };
   return (
     <div className="shijing-hejing__empty">
       <header className="shijing-hejing__empty-intro">
@@ -135,23 +147,25 @@ export function HeJingEmptyState({
 export function HeJingRelationshipTypeEmpty({
   typeLabel,
   onCreate,
+  onSelectExisting = onCreate,
 }: {
   readonly typeLabel: string;
   readonly onCreate: () => void;
+  readonly onSelectExisting?: () => void;
 }) {
   return (
-    <div className="shijing-hejing__type-empty" role="status">
-      <div className="shijing-hejing__type-empty-mark" aria-hidden>
-        合
-      </div>
-      <div className="shijing-hejing__type-empty-copy">
-        <h2 id="hejing-overview-title">{copy.emptyTypeTitle(typeLabel)}</h2>
-        <p>{copy.emptyTypeBody(typeLabel)}</p>
-        <button type="button" onClick={onCreate}>
-          {copy.emptyTypeAction(typeLabel)}
-        </button>
-        <span>{copy.emptyTypeHint}</span>
-      </div>
-    </div>
+    <HeJingEmptyState
+      onCreate={onCreate}
+      onSelectExisting={onSelectExisting}
+      copyOverride={{
+        title: copy.emptyTypeTitle(typeLabel),
+        lead: copy.emptyTypeBody(typeLabel),
+        primaryCta: copy.emptyTypeAction(typeLabel),
+        cardTitle: copy.emptyTypeTitle(typeLabel),
+        cardBody: copy.emptyTypeHint,
+        startCta: copy.emptyTypeAction(typeLabel),
+        existingCta: copy.addPersonDialogTitle,
+      }}
+    />
   );
 }

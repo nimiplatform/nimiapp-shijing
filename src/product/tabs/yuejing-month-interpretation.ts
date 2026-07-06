@@ -5,7 +5,7 @@ import type { EventMemory } from '../../domain/event-memory.ts';
 import type { YueJingCell, TendencyClass } from '../../domain/mirror-output.ts';
 import type { PlanItem } from '../../domain/plan-item.ts';
 import { trimmedConcernLabel as yuejingTagLabel } from '../concern-tags/concern-presets.ts';
-import type { YueJingDayTendency, YueJingMonthConcernInterpretation, YueJingMonthInterpretation, YueJingMonthKeyWindow, YueJingMonthPhase, YueJingTendencyCounts } from './yuejing/yuejing-month-types.ts';
+import type { YueJingDayTendency, YueJingMonthActionItem, YueJingMonthConcernInterpretation, YueJingMonthDateRange, YueJingMonthInterpretation, YueJingMonthKeyWindow, YueJingMonthPhase, YueJingTendencyCounts } from './yuejing/yuejing-month-types.ts';
 import { YUEJING_TENDENCY_SEVERITY, countYueJingTendencies, emptyYueJingTendencyCounts, primaryYueJingTendencyFromCounts } from './yuejing/yuejing-month-tendency.ts';
 import {
   CONCERN_ACTION_BY_LABEL,
@@ -21,6 +21,8 @@ import {
 } from './yuejing/yuejing-month-language.ts';
 
 export type {
+  YueJingMonthActionItem,
+  YueJingMonthDateRange,
   YueJingDayTendency,
   YueJingMonthAdvice,
   YueJingMonthConcernInterpretation,
@@ -51,7 +53,7 @@ function slashMonthDay(dateStr: string): string {
 
 export function compactYueJingDateRangeLabel(startDate: string, endDate: string): string {
   if (startDate === endDate) return shortMonthDay(startDate);
-  return `${shortMonthDay(startDate)}-${shortMonthDay(endDate)}`;
+  return `${shortMonthDay(startDate)}–${shortMonthDay(endDate)}`;
 }
 
 // A single date's dominant tendency, by severity - the same rule the calendar
@@ -92,42 +94,111 @@ function cellsForConcernInWindow(input: {
   return cells;
 }
 
-function contiguousDateRanges(
+function contiguousDateRangeSegments(
   cells: readonly YueJingCell[],
   dates: readonly string[],
   predicate: (cell: YueJingCell) => boolean,
-): string[] {
+): YueJingMonthDateRange[] {
   const dateIndex = new Map(dates.map((date, index) => [date, index] as const));
   const selected = cells
     .filter(predicate)
     .map((cell) => cell.date)
     .filter((date, index, arr) => arr.indexOf(date) === index)
     .sort((a, b) => (dateIndex.get(a) ?? 0) - (dateIndex.get(b) ?? 0));
-  const ranges: string[] = [];
+  const ranges: YueJingMonthDateRange[] = [];
   let start: string | null = null;
   let previous: string | null = null;
+  let rangeDates: string[] = [];
   for (const date of selected) {
     if (!start || !previous) {
       start = date;
       previous = date;
+      rangeDates = [date];
       continue;
     }
     if ((dateIndex.get(date) ?? -1) === (dateIndex.get(previous) ?? -3) + 1) {
       previous = date;
+      rangeDates.push(date);
       continue;
     }
-    ranges.push(compactYueJingDateRangeLabel(start, previous));
+    ranges.push({
+      label: compactYueJingDateRangeLabel(start, previous),
+      start_date: start,
+      end_date: previous,
+      dates: rangeDates,
+    });
     start = date;
     previous = date;
+    rangeDates = [date];
   }
-  if (start && previous) ranges.push(compactYueJingDateRangeLabel(start, previous));
+  if (start && previous) {
+    ranges.push({
+      label: compactYueJingDateRangeLabel(start, previous),
+      start_date: start,
+      end_date: previous,
+      dates: rangeDates,
+    });
+  }
   return ranges;
+}
+
+function contiguousDateRanges(
+  cells: readonly YueJingCell[],
+  dates: readonly string[],
+  predicate: (cell: YueJingCell) => boolean,
+): string[] {
+  return contiguousDateRangeSegments(cells, dates, predicate).map((range) => range.label);
 }
 
 function limitedRangeText(ranges: readonly string[], fallback: string): string {
   if (ranges.length === 0) return fallback;
   const head = ranges.slice(0, 3).join('、');
   return ranges.length > 3 ? `${head} 等` : head;
+}
+
+function limitedDateRangeSegments(
+  segments: readonly YueJingMonthDateRange[],
+  fallback: YueJingMonthDateRange,
+): readonly YueJingMonthDateRange[] {
+  return (segments.length > 0 ? segments : [fallback]).slice(0, 3);
+}
+
+function dateRangeText(
+  segments: readonly YueJingMonthDateRange[],
+  fallback: YueJingMonthDateRange,
+): string {
+  return limitedRangeText(limitedDateRangeSegments(segments, fallback).map((range) => range.label), fallback.label);
+}
+
+function flattenRangeDates(segments: readonly YueJingMonthDateRange[]): string[] {
+  return segments.flatMap((range) => [...range.dates]);
+}
+
+function selectedDateRangeSegment(
+  segments: readonly YueJingMonthDateRange[],
+  index: number,
+): readonly YueJingMonthDateRange[] {
+  const segment = segments[index] ?? segments[0];
+  return segment ? [segment] : [];
+}
+
+function fullWindowRange(dates: readonly string[], rangeLabel: string): YueJingMonthDateRange {
+  const firstDate = dates[0] ?? '';
+  const lastDate = dates[dates.length - 1] ?? firstDate;
+  return {
+    label: rangeLabel,
+    start_date: firstDate,
+    end_date: lastDate,
+    dates: [...dates],
+  };
+}
+
+function singleDateRangeForDates(dates: readonly string[], fallbackLabel: string): YueJingMonthDateRange {
+  if (dates.length === 0) return fullWindowRange(dates, fallbackLabel);
+  return fullWindowRange(
+    dates,
+    compactYueJingDateRangeLabel(dates[0] as string, dates[dates.length - 1] as string),
+  );
 }
 
 function meaningfulCellDetails(cells: readonly YueJingCell[]): string[] {
@@ -156,6 +227,14 @@ function rangesForTendency(
   tendency: TendencyClass,
 ): string[] {
   return contiguousDateRanges(cells, dates, (cell) => cell.tendency_class === tendency);
+}
+
+function rangeSegmentsForTendency(
+  cells: readonly YueJingCell[],
+  dates: readonly string[],
+  tendency: TendencyClass,
+): YueJingMonthDateRange[] {
+  return contiguousDateRangeSegments(cells, dates, (cell) => cell.tendency_class === tendency);
 }
 
 function countGeneratedDates(
@@ -234,58 +313,24 @@ function splitIntoPhases(
 
 function keyWindow(
   title: string,
-  window: string,
+  dateRanges: readonly YueJingMonthDateRange[],
+  fallbackRange: YueJingMonthDateRange,
   tendency: TendencyClass | undefined,
   brief: string,
   suitable: string,
   unsuitable: string,
 ): YueJingMonthKeyWindow {
-  return { title, window, tendency, brief, suitable, unsuitable };
-}
-
-function contextDateRanges(input: {
-  readonly dates: readonly string[];
-  readonly eventMemories: readonly EventMemory[];
-  readonly planItems: readonly PlanItem[];
-}): YueJingMonthKeyWindow[] {
-  const dateSet = new Set(input.dates);
-  const memoryDates = input.eventMemories
-    .map((memory) => memory.occurred_at.slice(0, 10))
-    .filter((date) => dateSet.has(date));
-  const planDates = input.planItems
-    .map((plan) => plan.planned_for.slice(0, 10))
-    .filter((date) => dateSet.has(date));
-  const dateOnlyCells = (dates: readonly string[]): YueJingCell[] =>
-    dates.map((date) => ({
-      date,
-      concern_tag_ref: '__context__',
-      tendency_class: 'steady',
-      summary: '',
-    }));
-  const windows: YueJingMonthKeyWindow[] = [];
-  const memoryRanges = contiguousDateRanges(dateOnlyCells(memoryDates), input.dates, () => true);
-  if (memoryRanges.length > 0) {
-    windows.push(keyWindow(
-      '已有事件记忆',
-      limitedRangeText(memoryRanges, ''),
-      undefined,
-      '回看当时真实发生了什么，把经验收进下一步安排。',
-      '适合回看当时真实发生了什么，把经验收进下一步安排。',
-      '不适合把单次事件放大成整月判断，先看它是否反复出现。',
-    ));
-  }
-  const planRanges = contiguousDateRanges(dateOnlyCells(planDates), input.dates, () => true);
-  if (planRanges.length > 0) {
-    windows.push(keyWindow(
-      '未来计划',
-      limitedRangeText(planRanges, ''),
-      undefined,
-      '提前拆小动作，把关键承诺避开阻力最重的日期。',
-      '适合提前拆小动作，尽量把关键承诺避开阻力最重的日期。',
-      '不适合把计划压到临近当天才处理，尤其不要在观察日临时加码。',
-    ));
-  }
-  return windows;
+  const visibleRanges = limitedDateRangeSegments(dateRanges, fallbackRange);
+  return {
+    title,
+    window: dateRangeText(dateRanges, fallbackRange),
+    date_ranges: visibleRanges,
+    target_dates: flattenRangeDates(visibleRanges),
+    tendency,
+    brief,
+    suitable,
+    unsuitable,
+  };
 }
 
 function concernLanguageFor(tag: ConcernTag): ConcernLanguage {
@@ -296,6 +341,34 @@ function concernLanguageFor(tag: ConcernTag): ConcernLanguage {
 function concernActionFor(tag: ConcernTag): ConcernAction {
   const label = yuejingTagLabel(tag);
   return CONCERN_ACTION_BY_LABEL[label] ?? GENERIC_CONCERN_ACTION;
+}
+
+function actionItemsForConcern(input: {
+  readonly action: ConcernAction;
+  readonly primary_segments: readonly YueJingMonthDateRange[];
+  readonly supportive_segments: readonly YueJingMonthDateRange[];
+  readonly watch_segments: readonly YueJingMonthDateRange[];
+  readonly turning_segments: readonly YueJingMonthDateRange[];
+  readonly after_opening_segments: readonly YueJingMonthDateRange[];
+  readonly fallback_range: YueJingMonthDateRange;
+}): YueJingMonthActionItem[] {
+  return input.action.actions.map((action) => {
+    const segments =
+      action.source === 'primary' ? input.primary_segments
+        : action.source === 'supportive' ? input.supportive_segments
+          : action.source === 'caution' ? input.watch_segments
+            : action.source === 'after_opening' ? input.after_opening_segments
+              : action.source === 'first_supportive' ? selectedDateRangeSegment(input.supportive_segments, 0)
+                : action.source === 'middle_watch' ? selectedDateRangeSegment(input.watch_segments, 1)
+                  : action.source === 'middle_turning' ? selectedDateRangeSegment(input.turning_segments, 1)
+                    : input.turning_segments;
+    const visibleRanges = limitedDateRangeSegments(segments, input.fallback_range);
+    return {
+      window: dateRangeText(segments, input.fallback_range),
+      label: action.label,
+      target_dates: flattenRangeDates(visibleRanges),
+    };
+  });
 }
 
 function deriveConcernInterpretation(input: {
@@ -315,18 +388,31 @@ function deriveConcernInterpretation(input: {
   const language = concernLanguageFor(input.tag);
   const concernAction = concernActionFor(input.tag);
   const primaryRanges = rangesForTendency(cells, input.dates, primary);
-  const supportiveRanges = rangesForTendency(cells, input.dates, 'supportive');
-  const watchRanges = [
-    ...rangesForTendency(cells, input.dates, 'watch'),
-    ...rangesForTendency(cells, input.dates, 'blocked'),
-  ];
-  const turningRanges = rangesForTendency(cells, input.dates, 'turning');
+  const primarySegments = rangeSegmentsForTendency(cells, input.dates, primary);
+  const supportiveSegments = rangeSegmentsForTendency(cells, input.dates, 'supportive');
+  const watchSegments = rangeSegmentsForTendency(cells, input.dates, 'watch');
+  const turningSegments = rangeSegmentsForTendency(cells, input.dates, 'turning');
   const blockedRanges = rangesForTendency(cells, input.dates, 'blocked');
+  const fallbackRange = fullWindowRange(input.dates, input.rangeLabel);
+  const afterOpeningDates = input.dates.slice(Math.min(3, input.dates.length));
+  const afterOpeningSegments = afterOpeningDates.length > 0
+    ? [singleDateRangeForDates(afterOpeningDates, input.rangeLabel)]
+    : primarySegments;
   const actionWindow = limitedRangeText(primaryRanges, input.rangeLabel);
+  const actionItems = actionItemsForConcern({
+    action: concernAction,
+    primary_segments: primarySegments,
+    supportive_segments: supportiveSegments,
+    watch_segments: watchSegments,
+    turning_segments: turningSegments,
+    after_opening_segments: afterOpeningSegments,
+    fallback_range: fallbackRange,
+  });
   const keyWindows = [
     keyWindow(
       '适合推进',
-      limitedRangeText(supportiveRanges, input.rangeLabel),
+      supportiveSegments,
+      fallbackRange,
       'supportive',
       language.supportive,
       language.supportive,
@@ -334,7 +420,8 @@ function deriveConcernInterpretation(input: {
     ),
     keyWindow(
       '先观察',
-      limitedRangeText(watchRanges, input.rangeLabel),
+      watchSegments,
+      fallbackRange,
       'watch',
       language.watch,
       language.watch,
@@ -342,7 +429,8 @@ function deriveConcernInterpretation(input: {
     ),
     keyWindow(
       '可能转向',
-      limitedRangeText(turningRanges, input.rangeLabel),
+      turningSegments,
+      fallbackRange,
       'turning',
       language.turning,
       language.turning,
@@ -367,7 +455,9 @@ function deriveConcernInterpretation(input: {
         : TENDENCY_LANGUAGE[primary].unsuitable,
     },
     key_windows: keyWindows,
-    checklist: concernAction.checklist,
+    action_items: actionItems,
+    reminders: concernAction.reminders,
+    checklist: actionItems.map((item) => `${item.window}：${item.label}`),
     counts,
     detail_examples: meaningfulCellDetails(cells),
   };
@@ -395,15 +485,15 @@ export function deriveYueJingMonthInterpretation(input: {
   const primary = allCells.length > 0 ? primaryYueJingTendencyFromCounts(dayCounts) : 'steady';
   const generatedDayCount = countGeneratedDates(input.dates, input.cellsByDate);
   const primaryLanguage = TENDENCY_LANGUAGE[primary];
-  const supportiveRanges = rangesForTendency(allCells, input.dates, 'supportive');
-  const watchRanges = rangesForTendency(allCells, input.dates, 'watch');
-  const blockedRanges = rangesForTendency(allCells, input.dates, 'blocked');
-  const turningRanges = rangesForTendency(allCells, input.dates, 'turning');
-  const cautionRanges = [...watchRanges, ...blockedRanges];
+  const supportiveSegments = rangeSegmentsForTendency(allCells, input.dates, 'supportive');
+  const watchSegments = rangeSegmentsForTendency(allCells, input.dates, 'watch');
+  const turningSegments = rangeSegmentsForTendency(allCells, input.dates, 'turning');
+  const fallbackRange = fullWindowRange(input.dates, rangeLabel);
   const keyWindows: YueJingMonthKeyWindow[] = [
     keyWindow(
       '主动推进窗口',
-      limitedRangeText(supportiveRanges, rangeLabel),
+      supportiveSegments,
+      fallbackRange,
       'supportive',
       KEY_WINDOW_BRIEF.push,
       TENDENCY_LANGUAGE.supportive.suitable,
@@ -411,7 +501,8 @@ export function deriveYueJingMonthInterpretation(input: {
     ),
     keyWindow(
       '放慢判断窗口',
-      limitedRangeText(cautionRanges, rangeLabel),
+      watchSegments,
+      fallbackRange,
       'watch',
       KEY_WINDOW_BRIEF.slow,
       TENDENCY_LANGUAGE.watch.suitable,
@@ -419,30 +510,13 @@ export function deriveYueJingMonthInterpretation(input: {
     ),
     keyWindow(
       '转向信号窗口',
-      limitedRangeText(turningRanges, rangeLabel),
+      turningSegments,
+      fallbackRange,
       'turning',
       KEY_WINDOW_BRIEF.turn,
       TENDENCY_LANGUAGE.turning.suitable,
       TENDENCY_LANGUAGE.turning.unsuitable,
     ),
-  ];
-  const contextWindows = contextDateRanges({
-    dates: input.dates,
-    eventMemories: input.eventMemories ?? [],
-    planItems: input.planItems ?? [],
-  });
-  // ⑤ 收尾提醒 — three short avoid bullets (two from the primary tendency,
-  // one anchored to the observation windows) and three reflective prompts
-  // (the middle one tendency-specific). All process guidance, no prediction.
-  const closingAvoid = [
-    primaryLanguage.avoid[0] as string,
-    primaryLanguage.avoid[1] as string,
-    cautionRanges.length > 0 ? '在观察日急于给关系或结果定性' : (primaryLanguage.avoid[2] as string),
-  ];
-  const reviewPrompts = [
-    '本期我最想推进的是什么？',
-    primaryLanguage.review,
-    '我做得好的是什么？可以保持什么？',
   ];
   const concernInterpretations = input.activeTags
     .map((tag) => deriveConcernInterpretation({
@@ -473,12 +547,11 @@ export function deriveYueJingMonthInterpretation(input: {
       window: rangeLabel,
       tagline: primaryLanguage.tagline,
       body: primaryLanguage.body,
+      best_for: primaryLanguage.best_for,
+      avoid_tags: primaryLanguage.avoid_tags,
     },
     phases: splitIntoPhases(input.dates, input.cellsByDate, rangeLabel),
     key_windows: keyWindows,
-    context_windows: contextWindows,
-    closing_avoid: closingAvoid,
-    review_prompts: reviewPrompts,
     concern_interpretations: concernInterpretations,
     basis_items: basisItems,
   };

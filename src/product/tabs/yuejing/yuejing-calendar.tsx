@@ -17,6 +17,7 @@ export interface YueJingCalendarProps {
   readonly cellsByDate: Map<string, readonly YueJingCell[]>;
   readonly today: string;
   readonly selectedDate: string | null;
+  readonly highlightedDates?: readonly string[];
   readonly onSelectDate: (date: string | null) => void;
 }
 
@@ -24,6 +25,10 @@ export function YueJingCalendar(props: YueJingCalendarProps) {
   const dates = useMemo(
     () => Array.from(props.cellsByDate.keys()).sort(),
     [props.cellsByDate],
+  );
+  const highlightedDateSet = useMemo(
+    () => new Set(props.highlightedDates ?? []),
+    [props.highlightedDates],
   );
   if (dates.length === 0) {
     return (
@@ -58,6 +63,7 @@ export function YueJingCalendar(props: YueJingCalendarProps) {
               entries={entries}
               today={props.today}
               selected={selected}
+              highlighted={highlightedDateSet.has(date)}
               onToggle={() => props.onSelectDate(selected ? null : date)}
             />
           );
@@ -75,6 +81,7 @@ interface YueJingDayCardProps {
   readonly entries: readonly YueJingCell[];
   readonly today: string;
   readonly selected: boolean;
+  readonly highlighted: boolean;
   readonly onToggle: () => void;
 }
 
@@ -105,6 +112,7 @@ function YueJingDayCard(props: YueJingDayCardProps) {
       data-day-kind={kind}
       data-tendency={dominant ?? 'empty'}
       data-selected={props.selected}
+      data-window-highlighted={props.highlighted}
       data-date={props.date}
     >
       <button

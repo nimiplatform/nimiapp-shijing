@@ -228,6 +228,37 @@ test('SdkRuntimeAiClient fails closed when no text model is provided', async () 
   }
 });
 
+test('SdkRuntimeAiClient classifies cloud provider product activation failures', async () => {
+  const providerFailure = {
+    reasonCode: 'AI_INPUT_INVALID',
+    actionHint: 'check_input_and_extensions',
+    traceId: '',
+    retryable: false,
+    message: 'provider request failed',
+    details: {
+      provider_message:
+        'The product is not activated, please confirm that you have activated products and try again after activation.',
+    },
+  };
+  const runtime = createTextRuntime({
+    generateText: async () => {
+      throw new Error(JSON.stringify(providerFailure));
+    },
+  });
+  const client = createSdkRuntimeAiClient({ runtime });
+
+  const result = await client.generate('rijing', minimalPromptRequest());
+
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.failure.kind, 'runtime_unavailable');
+    assert.equal(
+      result.failure.detail,
+      'provider_product_not_activated:provider_message=The product is not activated, please confirm that you have activated products and try again after activation.',
+    );
+  }
+});
+
 test('SdkRuntimeAiClient uses SDK structured output extraction for fenced JSON', async () => {
   const fenced = `\`\`\`json\n${JSON.stringify(rijingPatch())}\n\`\`\``;
   const runtime = createTextRuntime({

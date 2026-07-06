@@ -45,6 +45,6 @@ export function ClipboardIcon() {
   );
 }
 
-// ===== 5c) Month-panel icon set (SJG-DSY-01「30 日解读」mockup) =======
+// ===== 5c) Month-panel icon set (SJG-DSY-01「30日行动指南」mockup) =======
 // Stroke-only glyphs matching the existing icon family. Used by the
 // numbered sections of the 30-day reading panel below.

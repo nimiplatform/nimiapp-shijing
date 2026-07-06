@@ -371,6 +371,7 @@ readingFailure: {
     algorithm_fail_closed: 'Generation failed: current data precision is insufficient for this mirror reading (closed by SJG-ALGO-10).',
   },
   methodFeatureUnsupported: 'Generation failed: the selected method does not support this mirror yet. Switch to a supported calculation method and regenerate.',
+  runtimeProviderProductNotActivated: 'Generation failed: the model is bound, but the cloud provider says the product or model service is not activated. Activate it in the provider console, or switch to an activated Runtime model and regenerate.',
 },
 citationDrawer: {
   ariaLabel: 'Generation evidence',

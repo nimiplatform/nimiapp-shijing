@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  isRuntimeProviderProductNotActivatedFailure,
   isMethodFeatureUnsupportedFailure,
   readingFailureHeadline,
+  runtimeAiFailureRecoveryKind,
 } from '../src/product/tabs/shared/reading-failure-copy.ts';
 import { getProductCopy } from '../src/product/i18n/copy.ts';
 import { consultationMirrorScope, rolling30DayMirrorScope } from './_fixtures.mjs';
@@ -16,6 +18,16 @@ function unsupportedConsultationMethodFailure() {
     stage: 'method_feature_support',
     detail:
       'method_feature_not_supported:shijing.consultation:qizheng_siyu_guolao_v1:supported=bazi_ziping_v1,ziwei_sanhe_v1',
+  };
+}
+
+function providerProductNotActivatedFailure() {
+  return {
+    kind: 'runtime_ai_failed',
+    mirror_kind: 'rijing',
+    mirror_scope: { kind: 'daily', date: '2026-07-04', basis_time_zone: 'Asia/Shanghai' },
+    detail:
+      'provider_product_not_activated:provider_message=The product is not activated, please confirm that you have activated products and try again after activation.',
   };
 }
 
@@ -47,4 +59,21 @@ test('ordinary algorithm fail-close keeps the generic SJG-ALGO-10 headline', () 
     readingFailureHeadline(getProductCopy('en'), failure),
     getProductCopy('en').readingFailure.headlines.algorithm_fail_closed,
   );
+});
+
+test('provider product activation failures are not presented as missing model configuration', () => {
+  const failure = providerProductNotActivatedFailure();
+
+  assert.equal(isRuntimeProviderProductNotActivatedFailure(failure), true);
+  assert.equal(runtimeAiFailureRecoveryKind(failure), 'provider_product_activation');
+
+  const zhHeadline = readingFailureHeadline(getProductCopy('zh'), failure);
+  const enHeadline = readingFailureHeadline(getProductCopy('en'), failure);
+
+  assert.match(zhHeadline, /云厂商|产品|开通/u);
+  assert.doesNotMatch(zhHeadline, /配置 AI 模型/u);
+  assert.match(enHeadline, /provider|activated|activation/i);
+  assert.doesNotMatch(enHeadline, /configure AI model/i);
+  assert.match(getProductCopy('zh').rijing.failureActions.runtimeProviderProductActivation, /开通|更换/u);
+  assert.match(getProductCopy('en').rijing.failureActions.runtimeProviderProductActivation, /activate|switch/i);
 });
