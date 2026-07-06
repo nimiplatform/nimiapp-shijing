@@ -8,6 +8,7 @@ import { ShijingShell } from '../../product/shell/shijing-shell.tsx';
 import { IndexedDBPersistenceAdapter } from '../../product/persistence/indexeddb-adapter.ts';
 import { InMemoryPersistenceAdapter } from '../../product/persistence/in-memory-adapter.ts';
 import { RuntimeAppStoragePersistenceAdapter } from '../persistence/runtime-app-storage-adapter.ts';
+import { hasShellHostInvoke } from '../bridge/index.js';
 import { buildEmptyShiJingSpace } from '../../product/dev/initial-space.ts';
 import type { PersistenceClient } from '../../product/persistence/persistence-client.ts';
 import { createShijingRuntimeAiClient } from '../ai/shijing-runtime-ai-client.ts';
@@ -15,15 +16,11 @@ import { createShijingConversationChatBridge } from '../ai/shijing-conversation-
 import { createShijingPresenceVerificationClient } from '../infra/shijing-presence-verification.ts';
 
 function pickPersistenceClient(userId: string): PersistenceClient {
-  if (isTauriRuntime()) return new RuntimeAppStoragePersistenceAdapter({ user_id: userId });
+  if (hasShellHostInvoke()) return new RuntimeAppStoragePersistenceAdapter({ user_id: userId });
   if (IndexedDBPersistenceAdapter.isSupported()) {
     return new IndexedDBPersistenceAdapter({ user_id: userId });
   }
   return new InMemoryPersistenceAdapter();
-}
-
-function isTauriRuntime(): boolean {
-  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
 
 export function ProductArea() {

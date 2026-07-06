@@ -102,3 +102,14 @@ No canned horoscope text, placeholder Reading content, prompt-only astrology
 calculation, randomized fortune text, or Runtime-AI-only substitute may ship as
 Reading content. Executable implementation must prove it follows
 `algorithm-contract.md`.
+
+## SJG-PROD-14 - Standard Shell Boundary
+
+ShiJing desktop shells must consume Nimi standard shell capabilities for
+platform primitives including app-scoped storage, path resolution, shell UI,
+Runtime bridge, OAuth, logging, local assets, and host window focus/drag.
+
+ShiJing app-local shell commands may exist only for product primitives that are
+genuinely owned by ShiJing. App-local commands must not redefine standard
+storage roots, storage read/write/remove operations, shell UI primitives, or
+host-owned platform paths.

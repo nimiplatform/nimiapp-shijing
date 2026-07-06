@@ -23,6 +23,7 @@ import {
   ReasonCode,
   type CoreMetadata,
 } from '@nimiplatform/sdk/types';
+import { hasElectronRuntime } from '@nimiplatform/kit/shell/renderer/bridge';
 import {
   SHIJING_RUNTIME_APP_ID,
   SHIJING_RUNTIME_APP_INSTANCE_ID,
@@ -45,6 +46,7 @@ const RUNTIME_PROTECTED_SCOPE_CATALOG_VERSION = 'sdk-v2';
 const RUNTIME_PROTECTED_TOKEN_TTL_SECONDS = 3600;
 const RUNTIME_PROTECTED_TOKEN_REFRESH_SKEW_MS = 60_000;
 const RUNTIME_PROTECTED_CONSENT_ID = 'shijing-runtime-account';
+const RUNTIME_BRIDGE_NAMESPACE = 'runtime_bridge';
 
 export type ShijingAuthUser = {
   id: string;
@@ -57,6 +59,8 @@ export type ShijingRuntimeSession = {
   readonly accountRuntime: Runtime;
   readonly accountCaller: NimiRuntimeAccountCaller;
 };
+
+export type ShijingRuntimeHostKind = 'node' | 'electron' | 'tauri';
 
 export const shijingRuntimeAccountCaller = createNimiDeveloperRegisteredRuntimeAccountCaller({
   appId: SHIJING_RUNTIME_APP_ID,
@@ -80,18 +84,27 @@ let protectedAccessInflight: {
 } | null = null;
 
 export async function configureShijingRuntimeSession(): Promise<ShijingRuntimeSession> {
+  const runtimeHostKind = resolveShijingRuntimeHostKind();
+  const transport = createShijingRuntimeTransportConfig(runtimeHostKind);
   const accountRuntime = new Runtime({
     appId: SHIJING_RUNTIME_APP_ID,
-    transport: runtimeTransport(),
+    transport,
   });
   await accountRuntime.ready();
   await registerShijingRuntimeAccountCaller(accountRuntime);
 
-  const runtime = new Runtime({
-    appId: SHIJING_RUNTIME_APP_ID,
-    transport: runtimeTransport(),
-    authMetadata: createShijingRuntimeAppSessionMetadataProvider(accountRuntime),
-  });
+  const runtime = new Runtime(
+    runtimeHostKind === 'electron'
+      ? {
+          appId: SHIJING_RUNTIME_APP_ID,
+          transport,
+        }
+      : {
+          appId: SHIJING_RUNTIME_APP_ID,
+          transport,
+          authMetadata: createShijingRuntimeAppSessionMetadataProvider(accountRuntime),
+        },
+  );
   const client = createNimiClient({
     appId: SHIJING_RUNTIME_APP_ID,
     runtime,
@@ -177,12 +190,39 @@ export async function logoutShijingRuntimeAccount(): Promise<void> {
   });
 }
 
-function runtimeTransport(): RuntimeOptions['transport'] {
+export function resolveShijingRuntimeHostKind(): ShijingRuntimeHostKind {
+  if (isNodeRuntime()) {
+    return 'node';
+  }
+  return hasElectronRuntime() ? 'electron' : 'tauri';
+}
+
+export function createShijingRuntimeTransportConfig(
+  hostKind: ShijingRuntimeHostKind = resolveShijingRuntimeHostKind(),
+): RuntimeOptions['transport'] | undefined {
+  if (hostKind === 'node') {
+    return undefined;
+  }
+  if (hostKind === 'electron') {
+    return {
+      type: 'electron-ipc',
+    };
+  }
   return {
     type: 'tauri-ipc',
-    commandNamespace: 'runtime_bridge',
-    eventNamespace: 'runtime_bridge',
+    commandNamespace: RUNTIME_BRIDGE_NAMESPACE,
+    eventNamespace: RUNTIME_BRIDGE_NAMESPACE,
   };
+}
+
+function isNodeRuntime(): boolean {
+  if (typeof window !== 'undefined') {
+    return false;
+  }
+  const maybeProcess = (globalThis as typeof globalThis & {
+    process?: { versions?: { node?: string } };
+  }).process;
+  return Boolean(maybeProcess?.versions?.node);
 }
 
 async function registerShijingRuntimeAccountCaller(runtime: Runtime): Promise<void> {

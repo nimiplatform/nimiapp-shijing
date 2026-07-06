@@ -4,6 +4,7 @@
 
 export {
   hasTauriInvoke,
+  hasShellHostInvoke,
   invoke,
   invokeChecked,
   BridgeError,
@@ -26,7 +27,7 @@ export type {
 import type { ShellOAuthBridge } from '@nimiplatform/kit/core/oauth';
 import {
   focusMainWindow,
-  hasTauriInvoke,
+  hasShellHostInvoke,
   oauthListenForCode,
   openExternalUrl,
 } from '@nimiplatform/kit/shell/renderer/bridge';
@@ -35,7 +36,7 @@ export const SHIJING_TOKEN_EXCHANGE_FORBIDDEN =
   'ShiJing does not expose OAuth token exchange; Runtime account service owns token custody.';
 
 export const shijingTauriOAuthBridge: ShellOAuthBridge = {
-  hasShellHostInvoke: hasTauriInvoke,
+  hasShellHostInvoke,
   oauthListenForCode,
   openExternalUrl,
   focusMainWindow,

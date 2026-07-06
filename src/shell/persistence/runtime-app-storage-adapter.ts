@@ -1,14 +1,12 @@
-// Runtime-owned app storage persistence adapter for ShiJingSpace.
+// Standard-shell app storage persistence adapter for ShiJingSpace.
 
-import type { NimiClient } from '@nimiplatform/sdk';
-import { resolveNimiRuntimeAppStorageRoots } from '@nimiplatform/sdk/runtime';
 import {
-  invoke,
+  createInstalledNimiAppStandardShellSurface,
   toShellBridgeNimiError,
-  type JsonObject,
+  type InstalledNimiAppStandardShellSurface,
+  type JsonValue,
 } from '@nimiplatform/kit/shell/renderer/bridge';
 import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts';
-import { SHIJING_RUNTIME_APP_ID } from '../../contracts/app-identity.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import {
   normalizePersistenceAccountId,
@@ -21,65 +19,35 @@ import type {
   PersistenceClient,
   SaveResult,
 } from '../../product/persistence/persistence-client.ts';
-import { getShijingNimiClient } from '../infra/shijing-nimi-client.ts';
-
-const STORAGE_LABEL = 'shijing app';
 
 export interface RuntimeAppStoragePersistenceAdapterOptions {
   readonly user_id: string;
-  readonly getClient?: () => NimiClient;
+  readonly standardShell?: InstalledNimiAppStandardShellSurface;
 }
 
 export class RuntimeAppStoragePersistenceAdapter implements PersistenceClient {
   readonly adapter_kind = 'runtime_app_storage' as const;
   private readonly user_id: string;
-  private readonly getClient: () => NimiClient;
+  private readonly standardShell: InstalledNimiAppStandardShellSurface;
 
   constructor(options: RuntimeAppStoragePersistenceAdapterOptions) {
     this.user_id = requireRuntimeStorageUserId(options.user_id);
-    this.getClient = options.getClient ?? (() => getShijingNimiClient());
+    this.standardShell = options.standardShell ?? createInstalledNimiAppStandardShellSurface();
   }
 
   async load(): Promise<LoadResult> {
-    let root: string;
-    try {
-      root = await this.dataRoot();
-    } catch (cause) {
-      return {
-        ok: false,
-        error: {
-          kind: 'load_open_failed',
-          adapter: this.adapter_kind,
-          cause: errorMessage(cause),
-        },
-      };
-    }
-    let raw: string | null | undefined;
-    try {
-      raw = await invokeShijingCommand<string | null | undefined>('shijing_space_load', {
-        payload: { storageRoot: root, userId: this.user_id },
-      });
-    } catch (cause) {
-      return {
-        ok: false,
-        error: {
-          kind: 'load_read_failed',
-          adapter: this.adapter_kind,
-          cause: errorMessage(cause),
-        },
-      };
-    }
-    if (raw === null || raw === undefined) return { ok: true, snapshot: null };
     let parsed: unknown;
     try {
-      parsed = JSON.parse(raw);
+      parsed = await this.standardShell.storage.readJson(this.relativePath());
     } catch (cause) {
+      const shellError = toShellBridgeNimiError(cause);
+      if (isNotFoundShellError(shellError)) return { ok: true, snapshot: null };
       return {
         ok: false,
         error: {
           kind: 'load_read_failed',
           adapter: this.adapter_kind,
-          cause: `stored JSON parse failed: ${errorMessage(cause)}`,
+          cause: errorMessage(shellError),
         },
       };
     }
@@ -100,27 +68,8 @@ export class RuntimeAppStoragePersistenceAdapter implements PersistenceClient {
     }
     const accountError = snapshotAccountMismatchError('save', this.adapter_kind, snapshot, this.user_id);
     if (accountError) return { ok: false, error: accountError };
-    let root: string;
     try {
-      root = await this.dataRoot();
-    } catch (cause) {
-      return {
-        ok: false,
-        error: {
-          kind: 'save_write_failed',
-          adapter: this.adapter_kind,
-          cause: errorMessage(cause),
-        },
-      };
-    }
-    try {
-      await invokeShijingCommand('shijing_space_save', {
-        payload: {
-          storageRoot: root,
-          userId: this.user_id,
-          snapshotJson: JSON.stringify(snapshot),
-        },
-      });
+      await this.standardShell.storage.writeJson(this.relativePath(), snapshotToStorageJson(snapshot));
       return { ok: true };
     } catch (cause) {
       return {
@@ -128,30 +77,15 @@ export class RuntimeAppStoragePersistenceAdapter implements PersistenceClient {
         error: {
           kind: 'save_write_failed',
           adapter: this.adapter_kind,
-          cause: errorMessage(cause),
+          cause: errorMessage(toShellBridgeNimiError(cause)),
         },
       };
     }
   }
 
   async clear(): Promise<ClearResult> {
-    let root: string;
     try {
-      root = await this.dataRoot();
-    } catch (cause) {
-      return {
-        ok: false,
-        error: {
-          kind: 'clear_failed',
-          adapter: this.adapter_kind,
-          cause: errorMessage(cause),
-        },
-      };
-    }
-    try {
-      await invokeShijingCommand('shijing_space_clear', {
-        payload: { storageRoot: root, userId: this.user_id },
-      });
+      await this.standardShell.storage.removeJson(this.relativePath());
       return { ok: true };
     } catch (cause) {
       return {
@@ -159,21 +93,14 @@ export class RuntimeAppStoragePersistenceAdapter implements PersistenceClient {
         error: {
           kind: 'clear_failed',
           adapter: this.adapter_kind,
-          cause: errorMessage(cause),
+          cause: errorMessage(toShellBridgeNimiError(cause)),
         },
       };
     }
   }
 
-  private async dataRoot(): Promise<string> {
-    const client = this.getClient();
-    await client.runtime.ready();
-    const roots = await resolveNimiRuntimeAppStorageRoots({
-      appLifecycle: client.runtime.appLifecycle,
-      appId: SHIJING_RUNTIME_APP_ID,
-      label: STORAGE_LABEL,
-    });
-    return roots.dataRoot;
+  private relativePath(): string {
+    return `shijing-space/account.${accountIdToHex(this.user_id)}.json`;
   }
 }
 
@@ -185,19 +112,41 @@ function requireRuntimeStorageUserId(value: string): string {
   return userId;
 }
 
-async function invokeShijingCommand<T = void>(
-  command: string,
-  args?: JsonObject,
-): Promise<T> {
-  try {
-    return await invoke(command, args ?? {}) as T;
-  } catch (error) {
-    throw toShellBridgeNimiError(error);
-  }
+function accountIdToHex(value: string): string {
+  return [...new TextEncoder().encode(value)]
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function snapshotToStorageJson(snapshot: ShiJingSpace): JsonValue {
+  return snapshot as unknown as JsonValue;
+}
+
+function isNotFoundShellError(cause: unknown): boolean {
+  return Boolean(cause && typeof cause === 'object' && (cause as { code?: unknown }).code === 'not-found');
 }
 
 function errorMessage(cause: unknown): string {
+  const structured = structuredErrorMessage(cause);
+  if (structured) return structured;
   if (cause instanceof Error) return cause.message;
   if (typeof cause === 'string') return cause;
   return String(cause || 'unknown error');
+}
+
+function structuredErrorMessage(cause: unknown): string {
+  if (!cause || typeof cause !== 'object') return '';
+  const record = cause as Record<string, unknown>;
+  const details = record.details && typeof record.details === 'object' && !Array.isArray(record.details)
+    ? record.details as Record<string, unknown>
+    : undefined;
+  return normalizeErrorText(details?.cause)
+    || normalizeErrorText(details?.message)
+    || normalizeErrorText(details?.rawMessage)
+    || normalizeErrorText(record.message);
+}
+
+function normalizeErrorText(value: unknown): string {
+  const normalized = typeof value === 'string' ? value.trim() : '';
+  return normalized === '[object Object]' ? '' : normalized;
 }

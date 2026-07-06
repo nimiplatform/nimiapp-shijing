@@ -7,6 +7,10 @@ import {
   SHIJING_RUNTIME_APP_INSTANCE_ID,
   SHIJING_RUNTIME_DEVICE_ID,
 } from '../src/contracts/app-identity.ts';
+import {
+  createShijingRuntimeTransportConfig,
+  resolveShijingRuntimeHostKind,
+} from '../src/shell/infra/shijing-runtime-session.ts';
 
 const BOOTSTRAP_SOURCE = readFileSync(
   new URL('../src/shell/infra/shijing-bootstrap.ts', import.meta.url),
@@ -55,14 +59,53 @@ test('ShiJing Nimi client uses developer-registered Runtime session without raw 
   assert.match(SESSION_SOURCE, /realm:\s*false/);
   assert.doesNotMatch(SESSION_SOURCE, /credentials:\s*'include'/);
   assert.match(SESSION_SOURCE, /type:\s*'tauri-ipc'/);
-  assert.match(SESSION_SOURCE, /commandNamespace:\s*'runtime_bridge'/);
-  assert.match(SESSION_SOURCE, /eventNamespace:\s*'runtime_bridge'/);
+  assert.match(SESSION_SOURCE, /commandNamespace:\s*RUNTIME_BRIDGE_NAMESPACE/);
+  assert.match(SESSION_SOURCE, /eventNamespace:\s*RUNTIME_BRIDGE_NAMESPACE/);
   assert.match(SESSION_SOURCE, /app:\s*false/);
   assert.match(SESSION_SOURCE, /permissions:\s*false/);
   assert.match(SESSION_SOURCE, /appId:\s*SHIJING_RUNTIME_APP_ID/);
   assert.match(SESSION_SOURCE, /externalPrincipalId:\s*SHIJING_RUNTIME_APP_ID/);
   assert.match(RUNTIME_AI_SOURCE, /appId:\s*SHIJING_RUNTIME_APP_ID/);
-  assert.match(RUNTIME_APP_STORAGE_SOURCE, /appId:\s*SHIJING_RUNTIME_APP_ID/);
+  assert.match(RUNTIME_APP_STORAGE_SOURCE, /createInstalledNimiAppStandardShellSurface/);
+  assert.doesNotMatch(RUNTIME_APP_STORAGE_SOURCE, /resolveNimiRuntimeAppStorageRoots|appId:\s*SHIJING_RUNTIME_APP_ID/);
+});
+
+test('ShiJing Runtime transport selector supports Electron without spoofing Tauri', () => {
+  const originalWindow = globalThis.window;
+  const originalElectronTest = globalThis.__NIMI_ELECTRON_TEST__;
+  try {
+    delete globalThis.window;
+    delete globalThis.__NIMI_ELECTRON_TEST__;
+    assert.equal(resolveShijingRuntimeHostKind(), 'node');
+    assert.equal(createShijingRuntimeTransportConfig(), undefined);
+
+    globalThis.window = {};
+    assert.equal(resolveShijingRuntimeHostKind(), 'tauri');
+    assert.deepEqual(createShijingRuntimeTransportConfig(), {
+      type: 'tauri-ipc',
+      commandNamespace: 'runtime_bridge',
+      eventNamespace: 'runtime_bridge',
+    });
+
+    globalThis.__NIMI_ELECTRON_TEST__ = {
+      invoke: async () => ({}),
+      listen: () => () => undefined,
+    };
+    assert.equal(resolveShijingRuntimeHostKind(), 'electron');
+    assert.deepEqual(createShijingRuntimeTransportConfig(), { type: 'electron-ipc' });
+  } finally {
+    if (originalWindow === undefined) delete globalThis.window;
+    else globalThis.window = originalWindow;
+    if (originalElectronTest === undefined) delete globalThis.__NIMI_ELECTRON_TEST__;
+    else globalThis.__NIMI_ELECTRON_TEST__ = originalElectronTest;
+  }
+
+  assert.match(SESSION_SOURCE, /hasElectronRuntime/);
+  assert.match(SESSION_SOURCE, /type:\s*'electron-ipc'/);
+  assert.match(SESSION_SOURCE, /type:\s*'tauri-ipc'/);
+  assert.match(SESSION_SOURCE, /runtimeHostKind === 'electron'/);
+  assert.doesNotMatch(SESSION_SOURCE, /__NIMI_TAURI_RUNTIME__\s*=/);
+  assert.doesNotMatch(SESSION_SOURCE, /__TAURI__\?\.core\?\.invoke/);
 });
 
 test('ShiJing does not own Runtime developer-registration gate or local auth token storage', () => {
@@ -79,10 +122,10 @@ test('ShiJing does not own Runtime developer-registration gate or local auth tok
   assert.doesNotMatch(TAURI_MAIN_SOURCE, /runtime_bridge::runtime_bridge_config_get|runtime_bridge::runtime_bridge_config_set/);
 });
 
-test('ShiJing registers standard shell UI command aliases used by Nimi Kit auth flows', () => {
+test('ShiJing consumes standard shell UI command aliases from Nimi Kit', () => {
   assert.match(TAURI_MAIN_SOURCE, /confirm_dialog/);
   assert.match(TAURI_MAIN_SOURCE, /start_window_drag/);
   assert.match(TAURI_MAIN_SOURCE, /focus_main_window/);
-  assert.match(TAURI_MAIN_SOURCE, /standard_shell_error/);
+  assert.doesNotMatch(TAURI_MAIN_SOURCE, /fn confirm_dialog|fn start_window_drag|fn focus_main_window/);
   assert.doesNotMatch(TAURI_MAIN_SOURCE, /shijing_start_window_drag/);
 });
