@@ -64,12 +64,17 @@ test('Electron host reuses Kit bridge without ShiJing platform primitive command
 
   assert.match(mainSource, /SHIJING_APP_ID/);
   assert.doesNotMatch(mainSource, /const APP_ID = 'nimi\.shijing'/);
+  assert.match(mainSource, /createElectronShellFileProtocolHost/);
   assert.match(mainSource, /registerNimiElectronRuntimeBridge/);
   assert.match(mainSource, /createNimiElectronFileAIConfigStore/);
   assert.match(mainSource, /createShijingElectronTrustedRuntimeMetadataProvider/);
   assert.match(mainSource, /@nimiplatform\/sdk\/runtime/);
   assert.match(mainSource, /resolveNimiRuntimeAppStorageRoots/);
   assert.match(mainSource, /await resolveStandardDataRoot\(\)/);
+  assert.match(mainSource, /standardDataRootBinding:\s*resolveStandardDataRootBinding\(\)/);
+  assert.match(mainSource, /localAssetProtocolHost/);
+  assert.match(mainSource, /registerPrivilegedSchemes\(\)/);
+  assert.match(mainSource, /registerProtocolHandler\(\)/);
   assert.match(mainSource, /\.catch\(handleElectronStartupFailure\)/);
   assert.match(mainSource, /NIMI_SHIJING_ELECTRON_RENDERER_URL/);
   assert.match(mainSource, /127\.0\.0\.1:46371/);
@@ -91,6 +96,9 @@ test('Electron host reuses Kit bridge without ShiJing platform primitive command
   assert.match(runtimeAuthSource, /createNimiElectronRuntimeAccountTrustedMetadataProvider/);
   assert.match(runtimeAuthSource, /RUNTIME_ACCOUNT_CALLER_MODE_LOCAL_DEVELOPER_APP/);
   assert.doesNotMatch(runtimeAuthSource, /@nimiplatform\/sdk\/runtime/);
+  assert.doesNotMatch(mainSource, /standardShellHost:\s*{[\s\S]*?\bdataRoot:\s*standardDataRoot/);
+  assert.doesNotMatch(mainSource, /resolveLocalAssetUrl:\s*resolveShijingLocalAssetUrl/);
+  assert.doesNotMatch(mainSource, /function\s+resolveShijingLocalAssetUrl/);
   assert.doesNotMatch(mainSource, /createShijingElectronCommandHandlers|commandHandlers/);
   assert.doesNotMatch(mainSource, /standard-shell-data/);
   assert.match(mainSource, /standardShellHost/);
@@ -129,8 +137,15 @@ test('Electron dev runner binds the same renderer endpoint as Vite and owns clea
   assert.match(runnerSource, /node_modules['"], ['"]vite['"], ['"]bin['"], ['"]vite\.js/);
   assert.match(runnerSource, /require\(['"]electron['"]\)/);
   assert.match(runnerSource, /const SIGNAL_EXIT_CODES = new Map/);
+  assert.match(runnerSource, /function spawnElectron\(storageRoots\)/);
+  assert.match(runnerSource, /stdio:\s*\[\s*'ignore'\s*,\s*'pipe'\s*,\s*'pipe'\s*\]/);
+  assert.match(runnerSource, /forwardChildOutput\(electron\.stdout,\s*process\.stdout\)/);
+  assert.match(runnerSource, /forwardChildOutput\(electron\.stderr,\s*process\.stderr\)/);
+  assert.match(runnerSource, /function formatWindowsExitCode\(code\)/);
+  assert.match(runnerSource, /toString\(16\)\.toUpperCase\(\)/);
   assert.match(runnerSource, /function requestProcessTreeShutdown\(child, signal\)/);
   assert.match(runnerSource, /taskkill\.exe/);
+  assert.doesNotMatch(runnerSource, /spawnTracked\(electronBin,\s*\[[^\]]*\],\s*\{\s*stdio:\s*'inherit'/);
   assert.doesNotMatch(runnerSource, /cmd\.exe|ComSpec|corepack\.cmd/);
   assert.match(preflightSource, /const rendererPort = 1430/);
   assert.match(preflightSource, /isShijingRendererProcess/);
@@ -141,6 +156,7 @@ test('Electron dev runner binds the same renderer endpoint as Vite and owns clea
 
 test('Tauri dev runner injects Runtime-projected app storage before launching shell', () => {
   const runnerSource = read('scripts/run-tauri-dev.mjs');
+  const tauriMainSource = read('src-tauri/src/main.rs');
   const packageJson = readJson('package.json');
 
   assert.match(packageJson.scripts['dev:shell'], /node scripts\/run-tauri-dev\.mjs/);
@@ -153,4 +169,8 @@ test('Tauri dev runner injects Runtime-projected app storage before launching sh
   assert.match(runnerSource, /dev/);
   assert.match(runnerSource, /ensure-dev-renderer-port\.mjs/);
   assert.doesNotMatch(runnerSource, /standard-shell-data|apps\/\$\{SHIJING_APP_ID\}/);
+  assert.match(tauriMainSource, /StandardAppStorageRootSlot/);
+  assert.match(tauriMainSource, /StandardDataRootBinding::RuntimeLaunchProjection/);
+  assert.doesNotMatch(tauriMainSource, /StandardAppStorageRoot::from_path/);
+  assert.doesNotMatch(tauriMainSource, /storage::StandardAppStorageRoot\b/);
 });

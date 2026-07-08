@@ -33,22 +33,35 @@ fn configure_runtime_bridge_env() {
     }
 }
 
-fn resolve_standard_app_storage_root() -> storage::StandardAppStorageRoot {
-    let root = [
-        "NIMI_APP_DURABLE_DATA_ROOT",
-        "NIMI_SHIJING_TAURI_DURABLE_DATA_ROOT",
-        "NIMI_SHIJING_TAURI_STANDARD_DATA_ROOT",
-    ]
-    .iter()
-    .find_map(|key| {
-        std::env::var(key)
-            .ok()
-            .map(|value| value.trim().to_string())
-            .filter(|value| !value.is_empty())
-    })
-    .expect("ShiJing Tauri requires Runtime-projected NIMI_APP_DURABLE_DATA_ROOT");
-    storage::StandardAppStorageRoot::from_path(std::path::PathBuf::from(root))
-        .expect("invalid ShiJing Runtime-projected app storage root")
+fn resolve_standard_app_storage_root_slot() -> storage::StandardAppStorageRootSlot {
+    let root = resolve_required_env_value(
+        &[
+            "NIMI_APP_DURABLE_DATA_ROOT",
+            "NIMI_SHIJING_TAURI_DURABLE_DATA_ROOT",
+            "NIMI_SHIJING_TAURI_STANDARD_DATA_ROOT",
+        ],
+        "ShiJing Tauri requires Runtime-projected NIMI_APP_DURABLE_DATA_ROOT",
+    );
+    tauri::async_runtime::block_on(storage::StandardAppStorageRootSlot::from_binding_resolved(
+        data::StandardDataRootBinding::RuntimeLaunchProjection {
+            durable_data_root: std::path::PathBuf::from(root),
+            cache_root: None,
+            temp_root: None,
+            projection_ref: "shijing-tauri-runtime-projection".to_string(),
+        },
+    ))
+    .expect("invalid ShiJing Runtime-projected app storage roots")
+}
+
+fn resolve_required_env_value(keys: &[&str], missing_message: &str) -> String {
+    keys.iter()
+        .find_map(|key| {
+            std::env::var(key)
+                .ok()
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty())
+        })
+        .expect(missing_message)
 }
 
 fn main() {
@@ -59,7 +72,7 @@ fn main() {
     session_logging::log_boot_marker("shijing main() entered");
 
     tauri::Builder::default()
-        .manage(resolve_standard_app_storage_root())
+        .manage(resolve_standard_app_storage_root_slot())
         .invoke_handler(tauri::generate_handler![
             data::data_path_resolve,
             storage::storage_read_json,

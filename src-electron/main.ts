@@ -1,14 +1,17 @@
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { appendFile, mkdir, readFile, realpath } from 'node:fs/promises';
+import { appendFile, mkdir } from 'node:fs/promises';
 import { app, BrowserWindow, ipcMain, Menu, protocol, shell } from 'electron';
 import {
   assertOpaqueElectronLocalAgentRef,
+  createElectronShellFileProtocolHost,
   createNimiElectronStandardApplicationMenuTemplate,
   createNimiElectronFileAIConfigStore,
   isAllowedElectronRendererUrl,
   registerNimiElectronRuntimeBridge,
   type NimiElectronRuntimeTrustedCallerMode,
+  type NimiElectronShellFileProtocolHost,
+  type NimiElectronStandardDataRootBinding,
 } from '@nimiplatform/kit/shell/electron/main';
 import {
   Runtime,
@@ -23,8 +26,6 @@ import {
 } from '../src/contracts/app-identity.js';
 import { createShijingElectronTrustedRuntimeMetadataProvider } from './runtime-auth.js';
 
-const FILE_PROTOCOL = 'nimi-shell-file';
-
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(currentFilePath);
 const appRoot = resolveAppRoot(currentDir);
@@ -35,19 +36,18 @@ const rendererUrl = normalizeText(process.env.NIMI_SHIJING_ELECTRON_RENDERER_URL
 const runtimeEndpoint = normalizeText(process.env.NIMI_RUNTIME_GRPC_ADDR)
   || normalizeText(process.env.NIMI_SHIJING_ELECTRON_RUNTIME_ENDPOINT)
   || '127.0.0.1:46371';
-const readableFiles = new Set<string>();
 let mainWindow: BrowserWindow | undefined;
 
-protocol.registerSchemesAsPrivileged([{
-  scheme: FILE_PROTOCOL,
-  privileges: {
-    standard: true,
-    secure: true,
-    corsEnabled: true,
-    supportFetchAPI: true,
-    stream: true,
+const localAssetProtocolHost: NimiElectronShellFileProtocolHost = createElectronShellFileProtocolHost({
+  protocol: {
+    registerSchemesAsPrivileged: (customSchemes) =>
+      protocol.registerSchemesAsPrivileged([...customSchemes]),
+    handle: (scheme, handler) =>
+      protocol.handle(scheme, async (request) => (await handler(request)) as Response),
   },
-}]);
+});
+
+localAssetProtocolHost.registerPrivilegedSchemes();
 
 app.setName('ShiJing');
 installShijingStandardApplicationMenu();
@@ -56,7 +56,7 @@ configureShijingElectronChromiumRuntime();
 void app.whenReady().then(bootstrapElectron).catch(handleElectronStartupFailure);
 
 async function bootstrapElectron(): Promise<void> {
-  registerReadableFileProtocol();
+  localAssetProtocolHost.registerProtocolHandler();
   const standardDataRoot = await resolveStandardDataRoot();
   const localAgentIdentity = resolveShijingElectronLocalAgentIdentity();
   registerNimiElectronRuntimeBridge({
@@ -70,9 +70,9 @@ async function bootstrapElectron(): Promise<void> {
       runtimeEndpoint,
     }),
     standardShellHost: {
-      dataRoot: standardDataRoot,
+      standardDataRootBinding: resolveStandardDataRootBinding(),
       localAssetRoots: resolveStandardLocalAssetRoots(standardDataRoot),
-      resolveLocalAssetUrl: resolveShijingLocalAssetUrl,
+      localAssetProtocolHost,
       openExternalUrl: openShijingExternalUrl,
       focusMainWindow,
       ...(localAgentIdentity ? { localAgentIdentity } : {}),
@@ -204,13 +204,29 @@ function isShijingRendererUrl(url: string): boolean {
 }
 
 async function resolveStandardDataRoot(): Promise<string> {
-  const fromEnv = normalizeText(process.env.NIMI_APP_DURABLE_DATA_ROOT)
-    || normalizeText(process.env.NIMI_SHIJING_ELECTRON_DURABLE_DATA_ROOT)
-    || normalizeText(process.env.NIMI_SHIJING_ELECTRON_STANDARD_DATA_ROOT);
+  const fromEnv = resolveStandardDataRootEnv();
   if (fromEnv) {
     return path.resolve(fromEnv);
   }
   return resolveRuntimeProjectedStandardDataRoot();
+}
+
+function resolveStandardDataRootBinding(): NimiElectronStandardDataRootBinding {
+  const fromEnv = resolveStandardDataRootEnv();
+  if (fromEnv) {
+    return {
+      source: 'runtime-launch-projection',
+      durableDataRoot: path.resolve(fromEnv),
+      projectionRef: 'shijing-electron-runtime-projection',
+    };
+  }
+  return { source: 'runtime-get-app-storage' };
+}
+
+function resolveStandardDataRootEnv(): string {
+  return normalizeText(process.env.NIMI_APP_DURABLE_DATA_ROOT)
+    || normalizeText(process.env.NIMI_SHIJING_ELECTRON_DURABLE_DATA_ROOT)
+    || normalizeText(process.env.NIMI_SHIJING_ELECTRON_STANDARD_DATA_ROOT);
 }
 
 async function resolveRuntimeProjectedStandardDataRoot(): Promise<string> {
@@ -335,11 +351,6 @@ function normalizeRequiredEnv(value: unknown, field: string): string {
   return normalized;
 }
 
-async function resolveShijingLocalAssetUrl(filePath: string): Promise<string> {
-  await registerReadableFile(filePath);
-  return encodeReadableFileUrl(filePath);
-}
-
 async function openShijingExternalUrl(url: string): Promise<void> {
   const capturePath = normalizeText(process.env.NIMI_SHIJING_ELECTRON_OPEN_EXTERNAL_CAPTURE_FILE);
   if (capturePath) {
@@ -363,61 +374,6 @@ async function focusMainWindow(): Promise<void> {
   }
   window.show();
   window.focus();
-}
-
-async function registerReadableFile(filePath: string): Promise<void> {
-  const canonical = await realpath(filePath).catch(() => path.resolve(filePath));
-  readableFiles.add(canonical);
-}
-
-function encodeReadableFileUrl(filePath: string): string {
-  return `${FILE_PROTOCOL}://local/${encodeURIComponent(path.resolve(filePath))}`;
-}
-
-function registerReadableFileProtocol(): void {
-  protocol.handle(FILE_PROTOCOL, async (request) => {
-    try {
-      const filePath = decodeReadableFileUrl(request.url);
-      const canonical = await realpath(filePath);
-      if (!readableFiles.has(canonical)) {
-        return new Response('file is not registered for ShiJing preview', { status: 403 });
-      }
-      return new Response(await readFile(canonical), {
-        headers: {
-          'content-type': contentTypeForPath(canonical),
-          'cache-control': 'no-store',
-          'access-control-allow-origin': '*',
-        },
-      });
-    } catch (error) {
-      return new Response(error instanceof Error ? error.message : String(error || 'file read failed'), {
-        status: 404,
-        headers: {
-          'access-control-allow-origin': '*',
-        },
-      });
-    }
-  });
-}
-
-function decodeReadableFileUrl(value: string): string {
-  const url = new URL(value);
-  if (url.protocol !== `${FILE_PROTOCOL}:`) {
-    throw new Error(`unsupported ShiJing file protocol: ${url.protocol}`);
-  }
-  const encoded = url.pathname.startsWith('/') ? url.pathname.slice(1) : url.pathname;
-  return decodeURIComponent(encoded);
-}
-
-function contentTypeForPath(filePath: string): string {
-  const ext = path.extname(filePath).toLowerCase();
-  if (ext === '.png') return 'image/png';
-  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
-  if (ext === '.webp') return 'image/webp';
-  if (ext === '.gif') return 'image/gif';
-  if (ext === '.json') return 'application/json; charset=utf-8';
-  if (ext === '.txt') return 'text/plain; charset=utf-8';
-  return 'application/octet-stream';
 }
 
 function normalizeText(value: unknown): string {

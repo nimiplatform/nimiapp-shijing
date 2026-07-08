@@ -44,18 +44,12 @@ try {
     sessionKind: 'electron-dev',
     errorPrefix: '[run-electron-dev]',
   });
-  const electron = spawnTracked(electronBin, ['dist-electron/src-electron/main.js'], {
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      NIMI_SHIJING_ELECTRON_RENDERER_URL: rendererUrl,
-      NIMI_RUNTIME_GRPC_ADDR: runtimeEndpoint,
-      NIMI_APP_DURABLE_DATA_ROOT: storageRoots.dataRoot,
-      NIMI_SHIJING_ELECTRON_DURABLE_DATA_ROOT: storageRoots.dataRoot,
-    },
-  });
+  const electron = spawnElectron(storageRoots);
   const exitCode = await waitForExit(electron);
   await requestAllChildrenShutdown('SIGTERM');
+  if (exitCode !== null && exitCode !== 0) {
+    console.error(`[run-electron-dev] Electron exited with code ${formatElectronExitCode(exitCode)}`);
+  }
   process.exit(exitCode ?? 0);
 } catch (error) {
   await requestAllChildrenShutdown('SIGTERM');
@@ -77,6 +71,22 @@ function ensureRendererPortAvailable() {
   }
 }
 
+function spawnElectron(storageRoots) {
+  const electron = spawnTracked(electronBin, ['dist-electron/src-electron/main.js'], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: {
+      ...process.env,
+      NIMI_SHIJING_ELECTRON_RENDERER_URL: rendererUrl,
+      NIMI_RUNTIME_GRPC_ADDR: runtimeEndpoint,
+      NIMI_APP_DURABLE_DATA_ROOT: storageRoots.dataRoot,
+      NIMI_SHIJING_ELECTRON_DURABLE_DATA_ROOT: storageRoots.dataRoot,
+    },
+  });
+  forwardChildOutput(electron.stdout, process.stdout);
+  forwardChildOutput(electron.stderr, process.stderr);
+  return electron;
+}
+
 function spawnRenderer() {
   return spawnTracked(process.execPath, [
     viteBin,
@@ -88,6 +98,15 @@ function spawnRenderer() {
   ], {
     stdio: 'inherit',
     env: process.env,
+  });
+}
+
+function forwardChildOutput(readable, writable) {
+  if (!readable) {
+    return;
+  }
+  readable.on('data', (chunk) => {
+    writable.write(chunk);
   });
 }
 
@@ -140,9 +159,28 @@ function forceKillProcessTree(child) {
 }
 
 function waitForExit(child) {
-  return new Promise((resolve) => {
-    child.on('exit', (code) => resolve(code));
+  return new Promise((resolve, reject) => {
+    child.once('error', reject);
+    child.once('exit', (code) => resolve(code));
   });
+}
+
+function formatElectronExitCode(code) {
+  if (process.platform !== 'win32') {
+    return String(code);
+  }
+  return `${code} (${formatWindowsExitCode(code)}${formatWindowsExitHint(code)})`;
+}
+
+function formatWindowsExitCode(code) {
+  return `0x${(code >>> 0).toString(16).toUpperCase().padStart(8, '0')}`;
+}
+
+function formatWindowsExitHint(code) {
+  if (formatWindowsExitCode(code) === '0xC0000409') {
+    return ': Windows fast-fail / stack buffer overrun';
+  }
+  return '';
 }
 
 function waitForExitOrTimeout(child, timeoutMs) {
