@@ -126,6 +126,10 @@ test('ShiJing consumes standard shell UI command aliases from Nimi Kit', () => {
   assert.match(TAURI_MAIN_SOURCE, /confirm_dialog/);
   assert.match(TAURI_MAIN_SOURCE, /start_window_drag/);
   assert.match(TAURI_MAIN_SOURCE, /focus_main_window/);
+  assert.match(TAURI_MAIN_SOURCE, /StandardAppStorageRootSlot/);
+  assert.match(TAURI_MAIN_SOURCE, /StandardDataRootBinding/);
+  assert.match(TAURI_MAIN_SOURCE, /resolve_standard_app_storage_roots/);
+  assert.doesNotMatch(TAURI_MAIN_SOURCE, /StandardAppStorageRoot::from_path/);
   assert.doesNotMatch(TAURI_MAIN_SOURCE, /fn confirm_dialog|fn start_window_drag|fn focus_main_window/);
   assert.doesNotMatch(TAURI_MAIN_SOURCE, /shijing_start_window_drag/);
 });

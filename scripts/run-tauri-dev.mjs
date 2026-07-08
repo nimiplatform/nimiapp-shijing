@@ -37,7 +37,11 @@ try {
       ...process.env,
       NIMI_RUNTIME_GRPC_ADDR: runtimeEndpoint,
       NIMI_APP_DURABLE_DATA_ROOT: storageRoots.dataRoot,
+      NIMI_APP_CACHE_ROOT: storageRoots.cacheRoot,
+      NIMI_APP_TEMP_ROOT: storageRoots.tempRoot,
       NIMI_SHIJING_TAURI_DURABLE_DATA_ROOT: storageRoots.dataRoot,
+      NIMI_SHIJING_TAURI_CACHE_ROOT: storageRoots.cacheRoot,
+      NIMI_SHIJING_TAURI_TEMP_ROOT: storageRoots.tempRoot,
     },
   });
   const exitCode = await waitForExit(tauri);

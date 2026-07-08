@@ -1,7 +1,15 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 // Shared standard shell capabilities from kit/shell/tauri crate (nimi-shell-tauri).
-use nimi_shell_tauri::capabilities::{data, oauth, runtime, session_logging, shell_ui, storage};
+use nimi_shell_tauri::capabilities::{
+    data::{
+        self, resolve_standard_app_storage_roots, StandardAppStorageRootSlot,
+        StandardDataRootBinding,
+    },
+    oauth, runtime, session_logging, shell_ui, storage,
+};
+
+const SHIJING_APP_ID: &str = "nimi.shijing";
 
 fn load_dotenv_files() {
     let root_env_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.env");
@@ -33,27 +41,30 @@ fn configure_runtime_bridge_env() {
     }
 }
 
-fn resolve_standard_app_storage_root_slot() -> storage::StandardAppStorageRootSlot {
-    let root = resolve_required_env_value(
-        &[
-            "NIMI_APP_DURABLE_DATA_ROOT",
-            "NIMI_SHIJING_TAURI_DURABLE_DATA_ROOT",
-            "NIMI_SHIJING_TAURI_STANDARD_DATA_ROOT",
-        ],
-        "ShiJing Tauri requires Runtime-projected NIMI_APP_DURABLE_DATA_ROOT",
-    );
-    tauri::async_runtime::block_on(storage::StandardAppStorageRootSlot::from_binding_resolved(
-        data::StandardDataRootBinding::RuntimeLaunchProjection {
-            durable_data_root: std::path::PathBuf::from(root),
-            cache_root: None,
-            temp_root: None,
-            projection_ref: "shijing-tauri-runtime-projection".to_string(),
+fn standard_app_storage_binding() -> StandardDataRootBinding {
+    match optional_env_path(&[
+        "NIMI_APP_DURABLE_DATA_ROOT",
+        "NIMI_SHIJING_TAURI_DURABLE_DATA_ROOT",
+        "NIMI_SHIJING_TAURI_STANDARD_DATA_ROOT",
+    ]) {
+        Some(durable_data_root) => StandardDataRootBinding::RuntimeLaunchProjection {
+            cache_root: optional_env_path(&[
+                "NIMI_APP_CACHE_ROOT",
+                "NIMI_SHIJING_TAURI_CACHE_ROOT",
+            ])
+            .or_else(|| Some(durable_data_root.clone())),
+            temp_root: optional_env_path(&["NIMI_APP_TEMP_ROOT", "NIMI_SHIJING_TAURI_TEMP_ROOT"])
+                .or_else(|| Some(durable_data_root.clone())),
+            durable_data_root,
+            projection_ref: "shijing-tauri-runtime-launch-projection".to_string(),
         },
-    ))
-    .expect("invalid ShiJing Runtime-projected app storage roots")
+        None => StandardDataRootBinding::RuntimeGetAppStorage {
+            app_id: SHIJING_APP_ID.to_string(),
+        },
+    }
 }
 
-fn resolve_required_env_value(keys: &[&str], missing_message: &str) -> String {
+fn optional_env_path(keys: &[&str]) -> Option<std::path::PathBuf> {
     keys.iter()
         .find_map(|key| {
             std::env::var(key)
@@ -61,7 +72,26 @@ fn resolve_required_env_value(keys: &[&str], missing_message: &str) -> String {
                 .map(|value| value.trim().to_string())
                 .filter(|value| !value.is_empty())
         })
-        .expect(missing_message)
+        .map(std::path::PathBuf::from)
+}
+
+fn install_standard_app_storage_slot(app: &tauri::App) {
+    use tauri::Manager;
+
+    let slot = StandardAppStorageRootSlot::empty();
+    match tauri::async_runtime::block_on(resolve_standard_app_storage_roots(
+        standard_app_storage_binding(),
+    )) {
+        Ok(roots) => {
+            if let Err(error) = slot.bind(roots) {
+                eprintln!("[shijing] standard app storage slot bind failed: {error}");
+            }
+        }
+        Err(error) => {
+            eprintln!("[shijing] standard app storage slot left unbound (fail-closed): {error}");
+        }
+    }
+    app.manage(slot);
 }
 
 fn main() {
@@ -72,7 +102,10 @@ fn main() {
     session_logging::log_boot_marker("shijing main() entered");
 
     tauri::Builder::default()
-        .manage(resolve_standard_app_storage_root_slot())
+        .setup(|app| {
+            install_standard_app_storage_slot(app);
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             data::data_path_resolve,
             storage::storage_read_json,

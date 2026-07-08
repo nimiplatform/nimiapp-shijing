@@ -79,7 +79,11 @@ function spawnElectron(storageRoots) {
       NIMI_SHIJING_ELECTRON_RENDERER_URL: rendererUrl,
       NIMI_RUNTIME_GRPC_ADDR: runtimeEndpoint,
       NIMI_APP_DURABLE_DATA_ROOT: storageRoots.dataRoot,
+      NIMI_APP_CACHE_ROOT: storageRoots.cacheRoot,
+      NIMI_APP_TEMP_ROOT: storageRoots.tempRoot,
       NIMI_SHIJING_ELECTRON_DURABLE_DATA_ROOT: storageRoots.dataRoot,
+      NIMI_SHIJING_ELECTRON_CACHE_ROOT: storageRoots.cacheRoot,
+      NIMI_SHIJING_ELECTRON_TEMP_ROOT: storageRoots.tempRoot,
     },
   });
   forwardChildOutput(electron.stdout, process.stdout);
