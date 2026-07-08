@@ -16,7 +16,7 @@ import {
   PolicyMode,
   type AccountProjection,
   type AuthorizeExternalPrincipalResponse,
-} from '@nimiplatform/sdk/runtime/generated';
+} from '@nimiplatform/sdk/runtime/wire-types';
 import {
   createNimiClientId,
   createNimiError,

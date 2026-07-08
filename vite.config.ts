@@ -79,8 +79,10 @@ export default defineConfig({
       { find: /^@nimiplatform\/sdk\/features\/evaluation$/, replacement: path.resolve(nimiSdkSourceRoot, 'features/evaluation/index.ts') },
       { find: /^@nimiplatform\/sdk\/runtime$/, replacement: path.resolve(nimiSdkSourceRoot, 'runtime/index.ts') },
       { find: /^@nimiplatform\/sdk\/runtime\/generated$/, replacement: path.resolve(nimiSdkSourceRoot, 'runtime/generated.ts') },
+      { find: /^@nimiplatform\/sdk\/runtime\/wire-types$/, replacement: path.resolve(nimiSdkSourceRoot, 'runtime/wire-types/index.ts') },
       { find: /^@nimiplatform\/sdk\/types$/, replacement: path.resolve(nimiSdkSourceRoot, 'types/index.ts') },
       { find: /^@nimiplatform\/kit\/auth$/, replacement: path.resolve(nimiKitSourceRoot, 'auth/src/index.ts') },
+      { find: /^@nimiplatform\/kit\/auth\/shell$/, replacement: path.resolve(nimiKitSourceRoot, 'auth/src/shell/index.ts') },
       { find: /^@nimiplatform\/kit\/auth\/styles\.css$/, replacement: path.resolve(nimiKitSourceRoot, 'auth/src/styles.css') },
       { find: /^@nimiplatform\/kit\/core\/model-config$/, replacement: path.resolve(nimiKitSourceRoot, 'core/src/model-config/index.ts') },
       { find: /^@nimiplatform\/kit\/core\/oauth$/, replacement: path.resolve(nimiKitSourceRoot, 'core/src/oauth/index.ts') },
@@ -124,6 +126,7 @@ export default defineConfig({
       '@nimiplatform/sdk/features/evaluation',
       '@nimiplatform/sdk/runtime',
       '@nimiplatform/sdk/runtime/generated',
+      '@nimiplatform/sdk/runtime/wire-types',
       '@nimiplatform/sdk/types',
     ],
   },
@@ -136,7 +139,7 @@ export default defineConfig({
     },
   },
   build: {
-    chunkSizeWarningLimit: 1600,
+    chunkSizeWarningLimit: 3000,
     rollupOptions: {
       output: {
         manualChunks: chunkForModule,

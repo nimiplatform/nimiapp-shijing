@@ -1,7 +1,9 @@
 import {
   createRuntimeAccountBrowserBroker,
-  type AuthPlatformAdapter,
 } from '@nimiplatform/kit/auth';
+import type {
+  AuthPlatformAdapter,
+} from '@nimiplatform/kit/auth/shell';
 import { withNimiRuntimeIdempotencyMetadata } from '@nimiplatform/sdk/runtime';
 import { createNimiClientId } from '@nimiplatform/sdk/types';
 import { shijingTauriOAuthBridge } from '../../bridge/index.js';

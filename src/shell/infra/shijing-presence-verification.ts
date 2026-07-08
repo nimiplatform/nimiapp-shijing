@@ -3,7 +3,7 @@ import {
   PresenceVerificationMethod as RuntimePresenceVerificationMethod,
   PresenceVerificationState as RuntimePresenceVerificationState,
   type RequestPresenceVerificationResponse,
-} from '@nimiplatform/sdk/runtime/generated';
+} from '@nimiplatform/sdk/runtime/wire-types';
 import type {
   PresenceVerificationClient,
   PresenceVerificationMethod,

@@ -7,7 +7,7 @@ import {
   PresenceVerificationMethod,
   PresenceVerificationState,
   ReasonCode,
-} from '@nimiplatform/sdk/runtime/generated';
+} from '@nimiplatform/sdk/runtime/wire-types';
 import { getProductCopy } from '../src/product/i18n/copy.ts';
 import { createUnavailablePresenceVerificationClient } from '../src/product/privacy/presence-verification.ts';
 import {
