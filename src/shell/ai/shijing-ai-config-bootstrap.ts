@@ -6,9 +6,9 @@ import {
   type NimiResolvedRecommendedAIProfile,
 } from '@nimiplatform/sdk/ai';
 import {
+  commitShijingAIConfigToShell,
   createShijingReadingAIScopeRef,
   loadShijingAIConfig,
-  saveShijingAIConfig,
 } from './shijing-ai-config.ts';
 import {
   SHIJING_TEXT_GENERATE_CAPABILITY_ID,
@@ -38,7 +38,7 @@ export type ShijingFirstLaunchAIConfigInitOutcome =
 export type ShijingFirstLaunchAIConfigInitOptions = {
   readonly scopeRef?: NimiAIScopeRef;
   readonly loadConfig?: (scopeRef: NimiAIScopeRef) => NimiAIConfig;
-  readonly saveConfig?: (next: NimiAIConfig, scopeRef: NimiAIScopeRef) => NimiAIConfig;
+  readonly saveConfig?: (next: NimiAIConfig, scopeRef: NimiAIScopeRef) => NimiAIConfig | Promise<NimiAIConfig>;
   readonly resolveRecommendedProfile?: (
     scopeRef: NimiAIScopeRef,
   ) => NimiResolvedRecommendedAIProfile | null | Promise<NimiResolvedRecommendedAIProfile | null>;
@@ -72,7 +72,7 @@ export async function ensureShijingReadingAIConfigFromFirstLaunchProfile(
   const scopeRef = options.scopeRef ?? createShijingReadingAIScopeRef();
   const loadConfig = options.loadConfig ?? loadShijingAIConfig;
   const saveConfig = options.saveConfig ?? ((next, targetScopeRef) =>
-    saveShijingAIConfig(next, targetScopeRef));
+    commitShijingAIConfigToShell(next, targetScopeRef));
   const config = ensureAIConfigShape(loadConfig(scopeRef), scopeRef);
 
   if (readTextGenerateTargetRef(config)) {

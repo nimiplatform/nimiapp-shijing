@@ -1,8 +1,9 @@
 import { spawn, spawnSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  resolveShijingRuntimeAppStorageRoots,
+  resolveShijingDevStorageRoots,
   resolveShijingRuntimeEndpoint,
 } from './runtime-app-storage-projection.mjs';
 
@@ -25,20 +26,22 @@ for (const signal of SIGNAL_EXIT_CODES.keys()) {
 
 try {
   ensureRendererPortAvailable();
-  const storageRoots = await resolveShijingRuntimeAppStorageRoots({
-    runtimeEndpoint,
-    label: 'ShiJing Tauri dev',
+  const storageRoots = resolveShijingDevStorageRoots({
     sessionKind: 'tauri-dev',
-    errorPrefix: '[run-tauri-dev]',
   });
+  const launchNonce = process.env.NIMI_APP_LAUNCH_NONCE
+    || process.env.NIMI_SHIJING_TAURI_LAUNCH_NONCE
+    || randomUUID();
   const tauri = spawnTracked(tauriBin, ['dev'], {
     stdio: 'inherit',
     env: {
       ...process.env,
       NIMI_RUNTIME_GRPC_ADDR: runtimeEndpoint,
+      NIMI_APP_LAUNCH_NONCE: launchNonce,
       NIMI_APP_DURABLE_DATA_ROOT: storageRoots.dataRoot,
       NIMI_APP_CACHE_ROOT: storageRoots.cacheRoot,
       NIMI_APP_TEMP_ROOT: storageRoots.tempRoot,
+      NIMI_SHIJING_TAURI_LAUNCH_NONCE: launchNonce,
       NIMI_SHIJING_TAURI_DURABLE_DATA_ROOT: storageRoots.dataRoot,
       NIMI_SHIJING_TAURI_CACHE_ROOT: storageRoots.cacheRoot,
       NIMI_SHIJING_TAURI_TEMP_ROOT: storageRoots.tempRoot,

@@ -2,14 +2,23 @@
 
 // Shared standard shell capabilities from kit/shell/tauri crate (nimi-shell-tauri).
 use nimi_shell_tauri::capabilities::{
+    ai_config,
     data::{
         self, resolve_standard_app_storage_roots, StandardAppStorageRootSlot,
         StandardDataRootBinding,
     },
-    oauth, runtime, session_logging, shell_ui, storage,
+    runtime, session_logging, shell_ui, storage,
+};
+use nimi_shell_tauri::installed_app_launch::{
+    build_installed_nimi_app_launch_binding_script,
+    resolve_installed_nimi_app_launch_binding_from_env, InstalledNimiAppLaunchBindingEnvConfig,
 };
 
 const SHIJING_APP_ID: &str = "nimi.shijing";
+const SHIJING_RUNTIME_APP_INSTANCE_ID: &str = "nimi.shijing.desktop-installed";
+const SHIJING_RUNTIME_DEVICE_ID: &str = "desktop-installed-app";
+const SHIJING_RELEASE_DESCRIPTOR_REF: &str = "nimi.shijing.bundled-with-nimi";
+const DESKTOP_TAURI_INSTALLED_APP_LAUNCH_HOST_ID: &str = "desktop-tauri-installed-app-host";
 
 fn load_dotenv_files() {
     let root_env_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.env");
@@ -41,13 +50,13 @@ fn configure_runtime_bridge_env() {
     }
 }
 
-fn standard_app_storage_binding() -> StandardDataRootBinding {
+fn standard_app_storage_binding() -> Result<StandardDataRootBinding, String> {
     match optional_env_path(&[
         "NIMI_APP_DURABLE_DATA_ROOT",
         "NIMI_SHIJING_TAURI_DURABLE_DATA_ROOT",
         "NIMI_SHIJING_TAURI_STANDARD_DATA_ROOT",
     ]) {
-        Some(durable_data_root) => StandardDataRootBinding::RuntimeLaunchProjection {
+        Some(durable_data_root) => Ok(StandardDataRootBinding::RuntimeLaunchProjection {
             cache_root: optional_env_path(&[
                 "NIMI_APP_CACHE_ROOT",
                 "NIMI_SHIJING_TAURI_CACHE_ROOT",
@@ -57,10 +66,8 @@ fn standard_app_storage_binding() -> StandardDataRootBinding {
                 .or_else(|| Some(durable_data_root.clone())),
             durable_data_root,
             projection_ref: "shijing-tauri-runtime-launch-projection".to_string(),
-        },
-        None => StandardDataRootBinding::RuntimeGetAppStorage {
-            app_id: SHIJING_APP_ID.to_string(),
-        },
+        }),
+        None => Err("ShiJing Tauri requires host-bound standard app storage roots".to_string()),
     }
 }
 
@@ -75,23 +82,40 @@ fn optional_env_path(keys: &[&str]) -> Option<std::path::PathBuf> {
         .map(std::path::PathBuf::from)
 }
 
-fn install_standard_app_storage_slot(app: &tauri::App) {
-    use tauri::Manager;
+fn resolve_standard_storage_slot() -> Result<StandardAppStorageRootSlot, String> {
+    let roots = tauri::async_runtime::block_on(resolve_standard_app_storage_roots(
+        standard_app_storage_binding()?,
+    ))?;
+    Ok(StandardAppStorageRootSlot::from_roots(roots))
+}
 
-    let slot = StandardAppStorageRootSlot::empty();
-    match tauri::async_runtime::block_on(resolve_standard_app_storage_roots(
-        standard_app_storage_binding(),
-    )) {
-        Ok(roots) => {
-            if let Err(error) = slot.bind(roots) {
-                eprintln!("[shijing] standard app storage slot bind failed: {error}");
-            }
-        }
-        Err(error) => {
-            eprintln!("[shijing] standard app storage slot left unbound (fail-closed): {error}");
-        }
-    }
-    app.manage(slot);
+fn resolve_installed_launch_binding_script() -> Result<String, String> {
+    let binding = resolve_installed_nimi_app_launch_binding_from_env(
+        InstalledNimiAppLaunchBindingEnvConfig {
+            app_id: SHIJING_APP_ID,
+            default_app_instance_id: SHIJING_RUNTIME_APP_INSTANCE_ID,
+            default_device_id: SHIJING_RUNTIME_DEVICE_ID,
+            default_release_descriptor_ref: SHIJING_RELEASE_DESCRIPTOR_REF,
+            launch_host_id: DESKTOP_TAURI_INSTALLED_APP_LAUNCH_HOST_ID,
+            launch_nonce_env_keys: &["NIMI_APP_LAUNCH_NONCE", "NIMI_SHIJING_TAURI_LAUNCH_NONCE"],
+            realm_base_url_env_keys: &[
+                "NIMI_REALM_BASE_URL",
+                "NIMI_REALM_URL",
+                "NIMI_SHIJING_TAURI_REALM_BASE_URL",
+            ],
+            app_instance_id_env_keys: &[
+                "NIMI_APP_INSTANCE_ID",
+                "NIMI_SHIJING_TAURI_APP_INSTANCE_ID",
+            ],
+            device_id_env_keys: &["NIMI_APP_DEVICE_ID", "NIMI_SHIJING_TAURI_DEVICE_ID"],
+            release_descriptor_ref_env_keys: &[
+                "NIMI_APP_RELEASE_DESCRIPTOR_REF",
+                "NIMI_SHIJING_TAURI_RELEASE_DESCRIPTOR_REF",
+            ],
+        },
+    )?;
+    build_installed_nimi_app_launch_binding_script(&binding)
+        .map_err(|error| format!("serialize ShiJing installed app launch binding: {error}"))
 }
 
 fn main() {
@@ -100,27 +124,28 @@ fn main() {
     session_logging::set_app_session_prefix("shijing");
     session_logging::install_panic_hook();
     session_logging::log_boot_marker("shijing main() entered");
+    let launch_binding_script = resolve_installed_launch_binding_script()
+        .expect("bind ShiJing installed app launch binding");
 
     tauri::Builder::default()
-        .setup(|app| {
-            install_standard_app_storage_slot(app);
-            Ok(())
-        })
+        .append_invoke_initialization_script(launch_binding_script)
+        .manage(
+            resolve_standard_storage_slot()
+                .expect("bind ShiJing standard Runtime app storage roots"),
+        )
         .invoke_handler(tauri::generate_handler![
             data::data_path_resolve,
             storage::storage_read_json,
             storage::storage_write_json,
             storage::storage_remove_json,
+            ai_config::ai_config_get,
+            ai_config::ai_config_set,
             shell_ui::confirm_dialog,
             shell_ui::start_window_drag,
             shell_ui::focus_main_window,
-            oauth::open_external_url,
-            oauth::oauth_listen_for_code,
             runtime::runtime_bridge_unary,
             runtime::runtime_bridge_stream_open,
             runtime::runtime_bridge_stream_close,
-            runtime::runtime_bridge_status,
-            session_logging::log_renderer_event,
         ])
         .run(tauri::generate_context!())
         .expect("error running shijing");

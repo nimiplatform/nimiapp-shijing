@@ -1,71 +1,105 @@
 import {
-  createNimiElectronRuntimeAccountTrustedMetadataProvider,
+  createNimiElectronInstalledAppRuntimeAccountTrustedMetadataProvider,
+  resolveElectronRuntimeDefaults,
   type ElectronRuntimeBridgeTrustedMetadataProvider,
 } from '@nimiplatform/kit/shell/electron/main';
+import {
+  SHIJING_APP_ID,
+  SHIJING_RELEASE_DESCRIPTOR_REF,
+  SHIJING_RUNTIME_APP_INSTANCE_ID,
+  SHIJING_RUNTIME_DEVICE_ID,
+} from '../src/contracts/app-identity.js';
 
-const RUNTIME_ACCOUNT_CALLER_MODE_LOCAL_DEVELOPER_APP = 7;
-const runtimeDeveloperRegistrationRequested = true;
-const runtimeProtectedScopes = ['ai.spend.meter'] as const;
-const runtimeProtectedScopeCatalogVersion = 'sdk-v2';
-const runtimeAppSessionDeviceId = 'shijing-platform-runtime-session';
-const runtimeAppSessionTtlSeconds = 3600;
-const runtimeAppSessionRefreshSkewMs = 30_000;
-const runtimeProtectedTokenTtlSeconds = 3600;
-const runtimeProtectedTokenRefreshSkewMs = 60_000;
+export type ShijingRendererLaunchBinding = {
+  readonly appId: string;
+  readonly appInstanceId: string;
+  readonly deviceId: string;
+  readonly launchHostId: string;
+  readonly launchNonce: string;
+  readonly releaseDescriptorRef: string;
+  readonly realmBaseUrl: string;
+};
 
-type ElectronRuntimeAccountCaller =
-  Parameters<typeof createNimiElectronRuntimeAccountTrustedMetadataProvider>[0]['accountCaller'];
+const DESKTOP_INSTALLED_APP_LAUNCH_HOST_ID = 'desktop-electron-installed-app-host';
 
 export function createShijingElectronTrustedRuntimeMetadataProvider(input: {
   readonly appId: string;
   readonly runtimeEndpoint: string;
 }): ElectronRuntimeBridgeTrustedMetadataProvider {
   const appId = requireText(input.appId, 'appId');
-  const runtimeEndpoint = requireText(input.runtimeEndpoint, 'runtimeEndpoint');
-  const clientIdPrefix = normalizeClientIdPrefix(appId);
-  return createNimiElectronRuntimeAccountTrustedMetadataProvider({
+  if (appId !== SHIJING_APP_ID) {
+    throw new Error(`ShiJing Electron Runtime auth requires appId ${SHIJING_APP_ID}`);
+  }
+  const launchBinding = createShijingRendererLaunchBinding();
+  return createNimiElectronInstalledAppRuntimeAccountTrustedMetadataProvider({
     appId,
-    runtimeEndpoint,
-    accountCaller: {
-      appId,
-      appInstanceId: `${appId}.local-developer`,
-      deviceId: `${clientIdPrefix}-local-developer-device`,
-      mode: RUNTIME_ACCOUNT_CALLER_MODE_LOCAL_DEVELOPER_APP,
-      scopes: [],
-    } as unknown as ElectronRuntimeAccountCaller,
+    runtimeEndpoint: requireText(input.runtimeEndpoint, 'runtimeEndpoint'),
+    installedApp: {
+      appInstanceId: launchBinding.appInstanceId,
+      deviceId: launchBinding.deviceId,
+      launchHostId: launchBinding.launchHostId,
+      launchNonce: launchBinding.launchNonce,
+      releaseDescriptorRef: launchBinding.releaseDescriptorRef,
+    },
     appSession: {
-      appInstanceId: `${appId}.platform-runtime-session`,
-      deviceId: runtimeAppSessionDeviceId,
-      capabilities: [...runtimeProtectedScopes],
-      ttlSeconds: runtimeAppSessionTtlSeconds,
-      refreshSkewMs: runtimeAppSessionRefreshSkewMs,
-      developerRegistration: runtimeDeveloperRegistrationRequested,
+      appVersion: '0.1.0',
+      capabilities: [],
+      developerRegistration: false,
     },
     protectedAccess: {
-      consentId: `${clientIdPrefix}-runtime-account`,
-      authorizationVersion: 'v1',
-      policyVersion: `${clientIdPrefix}-runtime-account-v1`,
-      scopeCatalogVersion: runtimeProtectedScopeCatalogVersion,
-      scopes: [...runtimeProtectedScopes],
-      ttlSeconds: runtimeProtectedTokenTtlSeconds,
-      refreshSkewMs: runtimeProtectedTokenRefreshSkewMs,
-      idempotencyKey: ({ normalizedSubjectUserId }) => `${clientIdPrefix}-runtime-protected-${normalizedSubjectUserId}`,
+      consentId: `${SHIJING_APP_ID}:electron-installed-app-runtime-account`,
+      authorizationVersion: 'electron-installed-app-runtime-account-v1',
+      scopeCatalogVersion: 'desktop-installed-app-standard-shell-v1',
+      scopes: [],
     },
   });
 }
 
-function normalizeClientIdPrefix(value: string): string {
-  return value.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'nimi-app';
+export function createShijingRendererLaunchBinding(): ShijingRendererLaunchBinding {
+  return {
+    appId: SHIJING_APP_ID,
+    appInstanceId: optionalText(process.env.NIMI_SHIJING_ELECTRON_APP_INSTANCE_ID)
+      || SHIJING_RUNTIME_APP_INSTANCE_ID,
+    deviceId: optionalText(process.env.NIMI_SHIJING_ELECTRON_DEVICE_ID)
+      || SHIJING_RUNTIME_DEVICE_ID,
+    launchHostId: DESKTOP_INSTALLED_APP_LAUNCH_HOST_ID,
+    launchNonce: requireText(
+      optionalText(process.env.NIMI_APP_LAUNCH_NONCE)
+        || optionalText(process.env.NIMI_SHIJING_ELECTRON_LAUNCH_NONCE),
+      'NIMI_APP_LAUNCH_NONCE or NIMI_SHIJING_ELECTRON_LAUNCH_NONCE',
+    ),
+    releaseDescriptorRef: optionalText(process.env.NIMI_SHIJING_ELECTRON_RELEASE_DESCRIPTOR_REF)
+      || SHIJING_RELEASE_DESCRIPTOR_REF,
+    realmBaseUrl: resolveShijingRealmBaseUrl(),
+  };
+}
+
+function resolveShijingRealmBaseUrl(): string {
+  const defaults = resolveElectronRuntimeDefaults();
+  const realm = defaults.realm;
+  const realmBaseUrl = realm && typeof realm === 'object' && !Array.isArray(realm)
+    ? optionalText((realm as { realmBaseUrl?: unknown }).realmBaseUrl)
+    : '';
+  if (!realmBaseUrl) {
+    throw new Error('ShiJing Electron launch binding requires host-projected Realm base URL.');
+  }
+  try {
+    return new URL(realmBaseUrl).toString();
+  } catch (error) {
+    throw new Error(`ShiJing Electron launch binding has invalid Realm base URL: ${realmBaseUrl}`, {
+      cause: error,
+    });
+  }
 }
 
 function requireText(value: unknown, field: string): string {
-  const normalized = normalizeText(value);
+  const normalized = optionalText(value);
   if (!normalized) {
     throw new Error(`ShiJing Electron Runtime auth requires ${field}`);
   }
   return normalized;
 }
 
-function normalizeText(value: unknown): string {
+function optionalText(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }

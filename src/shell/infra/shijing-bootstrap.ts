@@ -1,21 +1,22 @@
-import { getShijingRuntimeDefaults } from '../bridge/index.js';
 import { useAppStore } from '../app-shell/app-store.js';
 import {
   ensureShijingReadingAIConfigFromFirstLaunchProfile,
 } from '../ai/shijing-ai-config-bootstrap.ts';
+import { hydrateShijingAIConfigFromShell } from '../ai/shijing-ai-config.ts';
 import { describeError, logRendererEvent } from './renderer-log.js';
 import { hasShijingNimiClient, setShijingNimiClient } from './shijing-nimi-client.js';
 import {
-  SHIJING_RUNTIME_APP_ID,
-  SHIJING_RUNTIME_APP_INSTANCE_ID,
-  SHIJING_RUNTIME_DEVICE_ID,
   clearShijingRuntimeSession,
   configureShijingRuntimeSession,
   loadShijingRuntimeAccountUser,
   logoutShijingRuntimeAccount as logoutCurrentShijingRuntimeAccount,
-  shijingRuntimeAccountCaller,
   type ShijingAuthUser,
 } from './shijing-runtime-session.ts';
+import {
+  SHIJING_RUNTIME_APP_ID,
+  SHIJING_RUNTIME_APP_INSTANCE_ID,
+  SHIJING_RUNTIME_DEVICE_ID,
+} from '../../contracts/app-identity.ts';
 
 let bootstrapPromise: Promise<void> | null = null;
 
@@ -24,7 +25,6 @@ export {
   SHIJING_RUNTIME_APP_INSTANCE_ID,
   SHIJING_RUNTIME_DEVICE_ID,
   loadShijingRuntimeAccountUser,
-  shijingRuntimeAccountCaller,
   type ShijingAuthUser,
 };
 
@@ -61,20 +61,13 @@ async function doRunShijingBootstrap(): Promise<void> {
   const flowId = `shijing-bootstrap-${Date.now().toString(36)}`;
 
   try {
-    // Step 1: Runtime defaults (transport and platform projection).
-    const runtimeDefaults = await getShijingRuntimeDefaults();
-    store.setRuntimeDefaults(runtimeDefaults);
-
-    // Step 2: Construct the developer-registered Runtime client. Desktop
-    // Developer Mode owns the Runtime developer-registration gate; ShiJing
-    // only requests developer registration and fails closed when the gate is
-    // off.
+    // Step 1: Construct the host-owned installed app Runtime client.
     setShijingNimiClient(null);
     clearShijingRuntimeSession();
     const session = await configureShijingRuntimeSession();
     setShijingNimiClient(session.client);
 
-    // Step 3: Resolve current account from runtime projection.
+    // Step 2: Resolve current account from runtime projection.
     const runtimeAccountUser = await loadShijingRuntimeAccountUser(session.accountRuntime)
       .catch((error) => {
         logRendererEvent({
@@ -92,14 +85,15 @@ async function doRunShijingBootstrap(): Promise<void> {
       store.clearAuthSession();
     }
 
-    // Step 4: Runtime SDK readiness. Product surfaces must not mount against a
+    // Step 3: Runtime SDK readiness. Product surfaces must not mount against a
     // runtime client that cannot answer Runtime app storage projections.
     await session.runtime.ready();
 
+    await hydrateShijingAIConfigFromShell();
     const aiConfigInit = await ensureShijingReadingAIConfigFromFirstLaunchProfile();
     if (aiConfigInit.outcome === 'setup-required') {
       logRendererEvent({
-        level: 'warn',
+        level: 'error',
         area: 'shijing-bootstrap.ai-config',
         message: 'action:first-launch-ai-config-setup-required',
         flowId,
@@ -108,6 +102,9 @@ async function doRunShijingBootstrap(): Promise<void> {
           detail: aiConfigInit.detail,
         },
       });
+      throw new Error(`ShiJing first-launch AIConfig setup required: ${aiConfigInit.reason}${
+        aiConfigInit.detail ? ` (${aiConfigInit.detail})` : ''
+      }`);
     }
 
     store.setBootstrapReady(true);

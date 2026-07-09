@@ -1,9 +1,10 @@
 import { spawn, spawnSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  resolveShijingRuntimeAppStorageRoots,
+  resolveShijingDevStorageRoots,
   resolveShijingRuntimeEndpoint,
 } from './runtime-app-storage-projection.mjs';
 
@@ -38,13 +39,13 @@ const renderer = spawnRenderer();
 
 try {
   await waitForUrl(rendererUrl, 45_000);
-  const storageRoots = await resolveShijingRuntimeAppStorageRoots({
-    runtimeEndpoint,
-    label: 'ShiJing Electron dev',
+  const storageRoots = resolveShijingDevStorageRoots({
     sessionKind: 'electron-dev',
-    errorPrefix: '[run-electron-dev]',
   });
-  const electron = spawnElectron(storageRoots);
+  const launchNonce = process.env.NIMI_APP_LAUNCH_NONCE
+    || process.env.NIMI_SHIJING_ELECTRON_LAUNCH_NONCE
+    || randomUUID();
+  const electron = spawnElectron(storageRoots, launchNonce);
   const exitCode = await waitForExit(electron);
   await requestAllChildrenShutdown('SIGTERM');
   if (exitCode !== null && exitCode !== 0) {
@@ -71,16 +72,18 @@ function ensureRendererPortAvailable() {
   }
 }
 
-function spawnElectron(storageRoots) {
+function spawnElectron(storageRoots, launchNonce) {
   const electron = spawnTracked(electronBin, ['dist-electron/src-electron/main.js'], {
     stdio: ['ignore', 'pipe', 'pipe'],
     env: {
       ...process.env,
       NIMI_SHIJING_ELECTRON_RENDERER_URL: rendererUrl,
       NIMI_RUNTIME_GRPC_ADDR: runtimeEndpoint,
+      NIMI_APP_LAUNCH_NONCE: launchNonce,
       NIMI_APP_DURABLE_DATA_ROOT: storageRoots.dataRoot,
       NIMI_APP_CACHE_ROOT: storageRoots.cacheRoot,
       NIMI_APP_TEMP_ROOT: storageRoots.tempRoot,
+      NIMI_SHIJING_ELECTRON_LAUNCH_NONCE: launchNonce,
       NIMI_SHIJING_ELECTRON_DURABLE_DATA_ROOT: storageRoots.dataRoot,
       NIMI_SHIJING_ELECTRON_CACHE_ROOT: storageRoots.cacheRoot,
       NIMI_SHIJING_ELECTRON_TEMP_ROOT: storageRoots.tempRoot,

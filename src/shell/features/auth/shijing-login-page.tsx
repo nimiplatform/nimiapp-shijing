@@ -1,51 +1,38 @@
-import { useMemo } from 'react';
-import { DesktopShellAuthPage } from '@nimiplatform/kit/auth';
-import '@nimiplatform/kit/auth/styles.css';
-import { useAppStore } from '../../app-shell/app-store.js';
-import {
-  createShijingDesktopBrowserAuthAdapter,
-  createShijingRuntimeAccountBrowserBroker,
-} from './shijing-auth-adapter.js';
-import { shijingTauriOAuthBridge } from '../../bridge/index.js';
+import { useTranslation } from 'react-i18next';
 
 const shijingLogoUrl = new URL('../../../../src-tauri/icons/128x128@2x.png', import.meta.url).href;
 
-export function ShijingLoginPage() {
-  const adapter = useMemo(() => createShijingDesktopBrowserAuthAdapter(), []);
-  const runtimeAccountBroker = useMemo(() => createShijingRuntimeAccountBrowserBroker(), []);
-  const webBaseUrl = useAppStore((s) => s.runtimeDefaults?.webBaseUrl || '');
+type ShijingLaunchPageProps = {
+  readonly onEnter: () => void;
+};
+
+export function ShijingLaunchPage({ onEnter }: ShijingLaunchPageProps) {
+  const { t } = useTranslation();
 
   return (
-    <DesktopShellAuthPage
-      adapter={adapter}
-      logo={shijingLogoUrl}
-      logoAltText="ShiJing"
-      session={{
-        mode: 'desktop-browser',
-        authStatus: 'unauthenticated',
-        setAuthSession: (user) => {
-          const store = useAppStore.getState();
-          if (!user || !user.id) {
-            store.clearAuthSession();
-            return;
-          }
-          store.setAuthSession({
-            id: String(user.id),
-            displayName: String(user.displayName || user.name || ''),
-            email: user.email ? String(user.email) : undefined,
-            avatarUrl: user.avatarUrl ? String(user.avatarUrl) : undefined,
-          });
-        },
-      }}
-      desktopBrowserAuth={{
-        baseUrl: webBaseUrl || undefined,
-        bridge: shijingTauriOAuthBridge,
-        runtimeAccountBroker,
-      }}
-      testIds={{
-        screen: 'shijing-login-page',
-        logoTrigger: 'shijing-login-trigger',
-      }}
-    />
+    <main
+      data-testid="shijing-launch-page"
+      className="min-h-screen bg-[#0f1115] text-white flex items-center justify-center"
+    >
+      <button
+        type="button"
+        data-testid="shijing-launch-trigger"
+        aria-label={t('Auth.enterShijing')}
+        onClick={onEnter}
+        className="flex flex-col items-center gap-5"
+      >
+        <img
+          src={shijingLogoUrl}
+          alt="ShiJing"
+          draggable={false}
+          className="h-28 w-28 rounded-2xl object-cover"
+        />
+        <span className="text-xs uppercase text-white/64">ShiJing</span>
+      </button>
+    </main>
   );
+}
+
+export function ShijingLoginPage() {
+  return <ShijingLaunchPage onEnter={() => {}} />;
 }

@@ -1,29 +1,21 @@
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { appendFile, mkdir } from 'node:fs/promises';
-import { app, BrowserWindow, ipcMain, Menu, protocol, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, protocol } from 'electron';
 import {
-  assertOpaqueElectronLocalAgentRef,
   createElectronShellFileProtocolHost,
   createNimiElectronStandardApplicationMenuTemplate,
   createNimiElectronFileAIConfigStore,
   isAllowedElectronRendererUrl,
   registerNimiElectronRuntimeBridge,
-  type NimiElectronRuntimeTrustedCallerMode,
   type NimiElectronStandardDataRootBinding,
 } from '@nimiplatform/kit/shell/electron/main';
 import {
-  Runtime,
-  createNimiRuntimeAppSessionMetadataProvider,
-  createNimiRuntimeFullAppRegistration,
-  resolveNimiRuntimeAppStorageRoots,
-} from '@nimiplatform/sdk/runtime';
-import {
   SHIJING_APP_ID,
-  SHIJING_RUNTIME_APP_INSTANCE_ID,
-  SHIJING_RUNTIME_DEVICE_ID,
 } from '../src/contracts/app-identity.js';
-import { createShijingElectronTrustedRuntimeMetadataProvider } from './runtime-auth.js';
+import {
+  createShijingElectronTrustedRuntimeMetadataProvider,
+  createShijingRendererLaunchBinding,
+} from './runtime-auth.js';
 
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(currentFilePath);
@@ -50,7 +42,6 @@ async function bootstrapElectron(): Promise<void> {
   const localAssetRoots = resolveStandardLocalAssetRoots(standardStorageRoots.durableDataRoot);
   const fileProtocolHost = createShijingFileProtocolHost(localAssetRoots);
   fileProtocolHost.registerProtocolHandler();
-  const localAgentIdentity = resolveShijingElectronLocalAgentIdentity();
   registerNimiElectronRuntimeBridge({
     appId: SHIJING_APP_ID,
     runtimeEndpoint,
@@ -62,15 +53,11 @@ async function bootstrapElectron(): Promise<void> {
       runtimeEndpoint,
     }),
     standardShellHost: {
+      capabilitySetRef: 'installed-nimi-app-standard-shell-v1',
       standardDataRootBinding: standardDataRootBinding(standardStorageRoots),
       localAssetRoots,
       localAssetProtocolHost: fileProtocolHost,
-      openExternalUrl: openShijingExternalUrl,
       focusMainWindow,
-      ...(localAgentIdentity ? { localAgentIdentity } : {}),
-      runtimeTrustedCaller: {
-        mode: resolveRuntimeTrustedCallerMode(),
-      },
       aiConfigStore: createShijingAiConfigStore(standardStorageRoots.durableDataRoot),
     },
   });
@@ -113,6 +100,7 @@ app.on('window-all-closed', () => {
 });
 
 async function createMainWindow(): Promise<BrowserWindow> {
+  const launchBinding = createShijingRendererLaunchBinding();
   const window = new BrowserWindow({
     width: 1320,
     height: 900,
@@ -125,6 +113,9 @@ async function createMainWindow(): Promise<BrowserWindow> {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      additionalArguments: [
+        `--nimi-installed-app-launch-binding=${Buffer.from(JSON.stringify(launchBinding), 'utf8').toString('base64url')}`,
+      ],
     },
   });
   mainWindow = window;
@@ -221,62 +212,12 @@ async function resolveStandardDataRoot(): Promise<ShijingStandardStorageRoots> {
       projectionRef: 'shijing-electron-env-runtime-launch-projection',
     };
   }
-  return resolveRuntimeProjectedStandardStorageRoots();
-}
-
-async function resolveRuntimeProjectedStandardStorageRoots(): Promise<ShijingStandardStorageRoots> {
-  const accountRuntime = new Runtime({
-    appId: SHIJING_APP_ID,
-    transport: {
-      type: 'node-grpc',
-      endpoint: runtimeEndpoint,
-    },
-  });
-  try {
-    await accountRuntime.ready();
-    await createNimiRuntimeFullAppRegistration(
-      () => ({ auth: accountRuntime.auth }),
-      {
-        appId: SHIJING_APP_ID,
-        appInstanceId: SHIJING_RUNTIME_APP_INSTANCE_ID,
-        deviceId: SHIJING_RUNTIME_DEVICE_ID,
-        capabilities: [],
-        developerRegistration: true,
-        rejectionLabel: 'ShiJing Electron Runtime registration rejected',
-      },
-    )();
-    const runtime = new Runtime({
-      appId: SHIJING_APP_ID,
-      transport: {
-        type: 'node-grpc',
-        endpoint: runtimeEndpoint,
-      },
-      authMetadata: createNimiRuntimeAppSessionMetadataProvider({
-        appId: SHIJING_APP_ID,
-        appInstanceId: `${SHIJING_APP_ID}.electron-host-session`,
-        deviceId: 'shijing-electron-host-session',
-        capabilities: [],
-        developerRegistration: true,
-        auth: accountRuntime.auth,
-      }),
-    });
-    const roots = await resolveNimiRuntimeAppStorageRoots({
-      appLifecycle: runtime.appLifecycle,
-      appId: SHIJING_APP_ID,
-      label: 'ShiJing Electron host',
-    });
-    return {
-      durableDataRoot: path.resolve(roots.dataRoot),
-      cacheRoot: path.resolve(roots.cacheRoot),
-      tempRoot: path.resolve(roots.tempRoot),
-      projectionRef: 'shijing-electron-runtime-launch-projection',
-    };
-  } catch (error) {
-    throw new Error(
-      `ShiJing Electron failed to resolve Runtime app storage projection from ${runtimeEndpoint}: ${errorMessage(error)}`,
-      { cause: error },
-    );
-  }
+  return {
+    durableDataRoot: path.join(app.getPath('userData'), 'installed-app-data'),
+    cacheRoot: path.join(app.getPath('userData'), 'installed-app-cache'),
+    tempRoot: path.join(app.getPath('temp'), 'shijing'),
+    projectionRef: 'shijing-electron-dev-shell',
+  };
 }
 
 function resolveOptionalStandardRoot(envKeys: readonly string[]): string | undefined {
@@ -319,51 +260,6 @@ function createShijingAiConfigStore(durableDataRoot: string) {
   });
 }
 
-function resolveRuntimeTrustedCallerMode(): NimiElectronRuntimeTrustedCallerMode {
-  const mode = normalizeText(process.env.NIMI_SHIJING_ELECTRON_RUNTIME_TRUSTED_CALLER_MODE) || 'local-developer-app';
-  if (
-    mode === 'local-developer-app'
-    || mode === 'local-first-party-app'
-    || mode === 'desktop-shell'
-  ) {
-    return mode;
-  }
-  throw new Error(`unsupported ShiJing Electron Runtime trusted caller mode: ${mode}`);
-}
-
-function resolveShijingElectronLocalAgentIdentity(): {
-  readonly ownerUserId: string;
-  readonly runtimeSourceRef: string;
-  readonly localAgentRef: string;
-} | undefined {
-  const localAgentRef = normalizeText(process.env.NIMI_SHIJING_ELECTRON_LOCAL_AGENT_REF);
-  if (!localAgentRef) {
-    return undefined;
-  }
-  const ownerUserId = normalizeRequiredEnv(
-    process.env.NIMI_SHIJING_ELECTRON_LOCAL_AGENT_OWNER_USER_ID,
-    'NIMI_SHIJING_ELECTRON_LOCAL_AGENT_OWNER_USER_ID',
-  );
-  const runtimeSourceRef = normalizeRequiredEnv(
-    process.env.NIMI_SHIJING_ELECTRON_LOCAL_AGENT_RUNTIME_SOURCE_REF,
-    'NIMI_SHIJING_ELECTRON_LOCAL_AGENT_RUNTIME_SOURCE_REF',
-  );
-  if (!localAgentRef.startsWith('local-agent:')) {
-    throw new Error('NIMI_SHIJING_ELECTRON_LOCAL_AGENT_REF must start with local-agent:');
-  }
-  assertOpaqueElectronLocalAgentRef({
-    ownerUserId,
-    runtimeSourceRef,
-    localAgentRef,
-    command: 'NIMI_SHIJING_ELECTRON_LOCAL_AGENT_REF',
-  });
-  return {
-    ownerUserId,
-    runtimeSourceRef,
-    localAgentRef,
-  };
-}
-
 function createShijingFileProtocolHost(roots: readonly string[]) {
   return createElectronShellFileProtocolHost({
     protocol: {
@@ -372,25 +268,6 @@ function createShijingFileProtocolHost(roots: readonly string[]) {
     },
     roots,
   });
-}
-
-function normalizeRequiredEnv(value: unknown, field: string): string {
-  const normalized = normalizeText(value);
-  if (!normalized) {
-    throw new Error(`${field} is required when NIMI_SHIJING_ELECTRON_LOCAL_AGENT_REF is set`);
-  }
-  return normalized;
-}
-
-async function openShijingExternalUrl(url: string): Promise<void> {
-  const capturePath = normalizeText(process.env.NIMI_SHIJING_ELECTRON_OPEN_EXTERNAL_CAPTURE_FILE);
-  if (capturePath) {
-    const resolved = path.resolve(capturePath);
-    await mkdir(path.dirname(resolved), { recursive: true });
-    await appendFile(resolved, `${url}\n`, 'utf8');
-    return;
-  }
-  await shell.openExternal(url);
 }
 
 async function focusMainWindow(): Promise<void> {
@@ -409,11 +286,4 @@ async function focusMainWindow(): Promise<void> {
 
 function normalizeText(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
-}
-
-function errorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return String(error || 'unknown error');
 }

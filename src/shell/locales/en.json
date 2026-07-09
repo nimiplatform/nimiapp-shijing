@@ -32,7 +32,8 @@
     "resendCode": "Resend code",
     "twoFaHint": "Enter your two-factor code",
     "verifyAndLogin": "Verify and log in",
-    "selectWalletHint": "Select a wallet to connect"
+    "selectWalletHint": "Select a wallet to connect",
+    "enterShijing": "Enter ShiJing"
   },
   "Shell": {
     "loading": "Loading...",

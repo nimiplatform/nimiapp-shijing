@@ -1,5 +1,3 @@
-import { hasTauriRuntime, invokeTauri } from '../bridge/index.js';
-
 export type ShijingRendererLogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 type JsonObject = Record<string, unknown>;
@@ -75,9 +73,6 @@ export function logRendererEvent(payload: ShijingRendererLogPayload): void {
     ...payload,
     details: sanitize(payload.details),
   };
-  if (hasTauriRuntime()) {
-    void invokeTauri('log_renderer_event', { payload: sanitized }).catch(() => {});
-  }
   const consoleFn = payload.level === 'error' ? 'error'
     : payload.level === 'warn' ? 'warn'
     : payload.level === 'info' ? 'info'

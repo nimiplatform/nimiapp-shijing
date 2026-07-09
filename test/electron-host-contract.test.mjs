@@ -68,10 +68,13 @@ test('Electron host reuses Kit bridge without ShiJing platform primitive command
   assert.match(mainSource, /registerNimiElectronRuntimeBridge/);
   assert.match(mainSource, /createNimiElectronFileAIConfigStore/);
   assert.match(mainSource, /createShijingElectronTrustedRuntimeMetadataProvider/);
-  assert.match(mainSource, /@nimiplatform\/sdk\/runtime/);
-  assert.match(mainSource, /resolveNimiRuntimeAppStorageRoots/);
+  assert.match(mainSource, /createShijingRendererLaunchBinding/);
+  assert.doesNotMatch(mainSource, /@nimiplatform\/sdk\/runtime/);
+  assert.doesNotMatch(mainSource, /createNimiRuntimeAppSessionMetadataProvider|createNimiRuntimeFullAppRegistration|resolveNimiRuntimeAppStorageRoots/);
+  assert.doesNotMatch(mainSource, /assertOpaqueElectronLocalAgentRef|resolveShijingElectronLocalAgentIdentity|localAgentIdentity|runtimeTrustedCaller|resolveRuntimeTrustedCallerMode/);
   assert.match(mainSource, /await resolveStandardDataRoot\(\)/);
   assert.match(mainSource, /standardDataRootBinding:\s*standardDataRootBinding\(standardStorageRoots\)/);
+  assert.match(mainSource, /capabilitySetRef:\s*'installed-nimi-app-standard-shell-v1'/);
   assert.match(mainSource, /localAssetProtocolHost/);
   assert.match(mainSource, /registerPrivilegedSchemes\(\)/);
   assert.match(mainSource, /registerProtocolHandler\(\)/);
@@ -93,8 +96,9 @@ test('Electron host reuses Kit bridge without ShiJing platform primitive command
   assert.match(mainSource, /disable-background-networking/);
   assert.match(preloadSource, /@nimiplatform\/kit\/shell\/electron\/preload-cjs/);
   assert.match(preloadSource, /installNimiElectronRuntimeBridge/);
-  assert.match(runtimeAuthSource, /createNimiElectronRuntimeAccountTrustedMetadataProvider/);
-  assert.match(runtimeAuthSource, /RUNTIME_ACCOUNT_CALLER_MODE_LOCAL_DEVELOPER_APP/);
+  assert.match(runtimeAuthSource, /createNimiElectronInstalledAppRuntimeAccountTrustedMetadataProvider/);
+  assert.match(runtimeAuthSource, /NIMI_APP_LAUNCH_NONCE/);
+  assert.match(runtimeAuthSource, /NIMI_SHIJING_ELECTRON_LAUNCH_NONCE/);
   assert.doesNotMatch(runtimeAuthSource, /@nimiplatform\/sdk\/runtime/);
   assert.doesNotMatch(mainSource, /standardShellHost:\s*{[\s\S]*?\bdataRoot:\s*standardDataRoot/);
   assert.doesNotMatch(mainSource, /resolveLocalAssetUrl:\s*resolveShijingLocalAssetUrl/);
@@ -121,7 +125,7 @@ test('Electron host reuses Kit bridge without ShiJing platform primitive command
 test('Renderer persistence uses Runtime app storage for any standard shell host', () => {
   const productAreaSource = read('src/shell/routes/product-area.tsx');
 
-  assert.match(productAreaSource, /hasShellHostInvoke/);
+  assert.match(productAreaSource, /hasNimiShellRuntime/);
   assert.match(productAreaSource, /new RuntimeAppStoragePersistenceAdapter\(\{ user_id: userId \}\)/);
   assert.doesNotMatch(productAreaSource, /__TAURI_INTERNALS__/);
 });
@@ -131,14 +135,20 @@ test('Electron dev runner binds the same renderer endpoint as Vite and owns clea
   const projectionSource = read('scripts/runtime-app-storage-projection.mjs');
   const preflightSource = read('scripts/ensure-dev-renderer-port.mjs');
 
-  assert.match(runnerSource, /resolveShijingRuntimeAppStorageRoots/);
-  assert.match(projectionSource, /@nimiplatform\/sdk\/runtime/);
-  assert.match(projectionSource, /resolveNimiRuntimeAppStorageRoots/);
-  assert.match(projectionSource, /appLifecycle:\s*runtime\.appLifecycle/);
-  assert.match(projectionSource, /appId:\s*SHIJING_APP_ID/);
+  assert.doesNotMatch(runnerSource, /resolveShijingRuntimeAppStorageRoots/);
+  assert.match(runnerSource, /resolveShijingDevStorageRoots/);
+  assert.match(runnerSource, /randomUUID/);
+  assert.match(runnerSource, /NIMI_APP_LAUNCH_NONCE/);
+  assert.doesNotMatch(projectionSource, /@nimiplatform\/sdk\/runtime/);
+  assert.doesNotMatch(projectionSource, /resolveNimiRuntimeAppStorageRoots/);
+  assert.doesNotMatch(projectionSource, /appLifecycle:\s*runtime\.appLifecycle/);
+  assert.match(projectionSource, /NIMI_SHIJING_DEV_STORAGE_ROOT/);
+  assert.match(projectionSource, /installed-app-host/);
+  assert.match(projectionSource, /SHIJING_APP_ID/);
   assert.match(runnerSource, /NIMI_APP_DURABLE_DATA_ROOT/);
   assert.match(runnerSource, /NIMI_APP_CACHE_ROOT/);
   assert.match(runnerSource, /NIMI_APP_TEMP_ROOT/);
+  assert.match(runnerSource, /NIMI_SHIJING_ELECTRON_LAUNCH_NONCE/);
   assert.match(runnerSource, /NIMI_SHIJING_ELECTRON_DURABLE_DATA_ROOT/);
   assert.match(runnerSource, /NIMI_SHIJING_ELECTRON_CACHE_ROOT/);
   assert.match(runnerSource, /NIMI_SHIJING_ELECTRON_TEMP_ROOT/);
@@ -146,7 +156,7 @@ test('Electron dev runner binds the same renderer endpoint as Vite and owns clea
   assert.match(runnerSource, /node_modules['"], ['"]vite['"], ['"]bin['"], ['"]vite\.js/);
   assert.match(runnerSource, /require\(['"]electron['"]\)/);
   assert.match(runnerSource, /const SIGNAL_EXIT_CODES = new Map/);
-  assert.match(runnerSource, /function spawnElectron\(storageRoots\)/);
+  assert.match(runnerSource, /function spawnElectron\(storageRoots,\s*launchNonce\)/);
   assert.match(runnerSource, /stdio:\s*\[\s*'ignore'\s*,\s*'pipe'\s*,\s*'pipe'\s*\]/);
   assert.match(runnerSource, /forwardChildOutput\(electron\.stdout,\s*process\.stdout\)/);
   assert.match(runnerSource, /forwardChildOutput\(electron\.stderr,\s*process\.stderr\)/);
@@ -163,14 +173,18 @@ test('Electron dev runner binds the same renderer endpoint as Vite and owns clea
   assert.doesNotMatch(preflightSource, /tester|NIMI_TESTER|1468/);
 });
 
-test('Tauri dev runner injects Runtime-projected app storage before launching shell', () => {
+test('Tauri dev runner injects host-bound app storage before launching shell', () => {
   const runnerSource = read('scripts/run-tauri-dev.mjs');
   const tauriMainSource = read('src-tauri/src/main.rs');
   const packageJson = readJson('package.json');
 
   assert.match(packageJson.scripts['dev:shell'], /node scripts\/run-tauri-dev\.mjs/);
-  assert.match(runnerSource, /resolveShijingRuntimeAppStorageRoots/);
+  assert.doesNotMatch(runnerSource, /resolveShijingRuntimeAppStorageRoots/);
+  assert.match(runnerSource, /resolveShijingDevStorageRoots/);
   assert.match(runnerSource, /NIMI_RUNTIME_GRPC_ADDR/);
+  assert.match(runnerSource, /randomUUID/);
+  assert.match(runnerSource, /NIMI_APP_LAUNCH_NONCE/);
+  assert.match(runnerSource, /NIMI_SHIJING_TAURI_LAUNCH_NONCE/);
   assert.match(runnerSource, /NIMI_APP_DURABLE_DATA_ROOT/);
   assert.match(runnerSource, /NIMI_APP_CACHE_ROOT/);
   assert.match(runnerSource, /NIMI_APP_TEMP_ROOT/);

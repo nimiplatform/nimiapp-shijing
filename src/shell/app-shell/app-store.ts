@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import type { ShijingRuntimeDefaults } from '../bridge/index.js';
 
 // SJG-PROD-02: Nimi platform owns identity. The renderer-side app store
 // keeps only the runtime-projected account identity. Raw Realm access tokens
@@ -20,13 +19,11 @@ interface AppState {
   };
   bootstrapReady: boolean;
   bootstrapError: string | null;
-  runtimeDefaults: ShijingRuntimeDefaults | null;
 
   setAuthSession: (user: AuthUser) => void;
   clearAuthSession: () => void;
   setBootstrapReady: (ready: boolean) => void;
   setBootstrapError: (error: string | null) => void;
-  setRuntimeDefaults: (defaults: ShijingRuntimeDefaults) => void;
 }
 
 declare global {
@@ -45,7 +42,6 @@ export const useAppStore = create<AppState>((set) => ({
   },
   bootstrapReady: false,
   bootstrapError: null,
-  runtimeDefaults: null,
 
   setAuthSession(user) {
     set({ auth: { status: 'authenticated', user } });
@@ -55,7 +51,6 @@ export const useAppStore = create<AppState>((set) => ({
   },
   setBootstrapReady: (ready) => set({ bootstrapReady: ready }),
   setBootstrapError: (error) => set({ bootstrapError: error }),
-  setRuntimeDefaults: (defaults) => set({ runtimeDefaults: defaults }),
 }));
 
 // Expose the store under window during dev so we can drive the authenticated

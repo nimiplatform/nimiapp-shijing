@@ -32,7 +32,8 @@
     "resendCode": "重新发送验证码",
     "twoFaHint": "请输入双重验证码",
     "verifyAndLogin": "验证并登录",
-    "selectWalletHint": "选择钱包进行连接"
+    "selectWalletHint": "选择钱包进行连接",
+    "enterShijing": "进入时镜"
   },
   "Shell": {
     "loading": "加载中...",

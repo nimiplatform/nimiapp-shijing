@@ -1,49 +1,20 @@
-// ShiJing is a developer-registered local app, not a first-party caller. Keep
-// renderer bridge exports scoped to read/status and code-only OAuth surfaces;
-// Runtime account service owns token custody and Desktop owns daemon control.
-
 export {
-  hasTauriInvoke,
-  hasShellHostInvoke,
-  invoke,
-  invokeChecked,
   BridgeError,
-  getDaemonStatus,
-  oauthListenForCode,
-  openExternalUrl,
+  confirmDialog,
+  createInstalledNimiAppStandardShellSurface,
   focusMainWindow,
-  parseRuntimeBridgeDaemonStatus,
+  hasElectronRuntime,
+  hasNimiShellRuntime,
   hasTauriRuntime,
-  invokeTauri,
+  readInstalledNimiAppLaunchBinding,
+  startWindowDrag,
 } from '@nimiplatform/kit/shell/renderer/bridge';
 
 export type {
-  RuntimeBridgeDaemonStatus,
+  InstalledNimiAppLaunchBinding,
+  InstalledNimiAppStandardShellSurface,
+  InstalledNimiAppStorageRemoveJsonResult,
   JsonValue,
   JsonObject,
   JsonPrimitive,
 } from '@nimiplatform/kit/shell/renderer/bridge';
-
-import type { ShellOAuthBridge } from '@nimiplatform/kit/core/oauth';
-import {
-  focusMainWindow,
-  hasShellHostInvoke,
-  oauthListenForCode,
-  openExternalUrl,
-} from '@nimiplatform/kit/shell/renderer/bridge';
-
-export const SHIJING_TOKEN_EXCHANGE_FORBIDDEN =
-  'ShiJing does not expose OAuth token exchange; Runtime account service owns token custody.';
-
-export const shijingTauriOAuthBridge: ShellOAuthBridge = {
-  hasShellHostInvoke,
-  oauthListenForCode,
-  openExternalUrl,
-  focusMainWindow,
-  oauthTokenExchange: async () => {
-    throw new Error(SHIJING_TOKEN_EXCHANGE_FORBIDDEN);
-  },
-};
-
-export type { ShijingRuntimeDefaults } from './shijing-types.ts';
-export { getShijingRuntimeDefaults } from './shijing-runtime-defaults.ts';

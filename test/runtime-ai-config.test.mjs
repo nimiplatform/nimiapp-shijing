@@ -16,13 +16,10 @@ import {
   createShijingConversationChatBridge,
 } from '../src/shell/ai/shijing-conversation-chat-bridge.ts';
 import {
-  SHIJING_AI_CONFIG_INDEX_KEY,
-  SHIJING_AI_CONFIG_QUARANTINE_PREFIX,
-  SHIJING_AI_CONFIG_STORAGE_PREFIX,
+  commitShijingAIConfigToShell,
   createShijingReadingAIScopeRef,
+  hydrateShijingAIConfigFromShell,
   loadShijingAIConfig,
-  repairShijingAIConfigStorageForScope,
-  saveShijingAIConfig,
 } from '../src/shell/ai/shijing-ai-config.ts';
 import {
   ensureShijingReadingAIConfigFromFirstLaunchProfile,
@@ -105,21 +102,6 @@ function emptyAIConfig() {
   };
 }
 
-function createMemoryStorage() {
-  const items = new Map();
-  return {
-    getItem(key) {
-      return items.has(key) ? items.get(key) : null;
-    },
-    setItem(key, value) {
-      items.set(key, String(value));
-    },
-    removeItem(key) {
-      items.delete(key);
-    },
-  };
-}
-
 function readyAIProfile() {
   return {
     profileId: 'profile-shijing-ready',
@@ -145,6 +127,21 @@ function readyAIProfile() {
   };
 }
 
+function installMockStandardShellInvoke(handler) {
+  const originalElectron = globalThis.__NIMI_ELECTRON_TEST__;
+  globalThis.__NIMI_ELECTRON_TEST__ = {
+    invoke: handler,
+    listen: () => () => undefined,
+  };
+  return () => {
+    if (originalElectron === undefined) {
+      delete globalThis.__NIMI_ELECTRON_TEST__;
+      return;
+    }
+    globalThis.__NIMI_ELECTRON_TEST__ = originalElectron;
+  };
+}
+
 function setupRequiredAIProfile() {
   return {
     profileId: 'profile-shijing-setup-required',
@@ -166,55 +163,71 @@ test('resolveShijingTextGenerateBinding fails closed when AIConfig has no text.g
   }
 });
 
-test('ShiJing AIConfig store keys persisted configs by scope', () => {
+test('ShiJing AIConfig reads from installed standard shell and rejects scope drift', async () => {
   const readingScope = createShijingReadingAIScopeRef();
   const otherScope = createNimiAppAIScopeRef('shijing', 'shijing.other');
+  const scopeKey = encodeNimiAIScopeRef(readingScope);
+  const calls = [];
+  const restore = installMockStandardShellInvoke(async (command, payload) => {
+    calls.push({ command, payload });
+    assert.equal(command, 'nimi.shell.aiConfig.get');
+    assert.deepEqual(payload, { payload: { scopeRef: scopeKey } });
+    return {
+      scopeRef: encodeNimiAIScopeRef(otherScope),
+      config: createEmptyNimiAIConfig(otherScope),
+    };
+  });
+  try {
+    await assert.rejects(
+      () => hydrateShijingAIConfigFromShell(readingScope),
+      /unexpected scopeRef/,
+    );
+  } finally {
+    restore();
+  }
+
   assert.notEqual(encodeNimiAIScopeRef(readingScope), encodeNimiAIScopeRef(otherScope));
-  assert.match(SHIJING_AI_CONFIG_STORAGE_PREFIX, /v2$/);
-  assert.equal(SHIJING_AI_CONFIG_INDEX_KEY, `${SHIJING_AI_CONFIG_STORAGE_PREFIX}:index`);
-
-  saveShijingAIConfig(createEmptyNimiAIConfig(otherScope), otherScope);
-  const loaded = loadShijingAIConfig(readingScope);
-
-  assert.deepEqual(loaded, createEmptyNimiAIConfig(readingScope));
+  assert.equal(calls.length, 1);
+  assert.deepEqual(loadShijingAIConfig(readingScope), createEmptyNimiAIConfig(readingScope));
 });
 
-test('ShiJing AIConfig repair quarantines retired persisted target refs before SDK load', () => {
-  const storage = createMemoryStorage();
+test('ShiJing AIConfig commits through installed standard shell without optimistic success', async () => {
   const scopeRef = createShijingReadingAIScopeRef();
   const scopeKey = encodeNimiAIScopeRef(scopeRef);
-  const storageKey = `${SHIJING_AI_CONFIG_STORAGE_PREFIX}:${scopeKey}`;
-  const raw = JSON.stringify({
-    scopeRef,
+  const next = {
+    ...createEmptyNimiAIConfig(scopeRef),
     capabilities: {
       targetRefs: {
         'text.generate': {
-          kind: 'local-runtime',
-          targetId: 'local-qwen',
-          profileId: 'runtime-baseline:ready',
+          kind: 'cloud-connector',
+          connectorId: 'connector-openai',
+          remoteModelCatalogId: 'remote-catalog:connector-openai:gpt-runtime',
+          providerModelId: 'gpt-runtime',
+          provider: 'openai',
         },
       },
       selectedParams: {},
     },
-    profileOrigin: null,
+  };
+  const emptyBefore = loadShijingAIConfig(scopeRef);
+  const calls = [];
+  const restore = installMockStandardShellInvoke(async (command, payload) => {
+    calls.push({ command, payload });
+    assert.equal(command, 'nimi.shell.aiConfig.set');
+    assert.deepEqual(payload, { payload: { scopeRef: scopeKey, config: next } });
+    throw new Error('host write failed');
   });
-  storage.setItem(SHIJING_AI_CONFIG_INDEX_KEY, JSON.stringify([scopeKey]));
-  storage.setItem(storageKey, raw);
+  try {
+    await assert.rejects(
+      () => commitShijingAIConfigToShell(next, scopeRef),
+      /host write failed/,
+    );
+  } finally {
+    restore();
+  }
 
-  const result = repairShijingAIConfigStorageForScope(scopeRef, storage, {
-    now: () => '2026-06-26T00:00:00.000Z',
-  });
-
-  assert.equal(result.scanned, 1);
-  assert.equal(result.quarantined, 1);
-  assert.deepEqual(result.removedScopeKeys, [scopeKey]);
-  assert.equal(storage.getItem(storageKey), null);
-  assert.deepEqual(JSON.parse(storage.getItem(SHIJING_AI_CONFIG_INDEX_KEY)), []);
-  assert.equal(result.quarantineKeys.length, 1);
-  assert.match(result.quarantineKeys[0], new RegExp(`^${SHIJING_AI_CONFIG_QUARANTINE_PREFIX}`));
-  const quarantine = JSON.parse(storage.getItem(result.quarantineKeys[0]));
-  assert.match(quarantine.reason, /targetId is retired/);
-  assert.equal(quarantine.raw, raw);
+  assert.equal(calls.length, 1);
+  assert.deepEqual(loadShijingAIConfig(scopeRef), emptyBefore);
 });
 
 test('first-launch profile initializes ShiJing text.generate AIConfig targetRef', async () => {
