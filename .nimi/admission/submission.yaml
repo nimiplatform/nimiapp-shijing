@@ -1,4 +1,4 @@
-app_id: shijing
+app_id: nimi.shijing
 display_name: ShiJing
 profile: workspace-app
 npm_package_name: @nimiplatform/shijing
@@ -8,7 +8,8 @@ package_author: Nimi Team
 submission_role: developer-submitted-input
 publish_readiness:
   install_command: pnpm install
-  dev_shell_command: pnpm dev:shell
+  dev_command: pnpm dev
+  dev_shell_command: pnpm dev:shell -- --shell tauri
   build_command: pnpm run build
   pack_command: pnpm run pack
 review_inputs:

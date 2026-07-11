@@ -35,7 +35,7 @@ test('dev resolver treats local Nimi SDK and Kit source as the only platform con
   assert.doesNotMatch(styles, /@nimiplatform\/kit\/dist/);
 });
 
-test('tauri dev shell loads the exact IPv4 Vite endpoint that dev:renderer binds', () => {
+test('Desktop supervisor and unprivileged Tauri fallback share the exact IPv4 renderer endpoint', () => {
   const devRenderer = packageJson.scripts['dev:renderer'];
   assert.match(devRenderer, /vite --host 127\.0\.0\.1 --port 1430 --strictPort/);
   assert.equal(
@@ -44,4 +44,6 @@ test('tauri dev shell loads the exact IPv4 Vite endpoint that dev:renderer binds
   );
   assert.doesNotMatch(tauriConfig.build.beforeDevCommand, /\bpnpm\s+run\b/);
   assert.equal(tauriConfig.build.devUrl, 'http://127.0.0.1:1430');
+  assert.equal(packageJson.scripts.dev, 'nimi-app dev --shell tauri');
+  assert.equal(packageJson.scripts['dev:shell'], 'nimi-app dev');
 });

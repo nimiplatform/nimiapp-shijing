@@ -6,7 +6,9 @@ This document is a developer-submitted listing request. It is not an approval, r
 
 ```bash
 pnpm install
-pnpm dev:shell
+pnpm dev
+pnpm dev:shell -- --shell electron
+pnpm dev:shell -- --shell tauri
 pnpm run check
 pnpm run pack
 ```

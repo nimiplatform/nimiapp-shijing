@@ -24,8 +24,6 @@ test('ShiJing ships real Electron and Tauri shells with permanent acceptance ent
   for (const relativePath of [
     'src-electron/main.ts',
     'src-electron/preload.cts',
-    'scripts/run-electron-dev.mjs',
-    'scripts/run-tauri-dev.mjs',
     'scripts/acceptance-electron.test.mjs',
     'scripts/acceptance-tauri.test.mjs',
     'scripts/bundle-electron-preload.mjs',
@@ -38,18 +36,21 @@ test('ShiJing ships real Electron and Tauri shells with permanent acceptance ent
   assert.equal(existsSync(rootPath('scripts/runtime-app-storage-projection.mjs')), false);
 
   const packageJson = readJson('package.json');
+  assert.equal(packageJson.scripts.dev, 'nimi-app dev --shell tauri');
+  assert.equal(packageJson.scripts['dev:shell'], 'nimi-app dev');
+  assert.equal(packageJson.scripts['dev:electron'], 'nimi-app dev --shell electron');
   assert.match(packageJson.scripts['acceptance:electron'], /acceptance-electron\.test\.mjs/);
   assert.match(packageJson.scripts['acceptance:tauri'], /acceptance-tauri\.test\.mjs/);
   assert.match(packageJson.devDependencies.playwright || '', /^\^?1\.61\./);
   assert.equal(packageJson.devDependencies['@grpc/grpc-js'], undefined);
 });
 
-test('Electron registers only the fixed Kit installed-app host', () => {
+test('Electron registers only the fixed Kit app host', () => {
   const mainSource = read('src-electron/main.ts');
   const preloadSource = read('src-electron/preload.cts');
 
   assert.equal(SHIJING_APP_ID, 'nimi.shijing');
-  assert.match(mainSource, /registerNimiElectronInstalledAppBridge/);
+  assert.match(mainSource, /registerNimiElectronAppBridge/);
   assert.match(mainSource, /appId:\s*SHIJING_APP_ID/);
   assert.match(mainSource, /allowedRendererUrls:\s*\[activeRendererUrl\(\)\]/);
   assert.doesNotMatch(mainSource, /registerNimiElectronRuntimeBridge/);
@@ -58,6 +59,7 @@ test('Electron registers only the fixed Kit installed-app host', () => {
   assert.doesNotMatch(mainSource, /createNimiElectronFileAIConfigStore|createElectronShellFileProtocolHost/);
   assert.doesNotMatch(mainSource, /trustedRuntimeMetadataProvider|additionalArguments/);
   assert.doesNotMatch(mainSource, /NIMI_RUNTIME_GRPC_ADDR|NIMI_APP_LAUNCH_NONCE|NIMI_APP_DURABLE_DATA_ROOT/);
+  assert.match(mainSource, /--nimi-dev-renderer-url=/);
   assert.match(mainSource, /contextIsolation:\s*true/);
   assert.match(mainSource, /nodeIntegration:\s*false/);
   assert.match(mainSource, /sandbox:\s*true/);
@@ -68,10 +70,10 @@ test('Electron registers only the fixed Kit installed-app host', () => {
   assert.match(preloadSource, /installNimiElectronRuntimeBridge/);
 });
 
-test('Tauri registers only the artifact-only installed standard shell', () => {
+test('Tauri registers only the artifact-only app-host standard shell', () => {
   const source = read('src-tauri/src/main.rs');
 
-  assert.match(source, /RuntimeBridgeInstalledHost::platform_default\(\)/);
+  assert.match(source, /RuntimeBridgeAppHost::platform_default\(\)/);
   assert.match(source, /nimi_shell_tauri_installed_app_standard_shell_handler!\[\]/);
   assert.doesNotMatch(source, /runtime_bridge_unary|runtime_bridge_stream/);
   assert.doesNotMatch(source, /ai_config_get|ai_config_set/);
@@ -81,17 +83,7 @@ test('Tauri registers only the artifact-only installed standard shell', () => {
   assert.doesNotMatch(source, /dotenv|NIMI_APP_|NIMI_RUNTIME_/);
 });
 
-test('dev runners do not mint portable launch or storage authority', () => {
-  const electronRunner = read('scripts/run-electron-dev.mjs');
-  const tauriRunner = read('scripts/run-tauri-dev.mjs');
-  const combined = `${electronRunner}\n${tauriRunner}`;
-
-  assert.doesNotMatch(combined, /randomUUID|LAUNCH_NONCE/);
-  assert.doesNotMatch(combined, /RUNTIME_GRPC_ADDR|RUNTIME_ENDPOINT/);
-  assert.doesNotMatch(combined, /DURABLE_DATA_ROOT|CACHE_ROOT|TEMP_ROOT/);
-  assert.doesNotMatch(combined, /runtime-app-storage-projection/);
-  assert.match(electronRunner, /127\.0\.0\.1:1430/);
-  assert.match(electronRunner, /function spawnElectron\(\)/);
-  assert.match(tauriRunner, /tauri/);
-  assert.match(tauriRunner, /ensure-dev-renderer-port\.mjs/);
+test('app-owned development runners are removed', () => {
+  assert.equal(existsSync(rootPath('scripts/run-electron-dev.mjs')), false);
+  assert.equal(existsSync(rootPath('scripts/run-tauri-dev.mjs')), false);
 });

@@ -9,10 +9,10 @@
     "pnpm": ">=10.0.0"
   },
   "scripts": {
-    "dev": "pnpm run dev:renderer",
+    "dev": "nimi-app dev --shell tauri",
     "dev:renderer": "vite --host 127.0.0.1 --port 1430 --strictPort",
-    "dev:electron": "corepack pnpm run build:electron && node scripts/run-electron-dev.mjs",
-    "dev:shell": "node scripts/run-tauri-dev.mjs",
+    "dev:electron": "nimi-app dev --shell electron",
+    "dev:shell": "nimi-app dev",
     "tauri": "tauri",
     "build:renderer": "vite build",
     "acceptance:electron": "pnpm run build:renderer && pnpm run build:electron && node --test scripts/acceptance-electron.test.mjs",
@@ -25,7 +25,10 @@
     "build:shell": "tauri build",
     "lint": "pnpm run i18n:check && pnpm run i18n:audit && pnpm run typecheck && eslint . --max-warnings 0 && (cd src-tauri && cargo check)",
     "test": "node --test test/*.test.mjs test/golden/*.test.mjs",
-    "check": "pnpm run check:ai-context-budget && pnpm run check:ai-structure-budget && pnpm run typecheck && pnpm run test && pnpm run lint",
+    "doctor": "nimi-app doctor",
+    "validate": "node scripts/validate.mjs",
+    "local-audit": "node scripts/local-audit.mjs",
+    "check": "pnpm run doctor && pnpm run validate && pnpm run local-audit && pnpm run check:ai-context-budget && pnpm run check:ai-structure-budget && pnpm run typecheck && pnpm run test && pnpm run lint",
     "check:ai-context-budget": "pnpm nimicoding:validate-ai-governance --profile shijing --scope context-budget",
     "check:ai-structure-budget": "pnpm nimicoding:validate-ai-governance --profile shijing --scope structure-budget",
     "i18n:check": "node scripts/i18n-check.mjs",
@@ -48,6 +51,8 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "@nimiplatform/app-tools": "link:../../nimi/app-tools",
+    "@nimiplatform/kit-protected-local-win32-x64": "link:../../nimi/kit/shell/protected-local-node/npm/win32-x64",
     "@eslint/js": "^10.0.1",
     "@nimiplatform/nimi-coding": "^0.2.5",
     "@tailwindcss/vite": "^4.3.0",

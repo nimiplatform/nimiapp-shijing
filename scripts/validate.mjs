@@ -8,7 +8,10 @@ if (!manifest.includes('manifest_role: submitted-input')) {
 if (!submission.includes('submission_role: developer-submitted-input')) {
   throw new Error('developer submission role marker missing');
 }
-if (!submission.includes('dev_shell_command: pnpm dev:shell')) {
-  throw new Error('dev shell command marker missing');
+if (!submission.includes('dev_command: pnpm dev')) {
+  throw new Error('official dev command marker missing');
+}
+if (!submission.includes('dev_shell_command: pnpm dev:shell -- --shell tauri')) {
+  throw new Error('official shell selection marker missing');
 }
 console.log('[nimi-app] validate pre-submission self-check passed');
