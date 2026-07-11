@@ -6,7 +6,7 @@ permissions:
   declared_nimi_api_scopes:
     - scope: runtime.ai.text.generate
       qualifier: shijing-reading
-      purpose: Generate ShiJing reading wording through Runtime AI using host-owned model configuration.
+      purpose: Declare the future ShiJing wording permission; execution remains unavailable until the protected installed operation is admitted.
     - scope: app.local.drafts
       qualifier: app-local-drafts
       purpose: Store drafts owned by this app during author testing.

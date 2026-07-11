@@ -1,180 +1,61 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
-import {
-  SHIJING_APP_ID,
-  SHIJING_RUNTIME_APP_ID,
-  SHIJING_RUNTIME_APP_INSTANCE_ID,
-  SHIJING_RUNTIME_DEVICE_ID,
-} from '../src/contracts/app-identity.ts';
-import {
-  createShijingRuntimeTransportConfig,
-  resolveShijingRuntimeHostKind,
-} from '../src/shell/infra/shijing-runtime-session.ts';
 
-const BOOTSTRAP_SOURCE = readFileSync(
-  new URL('../src/shell/infra/shijing-bootstrap.ts', import.meta.url),
-  'utf8',
-);
-const SESSION_SOURCE = readFileSync(
-  new URL('../src/shell/infra/shijing-runtime-session.ts', import.meta.url),
-  'utf8',
-);
-const RUNTIME_AI_SOURCE = readFileSync(
-  new URL('../src/shell/ai/shijing-runtime-ai-client.ts', import.meta.url),
-  'utf8',
-);
-const RUNTIME_AI_REQUIREMENTS_SOURCE = readFileSync(
-  new URL('../src/shell/ai/shijing-ai-requirements.ts', import.meta.url),
-  'utf8',
-);
-const RUNTIME_APP_STORAGE_SOURCE = readFileSync(
-  new URL('../src/shell/persistence/runtime-app-storage-adapter.ts', import.meta.url),
-  'utf8',
-);
-const BRIDGE_SOURCE = readFileSync(
-  new URL('../src/shell/bridge/index.ts', import.meta.url),
-  'utf8',
-);
-const TAURI_MAIN_SOURCE = readFileSync(
-  new URL('../src-tauri/src/main.rs', import.meta.url),
-  'utf8',
-);
-const MANIFEST_SOURCE = readFileSync(
-  new URL('../nimi.app.yaml', import.meta.url),
-  'utf8',
-);
+import { SHIJING_APP_ID } from '../src/contracts/app-identity.ts';
 
-test('ShiJing uses one canonical Nimi app id across manifest, Runtime, and Tauri identity', () => {
+function read(relativePath) {
+  return readFileSync(new URL(`../${relativePath}`, import.meta.url), 'utf8');
+}
+
+const APP_SOURCE = read('src/shell/App.tsx');
+const AUTH_PROVIDER_SOURCE = read('src/shell/app-shell/auth-provider.tsx');
+const BOOTSTRAP_SOURCE = read('src/shell/infra/shijing-bootstrap.ts');
+const STORE_SOURCE = read('src/shell/app-shell/app-store.ts');
+const BRIDGE_SOURCE = read('src/shell/bridge/index.ts');
+
+test('ShiJing keeps app identity public while removing portable installed-session identity', () => {
+  const identitySource = read('src/contracts/app-identity.ts');
+  const manifestSource = read('nimi.app.yaml');
+
   assert.equal(SHIJING_APP_ID, 'nimi.shijing');
-  assert.equal(SHIJING_RUNTIME_APP_ID, 'nimi.shijing');
-  assert.equal(SHIJING_RUNTIME_APP_INSTANCE_ID, 'nimi.shijing.desktop-installed');
-  assert.equal(SHIJING_RUNTIME_DEVICE_ID, 'desktop-installed-app');
-  assert.equal(SHIJING_RUNTIME_APP_ID, SHIJING_APP_ID);
+  assert.match(manifestSource, /app_id:\s*nimi\.shijing/);
+  assert.doesNotMatch(identitySource, /APP_INSTANCE_ID|RUNTIME_DEVICE_ID|RELEASE_DESCRIPTOR_REF/);
 });
 
-test('ShiJing Nimi client uses host-owned installed app Runtime session without raw Realm tokens', () => {
-  assert.match(BOOTSTRAP_SOURCE, /configureShijingRuntimeSession/);
-  assert.doesNotMatch(BOOTSTRAP_SOURCE, /syncShijingRuntimeDeveloperRegistrationConfig/);
-  assert.match(SESSION_SOURCE, /createNimiClient/);
-  assert.match(SESSION_SOURCE, /createInstalledNimiAppBootstrap/);
-  assert.match(SESSION_SOURCE, /readInstalledNimiAppLaunchBinding/);
-  assert.match(SESSION_SOURCE, /createInstalledNimiAppStandardShellSurface/);
-  assert.doesNotMatch(SESSION_SOURCE, /createNimiDeveloperRegisteredRuntimeAccountCaller/);
-  assert.doesNotMatch(SESSION_SOURCE, /createRealmFetchTransport/);
-  assert.doesNotMatch(SESSION_SOURCE, /getAccessToken/);
-  assert.doesNotMatch(SESSION_SOURCE, /createNimiRuntimeAppSessionMetadataProvider/);
-  assert.doesNotMatch(SESSION_SOURCE, /createNimiRuntimeFullAppRegistration/);
-  assert.doesNotMatch(SESSION_SOURCE, /authorizeExternalPrincipal/);
-  assert.doesNotMatch(SESSION_SOURCE, /protectedAccessInflight/);
-  assert.match(SESSION_SOURCE, /realm:\s*false/);
-  assert.doesNotMatch(SESSION_SOURCE, /credentials:\s*'include'/);
-  assert.match(SESSION_SOURCE, /type:\s*'tauri-ipc'/);
-  assert.match(SESSION_SOURCE, /commandNamespace:\s*RUNTIME_BRIDGE_NAMESPACE/);
-  assert.match(SESSION_SOURCE, /eventNamespace:\s*RUNTIME_BRIDGE_NAMESPACE/);
-  assert.match(SESSION_SOURCE, /app:\s*false/);
-  assert.match(SESSION_SOURCE, /permissions:\s*false/);
-  assert.match(SESSION_SOURCE, /appId:\s*SHIJING_RUNTIME_APP_ID/);
-  assert.match(SESSION_SOURCE, /launchBinding/);
-  assert.match(SESSION_SOURCE, /standardShell/);
-  assert.match(SESSION_SOURCE, /accountCaller:\s*bootstrap\.accountCaller/);
-  assert.match(SESSION_SOURCE, /const realmBaseUrl = requireHostProjectedRealmBaseUrl\(launchBinding\.realmBaseUrl\)/);
-  assert.match(SESSION_SOURCE, /realmBaseUrl,\s*\n\s*runtime,/);
-  assert.doesNotMatch(SESSION_SOURCE, /externalPrincipalId/);
-  assert.match(RUNTIME_AI_SOURCE, /appId:\s*SHIJING_RUNTIME_APP_ID/);
-  assert.match(RUNTIME_APP_STORAGE_SOURCE, /createInstalledNimiAppStandardShellSurface/);
-  assert.doesNotMatch(RUNTIME_APP_STORAGE_SOURCE, /resolveNimiRuntimeAppStorageRoots|appId:\s*SHIJING_RUNTIME_APP_ID/);
+test('production renderer never mounts product or app-owned account surfaces before protected admission', () => {
+  assert.doesNotMatch(APP_SOURCE, /ProductArea|routes\/product-area/);
+  assert.match(APP_SOURCE, /AuthProvider/);
+  assert.doesNotMatch(AUTH_PROVIDER_SOURCE, /ShijingLoginPage|login-required/);
+  assert.doesNotMatch(STORE_SOURCE, /AuthUser|AuthStatus|setAuthSession|clearAuthSession|auth:/);
+  assert.doesNotMatch(STORE_SOURCE, /__SHIJING_APP_STORE__/);
+  assert.equal(existsSync(new URL('../src/shell/features/auth/shijing-login-page.tsx', import.meta.url)), false);
+  assert.equal(existsSync(new URL('../src/shell/features/auth/shijing-auth-adapter.ts', import.meta.url)), false);
 });
 
-test('ShiJing Runtime transport selector supports Electron without spoofing Tauri', () => {
-  const originalWindow = globalThis.window;
-  const originalElectronTest = globalThis.__NIMI_ELECTRON_TEST__;
-  try {
-    delete globalThis.window;
-    delete globalThis.__NIMI_ELECTRON_TEST__;
-    assert.equal(resolveShijingRuntimeHostKind(), 'node');
-    assert.equal(createShijingRuntimeTransportConfig(), undefined);
+test('bootstrap exposes one typed fail-close result without constructing Runtime, account, or Realm clients', () => {
+  assert.match(BOOTSTRAP_SOURCE, /shijing-protected-operation-set-not-admitted/);
+  assert.match(BOOTSTRAP_SOURCE, /classifyShijingProtectedSessionFailure/);
+  assert.doesNotMatch(BOOTSTRAP_SOURCE, /createNimiClient|configureShijingRuntimeSession/);
+  assert.doesNotMatch(BOOTSTRAP_SOURCE, /Account|Realm|AIConfig|setShijingNimiClient/);
+  assert.doesNotMatch(BOOTSTRAP_SOURCE, /setBootstrapReady\(true\)/);
+  assert.doesNotMatch(BRIDGE_SOURCE, /readInstalledNimiAppLaunchBinding|hasElectronRuntime|hasTauriRuntime/);
+  assert.equal(existsSync(new URL('../src/shell/infra/shijing-runtime-session.ts', import.meta.url)), false);
+  assert.equal(existsSync(new URL('../src/shell/infra/shijing-nimi-client.ts', import.meta.url)), false);
+});
 
-    globalThis.window = {};
-    assert.equal(resolveShijingRuntimeHostKind(), 'tauri');
-    assert.deepEqual(createShijingRuntimeTransportConfig(), {
-      type: 'tauri-ipc',
-      commandNamespace: 'runtime_bridge',
-      eventNamespace: 'runtime_bridge',
-    });
-
-    globalThis.__NIMI_ELECTRON_TEST__ = {
-      invoke: async () => ({}),
-      listen: () => () => undefined,
-    };
-    assert.equal(resolveShijingRuntimeHostKind(), 'electron');
-    assert.deepEqual(createShijingRuntimeTransportConfig(), { type: 'electron-ipc' });
-  } finally {
-    if (originalWindow === undefined) delete globalThis.window;
-    else globalThis.window = originalWindow;
-    if (originalElectronTest === undefined) delete globalThis.__NIMI_ELECTRON_TEST__;
-    else globalThis.__NIMI_ELECTRON_TEST__ = originalElectronTest;
+test('five stable protected-session states drive retryable, disabled fail-close UI', () => {
+  const stateSource = read('src/shell/app-shell/protected-session-state.ts');
+  for (const state of [
+    'login-required',
+    'runtime-unavailable',
+    'permission-denied',
+    'repair-required',
+    'capability-unavailable',
+  ]) {
+    assert.match(stateSource, new RegExp(state));
   }
-
-  assert.match(SESSION_SOURCE, /hasElectronRuntime/);
-  assert.match(SESSION_SOURCE, /type:\s*'electron-ipc'/);
-  assert.match(SESSION_SOURCE, /type:\s*'tauri-ipc'/);
-  assert.match(SESSION_SOURCE, /runtimeHostKind === 'electron'/);
-  assert.doesNotMatch(SESSION_SOURCE, /__NIMI_TAURI_RUNTIME__\s*=/);
-  assert.doesNotMatch(SESSION_SOURCE, /__TAURI__\?\.core\?\.invoke/);
-});
-
-test('ShiJing does not own Runtime developer-registration gate or local auth token storage', () => {
-  assert.doesNotMatch(BOOTSTRAP_SOURCE, /setDaemonConfig|restartDaemon|mergeNimiRuntimeBridgeDeveloperRegistrationConfig/);
-  assert.doesNotMatch(SESSION_SOURCE, /LOCAL_FIRST_PARTY_APP|local-first-party|local-first-party-app/);
-  assert.doesNotMatch(TAURI_MAIN_SOURCE, /auth_session_commands|auth_session_load|auth_session_save|auth_session_clear/);
-  assert.doesNotMatch(BRIDGE_SOURCE, /startDaemon|stopDaemon|restartDaemon|getDaemonConfig|setDaemonConfig|RuntimeBridgeConfigSetResult/);
-  assert.doesNotMatch(BRIDGE_SOURCE, /getShijingRuntimeDefaults|getRuntimeDefaults|parseRuntimeDefaults|RuntimeDefaults|RealmDefaults|RuntimeExecutionDefaults/);
-  assert.doesNotMatch(BRIDGE_SOURCE, /oauthListenForCode|openExternalUrl|shijingTauriOAuthBridge|createTauriOAuthBridge|oauthTokenExchange/);
-  assert.doesNotMatch(TAURI_MAIN_SOURCE, /runtime_defaults::runtime_defaults|defaults::runtime_defaults/);
-  assert.doesNotMatch(TAURI_MAIN_SOURCE, /oauth::open_external_url|oauth::oauth_listen_for_code|oauth_commands::oauth_token_exchange/);
-  assert.doesNotMatch(TAURI_MAIN_SOURCE, /runtime_bridge::runtime_bridge_start|runtime_bridge::runtime_bridge_stop|runtime_bridge::runtime_bridge_restart/);
-  assert.doesNotMatch(TAURI_MAIN_SOURCE, /runtime_bridge::runtime_bridge_status|runtime_bridge::runtime_bridge_config_get|runtime_bridge::runtime_bridge_config_set/);
-});
-
-test('ShiJing consumes standard shell UI command aliases from Nimi Kit', () => {
-  assert.match(TAURI_MAIN_SOURCE, /confirm_dialog/);
-  assert.match(TAURI_MAIN_SOURCE, /start_window_drag/);
-  assert.match(TAURI_MAIN_SOURCE, /focus_main_window/);
-  assert.match(TAURI_MAIN_SOURCE, /StandardAppStorageRootSlot/);
-  assert.match(TAURI_MAIN_SOURCE, /StandardDataRootBinding/);
-  assert.match(TAURI_MAIN_SOURCE, /resolve_standard_app_storage_roots/);
-  assert.match(TAURI_MAIN_SOURCE, /nimi_shell_tauri::installed_app_launch/);
-  assert.match(TAURI_MAIN_SOURCE, /resolve_installed_nimi_app_launch_binding_from_env/);
-  assert.match(TAURI_MAIN_SOURCE, /build_installed_nimi_app_launch_binding_script/);
-  assert.match(TAURI_MAIN_SOURCE, /append_invoke_initialization_script/);
-  assert.match(TAURI_MAIN_SOURCE, /NIMI_SHIJING_TAURI_LAUNCH_NONCE/);
-  assert.match(TAURI_MAIN_SOURCE, /\.manage\(\s*resolve_standard_storage_slot\(\)\s*\.expect/);
-  assert.match(TAURI_MAIN_SOURCE, /ai_config::ai_config_get/);
-  assert.match(TAURI_MAIN_SOURCE, /ai_config::ai_config_set/);
-  assert.doesNotMatch(TAURI_MAIN_SOURCE, /StandardAppStorageRoot::from_path/);
-  assert.doesNotMatch(TAURI_MAIN_SOURCE, /StandardAppStorageRootSlot::empty/);
-  assert.doesNotMatch(TAURI_MAIN_SOURCE, /left unbound/);
-  assert.doesNotMatch(TAURI_MAIN_SOURCE, /fn confirm_dialog|fn start_window_drag|fn focus_main_window/);
-  assert.doesNotMatch(TAURI_MAIN_SOURCE, /shijing_start_window_drag/);
-});
-
-test('ShiJing manifest declares the Runtime AI scope used by its standard shell AIConfig', () => {
-  assert.match(MANIFEST_SOURCE, /scope:\s*runtime\.ai\.text\.generate/);
-  assert.match(MANIFEST_SOURCE, /qualifier:\s*shijing-reading/);
-  assert.match(RUNTIME_AI_REQUIREMENTS_SOURCE, /SHIJING_TEXT_GENERATE_CAPABILITY_ID = 'text\.generate'/);
-  assert.match(RUNTIME_AI_SOURCE, /SHIJING_TEXT_GENERATE_CAPABILITY_ID/);
-});
-
-test('ShiJing bootstrap treats first-launch AIConfig setup-required as blocking', () => {
-  const setupRequiredIndex = BOOTSTRAP_SOURCE.indexOf("if (aiConfigInit.outcome === 'setup-required')");
-  const blockingThrowIndex = BOOTSTRAP_SOURCE.indexOf(
-    'throw new Error(`ShiJing first-launch AIConfig setup required:',
-    setupRequiredIndex,
-  );
-  const readyProjectionIndex = BOOTSTRAP_SOURCE.indexOf('store.setBootstrapReady(true)', setupRequiredIndex);
-
-  assert.ok(setupRequiredIndex >= 0, 'setup-required branch should exist');
-  assert.ok(blockingThrowIndex > setupRequiredIndex, 'setup-required branch should throw');
-  assert.ok(readyProjectionIndex > blockingThrowIndex, 'ready projection must only appear after the blocking throw');
+  assert.match(AUTH_PROVIDER_SOURCE, /data-testid="shijing-protected-session-failure"/);
+  assert.match(AUTH_PROVIDER_SOURCE, /data-testid="shijing-protected-session-retry"/);
+  assert.match(AUTH_PROVIDER_SOURCE, /data-testid="shijing-protected-operations-locked"/);
 });

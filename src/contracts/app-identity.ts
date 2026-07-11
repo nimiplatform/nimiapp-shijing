@@ -1,13 +1,10 @@
 // Canonical ShiJing app identity.
 //
-// The Nimi app id is single-source across manifest, Runtime/SDK, storage,
-// AIConfig, and Tauri bundle identity. The product-local mirror kind/slug
-// remains `shijing`, but it is not an app identity.
+// The public Nimi app id is single-source across the submitted manifest,
+// SDK request shapes, and Tauri bundle identity. Installed admission identity,
+// release truth, process binding, and account generation remain Runtime-owned.
 
 export const SHIJING_APP_ID = 'nimi.shijing';
 export const SHIJING_PRODUCT_SLUG = 'shijing';
 export const SHIJING_TAURI_IDENTIFIER = SHIJING_APP_ID;
 export const SHIJING_RUNTIME_APP_ID = SHIJING_APP_ID;
-export const SHIJING_RUNTIME_APP_INSTANCE_ID = `${SHIJING_RUNTIME_APP_ID}.desktop-installed`;
-export const SHIJING_RUNTIME_DEVICE_ID = 'desktop-installed-app';
-export const SHIJING_RELEASE_DESCRIPTOR_REF = 'nimi.shijing.bundled-with-nimi' as const;

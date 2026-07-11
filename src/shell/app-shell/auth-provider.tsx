@@ -1,6 +1,5 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { OfflineCoordinator, type OfflineTier } from '@nimiplatform/kit/core/offline-coordinator';
 import {
   AmbientBackground,
   Button,
@@ -9,172 +8,92 @@ import {
   Surface,
 } from '@nimiplatform/kit/ui';
 import { useAppStore } from './app-store.js';
+import type { ShijingProtectedSessionState } from './protected-session-state.js';
+import { runShijingBootstrap } from '../infra/shijing-bootstrap.js';
 
-const shijingAuthGateOfflineCoordinator = new OfflineCoordinator();
-
-const ShijingLoginPage = lazy(() =>
-  import('../features/auth/shijing-login-page.js').then((module) => ({
-    default: module.ShijingLoginPage,
-  })),
-);
-
-let shijingBootstrapModulePromise:
-  | Promise<typeof import('../infra/shijing-bootstrap.js')>
-  | null = null;
-
-function loadShijingBootstrapModule(): Promise<typeof import('../infra/shijing-bootstrap.js')> {
-  shijingBootstrapModulePromise ??= import('../infra/shijing-bootstrap.js');
-  return shijingBootstrapModulePromise;
-}
-
-async function runShijingBootstrap(options?: { readonly force?: boolean }): Promise<void> {
-  const bootstrap = await loadShijingBootstrapModule();
-  await bootstrap.runShijingBootstrap(options);
-}
-
-type AuthGateState =
-  | { kind: 'checking' }
-  | { kind: 'blocked'; message: string; offlineTier: OfflineTier }
-  | { kind: 'login-required' }
-  | { kind: 'ready' };
-
-function resolveAuthGateState(input: {
-  authStatus: ReturnType<typeof useAppStore.getState>['auth']['status'];
-  bootstrapReady: boolean;
-  bootstrapError: string | null;
-}): AuthGateState {
-  if (input.bootstrapError) {
-    shijingAuthGateOfflineCoordinator.markRuntimeReachable(false);
-    return {
-      kind: 'blocked',
-      message: input.bootstrapError,
-      offlineTier: shijingAuthGateOfflineCoordinator.getTier(),
-    };
-  }
-  if (!input.bootstrapReady || input.authStatus === 'bootstrapping') {
-    return { kind: 'checking' };
-  }
-  shijingAuthGateOfflineCoordinator.markRuntimeReachable(true);
-  if (input.authStatus === 'unauthenticated') {
-    return { kind: 'login-required' };
-  }
-  return { kind: 'ready' };
-}
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { t } = useTranslation();
-  const authStatus = useAppStore((s) => s.auth.status);
-  const bootstrapReady = useAppStore((s) => s.bootstrapReady);
-  const bootstrapError = useAppStore((s) => s.bootstrapError);
+export function AuthProvider() {
+  const { t, i18n } = useTranslation();
+  const failure = useAppStore((state) => state.bootstrapFailure);
   const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
     void runShijingBootstrap();
   }, []);
 
-  const gateState = useMemo(
-    () => resolveAuthGateState({ authStatus, bootstrapReady, bootstrapError }),
-    [authStatus, bootstrapError, bootstrapReady],
-  );
-
   const retry = useCallback(() => {
-    const store = useAppStore.getState();
-    store.setBootstrapError(null);
-    store.setBootstrapReady(false);
     setRetrying(true);
-    void runShijingBootstrap({ force: true }).finally(() => {
-      setRetrying(false);
-    });
+    void runShijingBootstrap({ force: true }).finally(() => setRetrying(false));
   }, []);
 
-  if (gateState.kind === 'blocked') {
-    return (
-      <AuthGateScreen
-        badge={<StatusBadge tone="danger" shape="dot">Runtime blocked · {gateState.offlineTier}</StatusBadge>}
-        title={t('Shell.runtimeUnavailable')}
-        detail={t('Shell.runtimeUnavailableDetail')}
-      >
-        <InlineAlert tone="danger">{gateState.message}</InlineAlert>
-        <Button tone="primary" onClick={retry} loading={retrying}>{t('Shell.retry')}</Button>
-      </AuthGateScreen>
-    );
-  }
+  const state: ShijingProtectedSessionState = failure?.state ?? 'capability-unavailable';
+  const reasonCode = failure?.reasonCode ?? 'shijing-protected-operation-set-not-admitted';
+  const actionHint = failure?.actionHint ?? 'wait_for_shijing_protected_operation_admission';
 
-  if (gateState.kind === 'checking') {
-    return (
-      <AuthGateScreen
-        badge={<StatusBadge tone="neutral" shape="dot">{t('Shell.runtimeCheck')}</StatusBadge>}
-        title={t('Shell.connectingRuntime')}
-        detail={t('Shell.connectingRuntimeDetail')}
-      >
-        <div className="flex items-center gap-3 text-sm text-[var(--nimi-text-secondary)]" role="status">
-          <span
-            aria-hidden="true"
-            className="inline-block h-4 w-4 rounded-full border-2 border-[var(--nimi-border-strong)] border-r-transparent animate-spin"
-          />
-          <span>{t('Shell.booting')}</span>
-        </div>
-      </AuthGateScreen>
-    );
-  }
-
-  if (gateState.kind === 'login-required') {
-    return (
-      <Suspense
-        fallback={
-          <AuthGateScreen
-            badge={<StatusBadge tone="neutral" shape="dot">{t('Shell.login')}</StatusBadge>}
-            title={t('Shell.loadingLogin')}
-            detail={t('Shell.loadingLoginDetail')}
-          >
-            <div className="flex items-center gap-3 text-sm text-[var(--nimi-text-secondary)]" role="status">
-              <span
-                aria-hidden="true"
-                className="inline-block h-4 w-4 rounded-full border-2 border-[var(--nimi-border-strong)] border-r-transparent animate-spin"
-              />
-              <span>{t('Shell.loading')}</span>
-            </div>
-          </AuthGateScreen>
-        }
-      >
-        <ShijingLoginPage />
-      </Suspense>
-    );
-  }
-
-  return <>{children}</>;
-}
-
-function AuthGateScreen({
-  badge,
-  title,
-  detail,
-  children,
-}: {
-  badge: ReactNode;
-  title: string;
-  detail: string;
-  children: ReactNode;
-}) {
   return (
-    <AmbientBackground
-      variant="mesh"
-      className="flex h-screen w-screen items-center justify-center px-6 text-[var(--nimi-text-primary)]"
-    >
+    <AmbientBackground variant="mesh" className="shijing-protected-gate">
+      <div className="shijing-protected-gate__language" role="group" aria-label={t('Shell.language')}>
+        <button
+          type="button"
+          aria-pressed={i18n.resolvedLanguage === 'en'}
+          onClick={() => void i18n.changeLanguage('en')}
+        >
+          EN
+        </button>
+        <button
+          type="button"
+          aria-pressed={i18n.resolvedLanguage === 'zh'}
+          onClick={() => void i18n.changeLanguage('zh')}
+        >
+          中
+        </button>
+      </div>
+
       <Surface
         tone="panel"
         elevation="raised"
         padding="lg"
-        className="relative z-[1] flex w-full max-w-[460px] flex-col gap-5"
+        className="shijing-protected-gate__panel"
+        data-testid="shijing-protected-session-failure"
+        data-protected-state={state}
       >
-        <div className="flex flex-col gap-3">
-          <div>{badge}</div>
-          <div className="space-y-2">
-            <h1 className="text-xl font-semibold leading-tight">{title}</h1>
-            <p className="text-sm leading-6 text-[var(--nimi-text-secondary)]">{detail}</p>
-          </div>
+        <StatusBadge tone="danger" shape="dot">
+          {t(`Shell.protectedState.${state}`)}
+        </StatusBadge>
+        <div className="shijing-protected-gate__copy">
+          <p className="shijing-protected-gate__eyebrow">{t('Shell.protectedSessionEyebrow')}</p>
+          <h1>{t('Shell.protectedSessionTitle')}</h1>
+          <p>{t('Shell.protectedSessionDetail')}</p>
         </div>
-        <div className="flex flex-col items-start gap-4">{children}</div>
+        <InlineAlert tone="danger">
+          <div className="shijing-protected-gate__alert-copy">
+            <span>{t('Shell.protectedSessionLocked')}</span>
+            <strong>{t('Shell.reasonCode')}: {reasonCode}</strong>
+          </div>
+        </InlineAlert>
+        <div className="shijing-protected-gate__action-hint">
+          <span>{t('Shell.nextStep')}</span>
+          <strong>{t(`Shell.protectedAction.${state}`)}</strong>
+          <code>{actionHint}</code>
+        </div>
+        <div className="shijing-protected-gate__actions">
+          <Button
+            type="button"
+            tone="secondary"
+            onClick={retry}
+            loading={retrying}
+            data-testid="shijing-protected-session-retry"
+          >
+            {t('Shell.retry')}
+          </Button>
+          <Button
+            type="button"
+            tone="primary"
+            disabled
+            data-testid="shijing-protected-operations-locked"
+          >
+            {t('Shell.protectedOperationsUnavailable')}
+          </Button>
+        </div>
       </Surface>
     </AmbientBackground>
   );

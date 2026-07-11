@@ -36,6 +36,28 @@
     "enterShijing": "Enter ShiJing"
   },
   "Shell": {
+    "language": "Language",
+    "protectedSessionEyebrow": "Protected installed app session",
+    "protectedSessionTitle": "ShiJing protected operations are not admitted yet",
+    "protectedSessionDetail": "This build exposes only the protected installed artifact carrier. Account, local data, Runtime AI, and presence operations remain fail-closed.",
+    "protectedSessionLocked": "ShiJing data and AI operations remain locked.",
+    "reasonCode": "Reason code",
+    "nextStep": "Next step",
+    "protectedOperationsUnavailable": "ShiJing operations unavailable",
+    "protectedState": {
+      "login-required": "Desktop sign-in required",
+      "runtime-unavailable": "Verified Runtime unavailable",
+      "permission-denied": "Permission denied",
+      "repair-required": "Verified installation repair required",
+      "capability-unavailable": "Protected capability unavailable"
+    },
+    "protectedAction": {
+      "login-required": "Sign in through Nimi Desktop, then reopen ShiJing.",
+      "runtime-unavailable": "Start the verified Runtime service from Nimi Desktop and retry.",
+      "permission-denied": "Review ShiJing permissions in Nimi Desktop.",
+      "repair-required": "Repair the signed Nimi Runtime or ShiJing installation.",
+      "capability-unavailable": "Wait for the typed ShiJing operation set to receive protected admission. Direct gRPC and renderer credentials are not supported."
+    },
     "loading": "Loading...",
     "logout": "Sign out",
     "accountMenu": "Account menu",

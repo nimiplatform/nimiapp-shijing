@@ -11,6 +11,7 @@ import {
 import { getProductCopy } from '../src/product/i18n/copy.ts';
 import { createUnavailablePresenceVerificationClient } from '../src/product/privacy/presence-verification.ts';
 import {
+  createShijingPresenceVerificationClient,
   mapRuntimePresenceVerificationErrorReason,
   mapRuntimePresenceVerificationResponse,
 } from '../src/shell/infra/shijing-presence-verification.ts';
@@ -48,20 +49,23 @@ test('shijing store exposes an injected presence verification client', () => {
   assert.match(storeSource, /createUnavailablePresenceVerificationClient/);
 });
 
-test('product area injects the shell Nimi presence verification seam', () => {
-  assert.match(productAreaSource, /createShijingPresenceVerificationClient/);
-  assert.match(productAreaSource, /presenceVerificationClient=\{presenceVerificationClient\}/);
+test('production product route remains dormant before protected admission', () => {
+  assert.doesNotMatch(productAreaSource, /createShijingPresenceVerificationClient/);
+  assert.match(productAreaSource, /return null/);
 });
 
-test('shell presence verification calls the SDK account projection directly', () => {
-  assert.match(
-    shellPresenceSource,
-    /session\.accountRuntime\.account\.requestPresenceVerification\(\{/,
-  );
-  assert.match(shellPresenceSource, /caller: session\.accountCaller/);
-  assert.match(shellPresenceSource, /ttlSeconds: request\.ttlSeconds/);
-  assert.doesNotMatch(shellPresenceSource, /typeof\s+\w+\.requestPresenceVerification/);
-  assert.doesNotMatch(shellPresenceSource, /FutureRuntimePresenceAccount/);
+test('shell presence verification is a typed fail-close surface without account control', async () => {
+  assert.doesNotMatch(shellPresenceSource, /requestPresenceVerification\(\{\s*caller:/s);
+  assert.doesNotMatch(shellPresenceSource, /accountRuntime|accountCaller|shijing-runtime-session/);
+  const result = await createShijingPresenceVerificationClient().requestPresenceVerification({
+    purpose: 'shijing.profile.reveal',
+    level: 'presence',
+    ttlSeconds: 300,
+  });
+  assert.deepEqual(result, {
+    state: 'unavailable',
+    reason: 'protected_session_required',
+  });
 });
 
 test('runtime presence mapper normalizes verified account projection', () => {

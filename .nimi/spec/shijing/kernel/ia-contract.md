@@ -89,6 +89,11 @@ list (see SJG-IA-07).
 
 Every mirror surface must display typed blockers and recovery routes for:
 
+- protected session login required;
+- verified Runtime unavailable;
+- installed-app permission denied;
+- signed installation repair required;
+- protected ShiJing capability unavailable;
 - missing self natal inputs;
 - invalid self natal inputs;
 - unresolved person mention;

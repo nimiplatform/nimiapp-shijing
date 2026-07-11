@@ -7,7 +7,6 @@ import { createRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { NimiThemeProvider, TooltipProvider } from '@nimiplatform/kit/ui';
 import { ShellLayout } from './shell/app-shell/shell-layout.js';
-import { useAppStore } from './shell/app-shell/app-store.js';
 import { ShijingStoreProvider } from './product/state/shijing-store.tsx';
 import { ShijingShell } from './product/shell/shijing-shell.tsx';
 import { InMemoryPersistenceAdapter } from './product/persistence/in-memory-adapter.ts';
@@ -26,10 +25,6 @@ function DevPreviewProductArea() {
 }
 
 function DevApp() {
-  React.useEffect(() => {
-    useAppStore.getState().setAuthSession({ id: 'dev-preview-user', displayName: '演示用户' });
-    useAppStore.getState().setBootstrapReady(true);
-  }, []);
   return (
     <ShellLayout>
       <DevPreviewProductArea />

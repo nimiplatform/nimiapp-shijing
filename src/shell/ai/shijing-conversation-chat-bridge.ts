@@ -20,8 +20,6 @@ import {
   resolveShijingRuntimeAISchedulingMetadata,
   resolveShijingTextGenerateBinding,
 } from './shijing-runtime-ai-client.ts';
-import { getShijingNimiClient } from '../infra/shijing-nimi-client.ts';
-import { requireShijingRuntimeSubjectUserId } from '../infra/shijing-runtime-session.ts';
 
 export type ShijingConversationChatBridgeOptions = {
   readonly loadConfig?: () => NimiAIConfig;
@@ -70,8 +68,8 @@ export function createShijingConversationTextGenerator(
   options: ShijingConversationChatBridgeOptions = {},
 ): RuntimeTextGenerator {
   const loadConfig = options.loadConfig ?? (() => loadShijingAIConfig(createShijingReadingAIScopeRef()));
-  const getClient = options.getClient ?? (() => getShijingNimiClient());
-  const getSubjectUserId = options.getSubjectUserId ?? requireShijingRuntimeSubjectUserId;
+  const getClient = options.getClient ?? unavailableProtectedRuntimeClient;
+  const getSubjectUserId = options.getSubjectUserId ?? unavailableProtectedSubjectUserId;
   const surfaceId = options.surfaceId ?? SHIJING_CONVERSATION_RUNTIME_SURFACE_ID;
 
   return async function generateConversationText(
@@ -139,6 +137,14 @@ export function createShijingConversationTextGenerator(
     }
     return { text: result.text };
   };
+}
+
+function unavailableProtectedRuntimeClient(): never {
+  throw new Error('ShiJing protected consultation operation is not admitted.');
+}
+
+function unavailableProtectedSubjectUserId(): never {
+  throw new Error('ShiJing protected account projection is not admitted.');
 }
 
 export function createShijingConversationChatBridge(

@@ -11,6 +11,11 @@ ShiJing is a Nimi-embedded app. Nimi owns account identity, login, runtime
 access, and platform safety boundaries. ShiJing owns only app-local astrology
 data under `ShiJingSpace`.
 
+The installed renderer has no account/login/logout surface, account projection,
+portable launch identity, credential material, or app-selected Runtime
+endpoint. Product data cannot mount until Runtime admits a protected ShiJing
+operation set bound to the installed process and account generation.
+
 ## SJG-PROD-03 - Personal Time-Mirror Product
 
 ShiJing is a personal astrology time-mirror, natal-companion, and relationship
@@ -78,7 +83,10 @@ are product/spec authority, not mutable user data.
 
 ## SJG-PROD-10 - Runtime Boundary
 
-AI access uses the Nimi runtime through `@nimiplatform/sdk/runtime` only.
+AI access uses only a separately admitted protected ShiJing Runtime operation
+through the shared SDK/Kit owner. Ordinary renderer/Tauri/Electron Runtime
+bridges, public gRPC, localhost endpoints, and app-constructed Runtime clients
+are not an installed-app transport.
 Runtime AI is wording and consultation over deterministic feature snapshots.
 It must not calculate pillars, DaYun, true solar time, stage labels, key
 windows, YueJing tendency classes, NianJing phase bands, or NianJing
@@ -105,11 +113,28 @@ Reading content. Executable implementation must prove it follows
 
 ## SJG-PROD-14 - Standard Shell Boundary
 
-ShiJing desktop shells must consume Nimi standard shell capabilities for
-platform primitives including app-scoped storage, path resolution, shell UI,
-Runtime bridge, OAuth, logging, local assets, and host window focus/drag.
+ShiJing desktop shells use the Kit-owned installed-app registration surface.
+The currently admitted host surface is artifact-only. Runtime endpoint,
+ordinary gRPC construction, account/login control, launch metadata, app-scoped
+storage, AI config, local assets, capability selection, and command extension
+are not ShiJing host inputs.
 
 ShiJing app-local shell commands may exist only for product primitives that are
 genuinely owned by ShiJing. App-local commands must not redefine standard
 storage roots, storage read/write/remove operations, shell UI primitives, or
 host-owned platform paths.
+
+Electron and Tauri must both keep direct Runtime commands unavailable and must
+not mount the product route before protected ShiJing operations are admitted.
+An independently unadmitted platform remains explicitly fail-closed; platform
+parity must not be claimed from compilation alone.
+
+## SJG-PROD-15 - Protected Session Failure Surface
+
+Before positive protected admission, the production renderer exposes one
+typed fail-close surface with exactly these recovery classes:
+`login-required`, `runtime-unavailable`, `permission-denied`,
+`repair-required`, and `capability-unavailable`. The surface shows the stable
+reason code and recovery action, supports retry, and keeps all product
+operations disabled. It must not render a login page, local-data fallback,
+pseudo account, product shell, or simulated success.

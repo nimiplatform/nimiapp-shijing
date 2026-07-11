@@ -1,21 +1,12 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  resolveShijingDevStorageRoots,
-  resolveShijingRuntimeEndpoint,
-} from './runtime-app-storage-projection.mjs';
 
 const require = createRequire(import.meta.url);
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(currentDir, '..');
-const rendererUrl = process.env.NIMI_SHIJING_ELECTRON_RENDERER_URL || 'http://127.0.0.1:1430';
-const runtimeEndpoint = resolveShijingRuntimeEndpoint(
-  'NIMI_RUNTIME_GRPC_ADDR',
-  'NIMI_SHIJING_ELECTRON_RUNTIME_ENDPOINT',
-);
+const rendererUrl = 'http://127.0.0.1:1430';
 const viteBin = path.join(appRoot, 'node_modules', 'vite', 'bin', 'vite.js');
 const electronBin = require('electron');
 const children = new Set();
@@ -39,13 +30,7 @@ const renderer = spawnRenderer();
 
 try {
   await waitForUrl(rendererUrl, 45_000);
-  const storageRoots = resolveShijingDevStorageRoots({
-    sessionKind: 'electron-dev',
-  });
-  const launchNonce = process.env.NIMI_APP_LAUNCH_NONCE
-    || process.env.NIMI_SHIJING_ELECTRON_LAUNCH_NONCE
-    || randomUUID();
-  const electron = spawnElectron(storageRoots, launchNonce);
+  const electron = spawnElectron();
   const exitCode = await waitForExit(electron);
   await requestAllChildrenShutdown('SIGTERM');
   if (exitCode !== null && exitCode !== 0) {
@@ -72,21 +57,11 @@ function ensureRendererPortAvailable() {
   }
 }
 
-function spawnElectron(storageRoots, launchNonce) {
+function spawnElectron() {
   const electron = spawnTracked(electronBin, ['dist-electron/src-electron/main.js'], {
     stdio: ['ignore', 'pipe', 'pipe'],
     env: {
       ...process.env,
-      NIMI_SHIJING_ELECTRON_RENDERER_URL: rendererUrl,
-      NIMI_RUNTIME_GRPC_ADDR: runtimeEndpoint,
-      NIMI_APP_LAUNCH_NONCE: launchNonce,
-      NIMI_APP_DURABLE_DATA_ROOT: storageRoots.dataRoot,
-      NIMI_APP_CACHE_ROOT: storageRoots.cacheRoot,
-      NIMI_APP_TEMP_ROOT: storageRoots.tempRoot,
-      NIMI_SHIJING_ELECTRON_LAUNCH_NONCE: launchNonce,
-      NIMI_SHIJING_ELECTRON_DURABLE_DATA_ROOT: storageRoots.dataRoot,
-      NIMI_SHIJING_ELECTRON_CACHE_ROOT: storageRoots.cacheRoot,
-      NIMI_SHIJING_ELECTRON_TEMP_ROOT: storageRoots.tempRoot,
     },
   });
   forwardChildOutput(electron.stdout, process.stdout);

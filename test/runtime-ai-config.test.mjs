@@ -4,11 +4,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  createEmptyNimiAIConfig,
-  createNimiAppAIScopeRef,
-  encodeNimiAIScopeRef,
-} from '@nimiplatform/sdk/ai';
-import {
   createShijingRuntimeAiClient,
   resolveShijingTextGenerateBinding,
 } from '../src/shell/ai/shijing-runtime-ai-client.ts';
@@ -127,21 +122,6 @@ function readyAIProfile() {
   };
 }
 
-function installMockStandardShellInvoke(handler) {
-  const originalElectron = globalThis.__NIMI_ELECTRON_TEST__;
-  globalThis.__NIMI_ELECTRON_TEST__ = {
-    invoke: handler,
-    listen: () => () => undefined,
-  };
-  return () => {
-    if (originalElectron === undefined) {
-      delete globalThis.__NIMI_ELECTRON_TEST__;
-      return;
-    }
-    globalThis.__NIMI_ELECTRON_TEST__ = originalElectron;
-  };
-}
-
 function setupRequiredAIProfile() {
   return {
     profileId: 'profile-shijing-setup-required',
@@ -163,39 +143,20 @@ test('resolveShijingTextGenerateBinding fails closed when AIConfig has no text.g
   }
 });
 
-test('ShiJing AIConfig reads from installed standard shell and rejects scope drift', async () => {
+test('ShiJing AIConfig read remains unavailable before protected operation admission', async () => {
   const readingScope = createShijingReadingAIScopeRef();
-  const otherScope = createNimiAppAIScopeRef('shijing', 'shijing.other');
-  const scopeKey = encodeNimiAIScopeRef(readingScope);
-  const calls = [];
-  const restore = installMockStandardShellInvoke(async (command, payload) => {
-    calls.push({ command, payload });
-    assert.equal(command, 'nimi.shell.aiConfig.get');
-    assert.deepEqual(payload, { payload: { scopeRef: scopeKey } });
-    return {
-      scopeRef: encodeNimiAIScopeRef(otherScope),
-      config: createEmptyNimiAIConfig(otherScope),
-    };
-  });
-  try {
-    await assert.rejects(
-      () => hydrateShijingAIConfigFromShell(readingScope),
-      /unexpected scopeRef/,
-    );
-  } finally {
-    restore();
-  }
-
-  assert.notEqual(encodeNimiAIScopeRef(readingScope), encodeNimiAIScopeRef(otherScope));
-  assert.equal(calls.length, 1);
-  assert.deepEqual(loadShijingAIConfig(readingScope), createEmptyNimiAIConfig(readingScope));
+  const before = loadShijingAIConfig(readingScope);
+  await assert.rejects(
+    () => hydrateShijingAIConfigFromShell(readingScope),
+    /explicit A\.4 operation admission/,
+  );
+  assert.deepEqual(loadShijingAIConfig(readingScope), before);
 });
 
-test('ShiJing AIConfig commits through installed standard shell without optimistic success', async () => {
+test('ShiJing AIConfig commit fails closed without optimistic success before admission', async () => {
   const scopeRef = createShijingReadingAIScopeRef();
-  const scopeKey = encodeNimiAIScopeRef(scopeRef);
   const next = {
-    ...createEmptyNimiAIConfig(scopeRef),
+    ...emptyAIConfig(),
     capabilities: {
       targetRefs: {
         'text.generate': {
@@ -210,23 +171,10 @@ test('ShiJing AIConfig commits through installed standard shell without optimist
     },
   };
   const emptyBefore = loadShijingAIConfig(scopeRef);
-  const calls = [];
-  const restore = installMockStandardShellInvoke(async (command, payload) => {
-    calls.push({ command, payload });
-    assert.equal(command, 'nimi.shell.aiConfig.set');
-    assert.deepEqual(payload, { payload: { scopeRef: scopeKey, config: next } });
-    throw new Error('host write failed');
-  });
-  try {
-    await assert.rejects(
-      () => commitShijingAIConfigToShell(next, scopeRef),
-      /host write failed/,
-    );
-  } finally {
-    restore();
-  }
-
-  assert.equal(calls.length, 1);
+  await assert.rejects(
+    () => commitShijingAIConfigToShell(next, scopeRef),
+    /explicit A\.4 operation admission/,
+  );
   assert.deepEqual(loadShijingAIConfig(scopeRef), emptyBefore);
 });
 

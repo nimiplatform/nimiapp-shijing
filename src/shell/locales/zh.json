@@ -36,6 +36,28 @@
     "enterShijing": "进入时镜"
   },
   "Shell": {
+    "language": "语言",
+    "protectedSessionEyebrow": "受保护的已安装应用会话",
+    "protectedSessionTitle": "时镜受保护操作尚未准入",
+    "protectedSessionDetail": "此版本仅暴露受保护的已安装应用 artifact 载体；账号、本地数据、Runtime AI 与本人确认操作继续 fail-close。",
+    "protectedSessionLocked": "时镜数据与 AI 操作仍处于锁定状态。",
+    "reasonCode": "原因代码",
+    "nextStep": "下一步",
+    "protectedOperationsUnavailable": "时镜操作不可用",
+    "protectedState": {
+      "login-required": "需要在 Desktop 登录",
+      "runtime-unavailable": "可信 Runtime 不可用",
+      "permission-denied": "权限被拒绝",
+      "repair-required": "需要修复可信安装",
+      "capability-unavailable": "受保护能力不可用"
+    },
+    "protectedAction": {
+      "login-required": "请通过 Nimi Desktop 登录，然后重新打开时镜。",
+      "runtime-unavailable": "请在 Nimi Desktop 启动可信 Runtime 服务后重试。",
+      "permission-denied": "请在 Nimi Desktop 检查时镜权限。",
+      "repair-required": "请修复经过签名验证的 Nimi Runtime 或时镜安装。",
+      "capability-unavailable": "等待 typed 时镜操作集完成受保护准入；不支持直连 gRPC 或 renderer 凭证降级。"
+    },
     "loading": "加载中...",
     "logout": "退出登录",
     "accountMenu": "账户菜单",

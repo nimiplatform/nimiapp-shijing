@@ -7,7 +7,8 @@ This directory is the normative authority landing for ShiJing (时镜).
 - `product-contract.md` (`SJG-PROD-*`): six-tab product invariants,
   HeJing-owned relationship analysis UX admission, no-legacy hard cut, single
   Reading entity, concern-tag limit, Runtime AI boundary, no pseudo-success,
-  no user-space catalog truth.
+  no user-space catalog truth, and the protected installed-session fail-close
+  admission surface.
 - `data-model-contract.md` (`SJG-DATA-*`): `ShiJingSpace`, `SelfSubject`,
   `Person`, `SubjectRef`, `ConcernTag`, `MentionRef`, `EventMemory`,
   `PlanItem`, `Reading`, `relationship_natal` MirrorScope, `Conversation`, and

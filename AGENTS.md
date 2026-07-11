@@ -20,9 +20,9 @@
 |-------|-----------|----------|
 | Desktop shell | Tauri 2 | `src-tauri/` |
 | Frontend | React 19 + Vite 7 | `src/shell/renderer/` |
-| Persistence | IndexedDB (browser) / in-memory fallback | `src/product/persistence/` |
+| Persistence | Protected operation pending admission; product adapters remain dormant | `src/product/persistence/` |
 | Astrology pipeline | Pure-TS deterministic v1 (`bazi_ganzhi_jieqi_dayun_v1`) | `src/product/astrology/` |
-| AI wording | nimi runtime (`runtime.ai.text.generate`) | via `@nimiplatform/sdk` |
+| AI wording | Protected ShiJing Runtime operation (pending admission) | shared SDK/Kit owner |
 | UI components | `@nimiplatform/kit` | npm dependency |
 | State | Custom store + reducer | `src/product/state/` |
 | Dev port | 1430 | `vite.config.ts`, `src-tauri/tauri.conf.json` |
@@ -133,8 +133,10 @@ no data to migrate. Therefore:
 
 ### Privacy Boundary
 
-- All data stored locally in IndexedDB (browser) or in-memory (fallback). No
-  cloud upload. No third-party SDK data collection.
+- Production installed shells do not mount product persistence until the
+  protected ShiJing data operation set is admitted. IndexedDB and in-memory
+  adapters remain test/dev-only product components, not installed account
+  truth. No cloud upload or third-party SDK data collection.
 - Runtime AI sends only the deterministic feature snapshot + the frozen
   `inputs_summary` over the runtime bridge; no raw user diary entries leak.
 

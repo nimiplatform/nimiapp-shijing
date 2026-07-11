@@ -163,9 +163,13 @@ generate new wording.
 
 ## SJG-ASTRO-11 - Runtime Boundary
 
-All AI generation for Reading runs through the Nimi runtime via
-`@nimiplatform/sdk/runtime`. Direct HTTP/gRPC calls, hardcoded provider/model
-literals, and fallback paths that mask runtime failure are forbidden.
+All AI generation for Reading runs through a separately admitted protected
+ShiJing operation owned by the Nimi Runtime and consumed through the shared
+SDK/Kit boundary. Direct HTTP/gRPC calls, ordinary renderer shell bridges,
+app-selected localhost endpoints, hardcoded provider/model literals, and
+fallback paths that mask runtime failure are forbidden. Until that operation
+is admitted, Reading generation remains unavailable rather than constructing
+an app-owned Runtime session.
 
 ## SJG-ASTRO-12 - MingJing Output
 

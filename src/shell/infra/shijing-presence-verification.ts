@@ -9,25 +9,14 @@ import type {
   PresenceVerificationMethod,
   PresenceVerificationResult,
 } from '../../product/privacy/presence-verification.ts';
-import { getShijingRuntimeSession } from './shijing-runtime-session.ts';
 
 export function createShijingPresenceVerificationClient(): PresenceVerificationClient {
   return {
-    async requestPresenceVerification(request) {
-      try {
-        const session = getShijingRuntimeSession();
-        const response = await session.accountRuntime.account.requestPresenceVerification({
-          caller: session.accountCaller,
-          purpose: request.purpose,
-          ttlSeconds: request.ttlSeconds,
-        });
-        return mapRuntimePresenceVerificationResponse(response);
-      } catch (error) {
-        return {
-          state: 'unavailable',
-          reason: mapRuntimePresenceVerificationErrorReason(error),
-        };
-      }
+    async requestPresenceVerification() {
+      return {
+        state: 'unavailable',
+        reason: 'protected_session_required',
+      };
     },
   };
 }

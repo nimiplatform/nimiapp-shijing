@@ -24,8 +24,6 @@ import {
   createShijingReadingAIScopeRef,
   loadShijingAIConfig,
 } from './shijing-ai-config.ts';
-import { getShijingNimiClient } from '../infra/shijing-nimi-client.ts';
-import { requireShijingRuntimeSubjectUserId } from '../infra/shijing-runtime-session.ts';
 import { SHIJING_TEXT_GENERATE_CAPABILITY_ID } from './shijing-ai-requirements.ts';
 
 type RuntimeTextParams = {
@@ -190,8 +188,8 @@ class AIConfigBackedRuntimeAiClient implements RuntimeAiClient {
 
   constructor(options: ShijingRuntimeAiClientOptions = {}) {
     this.loadConfig = options.loadConfig ?? (() => loadShijingAIConfig(createShijingReadingAIScopeRef()));
-    this.getClient = options.getClient ?? (() => getShijingNimiClient());
-    this.getSubjectUserId = options.getSubjectUserId ?? requireShijingRuntimeSubjectUserId;
+    this.getClient = options.getClient ?? unavailableProtectedRuntimeClient;
+    this.getSubjectUserId = options.getSubjectUserId ?? unavailableProtectedSubjectUserId;
   }
 
   async generate(
@@ -277,6 +275,14 @@ class AIConfigBackedRuntimeAiClient implements RuntimeAiClient {
       ...resolved.params,
     }).generate(mirror_kind, request);
   }
+}
+
+function unavailableProtectedRuntimeClient(): never {
+  throw new Error('ShiJing protected Runtime AI operation is not admitted.');
+}
+
+function unavailableProtectedSubjectUserId(): never {
+  throw new Error('ShiJing protected account projection is not admitted.');
 }
 
 export function createShijingRuntimeAiClient(
