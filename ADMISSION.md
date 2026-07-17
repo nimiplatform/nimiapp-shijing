@@ -9,6 +9,7 @@ pnpm install
 pnpm dev
 pnpm dev:shell -- --shell electron
 pnpm dev:shell -- --shell tauri
+pnpm dev:tauri
 pnpm run check
 pnpm run pack
 ```

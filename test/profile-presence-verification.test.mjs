@@ -49,9 +49,10 @@ test('shijing store exposes an injected presence verification client', () => {
   assert.match(storeSource, /createUnavailablePresenceVerificationClient/);
 });
 
-test('production product route remains dormant before protected admission', () => {
+test('local-development product route keeps presence verification dormant', () => {
   assert.doesNotMatch(productAreaSource, /createShijingPresenceVerificationClient/);
-  assert.match(productAreaSource, /return null/);
+  assert.match(productAreaSource, /persistenceClient=\{null\}/);
+  assert.match(productAreaSource, /ShijingStoreProvider/);
 });
 
 test('shell presence verification is a typed fail-close surface without account control', async () => {

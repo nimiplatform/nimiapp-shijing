@@ -9,7 +9,7 @@ submission_role: developer-submitted-input
 publish_readiness:
   install_command: pnpm install
   dev_command: pnpm dev
-  dev_shell_command: pnpm dev:shell -- --shell tauri
+  dev_shell_command: pnpm dev:shell -- --shell electron
   build_command: pnpm run build
   pack_command: pnpm run pack
 review_inputs:

@@ -10,9 +10,11 @@ import {
 import { useAppStore } from './app-store.js';
 import type { ShijingProtectedSessionState } from './protected-session-state.js';
 import { runShijingBootstrap } from '../infra/shijing-bootstrap.js';
+import { ProductArea } from '../routes/product-area.js';
 
-export function AuthProvider() {
+export function ProtectedSessionBoundary() {
   const { t, i18n } = useTranslation();
+  const ready = useAppStore((state) => state.bootstrapReady);
   const failure = useAppStore((state) => state.bootstrapFailure);
   const [retrying, setRetrying] = useState(false);
 
@@ -24,6 +26,8 @@ export function AuthProvider() {
     setRetrying(true);
     void runShijingBootstrap({ force: true }).finally(() => setRetrying(false));
   }, []);
+
+  if (ready) return <ProductArea />;
 
   const state: ShijingProtectedSessionState = failure?.state ?? 'capability-unavailable';
   const reasonCode = failure?.reasonCode ?? 'shijing-protected-operation-set-not-admitted';

@@ -1,5 +1,4 @@
 import {
-  areNimiAIScopeRefsEqual,
   createEmptyNimiAIConfig,
   createNimiAIConfigSubscriptionRegistry,
   createNimiAIHostSurface,
@@ -17,10 +16,6 @@ import type {
   SharedAIConfigUnsubscribe,
 } from '@nimiplatform/kit/features/model-config/headless';
 import { SHIJING_APP_ID } from '../../contracts/app-identity.ts';
-import {
-  createInstalledNimiAppStandardShellSurface,
-  type JsonObject,
-} from '../bridge/index.ts';
 
 export const SHIJING_READING_AI_SURFACE_ID = 'shijing.reading';
 
@@ -86,37 +81,9 @@ export function loadShijingAIConfig(
 }
 
 export async function hydrateShijingAIConfigFromShell(
-  scopeRef: NimiAIScopeRef = createShijingReadingAIScopeRef(),
+  _scopeRef: NimiAIScopeRef = createShijingReadingAIScopeRef(),
 ): Promise<NimiAIConfig | null> {
-  const scopeKey = encodeNimiAIScopeRef(scopeRef);
-  const standardShell = createInstalledNimiAppStandardShellSurface();
-  try {
-    const config = parseShellAIConfig(await standardShell.aiConfig.get(scopeKey), scopeRef);
-    return rememberShijingAIConfig(config, scopeRef);
-  } catch (error) {
-    if (isStandardShellAIConfigNotFound(error)) {
-      rememberShijingAIConfig(createEmptyNimiAIConfig(scopeRef), scopeRef);
-      return null;
-    }
-    throw error;
-  }
-}
-
-function parseShellAIConfig(value: JsonObject, scopeRef: NimiAIScopeRef): NimiAIConfig {
-  const validation = validateNimiAIConfig(value);
-  if (!validation.valid) {
-    throw new Error(`ShiJing standard shell AIConfig is invalid: ${validation.errors.join('; ')}`);
-  }
-  const config = value as unknown as NimiAIConfig;
-  if (!areNimiAIScopeRefsEqual(config.scopeRef, scopeRef)) {
-    throw new Error('ShiJing standard shell AIConfig scopeRef does not match shijing.reading.');
-  }
-  return config;
-}
-
-function isStandardShellAIConfigNotFound(error: unknown): boolean {
-  const text = error instanceof Error ? error.message : String(error || '');
-  return /ai-config-scope-not-found|scope-not-found|not-found/i.test(text);
+  throw shijingProtectedOperationUnavailable('hydrate_shijing_ai_config');
 }
 
 export async function commitShijingAIConfigToShell(
@@ -132,13 +99,19 @@ export async function commitShijingAIConfigToShell(
       throw new Error('AIConfig CAS conflict: baseVersion is stale');
     }
   }
-  const scopeKey = encodeNimiAIScopeRef(scopeRef);
-  const standardShell = createInstalledNimiAppStandardShellSurface();
-  const saved = parseShellAIConfig(
-    await standardShell.aiConfig.set(scopeKey, normalized as unknown as JsonObject),
-    scopeRef,
+  void normalized;
+  throw shijingProtectedOperationUnavailable('commit_shijing_ai_config');
+}
+
+function shijingProtectedOperationUnavailable(operation: string): Error {
+  return Object.assign(
+    new Error(`ShiJing protected operation is not admitted: ${operation}.`),
+    {
+      reasonCode: 'shijing-protected-operation-set-not-admitted',
+      actionHint: 'wait_for_shijing_protected_operation_admission',
+      retryable: false,
+    },
   );
-  return rememberShijingAIConfig(saved, scopeRef);
 }
 
 export function createShijingAIConfigService(): SharedAIConfigService {

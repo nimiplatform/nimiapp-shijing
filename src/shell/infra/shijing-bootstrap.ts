@@ -1,5 +1,9 @@
 import { useAppStore } from '../app-shell/app-store.js';
 import { classifyShijingProtectedSessionFailure } from '../app-shell/protected-session-state.js';
+import {
+  shijingLocalAppRuntimePlatform,
+  withShijingLocalAppResponseDeadline,
+} from '../local-development/shijing-local-app-runtime.ts';
 
 let bootstrapPromise: Promise<void> | null = null;
 
@@ -28,14 +32,25 @@ async function doRunShijingBootstrap(): Promise<void> {
   store.setBootstrapError(null);
   store.setBootstrapFailure(null);
 
-  const error = Object.assign(
-    new Error('ShiJing operations require a separately admitted protected installed session.'),
-    {
-      reasonCode: 'shijing-protected-operation-set-not-admitted',
-      actionHint: 'wait_for_shijing_protected_operation_admission',
-    },
-  );
-  const failure = classifyShijingProtectedSessionFailure(error);
-  store.setBootstrapFailure(failure);
-  store.setBootstrapError(failure.message);
+  try {
+    const session = await withShijingLocalAppResponseDeadline(
+      shijingLocalAppRuntimePlatform.auth.status(),
+      'session status bootstrap',
+    );
+    if (!session.sessionBound) {
+      throw Object.assign(
+        new Error(`ShiJing local-development session is ${session.state}.`),
+        {
+          reasonCode: session.reasonCode,
+          actionHint: session.actionHint,
+          retryable: session.retryable,
+        },
+      );
+    }
+    store.setBootstrapReady(true);
+  } catch (error) {
+    const failure = classifyShijingProtectedSessionFailure(error);
+    store.setBootstrapFailure(failure);
+    store.setBootstrapError(failure.message);
+  }
 }

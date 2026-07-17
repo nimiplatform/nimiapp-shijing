@@ -1,5 +1,6 @@
+schema_version: 1
 app_id: nimi.shijing
-display_name: ShiJing
+display_name: 时镜 ShiJing
 profile: workspace-app
 manifest_role: submitted-input
 permissions:
@@ -13,3 +14,7 @@ permissions:
     - scope: data.scope.read
       qualifier: runtime.artifacts
       purpose: Read the Runtime-owned bootstrap artifact through the admitted typed app-host operation.
+local_development:
+  electron:
+    renderer_origin: http://127.0.0.1:1430
+    execution_profile_ref: opaque:windows-native-electron-development-v1

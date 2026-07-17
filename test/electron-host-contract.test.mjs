@@ -36,9 +36,10 @@ test('ShiJing ships real Electron and Tauri shells with permanent acceptance ent
   assert.equal(existsSync(rootPath('scripts/runtime-app-storage-projection.mjs')), false);
 
   const packageJson = readJson('package.json');
-  assert.equal(packageJson.scripts.dev, 'nimi-app dev --shell tauri');
+  assert.equal(packageJson.scripts.dev, 'nimi-app dev --shell electron');
   assert.equal(packageJson.scripts['dev:shell'], 'nimi-app dev');
   assert.equal(packageJson.scripts['dev:electron'], 'nimi-app dev --shell electron');
+  assert.equal(packageJson.scripts['dev:tauri'], 'nimi-app dev --shell tauri');
   assert.match(packageJson.scripts['acceptance:electron'], /acceptance-electron\.test\.mjs/);
   assert.match(packageJson.scripts['acceptance:tauri'], /acceptance-tauri\.test\.mjs/);
   assert.match(packageJson.devDependencies.playwright || '', /^\^?1\.61\./);
@@ -70,11 +71,15 @@ test('Electron registers only the fixed Kit app host', () => {
   assert.match(preloadSource, /installNimiElectronRuntimeBridge/);
 });
 
-test('Tauri registers only the artifact-only app-host standard shell', () => {
+test('Tauri debug uses the local-app carrier while release fails closed without app-owned authority', () => {
   const source = read('src-tauri/src/main.rs');
 
-  assert.match(source, /RuntimeBridgeAppHost::platform_default\(\)/);
-  assert.match(source, /nimi_shell_tauri_installed_app_standard_shell_handler!\[\]/);
+  assert.match(source, /#\[cfg\(debug_assertions\)\]/);
+  assert.match(source, /RuntimeBridgeLocalAppHost::platform_default\(\)/);
+  assert.match(source, /nimi_shell_tauri_local_app_standard_shell_handler!\[\]/);
+  assert.match(source, /#\[cfg\(not\(debug_assertions\)\)\]/);
+  assert.match(source, /fail-closed release shell/);
+  assert.doesNotMatch(source, /RuntimeBridgeAppHost|installed_app_standard_shell_handler/);
   assert.doesNotMatch(source, /runtime_bridge_unary|runtime_bridge_stream/);
   assert.doesNotMatch(source, /ai_config_get|ai_config_set/);
   assert.doesNotMatch(source, /storage_read_json|storage_write_json|storage_remove_json/);

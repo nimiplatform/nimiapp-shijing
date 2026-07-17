@@ -16,7 +16,7 @@ const evidenceDir = path.resolve(
     || path.join(appRoot, '.nimi', 'local', 'acceptance', 'shijing-tauri'),
 );
 
-test('real Tauri WebView2 shell matches the ShiJing installed fail-close posture', {
+test('real Tauri WebView2 local-app shell fails closed outside Desktop supervision', {
   timeout: 180_000,
   skip: process.platform !== 'win32',
 }, async () => {
@@ -58,13 +58,13 @@ test('real Tauri WebView2 shell matches the ShiJing installed fail-close posture
     await assertFailClosedPanel(page);
     await page.getByRole('button', { name: 'EN' }).click();
     await page.getByRole('heading', {
-      name: 'ShiJing protected operations are not admitted yet',
+      name: 'ShiJing must be launched by Nimi Desktop',
     }).waitFor();
 
     const desktopMetrics = await setViewportAndInspect(page, 1366, 900);
     assert.equal(desktopMetrics.innerWidth, 1366);
     assert.ok(desktopMetrics.scrollWidth <= desktopMetrics.innerWidth, JSON.stringify(desktopMetrics));
-    assert.match(desktopMetrics.bodyText, /ShiJing protected operations are not admitted yet/u);
+    assert.match(desktopMetrics.bodyText, /ShiJing must be launched by Nimi Desktop/u);
     await page.screenshot({
       path: path.join(evidenceDir, 'tauri-desktop-1366x900.png'),
       fullPage: true,
@@ -76,16 +76,17 @@ test('real Tauri WebView2 shell matches the ShiJing installed fail-close posture
       `${bridgeProof.runtime.reasonCode} ${bridgeProof.runtime.message}`,
       /runtime_bridge_unary|not found|unknown|unregistered|not allowed/iu,
     );
-    assertTypedArtifactFailure(bridgeProof.artifact);
+    assertTypedLocalFailure(bridgeProof.session);
+    assertTypedLocalFailure(bridgeProof.storage);
 
     await page.getByTestId('shijing-protected-session-retry').click();
     await assertFailClosedPanel(page);
     await page.getByRole('button', { name: '中' }).click();
-    await page.getByRole('heading', { name: '时镜受保护操作尚未准入' }).waitFor();
+    await page.getByRole('heading', { name: '时镜需要由 Nimi Desktop 启动' }).waitFor();
     const narrowMetrics = await setViewportAndInspect(page, 390, 844);
     assert.equal(narrowMetrics.innerWidth, 390);
     assert.ok(narrowMetrics.scrollWidth <= narrowMetrics.innerWidth, JSON.stringify(narrowMetrics));
-    assert.match(narrowMetrics.bodyText, /时镜受保护操作尚未准入/u);
+    assert.match(narrowMetrics.bodyText, /时镜需要由 Nimi Desktop 启动/u);
     assert.doesNotMatch(narrowMetrics.bodyText, /�/u);
     await page.screenshot({
       path: path.join(evidenceDir, 'tauri-narrow-390x844-zh.png'),
@@ -118,11 +119,18 @@ test('real Tauri WebView2 shell matches the ShiJing installed fail-close posture
 
 async function assertFailClosedPanel(page) {
   const panel = page.getByTestId('shijing-protected-session-failure');
-  assert.equal(await panel.getAttribute('data-protected-state'), 'capability-unavailable');
+  const protectedState = await panel.getAttribute('data-protected-state');
+  assert.ok(
+    new Set(['repair-required', 'runtime-unavailable', 'capability-unavailable']).has(protectedState),
+    `unexpected protected state: ${protectedState}`,
+  );
   assert.equal(await page.getByTestId('shijing-protected-operations-locked').isDisabled(), true);
   assert.equal(await page.locator('.shijing-shell').count(), 0);
   assert.equal(await page.getByRole('alert').count(), 1);
-  assert.match(await panel.innerText(), /shijing-protected-operation-set-not-admitted/u);
+  assert.match(
+    await panel.innerText(),
+    /protected-carrier-required|runtime-service-unavailable|runtime-service-untrusted|shijing-protected-operation-set-not-admitted/u,
+  );
 }
 
 async function probeTauriBridge(page) {
@@ -133,7 +141,14 @@ async function probeTauriBridge(page) {
     }
     const probe = async (command, payload) => {
       try {
-        return { ok: true, value: await hook.invoke(command, payload) };
+        const value = await Promise.race([
+          hook.invoke(command, payload),
+          new Promise((_, reject) => setTimeout(() => reject(Object.assign(
+            new Error(`Timed out probing ${command}`),
+            { reasonCode: 'runtime-service-unavailable' },
+          )), 5_000)),
+        ]);
+        return { ok: true, value };
       } catch (error) {
         let record = error && typeof error === 'object' ? error : {};
         const message = typeof record.message === 'string' ? record.message : String(error);
@@ -165,14 +180,18 @@ async function probeTauriBridge(page) {
           request: {},
         },
       }),
-      artifact: await probe('nimi.shell.artifacts.readRuntimeBytes', {
-        payload: { artifactId: 'shijing-tauri-acceptance-probe' },
+      session: await probe('nimi.shell.localApp.sessionStatus', {}),
+      storage: await probe('nimi.shell.storage.writeJson', {
+        payload: {
+          relativePath: 'launch-migration/direct-shell-negative.json',
+          value: { source: 'direct-tauri-negative-acceptance' },
+        },
       }),
     };
   });
 }
 
-function assertTypedArtifactFailure(result) {
+function assertTypedLocalFailure(result) {
   assert.equal(result.ok, false, JSON.stringify(result));
   assert.ok(new Set([
     'protected-carrier-required',

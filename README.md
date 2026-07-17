@@ -81,14 +81,17 @@ All runtime dependencies resolve from npm (`@nimiplatform/kit`,
 ## Development
 
 ```bash
-# Desktop-supervised Tauri with protected app-host admission
+# Desktop-supervised Electron (the primary proven development path)
 pnpm dev
 
 # Explicit Desktop-supervised shell selection
 pnpm dev:shell -- --shell electron
 pnpm dev:shell -- --shell tauri
 
-# Renderer-only, intentionally without protected operations
+# Equivalent explicit Tauri entry
+pnpm dev:tauri
+
+# Renderer-only; protected operations and product mounting fail closed
 pnpm dev:renderer
 ```
 

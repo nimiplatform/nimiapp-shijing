@@ -148,7 +148,9 @@ test('ShiJing AIConfig read remains unavailable before protected operation admis
   const before = loadShijingAIConfig(readingScope);
   await assert.rejects(
     () => hydrateShijingAIConfigFromShell(readingScope),
-    /explicit A\.4 operation admission/,
+    (error) => error.reasonCode === 'shijing-protected-operation-set-not-admitted'
+      && error.actionHint === 'wait_for_shijing_protected_operation_admission'
+      && error.retryable === false,
   );
   assert.deepEqual(loadShijingAIConfig(readingScope), before);
 });
@@ -173,7 +175,9 @@ test('ShiJing AIConfig commit fails closed without optimistic success before adm
   const emptyBefore = loadShijingAIConfig(scopeRef);
   await assert.rejects(
     () => commitShijingAIConfigToShell(next, scopeRef),
-    /explicit A\.4 operation admission/,
+    (error) => error.reasonCode === 'shijing-protected-operation-set-not-admitted'
+      && error.actionHint === 'wait_for_shijing_protected_operation_admission'
+      && error.retryable === false,
   );
   assert.deepEqual(loadShijingAIConfig(scopeRef), emptyBefore);
 });

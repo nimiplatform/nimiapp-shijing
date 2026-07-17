@@ -1,5 +1,5 @@
-import { AuthProvider } from './app-shell/auth-provider.js';
+import { ProtectedSessionBoundary } from './app-shell/protected-session-boundary.js';
 
 export function App() {
-  return <AuthProvider />;
+  return <ProtectedSessionBoundary />;
 }

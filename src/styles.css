@@ -287,6 +287,103 @@ body {
   gap: 10px;
 }
 
+.shijing-local-development-shell {
+  min-height: 100vh;
+}
+
+.shijing-local-development {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 80;
+  display: grid;
+  width: min(440px, calc(100vw - 36px));
+  max-height: min(620px, calc(100vh - 36px));
+  gap: 14px;
+  overflow: auto;
+  border: 1px solid var(--shijing-border-default);
+  box-shadow: var(--shijing-shadow-2);
+}
+
+.shijing-local-development__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.shijing-local-development__heading h2,
+.shijing-local-development__heading p {
+  margin: 0;
+}
+
+.shijing-local-development__heading h2 {
+  margin-top: 10px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.shijing-local-development__heading p {
+  margin-top: 6px;
+  color: var(--shijing-text-secondary);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.shijing-local-development__badges,
+.shijing-local-development__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shijing-local-development__facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  margin: 0;
+}
+
+.shijing-local-development__facts > div {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-md);
+  background: var(--shijing-surface-card-quiet);
+}
+
+.shijing-local-development__facts dt {
+  color: var(--shijing-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.shijing-local-development__facts dd {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+  color: var(--shijing-text-primary);
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.shijing-local-development .nimi-inline-alert__body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.shijing-local-development .nimi-inline-alert__body span,
+.shijing-local-development .nimi-inline-alert__body code {
+  overflow-wrap: anywhere;
+}
+
+.shijing-local-development .nimi-inline-alert__body code {
+  font-size: 10px;
+}
+
 @media (max-width: 560px) {
   .shijing-protected-gate {
     align-items: flex-start;
@@ -313,5 +410,26 @@ body {
 
   .shijing-protected-gate__action-hint code {
     display: none;
+  }
+
+  .shijing-local-development {
+    right: 10px;
+    bottom: 10px;
+    width: calc(100vw - 20px);
+    max-height: min(48vh, 420px);
+    gap: 10px;
+  }
+
+  .shijing-local-development__heading {
+    display: grid;
+  }
+
+  .shijing-local-development__heading button,
+  .shijing-local-development__actions button {
+    width: 100%;
+  }
+
+  .shijing-local-development__facts {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
