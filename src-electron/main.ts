@@ -28,6 +28,7 @@ async function bootstrapElectron(): Promise<void> {
     appId: SHIJING_APP_ID,
     allowedRendererUrls: [activeRendererUrl()],
     ipcMain,
+    onProtectedSessionFailure: () => app.quit(),
   });
 
   await createMainWindow();
@@ -53,16 +54,6 @@ function resolveAppRoot(electronDir: string): string {
 
 function configureShijingElectronChromiumRuntime(): void {
   app.commandLine.appendSwitch('disable-background-networking');
-  const acceptanceCdpPort = String(
-    process.env.NIMI_SHIJING_ELECTRON_ACCEPTANCE_CDP_PORT || '',
-  ).trim();
-  if (!acceptanceCdpPort) return;
-  const port = Number(acceptanceCdpPort);
-  if (!Number.isInteger(port) || port < 1024 || port > 65535) {
-    throw new Error('ShiJing acceptance CDP port is invalid.');
-  }
-  app.commandLine.appendSwitch('remote-debugging-address', '127.0.0.1');
-  app.commandLine.appendSwitch('remote-debugging-port', acceptanceCdpPort);
 }
 
 function installShijingStandardApplicationMenu(): void {

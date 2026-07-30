@@ -32,12 +32,10 @@ import { SettingsSurfaceSection } from './settings-surfaces.tsx';
 export type ShijingSettingsFocusTarget =
   | 'self_profile_editor'
   | 'method_profile'
-  | 'ai_model_config'
   | 'privacy_local_data';
 
 const SETTINGS_FOCUS_TARGET_IDS: Partial<Record<ShijingSettingsFocusTarget, string>> = {
   method_profile: 'settings-method-profile',
-  ai_model_config: 'settings-ai-model-config',
   privacy_local_data: 'settings-privacy-local-data',
 };
 
@@ -190,7 +188,6 @@ export function SettingsPageView({
           { targetId: 'settings-ui-language', label: copy.uiLanguage.title },
           { targetId: 'settings-method-profile', label: copy.methodProfile.title },
           { targetId: 'settings-response-preferences', label: copy.responsePreferences.title },
-          { targetId: 'settings-ai-model-config', label: copy.aiConfig.title },
           { targetId: 'settings-privacy-local-data', label: copy.privacy.title },
           { targetId: 'settings-diagnostics', label: copy.diagnostics.title },
         ]

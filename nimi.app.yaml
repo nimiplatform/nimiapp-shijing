@@ -4,16 +4,8 @@ display_name: 时镜 ShiJing
 profile: workspace-app
 manifest_role: submitted-input
 permissions:
-  declared_nimi_api_scopes:
-    - scope: ai.spend.meter
-      qualifier: shijing-reading
-      purpose: Declare the future ShiJing wording permission; execution remains unavailable until the protected installed operation is admitted.
-    - scope: file.write.scoped
-      qualifier: app-local-drafts
-      purpose: Store drafts owned by this app during author testing.
-    - scope: data.scope.read
-      qualifier: runtime.artifacts
-      purpose: Read the Runtime-owned bootstrap artifact through the admitted typed app-host operation.
+  - id: agents.interact
+    reason: ShiJing needs access to the Agents on this account to complete an astrology conversation turn.
 local_development:
   electron:
     renderer_origin: http://127.0.0.1:1430

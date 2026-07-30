@@ -3,18 +3,16 @@
     "badge": "Desktop 监督的 local_development",
     "checking": "检查中",
     "title": "时镜产品 UI 已在受保护开发会话中打开",
-    "detail": "数据持久化、Runtime AI、咨询与本人确认尚未准入，均保持明确 fail-closed；下方只验证一条 app-storage 权限链。",
+    "detail": "咨询仅通过 Desktop 监督的 Agent 路径运行；请在时镜内明确请求 agents.interact，再到 Desktop 完成批准。",
     "refresh": "刷新真实状态",
     "session": "会话",
     "sessionReason": "会话原因",
-    "operation": "操作",
-    "resource": "资源",
+    "permission": "权限",
+    "agentCount": "可用 Agent",
+    "selectedAgent": "咨询 Agent",
     "permissionReason": "权限原因",
     "nextStep": "下一步",
-    "write": "执行真实写入",
-    "request": "请求精确权限",
-    "permissionPurpose": "写入一条时镜本地开发权限回归记录，以验证批准、撤销与拒绝链路。",
-    "writeSucceeded": "Runtime 已确认 app-scoped JSON 写入成功。"
+    "request": "请求 Agent 交互权限"
   },
   "Shell": {
     "language": "语言",

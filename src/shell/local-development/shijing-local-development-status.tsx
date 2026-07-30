@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { NimiLocalAppAgent, NimiLocalAppAgentHandle } from '@nimiplatform/sdk/app';
 import {
   Button,
   InlineAlert,
@@ -7,9 +8,8 @@ import {
   Surface,
 } from '@nimiplatform/kit/ui';
 import {
-  SHIJING_LOCAL_DEVELOPMENT_STORAGE_OPERATION,
-  SHIJING_LOCAL_DEVELOPMENT_STORAGE_PATH,
-  SHIJING_LOCAL_DEVELOPMENT_STORAGE_RESOURCE,
+  SHIJING_AGENTS_INTERACT_PERMISSION,
+  SHIJING_AGENTS_INTERACT_REASON,
   normalizeShijingLocalAppError,
   shijingLocalAppRuntimePlatform,
   withShijingLocalAppResponseDeadline,
@@ -23,26 +23,37 @@ type SessionEvidence = {
 };
 
 type PermissionEvidence = {
-  readonly state: string;
-  readonly reasonCode: string;
-  readonly actionHint: string;
+  readonly posture: string;
+  readonly canRequest: boolean;
+  readonly agents: readonly NimiLocalAppAgent[];
+  readonly detail: string;
 };
 
 type OperationEvidence =
   | { readonly state: 'idle' }
-  | {
-      readonly state: 'succeeded';
-      readonly reasonCode: string;
-      readonly actionHint: string;
-    }
   | ({ readonly state: 'failed' } & ShijingLocalAppErrorEvidence);
 
-export function ShijingLocalDevelopmentStatus() {
+export type ShijingLocalDevelopmentStatusProps = {
+  readonly selectedAgentHandle: NimiLocalAppAgentHandle | null;
+  readonly onSelectAgent: (agentHandle: NimiLocalAppAgentHandle | null) => void;
+};
+
+export function ShijingLocalDevelopmentStatus(
+  props: ShijingLocalDevelopmentStatusProps,
+) {
   const { t } = useTranslation();
   const [session, setSession] = useState<SessionEvidence | null>(null);
   const [permission, setPermission] = useState<PermissionEvidence | null>(null);
   const [operation, setOperation] = useState<OperationEvidence>({ state: 'idle' });
-  const [busy, setBusy] = useState<'refresh' | 'request' | 'write' | null>(null);
+  const [busy, setBusy] = useState<'refresh' | 'request' | null>(null);
+
+  const applyPermission = useCallback((nextPermission: PermissionEvidence) => {
+    setPermission(nextPermission);
+    const retained = nextPermission.agents.find(
+      (agent) => agent.agentHandle === props.selectedAgentHandle,
+    );
+    props.onSelectAgent(retained?.agentHandle ?? nextPermission.agents[0]?.agentHandle ?? null);
+  }, [props.onSelectAgent, props.selectedAgentHandle]);
 
   const refresh = useCallback(async () => {
     setBusy('refresh');
@@ -50,91 +61,82 @@ export function ShijingLocalDevelopmentStatus() {
       const [nextSession, nextPermission] = await withShijingLocalAppResponseDeadline(
         Promise.all([
           shijingLocalAppRuntimePlatform.auth.status(),
-          shijingLocalAppRuntimePlatform.permissions.posture({
-            operationId: SHIJING_LOCAL_DEVELOPMENT_STORAGE_OPERATION,
-            resourceRef: SHIJING_LOCAL_DEVELOPMENT_STORAGE_RESOURCE,
-          }),
+          shijingLocalAppRuntimePlatform.permissions.status(
+            SHIJING_AGENTS_INTERACT_PERMISSION,
+          ),
         ]),
-        'session and permission refresh',
+        'session and Agent permission refresh',
       );
       setSession({
         state: nextSession.state,
         reasonCode: nextSession.reasonCode,
         actionHint: nextSession.actionHint,
       });
-      setPermission({
-        state: nextPermission.state,
-        reasonCode: nextPermission.reasonCode,
-        actionHint: nextPermission.actionHint,
+      applyPermission({
+        posture: nextPermission.posture,
+        canRequest: nextPermission.canRequest,
+        agents: nextPermission.agents,
+        detail: nextPermission.detail ?? '',
       });
+      setOperation({ state: 'idle' });
     } catch (error) {
       setOperation({ state: 'failed', ...normalizeShijingLocalAppError(error) });
     } finally {
       setBusy(null);
     }
-  }, []);
+  }, [applyPermission]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
+  useEffect(() => shijingLocalAppRuntimePlatform.permissions.subscribe(
+    SHIJING_AGENTS_INTERACT_PERMISSION,
+    (event) => {
+      applyPermission({
+        posture: event.status.posture,
+        canRequest: event.status.canRequest,
+        agents: event.status.agents,
+        detail: event.status.detail ?? '',
+      });
+    },
+    (error) => {
+      setOperation({ state: 'failed', ...normalizeShijingLocalAppError(error) });
+    },
+  ), [applyPermission]);
+
   const requestPermission = useCallback(async () => {
     setBusy('request');
     setOperation({ state: 'idle' });
     try {
-      const posture = await withShijingLocalAppResponseDeadline(
+      const nextPermission = await withShijingLocalAppResponseDeadline(
         shijingLocalAppRuntimePlatform.permissions.request({
-          operationId: SHIJING_LOCAL_DEVELOPMENT_STORAGE_OPERATION,
-          resourceRef: SHIJING_LOCAL_DEVELOPMENT_STORAGE_RESOURCE,
-          purpose: t('LocalDevelopment.permissionPurpose'),
+          permissionId: SHIJING_AGENTS_INTERACT_PERMISSION,
+          reason: SHIJING_AGENTS_INTERACT_REASON,
         }),
-        'permission request',
+        'Agent permission request',
       );
-      setPermission({
-        state: posture.state,
-        reasonCode: posture.reasonCode,
-        actionHint: posture.actionHint,
+      applyPermission({
+        posture: nextPermission.posture,
+        canRequest: nextPermission.canRequest,
+        agents: nextPermission.agents,
+        detail: nextPermission.detail ?? '',
       });
     } catch (error) {
       setOperation({ state: 'failed', ...normalizeShijingLocalAppError(error) });
     } finally {
       setBusy(null);
     }
-  }, [t]);
+  }, [applyPermission]);
 
-  const writeProbe = useCallback(async () => {
-    setBusy('write');
-    setOperation({ state: 'idle' });
-    try {
-      await withShijingLocalAppResponseDeadline(
-        shijingLocalAppRuntimePlatform.storage.writeJson(
-          SHIJING_LOCAL_DEVELOPMENT_STORAGE_PATH,
-          {
-            schemaVersion: 1,
-            source: 'shijing-app-launch-migration',
-            executedAt: new Date().toISOString(),
-          },
-        ),
-        'app storage write',
-      );
-      setOperation({
-        state: 'succeeded',
-        reasonCode: 'local-app-storage-write-succeeded',
-        actionHint: 'revoke_in_desktop_then_retry_to_verify_denial',
-      });
-      await refresh();
-    } catch (error) {
-      setOperation({ state: 'failed', ...normalizeShijingLocalAppError(error) });
-    } finally {
-      setBusy(null);
-    }
-  }, [refresh]);
-
-  const permissionTone = permission?.state === 'granted'
+  const permissionTone = permission?.posture === 'granted'
     ? 'success'
-    : permission?.state === 'pending'
+    : permission?.posture === 'pending'
       ? 'warning'
       : 'neutral';
+  const selectedAgent = permission?.agents.find(
+    (agent) => agent.agentHandle === props.selectedAgentHandle,
+  );
 
   return (
     <Surface
@@ -149,7 +151,7 @@ export function ShijingLocalDevelopmentStatus() {
           <div className="shijing-local-development__badges">
             <StatusBadge tone="info" shape="dot">{t('LocalDevelopment.badge')}</StatusBadge>
             <StatusBadge tone={permissionTone}>
-              {permission?.state ?? t('LocalDevelopment.checking')}
+              {permission?.posture ?? t('LocalDevelopment.checking')}
             </StatusBadge>
           </div>
           <h2>{t('LocalDevelopment.title')}</h2>
@@ -170,26 +172,39 @@ export function ShijingLocalDevelopmentStatus() {
       <dl className="shijing-local-development__facts">
         <Fact label={t('LocalDevelopment.session')} value={session?.state ?? 'loading'} />
         <Fact label={t('LocalDevelopment.sessionReason')} value={session?.reasonCode ?? 'loading'} />
-        <Fact label={t('LocalDevelopment.operation')} value={SHIJING_LOCAL_DEVELOPMENT_STORAGE_OPERATION} />
-        <Fact label={t('LocalDevelopment.resource')} value={SHIJING_LOCAL_DEVELOPMENT_STORAGE_RESOURCE} />
-        <Fact label={t('LocalDevelopment.permissionReason')} value={permission?.reasonCode ?? 'loading'} />
-        <Fact label={t('LocalDevelopment.nextStep')} value={permission?.actionHint ?? 'refresh_local_app_runtime_projection'} />
+        <Fact label={t('LocalDevelopment.permission')} value={SHIJING_AGENTS_INTERACT_PERMISSION} />
+        <Fact label={t('LocalDevelopment.agentCount')} value={String(permission?.agents.length ?? 0)} />
+        <Fact label={t('LocalDevelopment.selectedAgent')} value={selectedAgent?.displayName ?? 'none'} />
+        <Fact label={t('LocalDevelopment.permissionReason')} value={permission?.detail || permission?.posture || 'loading'} />
+        <Fact label={t('LocalDevelopment.nextStep')} value={permissionActionHint(permission)} />
       </dl>
 
       <div className="shijing-local-development__actions">
+        {permission?.posture === 'granted' && permission.agents.length > 0 ? (
+          <label>
+            <span>{t('LocalDevelopment.selectedAgent')}</span>
+            <select
+              value={props.selectedAgentHandle ?? ''}
+              onChange={(event) => {
+                const selected = permission.agents.find(
+                  (agent) => agent.agentHandle === event.currentTarget.value,
+                );
+                props.onSelectAgent(selected?.agentHandle ?? null);
+              }}
+              data-testid="shijing-local-development-agent-select"
+            >
+              {permission.agents.map((agent) => (
+                <option key={agent.agentHandle} value={agent.agentHandle}>
+                  {agent.displayName}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <Button
-          tone="secondary"
-          loading={busy === 'write'}
-          disabled={busy !== null && busy !== 'write'}
-          onClick={() => void writeProbe()}
-          data-testid="shijing-local-development-write-probe"
-        >
-          {t('LocalDevelopment.write')}
-        </Button>
-        <Button
-          tone="secondary"
+          tone="primary"
           loading={busy === 'request'}
-          disabled={busy !== null || permission?.state === 'pending' || permission?.state === 'granted'}
+          disabled={busy !== null || !permission?.canRequest || permission.posture === 'pending'}
           onClick={() => void requestPermission()}
           data-testid="shijing-local-development-request-permission"
         >
@@ -207,18 +222,20 @@ export function ShijingLocalDevelopmentStatus() {
           <code>{operation.actionHint}</code>
         </InlineAlert>
       ) : null}
-      {operation.state === 'succeeded' ? (
-        <InlineAlert
-          tone="success"
-          data-testid="shijing-local-development-operation-success"
-        >
-          <strong>{operation.reasonCode}</strong>
-          <span>{t('LocalDevelopment.writeSucceeded')}</span>
-          <code>{operation.actionHint}</code>
-        </InlineAlert>
-      ) : null}
     </Surface>
   );
+}
+
+function permissionActionHint(permission: PermissionEvidence | null): string {
+  if (!permission) return 'refresh_agents_interact_permission';
+  if (permission.posture === 'granted') {
+    return permission.agents.length > 0
+      ? 'send_shijing_agent_conversation'
+      : 'wait_for_account_agent_inventory';
+  }
+  if (permission.posture === 'pending') return 'approve_agents_interact_in_nimi_desktop';
+  if (permission.canRequest) return 'request_agents_interact_from_shijing';
+  return 'review_agents_interact_in_nimi_desktop';
 }
 
 function Fact({ label, value }: { readonly label: string; readonly value: string }) {

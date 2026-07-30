@@ -3,18 +3,16 @@
     "badge": "Desktop-supervised local_development",
     "checking": "Checking",
     "title": "ShiJing product UI is open in a protected development session",
-    "detail": "Persistence, Runtime AI, consultation, and presence verification are not admitted and remain explicitly fail-closed. The controls below verify one app-storage permission path only.",
+    "detail": "Consultation runs only through a Desktop-supervised Agent. Explicitly request agents.interact here, then approve it in Desktop.",
     "refresh": "Refresh live state",
     "session": "Session",
     "sessionReason": "Session reason",
-    "operation": "Operation",
-    "resource": "Resource",
+    "permission": "Permission",
+    "agentCount": "Available Agents",
+    "selectedAgent": "Consultation Agent",
     "permissionReason": "Permission reason",
     "nextStep": "Next step",
-    "write": "Run real write",
-    "request": "Request exact permission",
-    "permissionPurpose": "Write one ShiJing local-development regression record to verify approval, revocation, and denial.",
-    "writeSucceeded": "Runtime confirmed the app-scoped JSON write."
+    "request": "Request Agent interaction"
   },
   "Shell": {
     "language": "Language",

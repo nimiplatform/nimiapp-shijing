@@ -23,10 +23,6 @@ const responsePreferencesSource = readFileSync(
   new URL('../src/product/settings/response-preferences-editor.tsx', import.meta.url),
   'utf8',
 );
-const aiModelConfigSource = readFileSync(
-  new URL('../src/shell/ai/shijing-ai-model-config-section.tsx', import.meta.url),
-  'utf8',
-);
 const personalDataStyles = readCssBundle(settingsCssFiles).replace(/\/\*[\s\S]*?\*\//g, '');
 const mirrorV1Styles = readFileSync(
   new URL('../src/styles-mirror-v1.css', import.meta.url),
@@ -127,7 +123,6 @@ test('settings cards expose stable module anchors for left navigation', () => {
   assert.match(uiLanguageSource, /id="settings-ui-language"/);
   assert.match(methodProfileSource, /id="settings-method-profile"/);
   assert.match(responsePreferencesSource, /id="settings-response-preferences"/);
-  assert.match(aiModelConfigSource, /id="settings-ai-model-config"/);
   assert.match(settingsSurfacesSource, /id="settings-privacy-local-data"/);
   assert.match(settingsSurfacesSource, /id="settings-diagnostics"/);
 });

@@ -15,7 +15,6 @@ import {
 import { SjpSelect } from '../components/sjp-select.tsx';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { commitResponsePreferences } from './response-preferences-state.ts';
-import { ShijingAiModelConfigSection } from '../../shell/ai/shijing-ai-model-config-section.tsx';
 
 export function ResponsePreferencesEditor() {
   const { state, dispatch } = useShijingStore();
@@ -122,7 +121,6 @@ export function ResponsePreferencesEditor() {
           ) : null}
         </div>
       </section>
-      <ShijingAiModelConfigSection />
     </>
   );
 }

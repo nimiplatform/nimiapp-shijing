@@ -179,6 +179,50 @@ function parseRuntimeAiWordingPatch(
   return { ok: true, value: normalized };
 }
 
+export function applyRuntimeAiWordingText(
+  mirrorKind: MirrorKind,
+  request: RuntimeAiPromptRequest,
+  text: string,
+): RuntimeAiResult {
+  const parsed = parseRuntimeAiWordingPatch(mirrorKind, text);
+  if (!parsed.ok) {
+    return { ok: false, failure: { kind: 'parse_failure', failure: parsed.failure } };
+  }
+  try {
+    return {
+      ok: true,
+      output: applyRuntimeAiWordingPatch(
+        request.deterministic_output,
+        parsed.value,
+      ),
+      output_source: runtimeAiWordingPatchAppliedSource(),
+    };
+  } catch (error) {
+    if (error instanceof RuntimeAiOutputValidationError) {
+      return { ok: false, failure: { kind: 'parse_failure', failure: error.failure } };
+    }
+    if (error instanceof RuntimeAiWordingPatchValidationError) {
+      return {
+        ok: false,
+        failure: {
+          kind: 'parse_failure',
+          failure: wordingPatchValidationFailure(error.detail),
+        },
+      };
+    }
+    return {
+      ok: false,
+      failure: {
+        kind: 'parse_failure',
+        failure: {
+          kind: 'validation_failed',
+          detail: error instanceof Error ? error.message : String(error),
+        },
+      },
+    };
+  }
+}
+
 function recordValue(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? value as Record<string, unknown>
@@ -277,43 +321,7 @@ class SdkRuntimeAiClient implements RuntimeAiClient {
         },
       };
     }
-    const parsed = parseRuntimeAiWordingPatch(mirror_kind, result.text);
-    if (!parsed.ok) {
-      return { ok: false, failure: { kind: 'parse_failure', failure: parsed.failure } };
-    }
-    try {
-      return {
-        ok: true,
-        output: applyRuntimeAiWordingPatch(
-          request.deterministic_output,
-          parsed.value,
-        ),
-        output_source: runtimeAiWordingPatchAppliedSource(),
-      };
-    } catch (error) {
-      if (error instanceof RuntimeAiOutputValidationError) {
-        return { ok: false, failure: { kind: 'parse_failure', failure: error.failure } };
-      }
-      if (error instanceof RuntimeAiWordingPatchValidationError) {
-        return {
-          ok: false,
-          failure: {
-            kind: 'parse_failure',
-            failure: wordingPatchValidationFailure(error.detail),
-          },
-        };
-      }
-      return {
-        ok: false,
-        failure: {
-          kind: 'parse_failure',
-          failure: {
-            kind: 'validation_failed',
-            detail: error instanceof Error ? error.message : String(error),
-          },
-        },
-      };
-    }
+    return applyRuntimeAiWordingText(mirror_kind, request, result.text);
   }
 }
 
