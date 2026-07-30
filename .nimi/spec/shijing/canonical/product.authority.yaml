@@ -1,0 +1,238 @@
+format: nimicoding.authority/v2
+owner: team.shijing
+scope: shijing.product
+units:
+  - id: definition.shijing.product.canonical-authority
+    kind: definition
+    title: Canonical authority
+    meaning: .nimi/spec/** is the canonical ShiJing product authority corpus against which guide and implementation behavior is evaluated.
+  - id: definition.shijing.product.shijing-app
+    kind: definition
+    title: ShiJing app
+    meaning: A Nimi-embedded personal astrology time-mirror, natal-companion, and relationship-insight app owning only app-local astrology data under ShiJingSpace, with Nimi owning account identity, login, Runtime access, and platform safety.
+  - id: definition.shijing.product.six-tabs
+    kind: definition
+    title: Six primary tabs
+    meaning: The six primary tabs are RiJing 日镜 for daily reflection, YueJing 月镜 for a rolling 30-day calendar, NianJing 年镜 for long-horizon phase bands and inflection points, MingJing 命镜 for self natal projection, HeJing 合镜 for self-plus-one-person relationship structure, interaction language, future windows, and review, and ShiJing Consultation Mirror 问镜 for session-based consultation grounded in cited readings.
+  - id: definition.shijing.product.anti-targets
+    kind: definition
+    title: Product anti-targets
+    meaning: ShiJing is not a CRM, consultant workspace, report builder, project manager, batch import or export tool, relation graph, or free-form context container.
+  - id: definition.shijing.product.concern-tag
+    kind: definition
+    title: Concern tag
+    meaning: ConcernTag is the sole long-running projection-intent concept, allows at most five active tags per ShiJingSpace, and replaces View, Focus, ViewTemplate, roster, context item, instruction, view memory, and user-facing View time-window surfaces.
+  - id: definition.shijing.product.person
+    kind: definition
+    title: Person
+    meaning: Person is a first-class other-person astrology object for natal inputs, validation, and consent posture, not a customer, contact, account, or owner of conversations, events, memories, plans, settings, relationships, notifications, or lifecycle.
+  - id: definition.shijing.product.hejing
+    kind: definition
+    title: HeJing
+    meaning: HeJing is the primary self-plus-one-Person relationship-analysis surface for structure, interaction language, future windows, advice, and relationship-event review, without creating a relation graph, contact workspace, consultant workflow, Person-owned lifecycle, CRM surface, persisted Relation, or parallel report entity.
+  - id: definition.shijing.product.memory-plan-separation
+    kind: definition
+    title: Memory and plan separation
+    meaning: EventMemory records past facts and PlanItem records future intentions; neither is a concern tag or consumes concern-tag quota, and PlanItem has no task, deadline, project, workflow, priority, dependency, progress, assignee, board, milestone, Gantt, or due or overdue semantics.
+  - id: definition.shijing.product.reading
+    kind: definition
+    title: Reading output entity
+    meaning: Reading is the only persisted astrology output entity; cards, reports, monthly or yearly reports, trend charts, luck-score records, and other parallel output entities do not create separate persisted astrology output.
+  - id: definition.shijing.product.product-catalog-authority
+    kind: definition
+    title: Product catalog authority
+    meaning: Built-in concern-tag semantics, mirror matrices, output schemas, memory policy, and removed names are immutable product authority rather than a catalog snapshot or mutable user-space data.
+  - id: definition.shijing.product.protected-runtime
+    kind: definition
+    title: Protected Runtime boundary
+    meaning: AI access is a separately admitted protected ShiJing Runtime operation consumed through the shared SDK or Kit owner, with Runtime AI limited to wording and consultation over deterministic feature snapshots.
+  - id: definition.shijing.product.typed-generation-failure
+    kind: definition
+    title: Typed generation failure
+    meaning: Runtime, parse, typed-output, hash, freshness, natal-data, and pipeline failures produce typed Reading absence rather than synthesized successful content.
+  - id: definition.shijing.product.response-preferences
+    kind: definition
+    title: Response preferences
+    meaning: Settings.response_preferences is the sole workspace-level wording preference field; global_instructions, project_memory, and long-line-style settings are not admitted.
+  - id: definition.shijing.product.deterministic-reading
+    kind: definition
+    title: Deterministic Reading
+    meaning: Reading content is produced from the admitted executable deterministic astrology algorithm rather than canned horoscope text, placeholders, prompt-only calculation, randomized fortune text, or a Runtime-AI-only substitute.
+  - id: definition.shijing.product.installed-shell
+    kind: definition
+    title: Installed shell boundary
+    meaning: Desktop shells use the Kit-owned installed-app registration surface, currently artifact-only, while ShiJing-local commands are limited to genuinely app-owned product primitives and both Electron and Tauri remain fail-closed until protected operations are admitted.
+  - id: definition.shijing.product.protected-session-failure
+    kind: definition
+    title: Protected session failure
+    meaning: Before positive protected admission, the production renderer has one typed fail-close surface with recovery classes login-required, runtime-unavailable, permission-denied, repair-required, and capability-unavailable.
+  - id: rule.shijing.product.r001
+    kind: rule
+    title: Single product authority
+    modality: must
+    statement: ShiJing product authority resides in the .nimi/spec/** canonical authority corpus, and every guide document and implementation surface remains non-contradictory with that authority.
+    condition: Always.
+    failure: Reject the conflicting guide or implementation change as non-canonical.
+    relations:
+      - type: applies_to
+        target: definition.shijing.product.canonical-authority
+  - id: rule.shijing.product.r002
+    kind: rule
+    title: Embedded app boundary
+    modality: must
+    statement: ShiJing operates as a Nimi-embedded app in which Nimi owns account identity, login, Runtime access, and platform safety and ShiJing owns only app-local astrology data under ShiJingSpace; the installed renderer exposes no account, login, logout, account projection, portable launch identity, credential material, or app-selected Runtime endpoint, and product data remains unmounted until Runtime admits a protected ShiJing operation set bound to the installed process and account generation.
+    condition: Always.
+    failure: Keep product data and product operations disabled and surface the protected-session failure instead of mounting an app-owned identity or Runtime path.
+    relations:
+      - type: applies_to
+        target: definition.shijing.product.protected-runtime
+      - type: applies_to
+        target: definition.shijing.product.shijing-app
+  - id: rule.shijing.product.r003
+    kind: rule
+    title: Personal time-mirror product
+    modality: must
+    statement: ShiJing remains a personal astrology time-mirror, natal-companion, and relationship-insight product organized by RiJing, YueJing, NianJing, MingJing, HeJing, and ShiJing Consultation Mirror 问镜, and it does not become a CRM, consultant workspace, report builder, project manager, batch import or export tool, relation graph, or free-form context container.
+    condition: Always.
+    failure: Reject any product shape that falls outside the admitted app identity or introduces an anti-target.
+    relations:
+      - type: applies_to
+        target: definition.shijing.product.anti-targets
+      - type: applies_to
+        target: definition.shijing.product.shijing-app
+      - type: applies_to
+        target: definition.shijing.product.six-tabs
+  - id: rule.shijing.product.r004
+    kind: rule
+    title: Six primary tabs
+    modality: must
+    statement: "The product exposes exactly six primary tabs: RiJing 日镜 for daily reflection; YueJing 月镜 for a rolling 30-day calendar; NianJing 年镜 for long-horizon phase bands and inflection points; MingJing 命镜 for self natal projection; HeJing 合镜 for self-plus-one-person relationship structure, interaction language, future windows, and relationship review; and ShiJing Consultation Mirror 问镜 for session-based consultation grounded in cited readings."
+    condition: Always.
+    failure: Reject a navigation model with a missing, additional, reordered, or repurposed primary tab.
+    relations:
+      - type: applies_to
+        target: definition.shijing.product.six-tabs
+  - id: rule.shijing.product.r005
+    kind: rule
+    title: Concern tags replace views
+    modality: must
+    statement: Long-running projection intent uses only ConcernTag; View, Focus, ViewTemplate, roster, context item, instruction, view memory, and user-facing View time-window concepts remain removed active surfaces; and no ShiJingSpace has more than five active concern tags.
+    condition: Always.
+    failure: Reject the removed container surface or the sixth active concern tag with a typed validation failure.
+    relations:
+      - type: applies_to
+        target: definition.shijing.product.concern-tag
+  - id: rule.shijing.product.r006
+    kind: rule
+    title: Person ownership boundary
+    modality: must
+    statement: Person remains first-class for natal inputs, validation, and consent posture, remains distinct from a customer, contact, or account, and owns no conversations, events, memories, plans, settings, relationships, notifications, or lifecycle.
+    condition: Always.
+    failure: Reject a Person shape or workflow that introduces customer identity or prohibited ownership.
+    relations:
+      - type: applies_to
+        target: definition.shijing.product.person
+  - id: rule.shijing.product.r007
+    kind: rule
+    title: HeJing relationship UX
+    modality: must
+    statement: HeJing is the primary relationship-analysis surface for exactly self plus one Person and may display relationship structure, interaction language, future windows, relationship advice, and relationship-event review; it remains distinct from a relation graph, contact workspace, consultant workflow, Person-owned lifecycle, and CRM-like surface; persisted relationship output remains one Reading and creates neither a persisted Relation nor a parallel report entity.
+    condition: Always.
+    failure: Reject a HeJing flow that changes the subject cardinality, creates prohibited ownership or entities, or persists output outside Reading.
+    relations:
+      - type: applies_to
+        target: definition.shijing.product.hejing
+      - type: applies_to
+        target: definition.shijing.product.reading
+  - id: rule.shijing.product.r008
+    kind: rule
+    title: Separate memory and plans
+    modality: must
+    statement: Past facts use EventMemory and future intentions use PlanItem; neither concept is a tag or consumes concern-tag quota; and PlanItem has no task, deadline, project, workflow, priority, dependency, progress, assignee, board, milestone, Gantt, or due or overdue semantics.
+    condition: Always.
+    failure: Reject a memory or plan record that crosses the past-versus-future boundary or introduces project-management semantics.
+    relations:
+      - type: applies_to
+        target: definition.shijing.product.memory-plan-separation
+  - id: rule.shijing.product.r009
+    kind: rule
+    title: One Reading entity
+    modality: must
+    statement: Reading remains the only persisted astrology output entity, and daily cards, reports, monthly or yearly reports, trend charts, luck-score records, and parallel reading entities do not persist as independent astrology output.
+    condition: Whenever astrology output is persisted.
+    failure: Reject persistence of astrology output outside a valid Reading.
+    relations:
+      - type: applies_to
+        target: definition.shijing.product.reading
+  - id: rule.shijing.product.r010
+    kind: rule
+    title: User catalog boundary
+    modality: must_not
+    statement: ShiJingSpace contains a catalog snapshot or mutable user-data copies of built-in concern-tag semantics, mirror matrices, output schemas, memory policy, or removed names.
+    condition: Always.
+    failure: Reject the ShiJingSpace payload and keep product catalog semantics in canonical authority.
+    relations:
+      - type: applies_to
+        target: definition.shijing.product.product-catalog-authority
+  - id: rule.shijing.product.r011
+    kind: rule
+    title: Runtime calculation boundary
+    modality: must
+    statement: AI access uses only a separately admitted protected ShiJing Runtime operation through the shared SDK or Kit owner; ordinary renderer, Tauri, or Electron Runtime bridges, public gRPC, localhost endpoints, and app-constructed Runtime clients are not installed-app transports; Runtime AI performs wording and consultation over deterministic feature snapshots and does not calculate pillars, DaYun, true solar time, stage labels, key windows, YueJing tendency classes, NianJing phase bands, or NianJing inflection points.
+    condition: Whenever ShiJing requests AI wording or consultation.
+    failure: Keep generation unavailable and surface a typed Runtime failure without invoking an unadmitted transport or calculation fallback.
+    relations:
+      - type: applies_to
+        target: definition.shijing.product.protected-runtime
+  - id: rule.shijing.product.r012
+    kind: rule
+    title: Generation failure behavior
+    modality: must_not
+    statement: ShiJing synthesizes Reading content as a fallback for Runtime failure, parse failure, missing typed output, hash mismatch, stale inputs, missing natal data, or pipeline failure.
+    condition: Whenever Reading generation cannot produce valid output.
+    failure: Persist no Reading and surface the corresponding typed generation failure.
+    relations:
+      - type: applies_to
+        target: definition.shijing.product.typed-generation-failure
+  - id: rule.shijing.product.r013
+    kind: rule
+    title: Single preference field
+    modality: must
+    statement: Settings.response_preferences is the only workspace-level wording preference field, and global_instructions, project_memory, and long-line-style settings remain forbidden.
+    condition: Always.
+    failure: Reject settings containing an alternate workspace-level wording preference field.
+    relations:
+      - type: applies_to
+        target: definition.shijing.product.response-preferences
+  - id: rule.shijing.product.r014
+    kind: rule
+    title: Algorithm implementation
+    modality: must_not
+    statement: Executable Reading behavior ships canned horoscope text, placeholder Reading content, prompt-only astrology calculation, randomized fortune text, a Runtime-AI-only substitute, or any Reading implementation that cannot prove conformance to the canonical algorithm authority.
+    condition: Whenever Reading content is implemented or shipped.
+    failure: Block shipment and surface the missing or invalid deterministic pipeline as a typed failure.
+    relations:
+      - type: applies_to
+        target: definition.shijing.product.deterministic-reading
+  - id: rule.shijing.product.r015
+    kind: rule
+    title: Standard shell boundary
+    modality: must
+    statement: Desktop shells use the Kit-owned installed-app registration surface, whose current admission is artifact-only; Runtime endpoint, ordinary gRPC construction, account or login control, launch metadata, app-scoped storage, AI config, local assets, capability selection, and command extension are not ShiJing host inputs; app-local shell commands exist only for genuinely ShiJing-owned product primitives and do not redefine standard storage roots, storage read, write, or remove operations, shell UI primitives, or host-owned platform paths; Electron and Tauri keep direct Runtime commands unavailable and do not mount the product route before protected operations are admitted; each independently unadmitted platform remains explicitly fail-closed, and compilation alone does not establish platform parity.
+    condition: Whenever a desktop shell registers, mounts, or invokes ShiJing product behavior.
+    failure: Keep the affected platform fail-closed, reject the unowned host input or command, and do not claim product mount or parity.
+    relations:
+      - type: applies_to
+        target: definition.shijing.product.installed-shell
+      - type: applies_to
+        target: definition.shijing.product.protected-runtime
+  - id: rule.shijing.product.r016
+    kind: rule
+    title: Protected session failure
+    modality: must
+    statement: Before positive protected admission, the production renderer exposes exactly one typed fail-close surface with recovery classes login-required, runtime-unavailable, permission-denied, repair-required, and capability-unavailable; it shows the stable reason code and recovery action, supports retry, keeps every product operation disabled, and renders no login page, local-data fallback, pseudo account, product shell, or simulated success.
+    condition: When protected ShiJing admission is not positively established.
+    failure: Render only the typed protected-session failure surface and keep all product operations disabled.
+    relations:
+      - type: applies_to
+        target: definition.shijing.product.protected-session-failure

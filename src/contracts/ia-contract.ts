@@ -1,4 +1,4 @@
-// SJG-IA-01..07 - Information architecture contract.
+// rule.shijing.ia.r001..r007 — Information architecture contract.
 // Renderer surfaces must consume SHIJING_IA_TABS instead of hardcoding
 // parallel tab lists.
 
@@ -17,7 +17,7 @@ export interface ShijingTabDescriptor {
   readonly english_anchor: string;
 }
 
-// SJG-IA-01 - widening-horizon order: day -> month -> decade ->
+// rule.shijing.ia.r001 — widening-horizon order: day -> month -> decade ->
 // whole-life natal -> relationship -> consultation.
 export const SHIJING_IA_TABS: readonly ShijingTabDescriptor[] = [
   { id: 'rijing', order: 1, chinese_label: '日镜', english_anchor: 'Daily Mirror' },
@@ -78,11 +78,11 @@ export const SHIJING_SECONDARY_SETTINGS_SURFACES: readonly ShijingSettingsSurfac
   'diagnostics',
 ] as const;
 
-// SJG-IA-04 - the seven settings surfaces are grouped into ordered sub-pages
+// rule.shijing.ia.r004 — the seven settings surfaces are grouped into ordered sub-pages
 // inside the secondary Settings surface. This is a presentation grouping only:
 // every surface in `SHIJING_SECONDARY_SETTINGS_SURFACES` appears in exactly one
 // page (the union is total and disjoint). Renderer code must consume this
-// constant rather than hardcoding a parallel page list (SJG-IA-07).
+// constant rather than hardcoding a parallel page list (rule.shijing.ia.r007).
 export type ShijingSettingsPageId = 'profile' | 'concerns' | 'memory' | 'settings';
 
 export interface ShijingSettingsPageDescriptor {

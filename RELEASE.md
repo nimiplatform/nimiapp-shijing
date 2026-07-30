@@ -24,10 +24,10 @@ The default for manual dispatch is `publish=false`.
 Semantic Versioning ([semver.org](https://semver.org/)).
 
 - **MAJOR** — Incompatible schema/migration, breaking a persisted
-  `ShiJingSpace` snapshot on disk, or removing a publicly admitted SJG-*
-  contract.
-- **MINOR** — New feature, new admitted contract (new SJG-* ID, new
-  ReadingKind/Scope, new tab), new spec table entries.
+  `ShiJingSpace` snapshot on disk, or removing or weakening an active
+  canonical authority unit.
+- **MINOR** — New feature, new admitted canonical unit, new
+  `MirrorKind`/`MirrorScope`, or new tab.
 - **PATCH** — Bug fix, dependency bump, internal refactor with no contract
   change.
 
@@ -59,6 +59,9 @@ The version string lives in three places that **must stay in lockstep**:
 
    ```bash
    pnpm install
+   pnpm spec:authority:check
+   pnpm spec:authority:compile
+   pnpm exec nimicoding sync --check
    pnpm nimicoding:doctor
    pnpm typecheck
    pnpm test
@@ -80,7 +83,7 @@ The version string lives in three places that **must stay in lockstep**:
 5. **Monitor the release workflow** — once all three platform builds succeed,
    the GitHub Release is published automatically.
 
-## Governance projection sync
+## Authority tooling sync
 
 If `@nimiplatform/nimi-coding` ships a new minor/major version, bump it in
 `package.json` and rerun:
@@ -91,7 +94,7 @@ pnpm exec nimicoding sync --apply
 pnpm nimicoding:doctor
 ```
 
-Commit the updated `.nimi/{config,contracts,methodology}/**` files alongside
+Commit the updated `.nimi/methodology/authority-authoring.yaml` alongside
 the `package.json` bump in the same release.
 
 ## Hotfix

@@ -67,7 +67,6 @@ ai_governance:
         - .nimi/spec/**/*.yaml
         - .nimi/spec/**/*.yml
       generated:
-        - .nimi/spec/**/kernel/generated/**
         - "**/generated/**"
         - "**/gen/**"
         - "**/core_generated/**"

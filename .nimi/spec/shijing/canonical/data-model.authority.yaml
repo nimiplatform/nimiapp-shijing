@@ -1,0 +1,326 @@
+format: nimicoding.authority/v2
+owner: team.shijing
+scope: shijing.data-model
+units:
+  - id: definition.shijing.data-model.subject-ref
+    kind: definition
+    title: Subject reference
+    meaning: SubjectRef is either the literal self, resolving to ShiJingSpace.self_subject, or an object with kind person and a string id resolving to one entry in ShiJingSpace.persons; no other subject-reference vocabulary is admitted.
+  - id: definition.shijing.data-model.shijing-space
+    kind: definition
+    title: ShiJingSpace root
+    meaning: ShiJingSpace is the single app-local user-data root with user_id, exactly one self_subject, and persons, concern_tags, event_memories, plan_items, readings, and conversations collections plus settings; every collection is unique by id, no more than five concern tags are active, and no catalog snapshot, View, Relation, report, trend-chart, luck-score, CRM, or project-management data is present.
+  - id: definition.shijing.data-model.natal-inputs
+    kind: definition
+    title: Natal inputs
+    meaning: NatalInputs is the complete calculation-input record with raw_birth_input, birth_datetime_utc, birth_precision from exact, rough_day, rough_month, rough_year, or unknown, calendar_system from gregorian or lunar_chinese, birth_location, calculation_sex from male, female, or unspecified, optional cultural_marker from natal_yang, natal_yin, or unspecified, and optional notes.
+  - id: definition.shijing.data-model.raw-birth-input
+    kind: definition
+    title: Raw birth input
+    meaning: RawBirthInput preserves calendar_system, local_date_text, optional local_time_text, optional lunar_year, lunar_month, lunar_day, and lunar_is_leap_month, and optional place_text.
+  - id: definition.shijing.data-model.birth-location
+    kind: definition
+    title: Birth location
+    meaning: BirthLocation contains numeric latitude and longitude, an IANA time-zone string, and an optional place name.
+  - id: definition.shijing.data-model.self-subject
+    kind: definition
+    title: Self subject
+    meaning: SelfSubject contains NatalInputs and optional notes and is present exactly once in its owning ShiJingSpace.
+  - id: definition.shijing.data-model.person
+    kind: definition
+    title: Person record
+    meaning: Person contains id, display_name, literal kind person, NatalInputs, consent_state from owner_recorded, subject_consented, or withheld, optional relation, and optional notes; relation is a presentation-only free-text label of at most 40 characters and is the sole admitted relationship-like Person field.
+  - id: definition.shijing.data-model.concern-tag
+    kind: definition
+    title: Concern tag record
+    meaning: ConcernTag contains id, label, active or archived status, sort_order, parsed_topics, mention_refs, prompt_text, created_at, and updated_at; labels are user-facing, parsed topics come from hash-prefixed tokens, prompt_text is frozen Runtime-AI wording context only, and archived tags are excluded from default mirror generation.
+  - id: definition.shijing.data-model.mention-ref
+    kind: definition
+    title: Mention reference
+    meaning: MentionRef contains a token, an optional resolved SubjectRef, and optional unresolved text; an at-prefixed person token resolves only to an existing or explicitly created Person, while unresolved mentions remain text.
+  - id: definition.shijing.data-model.event-memory
+    kind: definition
+    title: Event memory record
+    meaning: EventMemory records a past fact with id, ISO-8601 UTC occurred_at, body, person_refs, concern_tag_refs, source from manual, rijing, yuejing, nianjing, or shijing, admissible_use from record_only or eligible_for_retrieval, and ISO-8601 UTC created_at and updated_at; references resolve within the owning space and any Reading use is cited by id.
+  - id: definition.shijing.data-model.plan-item
+    kind: definition
+    title: Plan item record
+    meaning: PlanItem records a future intention or goal for mirror analysis with id, planned_for, body, person_refs, concern_tag_refs, source from manual, yuejing, or shijing, created_at, and updated_at, and any Reading use is cited by id.
+  - id: definition.shijing.data-model.reading
+    kind: definition
+    title: Reading record
+    meaning: Reading is the sole persisted astrology output record with id, created_at, mirror_kind, mirror_scope, primary_subject_ref self, related_person_refs, concern_tag_refs, cited_reading_ids, cited_event_memory_refs, cited_plan_item_refs, frozen inputs_summary, structured output, and uncertainty; persisted fields anchor_subject, subjects, time_window, scope, kind, view_id, and ad_hoc_context are not admitted.
+  - id: definition.shijing.data-model.reading-generation-failure
+    kind: definition
+    title: Reading generation failure
+    meaning: ReadingGenerationFailure is a transient non-Reading result with kind runtime_ai_failed, pipeline_stage_failed, validation_failed, stale_inputs, or hash_mismatch, plus mirror_kind, mirror_scope, optional stage, and optional detail.
+  - id: definition.shijing.data-model.mirror-scope
+    kind: definition
+    title: Mirror scope
+    meaning: MirrorScope is daily with date and basis_time_zone, rolling_30_day with start_date, end_date, and basis_time_zone, long_horizon with start_date, end_date, and basis_time_zone, natal with anchor_year and basis_time_zone, relationship_natal with one person related_person_ref, anchor_year, and basis_time_zone, or consultation with source_reading_ids, basis_time_zone, and optional start_date and end_date question_window.
+  - id: definition.shijing.data-model.inputs-summary
+    kind: definition
+    title: Inputs summary
+    meaning: InputsSummary is a frozen Reading-creation snapshot with captured_at, fixed canonical astrology and algorithm contract versions, method_profile, mirror_context_snapshot, input_hash, feature_snapshot_hash, and feature_snapshot; source changes never mutate it and ViewSnapshot is not admitted.
+  - id: definition.shijing.data-model.mirror-context-snapshot
+    kind: definition
+    title: Mirror context snapshot
+    meaning: MirrorContextSnapshot contains mirror_kind, mirror_scope, active_concern_tags, resolved_person_refs, cited_event_memory_refs, cited_plan_item_refs, and response_preferences_hash.
+  - id: definition.shijing.data-model.concern-tag-snapshot
+    kind: definition
+    title: Concern tag snapshot
+    meaning: ConcernTagSnapshot contains exactly id, label, active or archived status, sort_order, parsed_topics, mention_refs, prompt_text_hash, resolved_person_refs, and captured_at; archived status is historical evidence and does not make archived tags eligible for new default generation.
+  - id: definition.shijing.data-model.conversation
+    kind: definition
+    title: Conversation record
+    meaning: Conversation contains id, created_at, source_reading_ids, concern_tag_refs, and turns; its concern-tag refs are filter and archive hints rather than ownership or grounding, and at least one source Reading resolves before an AI turn is appended.
+  - id: definition.shijing.data-model.conversation-turn
+    kind: definition
+    title: Conversation turn
+    meaning: ConversationTurn contains id, user or ai role, body, cited_reading_ids, cited_event_memory_refs, cited_plan_item_refs, and created_at; AI turns clarify cited Readings, remain distinct from astrology output entities, and disclose every influencing cited reference.
+  - id: definition.shijing.data-model.settings
+    kind: definition
+    title: Settings record
+    meaning: Settings contains ui_language zh or en, response_preferences, and optional method_profile_id; UI language affects renderer copy only, method profile selects admitted deterministic calculation for new generation with bazi_ziping_v1 as the absence default, and no global instructions, project memory, catalog, workflow, task, report, trend-chart, or luck-score fields are admitted.
+  - id: definition.shijing.data-model.response-preferences
+    kind: definition
+    title: Response preferences
+    meaning: ResponsePreferences contains tone neutral, warm, or concise, length short, standard, or long, language, and optional extra_instructions.
+  - id: definition.shijing.data-model.concern-tag-built-in-love
+    kind: definition
+    title: Built-in love concern
+    meaning: "The built-in love concern-tag row has id built_in_love, label #姻缘, topic love, and default status active."
+  - id: definition.shijing.data-model.concern-tag-built-in-career
+    kind: definition
+    title: Built-in career concern
+    meaning: "The built-in career concern-tag row has id built_in_career, label #事业, topic career, and default status active."
+  - id: definition.shijing.data-model.concern-tag-built-in-health
+    kind: definition
+    title: Built-in health concern
+    meaning: "The built-in health concern-tag row has id built_in_health, label #健康, topic health, and default status active."
+  - id: definition.shijing.data-model.concern-tag-built-in-wealth
+    kind: definition
+    title: Built-in wealth concern
+    meaning: "The built-in wealth concern-tag row has id built_in_wealth, label #财富, topic wealth, and default status active."
+  - id: definition.shijing.data-model.concern-tag-rules
+    kind: definition
+    title: Concern tag catalog rules
+    meaning: The concern-tag catalog fixes active_limit at five and requires active tags not to exceed that limit, archived tags to stay out of default generation, person and event counts not to consume quota, unresolved mentions to remain text, and prompt_text to serve Runtime-AI wording context only.
+  - id: definition.shijing.data-model.custom-tag-contract
+    kind: definition
+    title: Custom tag contract
+    meaning: "A custom tag has label length at most 80, parses topic tokens with # and person tokens with @, and requires id, label, status, sort_order, parsed_topics, mention_refs, prompt_text, created_at, and updated_at."
+  - id: definition.shijing.data-model.memory-policy-principles
+    kind: definition
+    title: Memory policy principles
+    meaning: Memory and plans are not concern tags, every use is cited, unavailable memory retrieval is never faked, and uncited memory influence is forbidden.
+  - id: definition.shijing.data-model.memory-policy-event-memory
+    kind: definition
+    title: Event memory eligibility
+    meaning: EventMemory is eligible only when marked eligible_for_retrieval, date-relevant to scope, concern-matching, and person-matching when applicable; it is forbidden when record_only, unrelated to scope, or used to replace deterministic astrology features.
+  - id: definition.shijing.data-model.memory-policy-plan-item
+    kind: definition
+    title: Plan item eligibility
+    meaning: PlanItem is eligible only when its planned date is inside or adjacent to scope and its concern and applicable person references match; it is forbidden as task status or when it creates project-management semantics.
+  - id: definition.shijing.data-model.memory-policy-rijing
+    kind: definition
+    title: RiJing memory policy
+    meaning: RiJing admits EventMemory and PlanItem only as optional cited context.
+  - id: definition.shijing.data-model.memory-policy-yuejing
+    kind: definition
+    title: YueJing memory policy
+    meaning: YueJing admits EventMemory as optional cited context for past-date details and PlanItem as optional cited context for future-date details.
+  - id: definition.shijing.data-model.memory-policy-nianjing
+    kind: definition
+    title: NianJing memory policy
+    meaning: NianJing admits EventMemory as optional cited context for phase explanation and excludes PlanItem from default context.
+  - id: definition.shijing.data-model.memory-policy-shijing
+    kind: definition
+    title: ShiJing memory policy
+    meaning: ShiJing admits EventMemory and PlanItem only when retrieved and cited.
+  - id: definition.shijing.data-model.memory-policy-disclosure
+    kind: definition
+    title: Memory use disclosure
+    meaning: Any memory or plan use discloses cited_event_memory_refs, cited_plan_item_refs, and a concise human summary.
+  - id: rule.shijing.data-model.r001
+    kind: rule
+    title: Subject reference vocabulary
+    modality: must
+    statement: A SubjectRef is exactly self, resolving to ShiJingSpace.self_subject, or an object with kind person and a string id resolving to an entry in ShiJingSpace.persons; no other subject-reference vocabulary is accepted.
+    condition: Whenever a subject is referenced.
+    failure: Reject a subject reference that does not resolve through the admitted form.
+    relations:
+      - type: applies_to
+        target: definition.shijing.data-model.subject-ref
+  - id: rule.shijing.data-model.r002
+    kind: rule
+    title: Single data root
+    modality: must
+    statement: ShiJingSpace is the only ShiJing root user-data entity and contains user_id, exactly one self_subject, persons, concern_tags, event_memories, plan_items, readings, conversations, and settings; each collection is unique by id; at most five ConcernTags are active; and the root contains no catalog snapshot, View data, Relation data, report data, trend-chart data, luck-score data, CRM data, or project-management data.
+    condition: Whenever ShiJing user data is validated or persisted.
+    failure: Reject the entire root payload before persistence.
+    relations:
+      - type: applies_to
+        target: definition.shijing.data-model.shijing-space
+  - id: rule.shijing.data-model.r003
+    kind: rule
+    title: Natal subject records
+    modality: must
+    statement: NatalInputs uses the complete admitted RawBirthInput, canonical UTC birth datetime, precision, calendar system, BirthLocation, calculation sex, optional cultural marker, and notes shape; SelfSubject contains NatalInputs and optional notes; Person contains id, display name, person kind, NatalInputs, consent state, optional relation, and notes and remains an other-person astrology object that owns no conversations, event memories, plan items, readings, settings, relations, notifications, or lifecycle; relation is an optional presentation-only free-text label of at most 40 characters that is never parsed into a relationship graph, never drives calculation, hashing, or retrieval, and never becomes a relational or CRM entity; relation_hint, subject_context, client, customer, and near-equivalent CRM fields remain forbidden; non-exact precision lowers confidence or fails closed under the uncertainty authority; and DaYun-dependent readings fail closed when calculation_sex is unspecified.
+    condition: Whenever self or other-person natal data is accepted or used.
+    failure: Reject the invalid subject record or fail the dependent generation with the applicable typed blocker.
+    relations:
+      - type: applies_to
+        target: definition.shijing.data-model.birth-location
+      - type: applies_to
+        target: definition.shijing.data-model.natal-inputs
+      - type: applies_to
+        target: definition.shijing.data-model.person
+      - type: applies_to
+        target: definition.shijing.data-model.raw-birth-input
+      - type: applies_to
+        target: definition.shijing.data-model.self-subject
+  - id: rule.shijing.data-model.r004
+    kind: rule
+    title: Concern tags and mentions
+    modality: must
+    statement: ConcernTag contains id, user-facing label, active or archived status, sort_order, hash-token-derived parsed_topics, mention_refs, Runtime-AI-only prompt_text, created_at, and updated_at; at-person tokens resolve to SubjectRef only through an existing or explicitly created Person, unresolved mentions remain text without a fake Person reference, prompt_text affects no deterministic calculation, tendency class, phase band, or canonical hash except the frozen wording-context snapshot, archived tags stay out of default mirror generation, and the built-in love, career, health, and wealth rows, five-active limit, catalog rules, and custom-tag shape remain fixed.
+    condition: Whenever concern tags are created, parsed, resolved, archived, or used for generation.
+    failure: Reject invalid tags or mentions and exclude archived or unresolved-person data from deterministic person evidence.
+    relations:
+      - type: applies_to
+        target: definition.shijing.data-model.concern-tag
+      - type: applies_to
+        target: definition.shijing.data-model.concern-tag-built-in-career
+      - type: applies_to
+        target: definition.shijing.data-model.concern-tag-built-in-health
+      - type: applies_to
+        target: definition.shijing.data-model.concern-tag-built-in-love
+      - type: applies_to
+        target: definition.shijing.data-model.concern-tag-built-in-wealth
+      - type: applies_to
+        target: definition.shijing.data-model.concern-tag-rules
+      - type: applies_to
+        target: definition.shijing.data-model.custom-tag-contract
+      - type: applies_to
+        target: definition.shijing.data-model.mention-ref
+  - id: rule.shijing.data-model.r005
+    kind: rule
+    title: Event memory record
+    modality: must
+    statement: EventMemory records a past fact with the admitted fields; occurred_at, created_at, and updated_at are ISO-8601 UTC instants; person_refs and concern_tag_refs resolve within the owning ShiJingSpace; view_refs, recap, task status, due date, priority, dependency, progress, and workflow fields are absent; and every Reading use cites the memory id and obeys eligibility, per-mirror use, no-faked-retrieval, and disclosure policy.
+    condition: Whenever an EventMemory is stored, retrieved, or used by a Reading.
+    failure: Reject an invalid memory record or omit ineligible memory and disclose retrieval unavailability without fake evidence.
+    relations:
+      - type: applies_to
+        target: definition.shijing.data-model.event-memory
+      - type: applies_to
+        target: definition.shijing.data-model.memory-policy-disclosure
+      - type: applies_to
+        target: definition.shijing.data-model.memory-policy-event-memory
+      - type: applies_to
+        target: definition.shijing.data-model.memory-policy-nianjing
+      - type: applies_to
+        target: definition.shijing.data-model.memory-policy-principles
+      - type: applies_to
+        target: definition.shijing.data-model.memory-policy-rijing
+      - type: applies_to
+        target: definition.shijing.data-model.memory-policy-shijing
+      - type: applies_to
+        target: definition.shijing.data-model.memory-policy-yuejing
+  - id: rule.shijing.data-model.r006
+    kind: rule
+    title: Plan item record
+    modality: must
+    statement: PlanItem records a future intention or goal with the admitted fields, is not a task, has no status, due or overdue, priority, dependency, progress, assignee, board, milestone, Gantt, or workflow fields, and every Reading use cites the plan id and obeys eligibility, per-mirror use, and disclosure policy.
+    condition: Whenever a PlanItem is stored, retrieved, or used by a Reading.
+    failure: Reject an invalid or task-shaped plan record and omit any ineligible plan from generation.
+    relations:
+      - type: applies_to
+        target: definition.shijing.data-model.memory-policy-disclosure
+      - type: applies_to
+        target: definition.shijing.data-model.memory-policy-nianjing
+      - type: applies_to
+        target: definition.shijing.data-model.memory-policy-plan-item
+      - type: applies_to
+        target: definition.shijing.data-model.memory-policy-principles
+      - type: applies_to
+        target: definition.shijing.data-model.memory-policy-rijing
+      - type: applies_to
+        target: definition.shijing.data-model.memory-policy-shijing
+      - type: applies_to
+        target: definition.shijing.data-model.memory-policy-yuejing
+      - type: applies_to
+        target: definition.shijing.data-model.plan-item
+  - id: rule.shijing.data-model.r007
+    kind: rule
+    title: Reading record invariants
+    modality: must
+    statement: Reading is the only persisted astrology output and contains exactly its admitted identity, time, mirror, subject, concern, citation, frozen-input, structured-output, and uncertainty fields; RiJing, YueJing, and NianJing primary_subject_ref is self and related persons enter only through concern tags, plan items, or memory references; anchor_subject, subjects, time_window, scope, kind, view_id, and ad_hoc_context are absent; mirror kind and scope and output satisfy their canonical definitions; relationship_natal uses mirror_kind mingjing, primary self, exactly one Person in related_person_refs equal to mirror_scope.related_person_ref, and empty concern_tag_refs and cited_reading_ids; cited_reading_ids is otherwise empty except for consultation, where it mirrors source_reading_ids and the output citation set; cited memory and plan refs resolve in the owning space; and failed generation remains a transient typed ReadingGenerationFailure rather than a persisted Reading.
+    condition: Whenever a Reading is validated or persisted.
+    failure: Reject the complete Reading and return a transient typed generation failure.
+    relations:
+      - type: applies_to
+        target: definition.shijing.data-model.mirror-scope
+      - type: applies_to
+        target: definition.shijing.data-model.reading
+      - type: applies_to
+        target: definition.shijing.data-model.reading-generation-failure
+  - id: rule.shijing.data-model.r008
+    kind: rule
+    title: Mirror scope invariants
+    modality: must
+    statement: MirrorScope uses only daily, rolling_30_day, long_horizon, natal, relationship_natal, or consultation with their admitted fields; dates are local civil dates in basis_time_zone; rolling_30_day covers exactly 30 local dates inclusive of start_date; long_horizon uses only admitted NianJing windows; consultation source_reading_ids is non-empty for Runtime-AI turns; and an optional consultation question_window is a transient question constraint rather than a saved reusable time container.
+    condition: Whenever a mirror scope is created or used.
+    failure: Reject the scope before feature calculation or persistence.
+    relations:
+      - type: applies_to
+        target: definition.shijing.data-model.mirror-scope
+  - id: rule.shijing.data-model.r009
+    kind: rule
+    title: Frozen inputs summary
+    modality: must
+    statement: InputsSummary is frozen at Reading creation with captured_at, canonical contract versions, method profile, MirrorContextSnapshot, input hash, feature-snapshot hash, and feature snapshot, and source changes never mutate it; ConcernTagSnapshot contains exactly id, label, status, sort_order, parsed_topics, mention_refs, prompt_text_hash, resolved_person_refs, and captured_at, preserves archived status only as historical evidence, and does not admit archived tags to new default generation; prompt_text_hash and response_preferences_hash use canonical hashing; and ViewSnapshot never appears in new inputs summaries.
+    condition: Whenever Reading provenance is captured, persisted, or reused.
+    failure: Reject a mutable, stale, incomplete, or View-derived inputs summary.
+    relations:
+      - type: applies_to
+        target: definition.shijing.data-model.concern-tag-snapshot
+      - type: applies_to
+        target: definition.shijing.data-model.inputs-summary
+      - type: applies_to
+        target: definition.shijing.data-model.mirror-context-snapshot
+  - id: rule.shijing.data-model.r010
+    kind: rule
+    title: Grounded conversations
+    modality: must
+    statement: Conversation contains id, created_at, source_reading_ids, concern_tag_refs, and turns and is never Person-owned; before an AI turn is appended, at least one source Reading resolves; concern_tag_refs records the creation-time active lens only as a filter and archive hint, owns neither the conversation nor a Project or View container, and never replaces cited Readings as Runtime-AI grounding; AI turns clarify cited Readings rather than becoming alternate astrology output and disclose every cited Reading, EventMemory, and PlanItem that influences the answer.
+    condition: Whenever a conversation is created or an AI turn is appended.
+    failure: Reject an ungrounded AI turn and persist no alternate astrology output.
+    relations:
+      - type: applies_to
+        target: definition.shijing.data-model.conversation
+      - type: applies_to
+        target: definition.shijing.data-model.conversation-turn
+  - id: rule.shijing.data-model.r011
+    kind: rule
+    title: Settings invariants
+    modality: must
+    statement: Settings contains ui_language, response_preferences, and optional method_profile_id only; ui_language controls renderer copy and enters neither deterministic calculation, Runtime-AI prompt construction, canonical hashing, nor Reading provenance; method_profile_id selects an admitted profile for new generation, defaults to bazi_ziping_v1 when absent, is included in input hashing and frozen provenance, and fails validation when unadmitted; Settings has no global_instructions, project_memory, catalog snapshot, workflow, task, report, trend-chart, or luck-score fields; and Self, People, Concern Tags, Memory and Plans, Response Preferences, Privacy or Local Data, and Diagnostics remain secondary UI surfaces rather than additional root entities.
+    condition: Whenever Settings is validated, persisted, or used for generation.
+    failure: Reject unadmitted settings before generation or persistence.
+    relations:
+      - type: applies_to
+        target: definition.shijing.data-model.response-preferences
+      - type: applies_to
+        target: definition.shijing.data-model.settings
+  - id: rule.shijing.data-model.r012
+    kind: rule
+    title: Removed active entities
+    modality: must_not
+    statement: The active data model defines Relation, Event, View, ViewTemplate, ShiJingCatalog, CurrentObservationTarget, report, trend-chart, luck-score, CRM, or project-management entities or fields.
+    condition: Always.
+    failure: Reject the data-model change and keep the removed concept absent from persisted truth.
+    relations:
+      - type: applies_to
+        target: definition.shijing.data-model.shijing-space

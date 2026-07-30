@@ -23,7 +23,7 @@
   background: var(--shijing-surface-canvas);
 }
 
-/* ----- Integrated top bar (brand + four-mirror nav + account) ----- */
+/* ----- Integrated top bar (brand + six-tab mirror nav + account) ----- */
 
 .shijing-topbar {
   grid-area: head;

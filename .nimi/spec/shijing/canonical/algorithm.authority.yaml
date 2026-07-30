@@ -1,0 +1,576 @@
+format: nimicoding.authority/v2
+owner: team.shijing
+scope: shijing.algorithm
+units:
+  - id: definition.shijing.algorithm.method-profile
+    kind: definition
+    title: Method profile
+    meaning: MethodProfile is an immutable closed-registry deterministic 命理 system descriptor with id, canonical algorithm contract version, canonical feature schema version, ephemeris_version, and optional interpretive_profile.
+  - id: definition.shijing.algorithm.method-profile-bazi-ziping-v1
+    kind: definition
+    title: BaZi method profile
+    meaning: bazi_ziping_v1 provides BaZi pillars, ganzhi cycles, jieqi boundaries, DaYun, stage labels, tendency classes, and NianJing phase and inflection derivation with tyme4ts-1.5.0 provenance, fuyi_tiaohou_v1 interpretation, and graceful rough-precision degradation.
+  - id: definition.shijing.algorithm.method-profile-ziwei-sanhe-v1
+    kind: definition
+    title: Ziwei method profile
+    meaning: ziwei_sanhe_v1 provides twelve palaces, major and minor stars with brightness, birth-year 四化, decadal 大限, and annual, monthly, and daily flying 四化 with iztro-2.5.x provenance, requires birth time, uses daxian as its horizon unit, and fixes 三合派 as swappable engine configuration.
+  - id: definition.shijing.algorithm.method-profile-qizheng-siyu-guolao-v1
+    kind: definition
+    title: QiZheng method profile
+    meaning: qizheng_siyu_guolao_v1 uses geocentric ecliptic longitudes for Sun, Moon, Mercury, Venus, Mars, Jupiter, and Saturn; models 罗喉 as ascending node, 计都 as descending node, 月孛 as mean lunar apogee, and 紫气 as a provenance-bearing 28-year virtual point; uses the explicit 28-equal-mansion-v1 approximation; supports MingJing natal, RiJing, YueJing, NianJing, and deterministic Relationship HePan evidence; requires exact birth time and resolved location and timezone; and leaves consultation unsupported pending deterministic mapping.
+  - id: definition.shijing.algorithm.method-engine
+    kind: definition
+    title: Method engine
+    meaning: MethodEngine computes method-private deterministic evidence and projects it to the algorithm-agnostic common driver surface without changing common consumers, Runtime-AI boundaries, persistence, or non-evidence UI.
+  - id: definition.shijing.algorithm.generation-pipeline
+    kind: definition
+    title: Generation pipeline
+    meaning: The generation pipeline runs NatalInputs through canonicalization, selected MethodEngine evidence, common-driver derivation, AstrologyFeatureSnapshot, common-only MirrorProjection, Runtime-AI wording over allowed evidence, Reading validation, and persistence.
+  - id: definition.shijing.algorithm.canonical-mirror-windows
+    kind: definition
+    title: Canonical mirror windows
+    meaning: Daily is one local civil day, rolling_30_day is exactly 30 local dates, long_horizon is an admitted NianJing window, natal is a deterministic anchor-year provenance window whose actual chart span is the DaYun sequence, and consultation is the union or summary of cited scopes plus an optional transient question window; persisted hashes use UTC instants derived with basis_time_zone.
+  - id: definition.shijing.algorithm.natal-canonicalization
+    kind: definition
+    title: Natal canonicalization
+    meaning: Natal canonicalization preserves Gregorian evidence and canonicalizes it to UTC, preserves leap-month evidence for ambiguous Chinese lunar input, uses an admitted ephemeris table for lunar conversion, applies true-solar correction when exact pillars are required, and never mutates historical Reading summaries after source-subject changes.
+  - id: definition.shijing.algorithm.true-solar-time
+    kind: definition
+    title: True solar time
+    meaning: True solar time equals local standard time plus longitude correction in minutes plus equation-of-time minutes, where standard meridian longitude is birth UTC-offset hours times 15 and longitude correction is birth longitude minus standard meridian longitude times 4.
+  - id: definition.shijing.algorithm.pillar-calculation
+    kind: definition
+    title: Pillar calculation
+    meaning: The year pillar changes at Li Chun, the month pillar at the twelve jie solar terms, the day pillar uses a deterministic sexagenary index, and the hour pillar uses true-solar two-hour branches.
+  - id: definition.shijing.algorithm.dayun-requirement
+    kind: definition
+    title: DaYun requirement
+    meaning: DaYun is required for every NianJing Reading, a YueJing scope intersecting a DaYun boundary, a consultation citing a DaYun-required Reading, and any scope longer than 90 local days, and it requires specified calculation sex.
+  - id: definition.shijing.algorithm.feature-snapshot
+    kind: definition
+    title: Feature snapshot
+    meaning: AstrologyFeatureSnapshot contains method_profile, mirror_kind rijing, yuejing, nianjing, mingjing, or shijing, canonical_window, common, and method_evidence.
+  - id: definition.shijing.algorithm.snapshot-common-drivers
+    kind: definition
+    title: Common drivers section
+    meaning: CommonDrivers contains stage_drivers, key_windows, yuejing_tendency_drivers, nianjing_phase_drivers, nianjing_inflection_drivers, and uncertainty_inputs.
+  - id: definition.shijing.algorithm.snapshot-method-evidence
+    kind: definition
+    title: Method evidence section
+    meaning: MethodEvidence is tagged bazi_ziping_v1 with BaziEvidence, ziwei_sanhe_v1 with ZiweiEvidence, or qizheng_siyu_guolao_v1 with QizhengSiyuEvidence.
+  - id: definition.shijing.algorithm.snapshot-canonical-mirror-window
+    kind: definition
+    title: Snapshot canonical window
+    meaning: CanonicalMirrorWindow contains start_utc, end_utc, basis_time_zone, and scope_kind daily, rolling_30_day, long_horizon, natal, or consultation.
+  - id: definition.shijing.algorithm.snapshot-bazi-evidence
+    kind: definition
+    title: BaZi evidence section
+    meaning: BaziEvidence contains self_subject as BaziSubjectChart and related_persons as a BaziSubjectChart list.
+  - id: definition.shijing.algorithm.snapshot-bazi-subject-chart
+    kind: definition
+    title: BaZi subject chart
+    meaning: BaziSubjectChart contains subject_ref, natal_chart, optional dayun, cycle_snapshot, and optional bazi_ziping_v1 interpretation.
+  - id: definition.shijing.algorithm.snapshot-bazi-interpretation
+    kind: definition
+    title: BaZi interpretation section
+    meaning: BaziInterpretation contains present-pillar BaziPillarFeatures, BaziStrength, YongShen, and natal_branch_relations covering 合冲刑害破 among natal branches.
+  - id: definition.shijing.algorithm.snapshot-bazi-pillar-features
+    kind: definition
+    title: BaZi pillar features
+    meaning: BaziPillarFeatures contains position year, month, day, or hour, stem ten_god relative to day master, hidden_stems in primary-to-residual order, nayin, and day-master terrain at the branch.
+  - id: definition.shijing.algorithm.snapshot-hidden-stem
+    kind: definition
+    title: Hidden stem
+    meaning: HiddenStem contains stem and weight_class primary, middle, or residual corresponding to 本气, 中气, or 余气.
+  - id: definition.shijing.algorithm.snapshot-bazi-strength
+    kind: definition
+    title: BaZi strength
+    meaning: BaziStrength contains band 极弱, 偏弱, 中和, 偏强, or 极强, support_ratio bounded from 0 through 1 as ordinal evidence rather than a luck score, and basis strings.
+  - id: definition.shijing.algorithm.snapshot-yong-shen
+    kind: definition
+    title: Useful elements
+    meaning: YongShen contains yong, xi, and ji Element lists, optional seasonal tiaohou Element, and basis strings.
+  - id: definition.shijing.algorithm.snapshot-bazi-branch-relation
+    kind: definition
+    title: BaZi branch relation
+    meaning: BaziBranchRelation contains kind 六合, 三合, 相冲, 相害, 相刑, or 相破 and positions selected from year, month, day, and hour.
+  - id: definition.shijing.algorithm.snapshot-element
+    kind: definition
+    title: Five elements
+    meaning: Element is exactly wood, fire, earth, metal, or water.
+  - id: definition.shijing.algorithm.snapshot-ziwei-evidence
+    kind: definition
+    title: Ziwei evidence section
+    meaning: ZiweiEvidence contains self_subject as ZiweiSubjectChart and related_persons as a ZiweiSubjectChart list.
+  - id: definition.shijing.algorithm.snapshot-ziwei-subject-chart
+    kind: definition
+    title: Ziwei subject chart
+    meaning: ZiweiSubjectChart contains subject_ref, five_elements_class, soul_star, body_star, soul_palace_branch, and twelve palaces in fixed branch order.
+  - id: definition.shijing.algorithm.snapshot-ziwei-palace
+    kind: definition
+    title: Ziwei palace
+    meaning: ZiweiPalace contains index, name, heavenly_stem, earthly_branch, is_soul, is_body, major_stars, minor_stars, decadal_start_age, and decadal_end_age.
+  - id: definition.shijing.algorithm.snapshot-ziwei-star
+    kind: definition
+    title: Ziwei star
+    meaning: ZiweiStar contains name, possibly empty brightness from 庙旺得利平不陷, and mutagen empty, 禄, 权, 科, or 忌 for birth-year 四化.
+  - id: definition.shijing.algorithm.snapshot-qizheng-siyu-evidence
+    kind: definition
+    title: QiZheng evidence section
+    meaning: QizhengSiyuEvidence contains self_subject as QizhengSiyuSubjectChart and related_persons as a QizhengSiyuSubjectChart list.
+  - id: definition.shijing.algorithm.snapshot-qizheng-siyu-subject-chart
+    kind: definition
+    title: QiZheng subject chart
+    meaning: QizhengSiyuSubjectChart contains subject_ref, canonicalization_hash, chart_basis, method-private 七政 plus 四余 bodies, and twelve v1 equal houses from ascendant.
+  - id: definition.shijing.algorithm.snapshot-qizheng-siyu-chart-basis
+    kind: definition
+    title: QiZheng chart basis
+    meaning: QizhengSiyuChartBasis contains birth_utc, ascendant_longitude, day_night day or night, zodiac_model, raw house_model, mansion_model with 28-equal-mansion-v1 as an admitted approximation, raw siyu_model identifying node semantics, and ephemeris_version.
+  - id: definition.shijing.algorithm.snapshot-qizheng-siyu-body
+    kind: definition
+    title: QiZheng body
+    meaning: QizhengSiyuBody contains key, label, kind qizheng or siyu, longitude, optional latitude, zodiac_sign, mansion, house_name, position_class, and provenance.
+  - id: definition.shijing.algorithm.snapshot-qizheng-siyu-house
+    kind: definition
+    title: QiZheng house
+    meaning: QizhengSiyuHouse contains index, name, start_longitude, end_longitude, and body_keys.
+  - id: definition.shijing.algorithm.snapshot-natal-chart
+    kind: definition
+    title: Natal chart snapshot
+    meaning: NatalChartSnapshot contains subject_ref, canonicalization_hash, optional year, month, day, and hour GanzhiPillars, optional day_master, and missing_pillars selected from year, month, day, and hour.
+  - id: definition.shijing.algorithm.snapshot-ganzhi-pillar
+    kind: definition
+    title: Ganzhi pillar
+    meaning: GanzhiPillar contains stem and branch.
+  - id: definition.shijing.algorithm.snapshot-dayun
+    kind: definition
+    title: DaYun snapshot
+    meaning: DayunSnapshot contains required and optional direction forward or reverse, start_age_years, current_period_start_utc, current_period_end_utc, and current_pillar.
+  - id: definition.shijing.algorithm.snapshot-cycle
+    kind: definition
+    title: Cycle snapshot
+    meaning: CycleSnapshot contains window_start_utc, window_end_utc, optional annual_pillar, monthly_pillars, daily_pillars, and markers.
+  - id: definition.shijing.algorithm.snapshot-timed-pillar
+    kind: definition
+    title: Timed pillar
+    meaning: TimedPillar contains start_utc, end_utc, and pillar.
+  - id: definition.shijing.algorithm.snapshot-cycle-marker
+    kind: definition
+    title: Cycle marker
+    meaning: CycleMarker contains kind, strength low, medium, or high, start_utc, end_utc, subject_refs, and source natal, dayun, annual, monthly, or daily.
+  - id: definition.shijing.algorithm.snapshot-stage-driver
+    kind: definition
+    title: Stage driver
+    meaning: StageDriver contains stage_label 进时, 收时, 养时, 转时, or 守时, marker_refs, and explanation_key.
+  - id: definition.shijing.algorithm.snapshot-key-window
+    kind: definition
+    title: Key window feature
+    meaning: KeyWindowFeature contains start_utc, end_utc, label transition, support, closure, or maintenance, driver_refs, and subject_refs.
+  - id: definition.shijing.algorithm.snapshot-yuejing-tendency-driver
+    kind: definition
+    title: YueJing tendency driver
+    meaning: YueJingTendencyDriver contains date, concern_tag_ref, tendency_class supportive, steady, watch, blocked, or turning, and driver_refs.
+  - id: definition.shijing.algorithm.snapshot-nianjing-phase-driver
+    kind: definition
+    title: NianJing phase driver
+    meaning: NianJingPhaseDriver contains concern_tag_ref, start_date, end_date, nature supportive, steady, watch, blocked, or turning, and driver_refs.
+  - id: definition.shijing.algorithm.snapshot-nianjing-inflection-driver
+    kind: definition
+    title: NianJing inflection driver
+    meaning: NianJingInflectionDriver contains concern_tag_ref, date, optional start_date and end_date date_window, kind dayun_boundary, annual_transition, monthly_transition, or marker_cluster, and driver_refs.
+  - id: definition.shijing.algorithm.snapshot-uncertainty-input
+    kind: definition
+    title: Uncertainty input
+    meaning: UncertaintyInput contains code, severity info, caveat, degrade, or fail_close, and optional subject_ref.
+  - id: definition.shijing.algorithm.stage-and-tendency-labels
+    kind: definition
+    title: Stage and tendency labels
+    meaning: Stage labels are 进时, 收时, 养时, 转时, and 守时; YueJing tendency classes are supportive, steady, watch, blocked, and turning as bounded ordinal UI groups rather than scores, ranks, percentiles, or curve points.
+  - id: definition.shijing.algorithm.uncertainty-decision-table
+    kind: definition
+    title: Uncertainty decisions
+    meaning: The BaZi baseline maps exact complete inputs to maximum high; rough_day to maximum medium without hour pillar; rough_month to maximum low and failure for DaYun-required mirrors; rough_year to failure for RiJing, YueJing, NianJing, and Runtime consultation; unknown to data-entry repair only; missing location, timezone, or ephemeris for required exact pillars to failure; required DaYun with unspecified calculation sex to failure; withheld related-Person consent to maximum medium plus caveat; unresolved active-tag mention to omitted person chart plus caveat; incomplete related-Person natal data to omission or failure for relation-specific output; no active tags to mirror-generation failure; unavailable optional memory to disclosed continuation; and Runtime-AI parse or validation error to failure; later stages only lower confidence and engines may tighten but never loosen failure.
+  - id: definition.shijing.algorithm.nianjing-phase-inflection
+    kind: definition
+    title: NianJing derivation
+    meaning: NianJing deterministically derives authoritative phase bands and inflection points from cycle, DaYun, annual, and monthly markers, with bounded date windows and no authoritative curves, K-line bars, numeric series, luck scores, or rankable numbers.
+  - id: definition.shijing.algorithm.canonical-hashing
+    kind: definition
+    title: Canonical hashing
+    meaning: Canonical hashes use sha256, json-c14n-v1, NFC Unicode normalization, utf-8 encoding, and lowercase hexadecimal digest; input_hash covers selected method id, scope, canonical natal inputs, active concern snapshots, resolved people, eligible plans, cited memories, response-preference hash, and deterministic window, while feature_snapshot_hash covers the full method_profile, common, and method_evidence envelope.
+  - id: definition.shijing.algorithm.runtime-ai-wording
+    kind: definition
+    title: Runtime AI wording
+    meaning: Runtime AI consumes common drivers, read-only display-only method-namespaced evidence projection, frozen mirror context, allowed concern prompt text, policy-admitted cited memory and plan summaries, response preferences, and output schema, and returns structured JSON.
+  - id: definition.shijing.algorithm.implementation-coherence
+    kind: definition
+    title: Implementation coherence
+    meaning: Canonical algorithm authority and downstream contracts, validators, state, persistence, Runtime prompts and parsers, engine adapters, renderer surfaces, and tests remain synchronized at every implementation checkpoint.
+  - id: definition.shijing.algorithm.bazi-interpretation
+    kind: definition
+    title: BaZi interpretive layer
+    meaning: fuyi_tiaohou_v1 is deterministic 扶抑-primary and 调候-secondary evidence containing pillar ten gods, weighted hidden stems, nayin, twelve-growth terrain, bounded day-master strength and support ratio, useful, favorable, and unfavorable elements, and natal branch relations; 空亡, pattern, and five-element distribution are display-only and tendency-neutral; 神煞 and 岁运并临 are non-authoritative; tendencies follow useful-element favorability with concern-domain ten-god focus.
+  - id: definition.shijing.algorithm.mingjing-chart
+    kind: definition
+    title: MingJing chart
+    meaning: MingJingChart is a live, non-Reading, non-feature-envelope deterministic BaZi self projection with subject_ref self, canonicalization_hash, natal_chart, interpretation, void, five_elements, pattern, dayun, liunian, and exact birth_precision, carrying no authoritative tendency classes, luck scores, or rankable numeric series.
+  - id: definition.shijing.algorithm.mingjing-bazi-void
+    kind: definition
+    title: BaZi void
+    meaning: BaziVoid contains the day-pillar 旬, its two void branches, and natal year, month, day, or hour positions whose branches are void.
+  - id: definition.shijing.algorithm.mingjing-bazi-pattern
+    kind: definition
+    title: BaZi pattern
+    meaning: BaziPattern contains name, ten_god empty for 禄刃, source 本气, 透干, or 禄刃, transparent, rooted, disposition 成格, 假成, or 破格, and basis.
+  - id: definition.shijing.algorithm.mingjing-five-element-distribution
+    kind: definition
+    title: Five-element distribution
+    meaning: FiveElementDistribution contains weighted and raw-count records by Element, dominant, weakest, and absent elements.
+  - id: definition.shijing.algorithm.mingjing-dayun-structure
+    kind: definition
+    title: DaYun structure
+    meaning: DayunStructure has required true, forward or reverse direction, start_age_years, and a full sequence of at least eight DayunPeriodFeatures.
+  - id: definition.shijing.algorithm.mingjing-dayun-period
+    kind: definition
+    title: DaYun period feature
+    meaning: DayunPeriodFeature contains pillar, start_age, end_age, start_year, end_year, stem_ten_god, terrain, tendency nature, favor 喜, 忌, or 平, natal_branch_relations, is_inflection, and is_current.
+  - id: definition.shijing.algorithm.mingjing-liunian-projection
+    kind: definition
+    title: LiuNian projection
+    meaning: LiuNianProjection contains start_year and end_year horizon plus salient LiuNian windows only rather than every year.
+  - id: definition.shijing.algorithm.mingjing-liunian-window
+    kind: definition
+    title: LiuNian window
+    meaning: LiuNianWindow contains start_year, end_year, year and pillar entries, tendency nature, favor 喜, 忌, or 平, salience high or medium, natal_branch_relations, optional dayun_pillar, and basis.
+  - id: definition.shijing.algorithm.relationship-hepan-evidence
+    kind: definition
+    title: Relationship HePan evidence
+    meaning: Relationship HePan evidence covers self and exactly one Person chart, available pairwise year, month, day, and hour branch interactions, method-specific relationship direction, anchor-year period-marker windows or an explicit namespaced fallback driver, and precision, location, consent, and related-person uncertainty inputs.
+  - id: definition.shijing.algorithm.feature-rijing-daily-reading
+    kind: definition
+    title: RiJing feature support
+    meaning: Feature rijing.daily_reading is the RiJing daily-reading product surface with mirror kind rijing, scope daily, and support from bazi_ziping_v1, ziwei_sanhe_v1, and qizheng_siyu_guolao_v1.
+  - id: definition.shijing.algorithm.feature-yuejing-rolling-30-day-reading
+    kind: definition
+    title: YueJing feature support
+    meaning: Feature yuejing.rolling_30_day_reading is the YueJing rolling-30-day product surface with mirror kind yuejing, scope rolling_30_day, and support from bazi_ziping_v1, ziwei_sanhe_v1, and qizheng_siyu_guolao_v1.
+  - id: definition.shijing.algorithm.feature-nianjing-long-horizon-reading
+    kind: definition
+    title: NianJing feature support
+    meaning: Feature nianjing.long_horizon_reading is the NianJing long-horizon product surface with mirror kind nianjing, scope long_horizon, and support from bazi_ziping_v1, ziwei_sanhe_v1, and qizheng_siyu_guolao_v1.
+  - id: definition.shijing.algorithm.feature-shijing-consultation
+    kind: definition
+    title: ShiJing feature support
+    meaning: Feature shijing.consultation is consultation grounded in cited Readings with mirror kind shijing, scope consultation, and support from bazi_ziping_v1 and ziwei_sanhe_v1.
+  - id: definition.shijing.algorithm.route-mingjing-bazi-ziping-v1
+    kind: definition
+    title: BaZi MingJing route
+    meaning: Route mingjing.route.bazi_ziping_v1 uses bazi_ziping_v1, is implemented, and supports natal_projection, natal_reading, and relationship_hepan.
+  - id: definition.shijing.algorithm.route-mingjing-ziwei-sanhe-v1
+    kind: definition
+    title: Ziwei MingJing route
+    meaning: Route mingjing.route.ziwei_sanhe_v1 uses ziwei_sanhe_v1, is implemented, and supports natal_projection, natal_reading, and relationship_hepan.
+  - id: definition.shijing.algorithm.route-mingjing-qizheng-siyu-guolao-v1
+    kind: definition
+    title: QiZheng MingJing route
+    meaning: Route mingjing.route.qizheng_siyu_guolao_v1 uses qizheng_siyu_guolao_v1, is implemented, and supports natal_projection, natal_reading, and relationship_hepan.
+  - id: rule.shijing.algorithm.r001
+    kind: rule
+    title: Closed method registry
+    modality: must
+    statement: "ShiJing uses a closed, immutable MethodProfile registry with bazi_ziping_v1, ziwei_sanhe_v1, and qizheng_siyu_guolao_v1 only: BaZi provides pillars, cycles, jieqi, DaYun, stage labels, tendency classes, NianJing derivation, tyme4ts-1.5.0 provenance, fuyi_tiaohou_v1 interpretation, and rough-precision degradation; Ziwei provides twelve palaces, stars and brightness, birth-year and flying 四化, decadal 大限, iztro-2.5.x provenance, required birth time, daxian horizon, and 三合派 engine configuration; QiZheng uses astronomical 七政 longitudes, the provenance-bearing 罗喉 ascending-node, 计都 descending-node, 月孛 mean-apogee, and 紫气 28-year virtual model, the 28-equal-mansion-v1 approximation, exact birth time and resolved location and timezone, and supports MingJing natal, RiJing, YueJing, NianJing, and relationship evidence while consultation remains unsupported; every MethodEngine computes private deterministic evidence and common drivers without changing common surfaces, wording boundaries, persistence, or non-evidence UI; and selected profile id participates in input hashing so profiles remain independently reproducible."
+    condition: Whenever a method profile is selected, admitted, or executed.
+    failure: Reject an unregistered or mutated profile before calculation and return a typed method-support failure.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.method-engine
+      - type: applies_to
+        target: definition.shijing.algorithm.method-profile
+      - type: applies_to
+        target: definition.shijing.algorithm.method-profile-bazi-ziping-v1
+      - type: applies_to
+        target: definition.shijing.algorithm.method-profile-qizheng-siyu-guolao-v1
+      - type: applies_to
+        target: definition.shijing.algorithm.method-profile-ziwei-sanhe-v1
+  - id: rule.shijing.algorithm.r002
+    kind: rule
+    title: Deterministic generation pipeline
+    modality: must
+    statement: Generation passes NatalInputs through natal canonicalization, MethodEngine selection by method_profile_id with bazi_ziping_v1 default, deterministic method evidence, deterministic common-driver derivation, the method_profile plus common plus method_evidence feature envelope, common-only mirror projection, Runtime-AI wording over common and allowed evidence, Reading validation, and persistence; deterministic engines own every astrology calculation, Runtime AI owns wording only, and every deterministic failure is typed rather than a successful Reading.
+    condition: Whenever a Reading is generated.
+    failure: Stop at the failing stage, persist no Reading, and return a typed pipeline-stage failure.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.generation-pipeline
+      - type: applies_to
+        target: definition.shijing.algorithm.method-engine
+  - id: rule.shijing.algorithm.r003
+    kind: rule
+    title: Canonical mirror windows
+    modality: must
+    statement: "Mirror windows derive from scope: daily is the local civil day in basis_time_zone; rolling_30_day is exactly 30 local dates from start_date through end_date; long_horizon is an admitted NianJing window; natal is a deterministic one-year anchor_year provenance window while MingJingChart spans the DaYun sequence; consultation is the union or summary of cited scopes plus an optional explicit question window; persisted hashes use ISO-8601 UTC instants derived from local scope and captured timezone; NianJing defaults to the next 10 years from anchor_year and allows only admitted presets rather than arbitrary user windows; and consultation question_window remains transient rather than reusable."
+    condition: Whenever a mirror window is canonicalized or hashed.
+    failure: Reject the scope before feature computation or hashing.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.canonical-mirror-windows
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-canonical-mirror-window
+  - id: rule.shijing.algorithm.r004
+    kind: rule
+    title: Natal canonicalization
+    modality: must
+    statement: Natal canonicalization preserves Gregorian input and canonicalizes it to UTC, preserves leap-month evidence for ambiguous Chinese lunar input, uses an admitted ephemeris table for lunar conversion, applies true-solar correction wherever exact pillars are required, and never mutates historical Reading summaries after source-subject changes.
+    condition: Whenever natal input is canonicalized.
+    failure: Reject incomplete or ambiguous canonicalization with a typed natal-input or pipeline failure.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.natal-canonicalization
+  - id: rule.shijing.algorithm.r005
+    kind: rule
+    title: True solar time
+    modality: must
+    statement: Pillar calculation uses true solar time equal to local standard time plus longitude correction and equation-of-time minutes, with standard meridian longitude equal to UTC-offset hours at birth times 15 and longitude correction equal to birth longitude minus standard meridian longitude times 4; missing location, timezone, or ephemeris data fails closed whenever exact pillars are required.
+    condition: Whenever exact pillar time is calculated.
+    failure: Stop pillar calculation and return a typed missing-canonicalization-data failure.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.true-solar-time
+  - id: rule.shijing.algorithm.r006
+    kind: rule
+    title: Deterministic pillars
+    modality: must
+    statement: The year pillar changes at Li Chun, the month pillar at the twelve jie solar terms, the day pillar uses a deterministic sexagenary day index, the hour pillar uses true-solar two-hour branches, and missing precision removes dependent pillars according to the uncertainty decisions.
+    condition: Whenever pillars are computed.
+    failure: Omit only authority-permitted dependent pillars or fail the generation when required pillars are unavailable.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.pillar-calculation
+      - type: applies_to
+        target: definition.shijing.algorithm.uncertainty-decision-table
+  - id: rule.shijing.algorithm.r007
+    kind: rule
+    title: DaYun predicate
+    modality: must
+    statement: DaYun is required for every NianJing Reading, every YueJing Reading whose scope intersects a DaYun boundary, every ShiJing consultation citing a DaYun-required source Reading, and every mirror scope longer than 90 local days; when required, calculation_sex is specified, otherwise generation fails closed.
+    condition: Whenever a mirror scope is evaluated for DaYun dependence.
+    failure: Return a typed DaYun prerequisite failure and persist no Reading.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.dayun-requirement
+  - id: rule.shijing.algorithm.r008
+    kind: rule
+    title: Feature snapshot envelope
+    modality: must
+    statement: AstrologyFeatureSnapshot is deterministic evidence with method_profile, mirror_kind, canonical_window, algorithm-agnostic common drivers, and method-tagged opaque method_evidence; mirror projection, Runtime AI, validators, persistence, and non-evidence UI bind only to common and method_profile, while only dedicated evidence views switch on method_id; every renderer-needed subject_ref appears in common; method-namespaced driver_refs remain opaque and unparsed; feature snapshots are neither user-authored context nor AI output; the declared snapshot definitions are the minimal admitted hashing, wording-input, validation, and evidence-UI shape; common is the sole algorithm-agnostic surface; engine-owned evidence changes only through engine admission; and implementations infer no additional fields.
+    condition: Whenever a feature snapshot is computed, consumed, validated, hashed, persisted, or displayed.
+    failure: Reject the snapshot or consumer binding before Reading generation proceeds.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.feature-snapshot
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-bazi-branch-relation
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-bazi-evidence
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-bazi-interpretation
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-bazi-pillar-features
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-bazi-strength
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-bazi-subject-chart
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-canonical-mirror-window
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-common-drivers
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-cycle
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-cycle-marker
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-dayun
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-element
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-ganzhi-pillar
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-hidden-stem
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-key-window
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-method-evidence
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-natal-chart
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-nianjing-inflection-driver
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-nianjing-phase-driver
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-qizheng-siyu-body
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-qizheng-siyu-chart-basis
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-qizheng-siyu-evidence
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-qizheng-siyu-house
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-qizheng-siyu-subject-chart
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-stage-driver
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-timed-pillar
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-uncertainty-input
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-yong-shen
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-yuejing-tendency-driver
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-ziwei-evidence
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-ziwei-palace
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-ziwei-star
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-ziwei-subject-chart
+  - id: rule.shijing.algorithm.r009
+    kind: rule
+    title: Stage and tendency labels
+    modality: must
+    statement: Product-language stage labels are exactly 进时, 收时, 养时, 转时, and 守时; YueJing tendency class is exactly supportive, steady, watch, blocked, or turning; and tendency classes remain bounded ordinal UI-grouping labels rather than numeric scores, ranks, percentiles, or curve points.
+    condition: Whenever stage or YueJing tendency labels are derived or displayed.
+    failure: Reject an unrecognized or numericized label.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-stage-driver
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-yuejing-tendency-driver
+      - type: applies_to
+        target: definition.shijing.algorithm.stage-and-tendency-labels
+  - id: rule.shijing.algorithm.r010
+    kind: rule
+    title: Uncertainty decisions
+    modality: must
+    statement: The BaZi uncertainty baseline sets exact complete inputs to maximum high; rough_day to maximum medium with hour pillar omitted; rough_month to maximum low and failure for DaYun-required mirrors; rough_year to failure for RiJing, YueJing, NianJing, and Runtime consultation; unknown to failure except data-entry repair; missing location, timezone, or ephemeris for exact required pillars to failure; required DaYun with unspecified calculation sex to failure; withheld related-Person consent to maximum medium plus caveat; an unresolved active-tag person mention to omitted person chart plus caveat; incomplete related-Person natal inputs to omitted chart or failure for relation-specific output; no active concern tags to mirror-generation failure; unavailable memory retrieval to continuation only when optional with disclosure; and Runtime-AI parse or validation failure to failure; confidence only decreases at later stages, an engine may tighten through capabilities such as required birth time, and no engine loosens a fail-closed condition.
+    condition: Whenever uncertainty or generation readiness is evaluated.
+    failure: Fail generation or cap and annotate confidence exactly as the matched decision requires.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.uncertainty-decision-table
+  - id: rule.shijing.algorithm.r011
+    kind: rule
+    title: NianJing derivation
+    modality: must
+    statement: NianJing derives discrete phase bands and inflection points from deterministic cycle, DaYun, annual, and monthly markers; each phase band contains concern_tag_ref, start_date, end_date, nature, driver_refs, and summary; each inflection point contains concern_tag_ref, date, optional bounded date_window, kind, driver_refs, and summary; date_window never becomes a reusable time container; bands and points are authoritative; and curves, K-line bars, numeric trend series, luck scores, and rankable numbers are forbidden authoritative data.
+    condition: Whenever NianJing phase or inflection evidence is derived.
+    failure: Reject malformed or forbidden long-horizon evidence.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.nianjing-phase-inflection
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-nianjing-inflection-driver
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-nianjing-phase-driver
+  - id: rule.shijing.algorithm.r012
+    kind: rule
+    title: Canonical hashes
+    modality: must
+    statement: input_hash and feature_snapshot_hash use sha256, json-c14n-v1, NFC Unicode normalization, utf-8, and lowercase hexadecimal digest; input_hash covers selected method_profile.id, mirror scope, canonical natal inputs, active concern-tag snapshots, resolved person refs, eligible plan refs, cited memory refs, response-preference hash, and deterministic mirror window so different profiles hash distinctly; and feature_snapshot_hash covers the entire method_profile, common, and method_evidence envelope.
+    condition: Whenever canonical input or feature evidence is hashed.
+    failure: Reject the artifact on missing input coverage or hash mismatch.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.canonical-hashing
+      - type: applies_to
+        target: definition.shijing.algorithm.feature-snapshot
+  - id: rule.shijing.algorithm.r013
+    kind: rule
+    title: Runtime wording boundary
+    modality: must
+    statement: Runtime AI receives only common drivers, a read-only method-namespaced display-label evidence projection without recompute hooks, frozen MirrorContextSnapshot, allowed concern-tag prompt text as wording context, policy-admitted cited memory and plan summaries, response preferences, and the mirror output schema, and returns structured JSON matching that schema; it is never asked to calculate pillars, palaces, DaYun or DaXian, solar terms, 四化, stage labels, tendency classes, phase bands, or inflection points, never reads raw method_evidence to rederive common drivers, never succeeds with prose or markdown, never emits fallback copy for Runtime or parse failure, and never lets concern-tag prompt text alter deterministic calculation.
+    condition: Whenever Runtime-AI wording is requested or validated.
+    failure: Reject the AI output with a typed Runtime or validation failure and persist no Reading.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.runtime-ai-wording
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-common-drivers
+  - id: rule.shijing.algorithm.r014
+    kind: rule
+    title: Implementation coherence
+    modality: must
+    statement: Canonical algorithm authority remains the source of truth while downstream source contracts, validators, state, persistence, Runtime prompts and parsers, engine adapters, renderer surfaces, and tests are synchronized at every implementation-wave checkpoint without divergence.
+    condition: Whenever an implementation wave reaches a checkpoint.
+    failure: Block checkpoint closure until every affected downstream surface conforms.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.implementation-coherence
+  - id: rule.shijing.algorithm.r015
+    kind: rule
+    title: BaZi interpretive layer
+    modality: must
+    statement: "bazi_ziping_v1 uses deterministic fuyi_tiaohou_v1 with 扶抑 primary and 调候 secondary and never emits a numeric luck score: authoritative features are pillar ten gods, hidden stems with 本气, 中气, or 余气 weights, nayin, twelve-growth terrain, day-master strength 极弱 through 极强 with 0 through 1 support_ratio, useful, favorable, and unfavorable elements, and natal branch 合冲刑害破; 空亡, pattern by month command, and five-element distribution are display-authoritative only on MingJing and tendency-neutral everywhere and stay outside the time-mirror hashed envelope; 神煞 and 岁运并临 are computed-but-unweighted or omitted and never drive v1 tendency; strength weights stem and hidden-stem element relations by month-command dominance, day branch, other positions, and hidden-stem class, computes support_ratio as support divided by support plus drain, and bands fixed thresholds; strong charts use overcoming, draining, and consuming 官杀, 食伤, and 财 and disfavor 生扶 印 and 比劫, weak charts use 生扶 and disfavor 克泄耗, balanced charts use a 调候-led balancing element, and extreme winter adds fire or summer adds water unless primarily unfavorable; favorable transits produce supportive, primary unfavorable blocked, other unfavorable watch, neutral steady, and 冲提纲, 岁运并临, or DaYun and annual boundary turning; concern domain selects ten-god focus without overriding useful-element favorability; and for the same 财 transit a strong chart is favorable while a weak chart is unfavorable."
+    condition: Whenever BaZi interpretation or tendency is derived.
+    failure: Reject interpretation or tendency evidence that violates weighting, authority, or correctness invariants.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.bazi-interpretation
+      - type: applies_to
+        target: definition.shijing.algorithm.snapshot-bazi-interpretation
+  - id: rule.shijing.algorithm.r016
+    kind: rule
+    title: MingJing natal projection
+    modality: must
+    statement: The BaZi MingJing surface consumes a deterministic live self MingJingChart from natal canonicalization that is neither a persisted Reading nor part of the time-mirror feature envelope and has no authoritative tendency classes, luck scores, or rankable series; the chart contains self reference, canonicalization hash, natal chart, interpretation, day-pillar 旬空 and per-pillar void flags, weighted and raw five-element distribution, month-command pattern with transparent, rooted, and 成格, 假成, or 破格 disposition, DaYun direction, start age, and full sequence of at least eight periods, salient future LiuNian windows, and exact precision; void branches come from the day-pillar 旬; pattern takes month-branch 本气 ten god, classifies 建禄格 or 阳刃格 for 比劫 by twelve-growth terrain, otherwise prefers transparent 中气 or 余气 over non-transparent 本气, and derives disposition from transparency, rooting, and month-command clash; every DaYun period nature is useful-element favorability of its stem rather than blanket turning; LiuNian emits only years salient by strong favorable or unfavorable year element, branch 冲, 合, 三合, or 刑 with day branch or month command, or a DaYun boundary, over anchor year through anchor plus 12 clamped to DaYun availability, and never degrades into a yearly ledger.
+    condition: Whenever the BaZi MingJing natal projection is computed or rendered.
+    failure: Reject an inexact, malformed, persisted-as-Reading, trend-shaped, or non-deterministic projection.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.mingjing-bazi-pattern
+      - type: applies_to
+        target: definition.shijing.algorithm.mingjing-bazi-void
+      - type: applies_to
+        target: definition.shijing.algorithm.mingjing-chart
+      - type: applies_to
+        target: definition.shijing.algorithm.mingjing-dayun-period
+      - type: applies_to
+        target: definition.shijing.algorithm.mingjing-dayun-structure
+      - type: applies_to
+        target: definition.shijing.algorithm.mingjing-five-element-distribution
+      - type: applies_to
+        target: definition.shijing.algorithm.mingjing-liunian-projection
+      - type: applies_to
+        target: definition.shijing.algorithm.mingjing-liunian-window
+  - id: rule.shijing.algorithm.r017
+    kind: rule
+    title: Relationship HePan evidence
+    modality: must
+    statement: Relationship HePan evidence is computed from self and exactly one Person and includes both subject charts; available pairwise branch interactions across year, month, day, and hour; method-specific direction evidence consisting of BaZi day-master relation, ten-god direction, and useful-element complement or depletion, Ziwei 命宫, 身宫, 主星, and 五行局 direction, or QiZheng ascendant, day or night luminary, house, and mansion direction; anchor-year timing windows from both subjects period markers or an explicit method-namespaced fallback driver; and uncertainty inputs for precision, location, consent, and related-person data; Runtime AI computes or alters none of these fields.
+    condition: Whenever relationship evidence is computed or worded.
+    failure: Fail relationship generation closed when evidence is incomplete, mismatched, or AI-derived.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.relationship-hepan-evidence
+  - id: rule.shijing.algorithm.r018
+    kind: rule
+    title: Feature and route support
+    modality: must
+    statement: "RiJing daily, YueJing rolling-30-day, NianJing long-horizon, and ShiJing consultation are algorithm-neutral features, while MingJing resolves a method-specific route, and support declarations are immutable product authority: the three time mirrors support bazi_ziping_v1, ziwei_sanhe_v1, and qizheng_siyu_guolao_v1; consultation supports BaZi and Ziwei only; all three MingJing routes are implemented for natal_projection, natal_reading, and relationship_hepan; before neutral-feature evidence or wording, mirror kind plus scope resolves an active feature and selected method support is validated, with unsupported selection failing at method_feature_support using detail method_feature_not_supported plus feature and method and available alternatives, without switching methods, partial Reading, or AI compensation; before MingJing projection, Reading, or HePan, selected Settings method resolves a route, with unimplemented route failing at mingjing_route_support using mingjing_route_not_implemented plus route and method and unsupported route feature using mingjing_route_feature_not_supported plus route and feature, without alternate route, synthetic output, or AI compensation; absent method setting defaults to bazi_ziping_v1 and unadmitted persisted values fail Settings validation; AI model choice changes wording only and never support; historical Readings retain frozen profile and hashes while switching affects only new generation and live projection; Ziwei supports three time mirrors, cited-Reading consultation, and relationship HePan from self evidence plus exactly one related chart, may render twelve palaces, decadal ranges, and namespaced relationship refs, and limits Runtime AI to admitted natal-brief and HePan prose without calculating palaces, stars, 四化, 大限, or relationship evidence; QiZheng supports MingJing natal, RiJing, YueJing, NianJing, and relationship HePan, renders 七政四余 bodies, houses, mansions, and explicit virtual-model provenance with product labels for raw model ids and 宫势 for position_class, limits MingJing AI to admitted natal-brief wording, derives deterministic concern-domain body, house, and 宫势 drivers for RiJing scope date and YueJing start_date, derives scoreless NianJing bands and annual inflections, exposes only opaque namespaced common refs, derives relationship refs from both charts, and fails consultation until its deterministic mapping is admitted."
+    condition: Whenever a feature or MingJing route is resolved, generated, switched, rendered, or worded.
+    failure: Fail closed at method_feature_support or mingjing_route_support with the stable applicable detail and no fallback method, route, partial output, or AI compensation.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.feature-nianjing-long-horizon-reading
+      - type: applies_to
+        target: definition.shijing.algorithm.feature-rijing-daily-reading
+      - type: applies_to
+        target: definition.shijing.algorithm.feature-shijing-consultation
+      - type: applies_to
+        target: definition.shijing.algorithm.feature-yuejing-rolling-30-day-reading
+      - type: applies_to
+        target: definition.shijing.algorithm.route-mingjing-bazi-ziping-v1
+      - type: applies_to
+        target: definition.shijing.algorithm.route-mingjing-qizheng-siyu-guolao-v1
+      - type: applies_to
+        target: definition.shijing.algorithm.route-mingjing-ziwei-sanhe-v1

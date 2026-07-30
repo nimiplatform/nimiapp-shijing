@@ -10,10 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial standalone project layout migrated from `apps/shijing` in the
   `nimi-realm` monorepo.
-- `.nimi/spec/shijing/kernel/**` host-authored product authority (SJG-PROD / SJG-DATA /
-  SJG-ASTRO / SJG-ALGO / SJG-IA / SJG-REMOVED contract families).
-- `@nimiplatform/nimi-coding` governance projection under
-  `.nimi/{config,contracts,methodology}/**`.
+- Host-authored ShiJing product authority (the original kernel layout was
+  later hard-cut to closed v2 canonical containers).
+- `@nimiplatform/nimi-coding` authority-authoring guide sync under
+  `.nimi/methodology/authority-authoring.yaml`.
 - Full source for the 14-wave delivery of topic
   `2026-05-25-shijing-person-view-reading-hardcut`:
   - NatalInputs editor (wave-7)

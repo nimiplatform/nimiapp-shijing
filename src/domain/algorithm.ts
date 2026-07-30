@@ -1,8 +1,8 @@
 // SJG-ALGO-* — Astrology Algorithm Contract v1 source mirror.
 //
 // Type aliases + closed enums + structural shapes mirroring
-// `.nimi/spec/shijing/kernel/algorithm-contract.md` (SJG-ALGO-08
-// AstrologyFeatureSnapshot). Validators consume these from src/contracts/**.
+// `.nimi/spec/shijing/canonical/algorithm.authority.yaml`.
+// Validators consume these from src/contracts/**.
 // Deterministic pipeline implementation lives downstream of W02.
 
 import type { RawBirthInput } from './person.ts';

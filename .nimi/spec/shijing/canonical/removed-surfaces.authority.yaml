@@ -1,0 +1,528 @@
+format: nimicoding.authority/v2
+owner: team.shijing
+scope: shijing.removed-surfaces
+units:
+  - id: definition.shijing.removed-surfaces.guard-semantics
+    kind: definition
+    title: Removed-name guard semantics
+    meaning: Removed-name guards match exact symbol, field, or surface names case-sensitively without substring matching; admitted exact names are EventMemory, event_memory, event_memories, cited_event_memory_refs, PlanItem, plan_item, plan_items, cited_plan_item_refs, ConcernTag, concern_tag, concern_tags, and concern_tag_refs; Reading alone rejects fields kind, scope, anchor_subject, subjects, time_window, view_id, and ad_hoc_context; generic discriminator names such as kind remain legal outside their owner-scoped removal.
+  - id: definition.shijing.removed-surfaces.profile
+    kind: definition
+    title: Removed Profile names
+    meaning: The exact removed-name group is Profile, profile, profiles, and ProfileRef.
+  - id: definition.shijing.removed-surfaces.venture
+    kind: definition
+    title: Removed Venture names
+    meaning: The exact removed-name group is Venture, venture, and ventures.
+  - id: definition.shijing.removed-surfaces.venture-node
+    kind: definition
+    title: Removed VentureNode names
+    meaning: The exact removed-name group is VentureNode, venture_node, and venture_nodes.
+  - id: definition.shijing.removed-surfaces.huangli
+    kind: definition
+    title: Removed Huangli names
+    meaning: The exact removed-name group is Huangli, huangli, HuangliDaily, huangli_daily, and huangli_mode.
+  - id: definition.shijing.removed-surfaces.report
+    kind: definition
+    title: Removed Report names
+    meaning: The exact removed-name group is Report, report, and reports.
+  - id: definition.shijing.removed-surfaces.monthly-report
+    kind: definition
+    title: Removed MonthlyReport names
+    meaning: The exact removed-name group is MonthlyReport, monthly_report, and monthly_reports.
+  - id: definition.shijing.removed-surfaces.yearly-report
+    kind: definition
+    title: Removed YearlyReport names
+    meaning: The exact removed-name group is YearlyReport, yearly_report, and yearly_reports.
+  - id: definition.shijing.removed-surfaces.trend-chart
+    kind: definition
+    title: Removed TrendChart names
+    meaning: The exact removed-name group is TrendChart, trend_chart, and trend_charts.
+  - id: definition.shijing.removed-surfaces.trend
+    kind: definition
+    title: Removed trend names
+    meaning: The exact removed-name group is trend, trends, and score_trend.
+  - id: definition.shijing.removed-surfaces.luck-score
+    kind: definition
+    title: Removed LuckScore names
+    meaning: The exact removed-name group is LuckScore, luck_score, and luck_scores.
+  - id: definition.shijing.removed-surfaces.luck-curve
+    kind: definition
+    title: Removed LuckCurve names
+    meaning: The exact removed-name group is LuckCurve and luck_curve.
+  - id: definition.shijing.removed-surfaces.luck-rank
+    kind: definition
+    title: Removed LuckRank names
+    meaning: The exact removed-name group is LuckRank and luck_rank.
+  - id: definition.shijing.removed-surfaces.percentile
+    kind: definition
+    title: Removed percentile name
+    meaning: The exact removed name is percentile.
+  - id: definition.shijing.removed-surfaces.k-line
+    kind: definition
+    title: Removed K-line names
+    meaning: The exact removed-name group is KLine, kline, k_line, and k_line_bar.
+  - id: definition.shijing.removed-surfaces.curve
+    kind: definition
+    title: Removed curve name
+    meaning: The exact removed name is curve.
+  - id: definition.shijing.removed-surfaces.numeric-series
+    kind: definition
+    title: Removed numeric series
+    meaning: The exact removed name is numeric_series.
+  - id: definition.shijing.removed-surfaces.project-memory
+    kind: definition
+    title: Removed ProjectMemory names
+    meaning: The exact removed-name group is ProjectMemory and project_memory.
+  - id: definition.shijing.removed-surfaces.long-line
+    kind: definition
+    title: Removed LongLine names
+    meaning: The exact removed-name group is LongLine, long_line, and long_lines.
+  - id: definition.shijing.removed-surfaces.global-instructions
+    kind: definition
+    title: Removed instruction names
+    meaning: The exact removed-name group is GlobalInstructions and global_instructions.
+  - id: definition.shijing.removed-surfaces.view
+    kind: definition
+    title: Removed View names
+    meaning: The exact removed-name group is View, view, and views.
+  - id: definition.shijing.removed-surfaces.view-template
+    kind: definition
+    title: Removed ViewTemplate names
+    meaning: The exact removed-name group is ViewTemplate, view_template, and view_templates.
+  - id: definition.shijing.removed-surfaces.view-workspace
+    kind: definition
+    title: Removed ViewWorkspace names
+    meaning: The exact removed-name group is ViewWorkspace and view_workspace.
+  - id: definition.shijing.removed-surfaces.view-memory
+    kind: definition
+    title: Removed ViewMemory names
+    meaning: The exact removed-name group is ViewMemory and view_memory.
+  - id: definition.shijing.removed-surfaces.view-snapshot
+    kind: definition
+    title: Removed ViewSnapshot names
+    meaning: The exact removed-name group is ViewSnapshot and view_snapshot.
+  - id: definition.shijing.removed-surfaces.focus
+    kind: definition
+    title: Removed Focus names
+    meaning: The exact removed-name group is Focus and focus.
+  - id: definition.shijing.removed-surfaces.event
+    kind: definition
+    title: Removed Event names
+    meaning: The exact removed-name group is Event, event, and events.
+  - id: definition.shijing.removed-surfaces.recap
+    kind: definition
+    title: Removed recap name
+    meaning: The exact removed name is recap.
+  - id: definition.shijing.removed-surfaces.relation
+    kind: definition
+    title: Removed Relation names
+    meaning: The exact removed-name group is Relation, relation, and relations.
+  - id: definition.shijing.removed-surfaces.relation-hint
+    kind: definition
+    title: Removed relation hint
+    meaning: The exact removed name is relation_hint.
+  - id: definition.shijing.removed-surfaces.subject-context
+    kind: definition
+    title: Removed subject context
+    meaning: The exact removed name is subject_context.
+  - id: definition.shijing.removed-surfaces.current-observation-target
+    kind: definition
+    title: Removed observation target
+    meaning: The exact removed-name group is CurrentObservationTarget and current_observation_target.
+  - id: definition.shijing.removed-surfaces.shijing-catalog
+    kind: definition
+    title: Removed ShiJingCatalog names
+    meaning: The exact removed-name group is ShiJingCatalog and shijing_catalog.
+  - id: definition.shijing.removed-surfaces.catalog-snapshot
+    kind: definition
+    title: Removed catalog snapshot
+    meaning: The exact removed name is catalog_snapshot.
+  - id: definition.shijing.removed-surfaces.roster
+    kind: definition
+    title: Removed roster name
+    meaning: The exact removed name is roster.
+  - id: definition.shijing.removed-surfaces.context-item
+    kind: definition
+    title: Removed context items
+    meaning: The exact removed-name group is context_item and context_items.
+  - id: definition.shijing.removed-surfaces.history
+    kind: definition
+    title: Removed History names
+    meaning: The exact removed-name group is History, history, and history_tab.
+  - id: definition.shijing.removed-surfaces.customer
+    kind: definition
+    title: Removed Customer names
+    meaning: The exact removed-name group is Customer, customer, and customers.
+  - id: definition.shijing.removed-surfaces.client
+    kind: definition
+    title: Removed Client names
+    meaning: The exact removed-name group is Client, client, and clients.
+  - id: definition.shijing.removed-surfaces.crm
+    kind: definition
+    title: Removed CRM names
+    meaning: The exact removed-name group is CRM and crm.
+  - id: definition.shijing.removed-surfaces.customer-management
+    kind: definition
+    title: Removed customer management
+    meaning: The exact removed name is customer_management.
+  - id: definition.shijing.removed-surfaces.consultant
+    kind: definition
+    title: Removed Consultant names
+    meaning: The exact removed-name group is Consultant, consultant, and consultants.
+  - id: definition.shijing.removed-surfaces.consultant-booking
+    kind: definition
+    title: Removed consultant booking
+    meaning: The exact removed name is consultant_booking.
+  - id: definition.shijing.removed-surfaces.booking
+    kind: definition
+    title: Removed booking name
+    meaning: The exact removed name is booking.
+  - id: definition.shijing.removed-surfaces.commerce
+    kind: definition
+    title: Removed commerce name
+    meaning: The exact removed name is commerce.
+  - id: definition.shijing.removed-surfaces.batch-import
+    kind: definition
+    title: Removed batch import
+    meaning: The exact removed name is batch_import.
+  - id: definition.shijing.removed-surfaces.batch-export
+    kind: definition
+    title: Removed batch export
+    meaning: The exact removed name is batch_export.
+  - id: definition.shijing.removed-surfaces.task
+    kind: definition
+    title: Removed Task names
+    meaning: The exact removed-name group is Task, task, and tasks.
+  - id: definition.shijing.removed-surfaces.project
+    kind: definition
+    title: Removed Project names
+    meaning: The exact removed-name group is Project, project, and projects.
+  - id: definition.shijing.removed-surfaces.deadline
+    kind: definition
+    title: Removed deadline name
+    meaning: The exact removed name is deadline.
+  - id: definition.shijing.removed-surfaces.due
+    kind: definition
+    title: Removed due name
+    meaning: The exact removed name is due.
+  - id: definition.shijing.removed-surfaces.overdue
+    kind: definition
+    title: Removed overdue name
+    meaning: The exact removed name is overdue.
+  - id: definition.shijing.removed-surfaces.dependency
+    kind: definition
+    title: Removed dependency names
+    meaning: The exact removed-name group is dependency and dependencies.
+  - id: definition.shijing.removed-surfaces.board
+    kind: definition
+    title: Removed board names
+    meaning: The exact removed-name group is board and boards.
+  - id: definition.shijing.removed-surfaces.milestone
+    kind: definition
+    title: Removed milestone name
+    meaning: The exact removed name is milestone.
+  - id: definition.shijing.removed-surfaces.priority
+    kind: definition
+    title: Removed priority names
+    meaning: The exact removed-name group is priority and priorities.
+  - id: definition.shijing.removed-surfaces.progress
+    kind: definition
+    title: Removed progress name
+    meaning: The exact removed name is progress.
+  - id: definition.shijing.removed-surfaces.assignee
+    kind: definition
+    title: Removed assignee name
+    meaning: The exact removed name is assignee.
+  - id: definition.shijing.removed-surfaces.workflow
+    kind: definition
+    title: Removed workflow name
+    meaning: The exact removed name is workflow.
+  - id: definition.shijing.removed-surfaces.gantt
+    kind: definition
+    title: Removed Gantt names
+    meaning: The exact removed-name group is Gantt and gantt.
+  - id: definition.shijing.removed-surfaces.reading-legacy-fields
+    kind: definition
+    title: Removed Reading fields
+    meaning: Reading owner-scoped removed fields are kind, scope, anchor_subject, subjects, time_window, view_id, and ad_hoc_context.
+  - id: definition.shijing.removed-surfaces.placeholder-pseudo-success
+    kind: definition
+    title: Removed pseudo-success
+    meaning: Removed placeholder categories are substitute or mocked Reading content, fabricated astrology output, randomized fortune text, completion-marker stubs, empty successful astrology output, Runtime fallback copy, and deterministic-pipeline bypass copy.
+  - id: definition.shijing.removed-surfaces.nianjing-visual-boundary
+    kind: definition
+    title: Removed NianJing visuals
+    meaning: NianJing admits phase bands and inflection points but removes authoritative trend charts, K-line bars, luck-score curves, rankable numeric series, and aggregatable scores; decorative interpolation is never persisted, cited, or treated as product truth.
+  - id: rule.shijing.removed-surfaces.r001
+    kind: rule
+    title: Removed product surfaces
+    modality: must_not
+    statement: Active product surfaces include Huangli mode, daily card, or calendar; Profile entity or Person and Profile duality; Venture, VentureNode, venture board, long-line state, or long-line templates; History tab or global Reading history; monthly report, yearly report, report builder, or report export; luck score, curve, rank, score trend, or percentile fortune; trend chart, luck trend, subject-comparison chart, or K-line authority; customer management, client list or segmentation, or CRM workflow; batch person import or report export; third-party consultant directory, booking flow, or commerce CTA; task, deadline, overdue, dependency, board, milestone, Gantt, progress, priority, or assignee project semantics; View, Focus, View workspace, ViewTemplate, roster, context item, instruction, view memory, or View time-window builder; Relation entity or UI; CurrentObservationTarget switcher; or user-space catalog snapshot.
+    condition: Always.
+    failure: Reject the active product surface and fail the authority cut closed.
+    relations:
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.assignee
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.batch-export
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.batch-import
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.board
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.booking
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.catalog-snapshot
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.client
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.commerce
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.consultant
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.consultant-booking
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.crm
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.current-observation-target
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.customer
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.customer-management
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.deadline
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.dependency
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.due
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.focus
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.gantt
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.history
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.huangli
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.k-line
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.long-line
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.luck-curve
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.luck-rank
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.luck-score
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.milestone
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.monthly-report
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.overdue
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.percentile
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.priority
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.profile
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.progress
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.project
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.relation
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.report
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.shijing-catalog
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.task
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.trend
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.trend-chart
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.venture
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.venture-node
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.view
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.view-memory
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.view-template
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.view-workspace
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.workflow
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.yearly-report
+  - id: rule.shijing.removed-surfaces.r002
+    kind: rule
+    title: Exact removed-name guards
+    modality: must_not
+    statement: An active product surface, source entity, source field, source type, validator name, store key, renderer-visible term, or authority unit exactly matches a removed-name definition; a downstream guard admits such an exact match; a guard uses case-insensitive or substring matching; a guard rejects an admitted EventMemory, PlanItem, or ConcernTag name; or Reading admits owner-scoped fields kind, scope, anchor_subject, subjects, time_window, view_id, or ad_hoc_context, while generic discriminators remain legal outside owner scope.
+    condition: Always.
+    failure: Reject the exact removed name at the guard boundary without rejecting an allowlisted name or unrelated substring.
+    relations:
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.guard-semantics
+  - id: rule.shijing.removed-surfaces.r003
+    kind: rule
+    title: Removed pseudo-success
+    modality: must_not
+    statement: A successful Reading contains substitute or mocked Reading content, fabricated astrology output, randomized fortune text, a completion-marker stub, empty successful astrology output, Runtime fallback copy, or deterministic-pipeline bypass copy.
+    condition: Always.
+    failure: Return a typed generation failure and persist no successful Reading.
+    relations:
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.placeholder-pseudo-success
+  - id: rule.shijing.removed-surfaces.r004
+    kind: rule
+    title: Removed NianJing visuals
+    modality: must_not
+    statement: NianJing treats an authoritative trend chart, K-line bar, luck-score curve, rankable numeric series, or aggregatable score as data, or persists, cites, or treats decorative interpolation as product truth; phase bands and inflection points remain the only admitted authoritative visual forms.
+    condition: Always.
+    failure: Reject the forbidden NianJing artifact before persistence, citation, or authoritative display.
+    relations:
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.k-line
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.luck-curve
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.luck-score
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.nianjing-visual-boundary
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.numeric-series
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.trend-chart
+  - id: rule.shijing.removed-surfaces.r005
+    kind: rule
+    title: Removed-surface reopen trigger
+    modality: must_not
+    statement: Any exact removed surface or owner-scoped removed Reading field reappears as active product, source, or authority truth.
+    condition: Always.
+    failure: Fail the authority cut and reopen the migration topic.
+    relations:
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.assignee
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.batch-export
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.batch-import
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.board
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.booking
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.catalog-snapshot
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.client
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.commerce
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.consultant
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.consultant-booking
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.context-item
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.crm
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.current-observation-target
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.curve
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.customer
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.customer-management
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.deadline
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.dependency
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.due
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.event
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.focus
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.gantt
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.global-instructions
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.history
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.huangli
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.k-line
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.long-line
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.luck-curve
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.luck-rank
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.luck-score
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.milestone
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.monthly-report
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.numeric-series
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.overdue
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.percentile
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.priority
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.profile
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.progress
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.project
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.project-memory
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.reading-legacy-fields
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.recap
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.relation
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.relation-hint
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.report
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.roster
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.shijing-catalog
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.subject-context
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.task
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.trend
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.trend-chart
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.venture
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.venture-node
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.view
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.view-memory
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.view-snapshot
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.view-template
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.view-workspace
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.workflow
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.yearly-report

@@ -16,5 +16,6 @@ review_inputs:
   manifest: nimi.app.yaml
   build_profile: .nimi/config/build-profile.yaml
   scaffold_boundary: .nimi/contracts/scaffold-boundary.yaml
+  product_authority: .nimi/spec/shijing/canonical
   local_audit: pnpm run local-audit
 admission_truth: platform-owned-after-review

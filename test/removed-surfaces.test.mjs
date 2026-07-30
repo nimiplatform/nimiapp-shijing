@@ -1,9 +1,10 @@
-// SJG-REMOVED-02 — Removed-surface guard tests plus yaml-source-of-truth
-// coverage and admitted-name allowlist coverage.
+// rule.shijing.removed-surfaces.r002 — Removed-surface guard tests plus
+// canonical-authority source coverage and admitted-name allowlist coverage.
 
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
+import { parse } from 'yaml';
 
 import {
   READING_OWNER_SCOPED_REMOVED_FIELDS,
@@ -76,6 +77,35 @@ const EXPECTED_ALLOWED = [
 
 const ACCEPTED_NEUTRAL = ['ShiJingSpace', 'SubjectRef', 'self_subject', 'Person', 'Reading', 'Settings'];
 
+const removedAuthority = parse(
+  readFileSync(
+    new URL('../.nimi/spec/shijing/canonical/removed-surfaces.authority.yaml', import.meta.url),
+    'utf8',
+  ),
+);
+
+function parseExactNameList(value) {
+  return value.replace(/,? and /g, ', ').split(', ').map((name) => name.trim());
+}
+
+function canonicalRemovedNames() {
+  const names = [];
+  for (const unit of removedAuthority.units) {
+    const match = /^The exact removed(?:-name group is| name is) (.+)\.$/.exec(unit.meaning ?? '');
+    if (match) names.push(...parseExactNameList(match[1]));
+  }
+  return new Set(names);
+}
+
+function canonicalAllowedNames() {
+  const guard = removedAuthority.units.find(
+    (unit) => unit.id === 'definition.shijing.removed-surfaces.guard-semantics',
+  );
+  const match = /admitted exact names are (.+?); Reading/.exec(guard?.meaning ?? '');
+  assert.ok(match, 'canonical removed-surface guard must enumerate admitted exact names');
+  return new Set(parseExactNameList(match[1]));
+}
+
 test('each expected removed name is rejected by guard', () => {
   for (const name of EXPECTED_REMOVED) {
     assert.equal(isRemovedSurfaceName(name), true, `expected removed: ${name}`);
@@ -98,81 +128,33 @@ test('canonical neutral identifiers are not flagged', () => {
   }
 });
 
-test('guard set exactly mirrors yaml authority `removed_names`', () => {
-  const yamlPath = new URL(
-    '../.nimi/spec/shijing/kernel/tables/removed-surface-names.yaml',
-    import.meta.url,
-  );
-  const yamlText = readFileSync(yamlPath, 'utf8');
-  const lines = yamlText.split('\n');
-  const yamlNames = new Set();
-  let section = '';
-  for (const rawLine of lines) {
-    const line = rawLine.replace(/\r$/, '');
-    if (line.startsWith('removed_names:')) {
-      section = 'removed_names';
-      continue;
-    }
-    if (line.startsWith('guard_semantics:')) {
-      section = 'guard_semantics';
-      continue;
-    }
-    if (line.match(/^[a-z_]+:/) && !line.startsWith('  ')) {
-      section = '';
-      continue;
-    }
-    if (section === 'removed_names') {
-      const m = /^\s+-\s+(.+)$/.exec(line);
-      if (m) yamlNames.add(m[1].trim());
-    }
-  }
-  for (const yamlName of yamlNames) {
+test('guard set exactly mirrors canonical removed-surface definitions', () => {
+  const authorityNames = canonicalRemovedNames();
+  for (const authorityName of authorityNames) {
     assert.equal(
-      REMOVED_SURFACE_NAMES.has(yamlName),
+      REMOVED_SURFACE_NAMES.has(authorityName),
       true,
-      `yaml-only name missing in TS guard: ${yamlName}`,
+      `authority-only name missing in TS guard: ${authorityName}`,
     );
   }
   for (const tsName of REMOVED_SURFACE_NAMES) {
-    assert.ok(yamlNames.has(tsName), `TS-only name missing in yaml authority: ${tsName}`);
+    assert.ok(authorityNames.has(tsName), `TS-only name missing in canonical authority: ${tsName}`);
   }
 });
 
-test('allowlist exactly mirrors yaml `admitted_names_allowlist`', () => {
-  const yamlPath = new URL(
-    '../.nimi/spec/shijing/kernel/tables/removed-surface-names.yaml',
-    import.meta.url,
-  );
-  const yamlText = readFileSync(yamlPath, 'utf8');
-  const lines = yamlText.split('\n');
-  const yamlAllowed = new Set();
-  let inSection = false;
-  for (const rawLine of lines) {
-    const line = rawLine.replace(/\r$/, '');
-    if (line.match(/^\s*admitted_names_allowlist:\s*$/)) {
-      inSection = true;
-      continue;
-    }
-    if (inSection) {
-      const m = /^\s+-\s+(.+)$/.exec(line);
-      if (m) {
-        yamlAllowed.add(m[1].trim());
-      } else if (line.match(/^\s*[a-z_]+:/) || line.match(/^[^\s-]/)) {
-        inSection = false;
-      }
-    }
-  }
-  for (const yamlName of yamlAllowed) {
+test('allowlist exactly mirrors canonical guard semantics', () => {
+  const authorityAllowed = canonicalAllowedNames();
+  for (const authorityName of authorityAllowed) {
     assert.equal(
-      REMOVED_SURFACE_NAME_ALLOWLIST.has(yamlName),
+      REMOVED_SURFACE_NAME_ALLOWLIST.has(authorityName),
       true,
-      `yaml-only allowed name missing in TS allowlist: ${yamlName}`,
+      `authority-only allowed name missing in TS allowlist: ${authorityName}`,
     );
   }
   for (const tsName of REMOVED_SURFACE_NAME_ALLOWLIST) {
     assert.ok(
-      yamlAllowed.has(tsName),
-      `TS-only allowed name missing in yaml allowlist: ${tsName}`,
+      authorityAllowed.has(tsName),
+      `TS-only allowed name missing in canonical authority: ${tsName}`,
     );
   }
 });

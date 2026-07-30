@@ -30,53 +30,39 @@
 ## Spec Authority & Sync
 
 `.nimi/spec/shijing/**` is ShiJing's project-local product authority.
-Normative product authority belongs only in
-`.nimi/spec/shijing/kernel/*.md` and `.nimi/spec/shijing/kernel/tables/**`;
-`.nimi/spec/INDEX.md`, `.nimi/spec/shijing/index.md`,
-`.nimi/spec/shijing/shijing.md`, and `.nimi/spec/shijing/AGENTS.md` are
-reading guides / authoring rules.
+Normative product authority belongs only in closed v2 containers under
+`.nimi/spec/shijing/canonical/*.authority.yaml`.
 
-`.nimi/{methodology,contracts,config}/**` is the nimicoding governance
-projection — owned by `@nimiplatform/nimi-coding`, managed by
-`pnpm nimicoding sync`, and never hand-edited.
+`.nimi/methodology/authority-authoring.yaml` is the package-managed
+nimicoding authoring guide. App-specific configuration and contracts remain
+host owned.
 
 When spec and code conflict, first classify the implementation behavior
-against the kernel authority. Retained behavior may update spec only
+against the canonical authority. Retained behavior may update spec only
 through an explicit redesign/admission decision that cites the affected
-kernel authority; otherwise align the implementation to the existing
-kernel authority or track the mismatch as a defect. Do not promote bugs,
+canonical unit IDs; otherwise align the implementation to the existing
+canonical authority or track the mismatch as a defect. Do not promote bugs,
 fail-open behavior, placeholder data writes, orphan surfaces, or
 implementation-only behavior into authority.
 
 Before making any change:
 
-1. Read `.nimi/spec/INDEX.md` for the cross-domain reading path.
-2. Read `.nimi/spec/shijing/AGENTS.md` for the rule-ID format and hard
-   editing rules.
-3. Read `.nimi/spec/shijing/kernel/index.md` for the authority map, then
-   the relevant `kernel/*.md` contract and its referenced
-   `kernel/tables/*.yaml`.
-4. Read source code under `src/{domain,contracts,product}/**` to verify
+1. Read `.nimi/methodology/authority-authoring.yaml`.
+2. Read only the affected `.nimi/spec/shijing/canonical/*.authority.yaml`
+   containers or bounded `nimicoding authority context` output.
+3. Read source code under `src/{domain,contracts,product}/**` to verify
    behavior or identify defects.
 
 ### Key Contracts
 
 | Contract | Rule Family | Governs |
 |----------|-------------|---------|
-| `.nimi/spec/shijing/kernel/product-contract.md` | `SJG-PROD-*` | Product-level invariants |
-| `.nimi/spec/shijing/kernel/data-model-contract.md` | `SJG-DATA-*` | ShiJingSpace, Subject/Person, View, Reading, Conversation, Settings, ShiJingCatalog |
-| `.nimi/spec/shijing/kernel/astrology-contract.md` | `SJG-ASTRO-*` | Astrology Contract v1: kind/scope matrix, output structure, forbidden outputs, uncertainty surface, consultation anchor rules |
-| `.nimi/spec/shijing/kernel/algorithm-contract.md` | `SJG-ALGO-*` | Astrology Algorithm Contract v1: method stack, time windows, canonicalization, DaYun, deterministic feature snapshots, Runtime-AI wording boundary, canonical hashing |
-| `.nimi/spec/shijing/kernel/ia-contract.md` | `SJG-IA-*` | Information architecture (five primary tabs: `日镜`, `月镜`, `年镜`, `命镜`, `时镜`) |
-| `.nimi/spec/shijing/kernel/removed-surfaces-contract.md` | `SJG-REMOVED-*` | Hard removals (Profile, Venture, HuangliDaily, Report, …) |
-
-### Key Tables
-
-| Table | Governs |
-|-------|---------|
-| `.nimi/spec/shijing/kernel/tables/reading-kind-scope-matrix.yaml` | Valid `Reading.kind` × `Reading.scope` combinations and per-cell anchor rules |
-| `.nimi/spec/shijing/kernel/tables/view-template-catalog.yaml` | `ShiJingCatalog.view_templates[]` schema and accepted entries |
-| `.nimi/spec/shijing/kernel/tables/removed-surface-names.yaml` | Names whose reappearance as active product/source must fail closed |
+| `.nimi/spec/shijing/canonical/product.authority.yaml` | Product-level invariants |
+| `.nimi/spec/shijing/canonical/data-model.authority.yaml` | ShiJingSpace and persisted product records |
+| `.nimi/spec/shijing/canonical/astrology.authority.yaml` | Astrology outputs, boundaries, and anchor rules |
+| `.nimi/spec/shijing/canonical/algorithm.authority.yaml` | Deterministic algorithm and Runtime-AI wording boundary |
+| `.nimi/spec/shijing/canonical/ia.authority.yaml` | Information architecture |
+| `.nimi/spec/shijing/canonical/removed-surfaces.authority.yaml` | Hard removals and exact-name guards |
 
 ## Development Principles
 
@@ -94,9 +80,10 @@ no data to migrate. Therefore:
 ### Fail-Close
 
 - `validateShiJingSpace` rejects any removed-surface field reappearance.
-- `validateReading` rejects any output that violates SJG-ASTRO invariants
-  (summary length, subject-ref membership, kind/scope cell, expired
-  `inputs_summary`, forbidden phrases, missing/extra fields).
+- `validateReading` rejects any output that violates the canonical astrology
+  invariants (summary length, subject-ref membership, `mirror_kind` /
+  `mirror_scope` pairing, expired `inputs_summary`, forbidden phrases, or
+  missing/extra fields).
 - Runtime AI wording failure → typed `runtime_ai_failed` status surfaced
   verbatim; never a synthesized substitute Reading.
 - Pipeline stage failure → typed `pipeline_stage_failed` with stage + kind +
@@ -117,19 +104,25 @@ no data to migrate. Therefore:
 
 ### IA Boundary
 
-- Exactly five primary tabs, in widening-horizon order: `日镜` (rijing), `月镜`
-  (yuejing), `年镜` (nianjing), `命镜` (mingjing), `时镜` (shijing). See
-  `ia-contract.md` SJG-IA-01 / SJG-IA-08. `命镜` is the whole-life natal
-  projection surface (SJG-ALGO-16).
+- Exactly six primary tabs, in widening-horizon order: `日镜` (rijing), `月镜`
+  (yuejing), `年镜` (nianjing), `命镜` (mingjing), `合镜` (hejing), and
+  `问镜` (shijing). See `rule.shijing.ia.r001` in
+  `.nimi/spec/shijing/canonical/ia.authority.yaml`. `命镜` is the whole-life
+  natal projection surface; `合镜` is the self-plus-one-Person relationship
+  workbench governed by `rule.shijing.ia.r009`.
 - No History tab. No customer management. No batch import/export. No project
-  management vocabulary. See `removed-surfaces-contract.md`.
+  management vocabulary. See `rule.shijing.ia.r002` and
+  `.nimi/spec/shijing/canonical/removed-surfaces.authority.yaml`.
 
 ### Subjects Boundary
 
 - Subjects are `self` or `{ kind: "person", id }`. `Person` is an
   other-person astrology object only — it does NOT own conversations,
   events, views, focus themes, notification settings, or app lifecycle.
-- `View.anchor_subject` must always be a member of `View.subjects`.
+- Mirror readings are self-anchored by default. A related Person enters only
+  through resolved concern tags, PlanItems, EventMemory references, or the
+  exactly-one-Person HeJing workbench; no `View` or
+  `CurrentObservationTarget` model may be reintroduced.
 
 ### Privacy Boundary
 
@@ -158,7 +151,7 @@ pnpm nimicoding:doctor
 
 ## Retrieval Defaults
 
-Start with: `spec/kernel/`, `src/domain/`, `src/contracts/`,
+Start with: `.nimi/spec/shijing/canonical/`, `src/domain/`, `src/contracts/`,
 `src/product/astrology/`, `src/product/state/`, `src/product/persistence/`,
 `src/shell/routes/`.
 
@@ -172,8 +165,7 @@ lockfiles, `.nimi/cache/`, `.nimi/local/`, `.nimi/topics/`.
   Reading / Snapshot.
 - ESM imports use `.ts` extension for in-repo TypeScript files. Node 24
   native `--experimental-strip-types` requires literal `.ts`; the matching
-  `tsconfig.json` opts in via `allowImportingTsExtensions: true`. This is
-  documented under "Admitted Scaffold Drift" in `spec/AGENTS.md`.
+  `tsconfig.json` opts in via `allowImportingTsExtensions: true`.
 - Canonical hashing (`SJG-ALGO-11`) uses sha256 + json-c14n-v1 + NFC +
   utf-8 + hex-lowercase. The pure-JS implementation in
   `src/product/astrology/canonical-hash.ts` is the only authority; do not
@@ -183,20 +175,12 @@ lockfiles, `.nimi/cache/`, `.nimi/local/`, `.nimi/topics/`.
 <!-- nimicoding:managed:agents:start -->
 # Nimi Coding Managed Block
 
-- Read .nimi/methodology, .nimi/spec, and .nimi/contracts before high-risk changes.
-- Treat .nimi as the primary AI truth surface for this project.
-- Treat `/.nimi/spec/**` as the current repo-wide product authority for this project, and use Git history for retired pre-cutover authority evidence.
-- If .nimi/spec remains bootstrap-only, use .nimi/methodology/spec-reconstruction.yaml and .nimi/config/skills.yaml to drive AI-side truth reconstruction.
-- Treat .nimi/methodology/spec-target-truth-profile.yaml as repo-local support guidance for future governance slices, not as the canonical reconstruction completion target or a guaranteed fresh-bootstrap seed.
-- Treat .nimi/contracts/spec-reconstruction-result.yaml, .nimi/contracts/doc-spec-audit-result.yaml, .nimi/contracts/high-risk-execution-result.yaml, and .nimi/contracts/high-risk-admission.schema.yaml as machine contracts for reconstruction, audit, local-only high-risk closeout summaries, and canonical high-risk admission truth.
-- Treat .nimi/config/skill-manifest.yaml, .nimi/config/host-profile.yaml, .nimi/config/host-adapter.yaml, .nimi/config/external-execution-artifacts.yaml, .nimi/config/skill-installer.yaml, .nimi/methodology/skill-runtime.yaml, .nimi/methodology/skill-installer-result.yaml, .nimi/methodology/skill-handoff.yaml, and admitted package-owned adapter profiles under adapters/**/profile.yaml as the canonical bridge to any external AI/skill execution.
-- Treat standalone nimicoding as boundary-complete for bootstrap, handoff, validation, projection, and explicit admission only; do not assume packaged run-kernel, provider, scheduler, notification, or automation ownership.
-- Treat .nimi/config/installer-evidence.yaml and .nimi/methodology/skill-installer-summary-projection.yaml as the operational-to-semantic installer projection boundary; do not promote concrete evidence artifacts into semantic truth.
-- Treat high-risk external execution closeout, decision, ingest, and review payloads under .nimi/local/** as local-only operational projections; they do not promote semantic truth automatically, even when manager-owned.
-- Use high-risk packetized execution only when authority, ownership, or cross-layer risk justifies it.
-- Keep inline manager-worker as the default methodology posture; do not assume a separate worker runtime is mandatory.
-- Keep code changes AI-context-efficient: favor bounded, cohesive files and split by responsibility during implementation instead of first concentrating unrelated logic into one file.
-- Keep the methodology continuity-agnostic; do not assume daemon, heartbeat, or persistent manager ownership.
-- Treat cutover readiness as preflight evidence only; the authority flip must come from an admitted cutover batch, not from readiness green by itself.
-- Do not treat this managed block as a replacement for project-specific rules outside .nimi.
+- Product authority lives under `.nimi/spec/**`.
+- For canonical authority authoring, read only `.nimi/methodology/authority-authoring.yaml`, the affected authority files or bounded task context, and CLI diagnostics.
+- Use `nimicoding authority context <path> <id> --max-units <n> --max-bytes <n> --json` only for the complete declared outgoing interpretation closure; it is not complete task context, and failure never permits guessed or partial context.
+- Use `nimicoding authority diff` and `authority impact` with explicit `--max-bytes`; impact reports declared review obligations and does not prove implementation, consumers, or tests are synchronized.
+- Under `.nimi/spec/**`, author only closed multi-unit `*.authority.yaml` containers or single-unit `*.authority.md`; historical document formats are unsupported and never inferred.
+- Run `nimicoding authority fmt` on each changed file, then `nimicoding authority check` on the complete authority input set.
+- Never bypass a failure with inferred or fallback semantics; choose repair values only from product/task authority.
+- Keep derived and verification evidence under `.nimi/local/**`; it is never product authority.
 <!-- nimicoding:managed:agents:end -->

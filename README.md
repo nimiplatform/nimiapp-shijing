@@ -14,53 +14,48 @@ app.
 |-------|-----------|----------|
 | Desktop shell | Tauri 2 | `src-tauri/` |
 | Frontend | React 19 + Vite 7 | `src/shell/renderer/` |
-| Persistence | IndexedDB (browser) / in-memory fallback | `src/product/persistence/` |
+| Persistence | Protected operation pending admission; IndexedDB/in-memory remain dev/test-only | `src/product/persistence/` |
 | Astrology pipeline | Pure-TS deterministic v1 (`bazi_ganzhi_jieqi_dayun_v1`) | `src/product/astrology/` |
 | AI wording | nimi runtime (`runtime.ai.text.generate`) | via `@nimiplatform/sdk` |
 | UI components | `@nimiplatform/kit` | npm dependency |
-| Governance | `@nimiplatform/nimi-coding` + `.nimi/**` | bootstrap projections |
+| Governance | `@nimiplatform/nimi-coding` + `.nimi/**` | v2 canonical authority |
 
 ## Product Surface
 
-Four primary tabs (`SJG-IA-*`):
+Exactly six primary tabs, governed by `rule.shijing.ia.r001`:
 
-- **今日 (Today)** — Generate and display the daily reading for the
-  currently observed subject.
-- **关注 (Views)** — Create / manage `View`s; each view fixes a subject set,
-  an anchor subject, a time window, and a template.
-- **问时镜 (Consultation)** — Ad-hoc consultation readings against an
-  anchored subject.
-- **我 (Me)** — `self_subject` `NatalInputs` + workspace `Settings`.
+- **日镜 (RiJing)** — Daily reflection.
+- **月镜 (YueJing)** — Rolling 30-day calendar.
+- **年镜 (NianJing)** — Long-horizon phase bands and inflection points.
+- **命镜 (MingJing)** — Whole-life self natal projection.
+- **合镜 (HeJing)** — Self-plus-one-Person relationship workbench.
+- **问镜 (ShiJing)** — Session-based consultation grounded in cited readings.
 
-The data root is `ShiJingSpace`: `self_subject`, `persons[]`, `relations[]`,
-`events[]`, `views[]`, `readings[]`, `conversations[]`, `settings`. See
-`.nimi/spec/shijing/kernel/data-model-contract.md`.
+The sole user-data root is `ShiJingSpace`: `user_id`, `self_subject`,
+`persons[]`, `concern_tags[]`, `event_memories[]`, `plan_items[]`,
+`readings[]`, `conversations[]`, and `settings`. See
+`rule.shijing.data-model.r002` in
+`.nimi/spec/shijing/canonical/data-model.authority.yaml`.
 
 ## Spec Authority
 
-Normative product authority lives under `.nimi/spec/shijing/kernel/**`
-(markdown contracts + typed YAML tables). Guides:
-
-- `.nimi/spec/INDEX.md` — cross-domain reading path
-- `.nimi/spec/shijing/index.md` — domain reading guide
-- `.nimi/spec/shijing/shijing.md` — top-level product positioning
-- `.nimi/spec/shijing/AGENTS.md` — authoring rules + admitted drift
-- `.nimi/spec/shijing/kernel/index.md` — kernel authority map
+Normative product authority lives in closed v2 containers under
+`.nimi/spec/shijing/canonical/**`.
 
 Contract families:
 
 | Family | File |
 |--------|------|
-| `SJG-PROD-*` | `.nimi/spec/shijing/kernel/product-contract.md` |
-| `SJG-DATA-*` | `.nimi/spec/shijing/kernel/data-model-contract.md` |
-| `SJG-ASTRO-*` | `.nimi/spec/shijing/kernel/astrology-contract.md` |
-| `SJG-ALGO-*` | `.nimi/spec/shijing/kernel/algorithm-contract.md` |
-| `SJG-IA-*` | `.nimi/spec/shijing/kernel/ia-contract.md` |
-| `SJG-REMOVED-*` | `.nimi/spec/shijing/kernel/removed-surfaces-contract.md` |
+| Product | `.nimi/spec/shijing/canonical/product.authority.yaml` |
+| Data model | `.nimi/spec/shijing/canonical/data-model.authority.yaml` |
+| Astrology | `.nimi/spec/shijing/canonical/astrology.authority.yaml` |
+| Algorithm | `.nimi/spec/shijing/canonical/algorithm.authority.yaml` |
+| IA | `.nimi/spec/shijing/canonical/ia.authority.yaml` |
+| Removed surfaces | `.nimi/spec/shijing/canonical/removed-surfaces.authority.yaml` |
 
-`.nimi/{config,contracts,methodology}/**` are projections from
-`@nimiplatform/nimi-coding`; they are managed by `pnpm nimicoding sync` and
-must not be hand-edited.
+`.nimi/methodology/authority-authoring.yaml` is managed by
+`@nimiplatform/nimi-coding`; app-specific configuration and contracts remain
+host owned.
 
 ## Prerequisites
 
@@ -107,6 +102,11 @@ pnpm test
 # Lint (typecheck + eslint + cargo check)
 pnpm lint
 
+# Canonical authority
+pnpm spec:authority:check
+pnpm spec:authority:compile
+pnpm exec nimicoding sync --check
+
 # Native bundle (DMG / NSIS / AppImage depending on host)
 pnpm build:shell
 ```
@@ -134,16 +134,16 @@ Persisted Reading
 
 The Runtime AI layer is an **explanation layer only**. Pillars, DaYun,
 true-solar canonicalization, stage labels, and key windows are owned by the
-deterministic pipeline. See `.nimi/spec/shijing/kernel/algorithm-contract.md`.
+deterministic pipeline. See `.nimi/spec/shijing/canonical/algorithm.authority.yaml`.
 
 Canonical hashing (`SJG-ALGO-11`) uses sha256 + json-c14n-v1 + NFC + utf-8 +
 hex-lowercase. The implementation lives in
 `src/product/astrology/canonical-hash.ts` as a pure-JS SHA-256 so it works
 identically in the Node `--test` runner and the Vite/Tauri renderer.
 
-## Governance projection sync
+## Authority tooling sync
 
-`.nimi/{config,contracts,methodology}/**` is owned by
+`.nimi/methodology/authority-authoring.yaml` is owned by
 `@nimiplatform/nimi-coding`. After bumping the package version:
 
 ```bash

@@ -1,0 +1,170 @@
+format: nimicoding.authority/v2
+owner: team.shijing
+scope: shijing.ia
+units:
+  - id: definition.shijing.ia.primary-navigation
+    kind: definition
+    title: Primary navigation
+    meaning: "Primary navigation presents six tabs in widening 命理 horizon order: rijing 日镜 Daily Mirror, yuejing 月镜 Monthly Mirror, nianjing 年镜 Yearly Mirror, mingjing 命镜 Destiny Mirror, hejing 合镜 Relationship Mirror, and shijing 问镜 Consultation Mirror."
+  - id: definition.shijing.ia.removed-primary-tabs
+    kind: definition
+    title: Removed primary tabs
+    meaning: Primary tab ids today, views, consultation, me, history, huangli, reports, customers, clients, trends, and consultants and labels 今日, 关注, 问时镜, and 我 are not active navigation.
+  - id: definition.shijing.ia.mirror-subject-routing
+    kind: definition
+    title: Mirror subject routing
+    meaning: Mirror readings are self-anchored by default, and related persons enter only through resolved concern tags, plan items, or memory references, without a CurrentObservationTarget switcher.
+  - id: definition.shijing.ia.secondary-settings
+    kind: definition
+    title: Secondary settings
+    meaning: Secondary Settings is reached from the global account or settings button and typed readiness blockers and contains Self, People, Concern Tags, Memory and Plans, Response Preferences, Privacy or Local Data, and Diagnostics exactly once across a total and disjoint ordered page grouping.
+  - id: definition.shijing.ia.settings-page-profile
+    kind: definition
+    title: Profile settings page
+    meaning: Settings page order 1 has id profile, label 档案, and contains Self and People.
+  - id: definition.shijing.ia.settings-page-memory
+    kind: definition
+    title: Memory settings page
+    meaning: Settings page order 2 has id memory, label 发生过的事, and contains Memory and Plans as a full-life archive and backfill record list rather than a View-like workspace; primary event entry and display remain on RiJing, YueJing, and NianJing time surfaces.
+  - id: definition.shijing.ia.settings-page-concerns
+    kind: definition
+    title: Concern settings page
+    meaning: Settings page order 3 has id concerns, label 关注, and contains Concern Tags as low-frequency configuration for a forward-looking cross-cutting lens.
+  - id: definition.shijing.ia.settings-page-settings
+    kind: definition
+    title: Preference settings page
+    meaning: Settings page order 4 has id settings, label 设置, and contains Response Preferences, Privacy or Local Data, and Diagnostics.
+  - id: definition.shijing.ia.readiness-blockers
+    kind: definition
+    title: Readiness blockers
+    meaning: Mirror blockers cover protected-session login required, verified Runtime unavailable, installed-app permission denied, signed-installation repair required, protected capability unavailable, missing or invalid self natal inputs, unresolved person mention, incomplete related-Person natal inputs, stale Reading inputs, Runtime-AI failure, persistence failure, and hash mismatch, each with a recovery route.
+  - id: definition.shijing.ia.concern-tag-controls
+    kind: definition
+    title: Concern tag controls
+    meaning: Concern-tag creation, archive and unarchive, mention resolution, and active-count feedback may appear in mirror filters and Settings without creating a View-like workspace, roster editor, or time-window builder.
+  - id: definition.shijing.ia.routing-contract
+    kind: definition
+    title: Routing contract
+    meaning: Downstream source exposes one ordered IA constant for the canonical primary tabs and one ordered page constant for Settings, and renderer code consumes those constants rather than parallel hardcoded lists.
+  - id: definition.shijing.ia.mingjing-surface
+    kind: definition
+    title: MingJing surface
+    meaning: MingJing is one whole-life self natal primary surface whose selected method route controls deterministic modules, evidence, and fail-close state; BaZi, Ziwei, and QiZheng routes render their admitted natal evidence directly, while AI interpretations and historical-event validation remain separately admitted and relationship analysis belongs to HeJing.
+  - id: definition.shijing.ia.hejing-workbench
+    kind: definition
+    title: HeJing workbench
+    meaning: HeJing is an independent primary self-plus-one-Person relationship workbench for object selection, basis, phase, completeness, future hints, diagnostic indices, self and other structure, convergence and friction, interaction language, practical advice, future windows, and review records, without Relation, graph, customer, project, or Person-owned lifecycle semantics.
+  - id: rule.shijing.ia.r001
+    kind: rule
+    title: Six ordered primary tabs
+    modality: must
+    statement: "The renderer exposes exactly six primary tabs in widening 命理 horizon order: 1 rijing 日镜 Daily Mirror, 2 yuejing 月镜 Monthly Mirror, 3 nianjing 年镜 Yearly Mirror, 4 mingjing 命镜 Destiny Mirror as self natal projection, 5 hejing 合镜 Relationship Mirror as self-plus-one-selected-Person workbench, and 6 shijing 问镜 Consultation Mirror as the final consultation surface."
+    condition: Whenever primary navigation is rendered.
+    failure: Reject the navigation contract or renderer state with a missing, additional, reordered, or repurposed tab.
+    relations:
+      - type: applies_to
+        target: definition.shijing.ia.primary-navigation
+      - type: applies_to
+        target: definition.shijing.product.six-tabs
+  - id: rule.shijing.ia.r002
+    kind: rule
+    title: Removed primary tabs
+    modality: must_not
+    statement: Primary navigation contains ids today, views, consultation, me, history, huangli, reports, customers, clients, trends, or consultants, or active primary labels 今日, 关注, 问时镜, or 我.
+    condition: Always.
+    failure: Reject the navigation configuration and do not render the removed tab.
+    relations:
+      - type: applies_to
+        target: definition.shijing.ia.removed-primary-tabs
+  - id: rule.shijing.ia.r003
+    kind: rule
+    title: Subject routing boundary
+    modality: must_not
+    statement: The product defines a CurrentObservationTarget switcher, anchors mirror readings away from self by default, or includes a related person outside a resolved concern tag, PlanItem, or EventMemory reference.
+    condition: Always.
+    failure: Reject the subject-routing state and keep the mirror self-anchored.
+    relations:
+      - type: applies_to
+        target: definition.shijing.ia.mirror-subject-routing
+  - id: rule.shijing.ia.r004
+    kind: rule
+    title: Complete secondary settings
+    modality: must
+    statement: Removing 我 from primary navigation is paired with complete secondary Settings containing Self, People, Concern Tags, Memory and Plans, Response Preferences, Privacy or Local Data, and Diagnostics, reachable from a global account or settings button and typed readiness blockers; every surface appears exactly once across total, disjoint pages ordered as profile 档案 with Self and People, memory 发生过的事 with Memory and Plans, concerns 关注 with Concern Tags, and settings 设置 with Response Preferences, Privacy or Local Data, and Diagnostics; concern tags remain a dedicated low-frequency forward-looking lens; memory and plans enter primarily on RiJing, YueJing, and NianJing time surfaces while the memory page is only full-life archive and backfill records rather than a View-like workspace; downstream source exposes one ordered page constant matching this grouping; and renderer code consumes it rather than hardcoding another list.
+    condition: Whenever Settings navigation or page grouping is defined or rendered.
+    failure: Reject incomplete, duplicate, overlapping, reordered, View-like, or hardcoded Settings navigation.
+    relations:
+      - type: applies_to
+        target: definition.shijing.ia.routing-contract
+      - type: applies_to
+        target: definition.shijing.ia.secondary-settings
+      - type: applies_to
+        target: definition.shijing.ia.settings-page-concerns
+      - type: applies_to
+        target: definition.shijing.ia.settings-page-memory
+      - type: applies_to
+        target: definition.shijing.ia.settings-page-profile
+      - type: applies_to
+        target: definition.shijing.ia.settings-page-settings
+  - id: rule.shijing.ia.r005
+    kind: rule
+    title: Blocker recovery routing
+    modality: must
+    statement: Every mirror displays typed blockers and recovery routes for protected-session login required, verified Runtime unavailable, installed-app permission denied, signed-installation repair required, protected ShiJing capability unavailable, missing self natal inputs, invalid self natal inputs, unresolved person mention, incomplete related-Person natal inputs, stale Reading inputs, Runtime-AI failure, persistence failure, and hash mismatch.
+    condition: Whenever a mirror readiness or generation prerequisite is unsatisfied.
+    failure: Display the matching typed blocker and route instead of successful mirror content.
+    relations:
+      - type: applies_to
+        target: definition.shijing.ia.readiness-blockers
+  - id: rule.shijing.ia.r006
+    kind: rule
+    title: Bounded concern controls
+    modality: must
+    statement: Concern-tag creation, archive and unarchive, mention resolution, and active-count feedback may appear only within mirror filters and Settings and never become a standalone View-like workspace, roster editor, or time-window builder.
+    condition: Whenever concern-tag controls are exposed.
+    failure: Reject the standalone or View-like concern-management surface.
+    relations:
+      - type: applies_to
+        target: definition.shijing.data-model.concern-tag
+      - type: applies_to
+        target: definition.shijing.ia.concern-tag-controls
+  - id: rule.shijing.ia.r007
+    kind: rule
+    title: Single routing constant
+    modality: must
+    statement: Downstream source exposes one ordered IA constant matching canonical primary navigation, and renderer code consumes that contract rather than hardcoding a parallel primary-tab list.
+    condition: Whenever primary navigation is implemented.
+    failure: Reject source or renderer code with an absent, divergent, or parallel hardcoded tab list.
+    relations:
+      - type: applies_to
+        target: definition.shijing.ia.primary-navigation
+      - type: applies_to
+        target: definition.shijing.ia.routing-contract
+  - id: rule.shijing.ia.r008
+    kind: rule
+    title: MingJing method routes
+    modality: must
+    statement: MingJing is one whole-life method-routed self natal primary surface anchored to birth chart rather than a rolling window, and Settings.method_profile_id selects its route, modules, evidence, and fail-close state; BaZi renders deterministic four pillars, ten gods, hidden stems, nayin, twelve-growth terrain, void, five elements, strength, pattern, useful and favorable elements, branch relations, the full DaYun sequence, and salient future-year windows directly without Reading or Runtime-AI wording, requires exact birth precision and specified calculation sex, and otherwise routes a typed blocker to Self; an unimplemented selected route displays mingjing_route_unavailable and never another method; AI interpretation and historical-event overlay are separate and never recompute deterministic projection; Ziwei renders natal-only 命宫, 身宫, 五行局, 命主身主, twelve palaces, and a natal brief over deterministic decadal ranges, with relationship analysis excluded and unsupported evidence failing closed rather than switching method or asking AI; QiZheng renders natal-only ascendant, day or night basis, 七政四余 placements, twelve houses, twenty-eight mansion intervals, and a natal brief over deterministic star targets, requires exact time plus resolved location and timezone, excludes relationship analysis until dedicated evidence is admitted, and exposes virtual-model provenance; MingJing has no relationship secondary mode and remains self natal projection.
+    condition: Whenever MingJing resolves, renders, or words a method route.
+    failure: Display the exact route or readiness blocker and render no fallback method, relationship mode, or synthetic projection.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.route-mingjing-bazi-ziping-v1
+      - type: applies_to
+        target: definition.shijing.algorithm.route-mingjing-qizheng-siyu-guolao-v1
+      - type: applies_to
+        target: definition.shijing.algorithm.route-mingjing-ziwei-sanhe-v1
+      - type: applies_to
+        target: definition.shijing.ia.mingjing-surface
+  - id: rule.shijing.ia.r009
+    kind: rule
+    title: HeJing workbench
+    modality: must
+    statement: HeJing is an independent primary tab at the same level as RiJing, YueJing, NianJing, MingJing, and ShiJing consultation for self plus exactly one Person and renders a modular workbench with relationship type and object selection; relationship basis, current phase, information completeness, and future hint; relationship indices as product diagnostics rather than fate claims; self and other structure plus convergence and friction; interaction language and practical advice; and future windows and review records; it never becomes a Relation entity, relation graph, contact or customer workspace, project-management surface, or Person-owned lifecycle, and selecting a Person never gives that Person ownership of generated output or conversations.
+    condition: Whenever HeJing is rendered or relationship context is selected.
+    failure: Reject invalid cardinality, ownership, entity creation, or prohibited workbench semantics.
+    relations:
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-hejing
+      - type: applies_to
+        target: definition.shijing.ia.hejing-workbench

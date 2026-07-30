@@ -34,6 +34,8 @@
     "i18n:audit": "node scripts/i18n-audit.mjs",
     "nimicoding": "nimicoding",
     "nimicoding:doctor": "nimicoding doctor",
+    "spec:authority:check": "nimicoding authority check .nimi/spec --require-format nimicoding.authority/v2",
+    "spec:authority:compile": "nimicoding authority compile .nimi/spec",
     "nimicoding:validate-ai-governance": "pnpm exec nimicoding validate-ai-governance"
   },
   "dependencies": {
@@ -53,7 +55,7 @@
     "@nimiplatform/app-tools": "link:../../nimi/app-tools",
     "@nimiplatform/kit-protected-local-win32-x64": "link:../../nimi/kit/shell/protected-local-node/npm/win32-x64",
     "@eslint/js": "^10.0.1",
-    "@nimiplatform/nimi-coding": "^0.2.5",
+    "@nimiplatform/nimi-coding": "0.4.0",
     "@tailwindcss/vite": "^4.3.0",
     "@tauri-apps/cli": "^2.11.2",
     "@types/node": "^24.10.1",
@@ -68,7 +70,8 @@
     "tailwindcss": "^4.3.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.4",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "yaml": "^2.9.0"
   },
   "author": "Nimi Team",
   "license": "Apache-2.0"

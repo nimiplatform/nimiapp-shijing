@@ -1,6 +1,6 @@
-// SJG-REMOVED-02 — Removed-surface name guard.
+// rule.shijing.removed-surfaces.r002 — Removed-surface name guard.
 //
-// Mirrors `.nimi/spec/shijing/kernel/tables/removed-surface-names.yaml`.
+// Mirrors `.nimi/spec/shijing/canonical/removed-surfaces.authority.yaml`.
 // Source/spec guards must reject every removed name as active product/source
 // truth. The guard is exact-symbol / exact-field / exact-surface matching.
 // Admitted v1 names (EventMemory, PlanItem, ConcernTag, …) are kept in the

@@ -1,4 +1,4 @@
-// SJG-IA-01 — primary tab router for the four-mirror shell.
+// rule.shijing.ia.r001 — primary router for the six-tab mirror shell.
 
 import { type ReactNode } from 'react';
 import {

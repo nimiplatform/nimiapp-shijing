@@ -1,0 +1,302 @@
+format: nimicoding.authority/v2
+owner: team.shijing
+scope: shijing.astrology
+units:
+  - id: definition.shijing.astrology.mirror-rijing
+    kind: definition
+    title: RiJing mirror
+    meaning: RiJing is the daily mirror and allows only daily scope; rolling_30_day, long_horizon, natal, relationship_natal, and consultation scopes are forbidden.
+  - id: definition.shijing.astrology.mirror-yuejing
+    kind: definition
+    title: YueJing mirror
+    meaning: YueJing is the rolling 30-day mirror and allows only rolling_30_day scope; daily, long_horizon, natal, relationship_natal, and consultation scopes are forbidden.
+  - id: definition.shijing.astrology.mirror-nianjing
+    kind: definition
+    title: NianJing mirror
+    meaning: NianJing is the long-horizon phase-and-inflection mirror and allows only long_horizon scope; daily, rolling_30_day, natal, relationship_natal, and consultation scopes are forbidden.
+  - id: definition.shijing.astrology.mirror-mingjing
+    kind: definition
+    title: MingJing mirror
+    meaning: MingJing is the self-anchored whole-life natal AI-interpretation mirror and allows natal and relationship_natal scopes; daily, rolling_30_day, long_horizon, and consultation scopes are forbidden.
+  - id: definition.shijing.astrology.mirror-shijing
+    kind: definition
+    title: ShiJing consultation mirror
+    meaning: ShiJing is the consultation mirror grounded in cited Readings and allows only consultation scope; daily, rolling_30_day, long_horizon, natal, and relationship_natal scopes are forbidden.
+  - id: definition.shijing.astrology.mirror-hejing
+    kind: definition
+    title: HeJing relationship mirror
+    meaning: HeJing is the primary product UX for self-plus-one-Person relationship_natal analysis persisted under the MingJing Reading kind; it is not an additional Reading.mirror_kind.
+  - id: definition.shijing.astrology.scope-daily
+    kind: definition
+    title: Daily scope
+    meaning: Daily scope requires date and basis_time_zone and has primary_subject_ref self.
+  - id: definition.shijing.astrology.scope-rolling-30-day
+    kind: definition
+    title: Rolling 30-day scope
+    meaning: Rolling_30_day scope requires start_date, end_date, and basis_time_zone, spans 30 local days, and has primary_subject_ref self.
+  - id: definition.shijing.astrology.scope-long-horizon
+    kind: definition
+    title: Long-horizon scope
+    meaning: Long_horizon scope requires start_date, end_date, and basis_time_zone, has primary_subject_ref self, spans at least 12 local months and at most 10 local years, defaults to January 1 of anchor_year through December 31 of anchor_year plus 10, allows next-3-year, next-5-year, next-10-year, and current-DaYun presets, and forbids free-form or reusable windows.
+  - id: definition.shijing.astrology.scope-natal
+    kind: definition
+    title: Natal scope
+    meaning: Natal scope requires anchor_year from 1900 through 2200 and basis_time_zone, has primary_subject_ref self, uses anchor_year only as current and future-year provenance within a deterministic one-year canonical window, requires no concern tags, and forbids free-form or reusable windows.
+  - id: definition.shijing.astrology.scope-relationship-natal
+    kind: definition
+    title: Relationship natal scope
+    meaning: Relationship_natal scope requires exactly one related_person_ref of kind person, anchor_year, and basis_time_zone, has primary_subject_ref self, and forbids concern_tag_refs and cited_reading_ids.
+  - id: definition.shijing.astrology.scope-consultation
+    kind: definition
+    title: Consultation scope
+    meaning: Consultation scope requires at least one source_reading_id and basis_time_zone, optionally carries a question_window of 1 through 365 local days, and forbids making that window a reusable time container.
+  - id: definition.shijing.astrology.mirror-output-common
+    kind: definition
+    title: Common mirror output
+    meaning: Every MirrorOutput is structured JSON requiring mirror_kind, summary, and citations; score, luck_score, trend_chart, k_line, report, task_status, and progress fields are forbidden; each citation requires method and reference, with method limited to bazi_ziping_v1, ziwei_sanhe_v1, or qizheng_siyu_guolao_v1.
+  - id: definition.shijing.astrology.output-rijing
+    kind: definition
+    title: RiJing output
+    meaning: RiJing output requires mirror_kind, summary, daily_overview, concern_projections, cited_event_memory_refs, cited_plan_item_refs, and citations; each concern projection requires concern_tag_ref, tendency_class, summary, and recommendations.
+  - id: definition.shijing.astrology.output-yuejing
+    kind: definition
+    title: YueJing output
+    meaning: YueJing output is one local date per Reading, calendar UI aggregates multiple Readings, cells target scope start_date, and output requires mirror_kind, summary, range, cells, cited_event_memory_refs, cited_plan_item_refs, and citations; each cell requires date, concern_tag_ref, tendency_class, and summary, with tendency_class supportive, steady, watch, blocked, or turning.
+  - id: definition.shijing.astrology.output-nianjing
+    kind: definition
+    title: NianJing output
+    meaning: NianJing output requires mirror_kind, summary, horizon, phase_bands, inflection_points, cited_event_memory_refs, cited_plan_item_refs, and citations; each phase band requires concern_tag_ref, start_date, end_date, nature, driver_refs, and summary; each inflection point requires concern_tag_ref, date, kind, driver_refs, and summary and may carry a start_date and end_date date_window; curve, k_line_bar, numeric_series, luck_score, and trend_chart are forbidden authoritative visual data.
+  - id: definition.shijing.astrology.output-shijing
+    kind: definition
+    title: ShiJing output
+    meaning: ShiJing output requires mirror_kind, summary, answer, non-empty cited_reading_ids, cited_event_memory_refs, cited_plan_item_refs, and citations, and neither mutates deterministic facts nor creates a parallel astrology output entity.
+  - id: definition.shijing.astrology.output-mingjing
+    kind: definition
+    title: BaZi MingJing output
+    meaning: BaZi MingJing output requires mirror_kind, summary, core, life_stage_strategies, event_validations, cited_event_memory_refs, cited_plan_item_refs, and citations; core AI wording requires personality, strengths, long_term_themes, relationship_pattern, and career_inclination; each life-stage strategy requires deterministic phase_label, age_range, and dayun_pillar plus AI-worded theme and strategy; each event validation requires event_memory_ref, occurred_year, period_nature, and note with optional dayun_pillar and is deterministic resonance never AI-patched; concern tags are not required and AI never recomputes or mutates chart facts.
+  - id: definition.shijing.astrology.output-mingjing-ziwei-natal-brief
+    kind: definition
+    title: Ziwei natal brief
+    meaning: Ziwei natal brief requires mirror_kind, output_kind ziwei_natal_brief, summary, chart_basis, profile, decade_guidance, cited_event_memory_refs, cited_plan_item_refs, and citations; deterministic chart_basis requires soul_palace_branch, soul_palace_name, body_palace_name, five_elements_class, soul_star, body_star, palace_count, and sihua_refs; AI-worded profile requires life_pattern, strengths, long_term_theme, relationship_pattern, and career_inclination; at least one guidance item requires deterministic age_range, palace_name, palace_branch, and major_stars plus AI-worded theme and strategy; palace, star, and decadal ranges remain deterministic, and relationship HePan, match scores, and trend curves are excluded.
+  - id: definition.shijing.astrology.output-mingjing-qizheng-siyu-natal-brief
+    kind: definition
+    title: QiZheng natal brief
+    meaning: QiZheng SiYu natal brief requires mirror_kind, output_kind qizheng_siyu_natal_brief, summary, chart_basis, profile, star_guidance, cited_event_memory_refs, cited_plan_item_refs, and citations; deterministic chart_basis requires ascendant_longitude, day_night, zodiac_model, house_model, mansion_model, siyu_model, ephemeris_version, and key_body_refs; AI-worded profile requires life_pattern, strengths, long_term_theme, relationship_pattern, and career_inclination; at least one guidance item requires deterministic body_key, body_label, house_name, mansion, and position_class plus AI-worded theme and strategy; star positions and virtual-point provenance remain deterministic, raw model ids receive product copy, the mansion model is explicitly the 28-equal-mansion approximation rather than full 距星 or 距度入宿, and relationship HePan, match scores, and trend curves are excluded.
+  - id: definition.shijing.astrology.output-mingjing-relationship-hepan
+    kind: definition
+    title: Relationship HePan output
+    meaning: Relationship HePan output requires mirror_kind, output_kind relationship_hepan, relationship_subject, summary, structure, timing_windows, practice, cited_event_memory_refs, cited_plan_item_refs, and citations; subject requires primary self, exactly one Person related_person_ref, anchor_year, and basis_time_zone; structure requires baseline_pattern, attraction_and_support, friction_and_misread, communication_rhythm, and boundary_advice; at least one timing window requires start_date, end_date, nature, deterministic driver_refs, and summary; AI-worded practice requires communication, boundary, and repair grounded in deterministic evidence; match scores and Runtime-AI calculation are forbidden.
+  - id: definition.shijing.astrology.uncertainty-annotation
+    kind: definition
+    title: Uncertainty annotation
+    meaning: UncertaintyAnnotation contains confidence low, medium, or high, caveats, and data_gaps and accompanies every ready Reading subject to a deterministic maximum that Runtime AI may lower but never raise.
+  - id: definition.shijing.astrology.inputs-summary-freshness
+    kind: definition
+    title: Inputs summary freshness
+    meaning: Freshness is measured from captured_at, with mirror-specific time and source-change expiry; historical expired snapshots remain retained but are never reused for new wording.
+  - id: definition.shijing.astrology.protected-generation
+    kind: definition
+    title: Protected AI generation
+    meaning: Reading AI generation is owned by a separately admitted protected Nimi Runtime operation consumed through the shared SDK or Kit boundary, never by direct transport, app-selected endpoints, hardcoded provider or model literals, or fallback masking.
+  - id: definition.shijing.astrology.relationship-hepan
+    kind: definition
+    title: Relationship HePan
+    meaning: Relationship HePan is deterministic self-plus-one-Person relationship structure and anchor-year timing evidence, surfaced primarily through HeJing and worded by Runtime AI only after deterministic evidence exists.
+  - id: rule.shijing.astrology.r001
+    kind: rule
+    title: Reading mirror kinds
+    modality: must
+    statement: Reading.mirror_kind is exactly rijing for the daily mirror, yuejing for the rolling 30-day mirror, nianjing for the long-horizon phase-and-inflection mirror, mingjing for self-anchored whole-life natal AI interpretation grounded in deterministic natal projection without required concern tags, or shijing for consultation grounded in cited Readings.
+    condition: Whenever a Reading is created or validated.
+    failure: Reject a Reading with any other mirror kind.
+    relations:
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-hejing
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-mingjing
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-nianjing
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-rijing
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-shijing
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-yuejing
+  - id: rule.shijing.astrology.r002
+    kind: rule
+    title: Mirror scope matrix
+    modality: must
+    statement: "Reading.mirror_scope.kind is exactly daily, rolling_30_day, long_horizon, natal for MingJing whole-life anchor-year scope, relationship_natal, or consultation, and valid pairings and all scope requirements follow the closed matrix: RiJing only daily, YueJing only rolling_30_day, NianJing only long_horizon, MingJing only natal or relationship_natal, ShiJing only consultation, with HeJing serving the relationship_natal UX without adding a Reading kind."
+    condition: Whenever a mirror scope is paired with a Reading kind.
+    failure: Reject the kind and scope pair before generation.
+    relations:
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-hejing
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-mingjing
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-nianjing
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-rijing
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-shijing
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-yuejing
+      - type: applies_to
+        target: definition.shijing.astrology.scope-consultation
+      - type: applies_to
+        target: definition.shijing.astrology.scope-daily
+      - type: applies_to
+        target: definition.shijing.astrology.scope-long-horizon
+      - type: applies_to
+        target: definition.shijing.astrology.scope-natal
+      - type: applies_to
+        target: definition.shijing.astrology.scope-relationship-natal
+      - type: applies_to
+        target: definition.shijing.astrology.scope-rolling-30-day
+  - id: rule.shijing.astrology.r003
+    kind: rule
+    title: Structured mirror output
+    modality: must
+    statement: Reading.output is structured JSON matching the common and selected per-kind MirrorOutput definitions, cites every EventMemory or PlanItem it uses, includes no field outside the admitted contract, and receives Runtime-AI prose wording only after deterministic feature snapshots exist.
+    condition: Whenever Reading output is generated or validated.
+    failure: Reject the complete output as a typed validation failure.
+    relations:
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-output-common
+      - type: applies_to
+        target: definition.shijing.astrology.output-mingjing
+      - type: applies_to
+        target: definition.shijing.astrology.output-mingjing-qizheng-siyu-natal-brief
+      - type: applies_to
+        target: definition.shijing.astrology.output-mingjing-relationship-hepan
+      - type: applies_to
+        target: definition.shijing.astrology.output-mingjing-ziwei-natal-brief
+      - type: applies_to
+        target: definition.shijing.astrology.output-nianjing
+      - type: applies_to
+        target: definition.shijing.astrology.output-rijing
+      - type: applies_to
+        target: definition.shijing.astrology.output-shijing
+      - type: applies_to
+        target: definition.shijing.astrology.output-yuejing
+  - id: rule.shijing.astrology.r004
+    kind: rule
+    title: RiJing output
+    modality: must
+    statement: RiJing output contains a daily overview, one projection block per active concern, a bounded tendency class, evidence citations, and optional cited memory and plan references; it is self-anchored and includes related persons only when active concern tags or cited context resolve them.
+    condition: Whenever RiJing output is generated.
+    failure: Reject incomplete or improperly anchored RiJing output.
+    relations:
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-rijing
+      - type: applies_to
+        target: definition.shijing.astrology.output-rijing
+  - id: rule.shijing.astrology.r005
+    kind: rule
+    title: YueJing daily granularity
+    modality: must
+    statement: YueJing is generated and persisted one local date per Reading while mirror_scope remains rolling_30_day with start_date equal to the generated date and end_date equal to the 30-day context boundary; each Reading contains cells only for start_date, may contain one or more active concern-tag projections for that date, uses only supportive, steady, watch, blocked, or turning tendency classes, contains generated-date details and cited plan and memory refs when used, and is aggregated with other persisted YueJing Readings for the visible calendar; empty dates remain ungenerated until generation occurs, Runtime AI is never asked to word 30 dates in one request, and tendency classes are not numeric scores, rankings, or curve inputs.
+    condition: Whenever YueJing is generated, persisted, or assembled for display.
+    failure: Reject multi-date output or invalid tendency data and leave ungenerated dates empty rather than synthesizing cells.
+    relations:
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-yuejing
+      - type: applies_to
+        target: definition.shijing.astrology.output-yuejing
+  - id: rule.shijing.astrology.r006
+    kind: rule
+    title: NianJing output boundary
+    modality: must
+    statement: NianJing output contains concern-tag phase bands, concern-tag inflection points, deterministic reasons or citation keys, and wording summaries; phase bands and inflection points are its only authoritative visual data, and output contains no authoritative curves, K-line bars, trend charts, numeric luck scores, rankable yearly or daily numbers, or aggregatable score series.
+    condition: Whenever NianJing output is generated or displayed as authoritative data.
+    failure: Reject output containing a forbidden visual form or missing structured bands and points.
+    relations:
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-nianjing
+      - type: applies_to
+        target: definition.shijing.astrology.output-nianjing
+  - id: rule.shijing.astrology.r007
+    kind: rule
+    title: Grounded consultation output
+    modality: must
+    statement: ShiJing consultation output is grounded in source_reading_ids and may explain cited Readings, compare cited mirror results, answer user questions with cited Readings and eligible memory references, and propose reflection language; it creates no astrology output entity outside Reading, mutates no deterministic fact, infers no missing natal input, and never pretends that uncited memory influenced the answer.
+    condition: Whenever consultation output is generated.
+    failure: Reject ungrounded consultation output and persist no synthetic answer.
+    relations:
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-shijing
+      - type: applies_to
+        target: definition.shijing.astrology.output-shijing
+  - id: rule.shijing.astrology.r008
+    kind: rule
+    title: Reading output exclusions
+    modality: must_not
+    statement: Reading output includes numeric luck scores, luck deltas, luck curves, percentiles, ranks, 0-100 or 0-10 scales, reports, monthly reports, yearly reports, report exports, report-like aggregates, trend charts, subject-comparison trend charts, Huangli daily fortune calendar entries, Venture, project, task, milestone, deadline, overdue, board, dependency, Gantt, progress, customer, client, consultant booking, commerce CTA, placeholder, mock, randomized, substitute, empty-success, or completion-marker payloads.
+    condition: Always.
+    failure: Fail the Reading closed without persisted or displayed successful content.
+    relations:
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-output-common
+  - id: rule.shijing.astrology.r009
+    kind: rule
+    title: Uncertainty surface
+    modality: must
+    statement: Every ready Reading carries confidence low, medium, or high, caveats, and data_gaps; the deterministic uncertainty decision sets maximum confidence; Runtime AI may lower but never raise confidence; and missing natal precision, incomplete related-person inputs, unresolved mentions, unavailable memory, and withheld consent are surfaced.
+    condition: Whenever a Reading reaches ready status.
+    failure: Reject a ready Reading with absent, overstated, or incomplete uncertainty.
+    relations:
+      - type: applies_to
+        target: definition.shijing.astrology.uncertainty-annotation
+  - id: rule.shijing.astrology.r010
+    kind: rule
+    title: Inputs summary expiry
+    modality: must
+    statement: "InputsSummary freshness derives from captured_at: RiJing expires after 24 hours; YueJing after 7 days or a rolling-scope change; NianJing after 30 days or an active-concern or natal-input change; MingJing after 180 days or a cited-event, natal-input, or response-preference change; Relationship HePan after 180 days or a related-Person natal-input, consent, anchor_year, scope-payload, self-plus-person deterministic-evidence, or response-preference change, with stale relationship evidence failing before Runtime-AI wording; and ShiJing consultation after 7 days for new AI turns; expired snapshots remain on historical Readings but are never reused for new wording."
+    condition: Whenever an existing inputs summary is considered for new wording or generation.
+    failure: Reject reuse with a typed stale-inputs failure while retaining the historical snapshot.
+    relations:
+      - type: applies_to
+        target: definition.shijing.astrology.inputs-summary-freshness
+      - type: applies_to
+        target: definition.shijing.astrology.relationship-hepan
+  - id: rule.shijing.astrology.r011
+    kind: rule
+    title: Protected Runtime generation
+    modality: must
+    statement: All Reading AI generation runs through a separately admitted protected ShiJing operation owned by Nimi Runtime and consumed through the shared SDK or Kit boundary; direct HTTP or gRPC, ordinary renderer shell bridges, app-selected localhost endpoints, hardcoded provider or model literals, and fallback paths masking Runtime failure remain forbidden; until the protected operation is admitted, generation stays unavailable instead of constructing an app-owned Runtime session.
+    condition: Whenever Reading AI generation is requested.
+    failure: Return a typed Runtime-unavailable failure and generate no Reading.
+    relations:
+      - type: applies_to
+        target: definition.shijing.astrology.protected-generation
+  - id: rule.shijing.astrology.r012
+    kind: rule
+    title: MingJing routed output
+    modality: must
+    statement: "MingJing natal AI interpretation is grounded in the selected deterministic route and receives Runtime-AI wording only after route evidence exists: the BaZi route provides one-line summary, five AI-worded core fields grounded in strength, useful elements, ten gods, and pattern, one strategy per current or upcoming DaYun with deterministic phase_label, age_range, and dayun_pillar and AI-worded theme and strategy, and deterministic event resonance never AI-patched, while never recomputing pillars, DaYun, pattern, or useful elements, asserting inevitable fate from events, creating output outside Reading, or emitting forbidden output; the Ziwei route emits ziwei_natal_brief with deterministic palace, five-element class, governing-star, body-star, count, and transformation references, AI-worded profile, and guidance per deterministic decadal palace range, while Runtime AI never computes or mutates palaces, stars, transformations, ranges, or support and output contains no relationship HePan, compatibility score, match percentage, relation graph, trend curve, year-by-year ledger, or rankable series; the QiZheng SiYu or GuoLao route emits qizheng_siyu_natal_brief with deterministic ascendant, day or night, zodiac, house, mansion, virtual-point model, ephemeris, and body references, AI-worded profile, and guidance per deterministic body target, while Runtime AI never computes or mutates longitudes, houses, mansions, provenance, or support and output contains no relationship HePan, compatibility score, match percentage, relation graph, trend curve, or absent evidence field, and the v1 virtual-point model remains visibly identified rather than universalized."
+    condition: Whenever MingJing natal Reading output is generated.
+    failure: Reject output that lacks deterministic route evidence, crosses the wording boundary, or violates its route-specific shape.
+    relations:
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-mingjing
+      - type: applies_to
+        target: definition.shijing.astrology.output-mingjing
+      - type: applies_to
+        target: definition.shijing.astrology.output-mingjing-qizheng-siyu-natal-brief
+      - type: applies_to
+        target: definition.shijing.astrology.output-mingjing-ziwei-natal-brief
+  - id: rule.shijing.astrology.r013
+    kind: rule
+    title: Relationship HePan output
+    modality: must
+    statement: Relationship HePan uses relationship_natal scope, is grounded in deterministic self-plus-one-Person relationship evidence, contains stable relationship structure and anchor-year timing windows, and uses HeJing as its primary product UX; it outputs no compatibility score, match percentage, fate claim, trend curve, relation graph, contact-management payload, or Runtime-AI-only Reading, and Runtime AI words admitted prose fields only after deterministic evidence exists.
+    condition: Whenever relationship analysis output is generated.
+    failure: Reject the relationship output and surface a typed evidence or validation failure.
+    relations:
+      - type: applies_to
+        target: definition.shijing.astrology.mirror-hejing
+      - type: applies_to
+        target: definition.shijing.astrology.output-mingjing-relationship-hepan
+      - type: applies_to
+        target: definition.shijing.astrology.relationship-hepan

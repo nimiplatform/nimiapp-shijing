@@ -7,7 +7,7 @@
  * 关注 (concerns — concern tags) and 发生过的事 (memory — the EventMemory
  * archive). They carry the `.shijing-settings-page--styled` modifier, so
  * the mint accent, aurora canvas, and card/grid form treatment apply to
- * them and never leak into the 设置 sub-page or the four-mirror surfaces.
+ * them and never leak into the 设置 sub-page or the six-tab mirror surfaces.
  * Class names are `sjp-*` prefixed to stay collision-free with the kit
  * and Tailwind.
  *

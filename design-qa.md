@@ -6,4 +6,4 @@ Local visual entry points used during the ShiJing surface audit:
 - `dev-hejing.html` mounts the HeJing relationship surface.
 - `dev-nianjing-overview.html` mounts the NianJing year-overview modules with synthetic output.
 
-These files are local review harnesses only. Product authority remains under `.nimi/spec/shijing/kernel/**`; verification results belong to the final audit output, not this note.
+These files are local review harnesses only. Product authority remains under `.nimi/spec/shijing/canonical/**`; verification results belong to the final audit output, not this note.
