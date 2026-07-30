@@ -126,6 +126,7 @@ export async function runShijingAgentTerminalTurn(
   const requestId = options.createRequestId?.() ?? createTurnRequestId();
   let runtimeTurnId = '';
   let committedText = '';
+  const sentAtMs = Date.now();
 
   try {
     await client.conversation.send({
@@ -169,9 +170,12 @@ export async function runShijingAgentTerminalTurn(
         );
       }
       if (event.messageType === 'runtime.agent.turn.interrupted') {
+        const interruptReason = stringValue(detail.reason) || 'unknown';
+        const eventReasonCode = stringValue(event.reasonCode);
         throw localAppTurnError(
-          'Runtime Agent turn was interrupted.',
-          'shijing-agent-turn-interrupted',
+          `${event.messageType} turnId=${runtimeTurnId} detail.reason=${interruptReason} `
+            + `reasonCode=${eventReasonCode || 'none'} elapsedMs=${Date.now() - sentAtMs}`,
+          eventReasonCode || 'shijing-agent-turn-interrupted',
           'retry_shijing_agent_turn',
         );
       }
@@ -193,6 +197,15 @@ function composeAgentTurnText(system: string, user: string): string {
     '',
     '[ShiJing user request and cited deterministic evidence]',
     user.trim(),
+    '',
+    '[Runtime Agent transport framing]',
+    'For this Agent conversation transport only, wrap the requested JSON wording patch '
+      + 'inside one text-only Runtime APML message:',
+    '<message id="message-0">{...the requested JSON wording patch...}</message>',
+    'The direct-model rules above about the first and last output characters apply only '
+      + 'to the JSON message text inside <message>. The complete response must begin with '
+      + '<message and end with </message>. Do not add Markdown, fences, sibling APML elements, '
+      + 'or prose outside the message.',
   ].join('\n');
 }
 

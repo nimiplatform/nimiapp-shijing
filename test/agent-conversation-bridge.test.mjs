@@ -109,6 +109,14 @@ test('Agent turn subscribes before send, correlates request and turn, and requir
   assert.equal(calls[2], 'subscribe:anchor-1');
   assert.match(calls[3], /^send:shijing-request-1:/);
   assert.match(calls[3], /\[ShiJing consultation contract\]/);
+  assert.match(
+    calls[3],
+    /<message id="message-0">\{\.\.\.the requested JSON wording patch\.\.\.\}<\/message>/,
+  );
+  assert.match(
+    calls[3],
+    /direct-model rules above about the first and last output characters apply only to the JSON message text/,
+  );
   assert.equal(cancelCount.value, 1);
 });
 
@@ -169,4 +177,38 @@ test('Agent turn does not open a conversation before agents.interact is granted'
     (error) => error.reasonCode === 'shijing-agents-interact-permission-required',
   );
   assert.equal(opened, false);
+});
+
+test('Agent turn exposes bounded terminal interruption diagnostics', async () => {
+  const calls = [];
+  const cancelCount = { value: 0 };
+  const client = clientWithEvents([
+    runtimeEvent('runtime.agent.turn.accepted', {
+      turn_id: 'turn-timeout',
+      detail: { request_id: 'shijing-request-timeout' },
+    }),
+    runtimeEvent('runtime.agent.turn.interrupted', {
+      turn_id: 'turn-timeout',
+      detail: { reason: 'deadline-exceeded' },
+    }, 'AI_STREAM_BROKEN'),
+  ], calls, cancelCount);
+
+  await assert.rejects(
+    () => runShijingAgentTerminalTurn({
+      getClient: () => client,
+      getAgentHandle: () => AGENT_HANDLE,
+      createRequestId: () => 'shijing-request-timeout',
+      system: 'system',
+      user: 'user',
+    }),
+    (error) => {
+      assert.equal(error.reasonCode, 'AI_STREAM_BROKEN');
+      assert.match(
+        error.message,
+        /^runtime\.agent\.turn\.interrupted turnId=turn-timeout detail\.reason=deadline-exceeded reasonCode=AI_STREAM_BROKEN elapsedMs=\d+$/,
+      );
+      return true;
+    },
+  );
+  assert.equal(cancelCount.value, 1);
 });
