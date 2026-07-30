@@ -39,7 +39,7 @@ function clientWithEvents(events, calls, cancelCount) {
     },
     conversation: {
       open: async (input) => {
-        calls.push(`open:${input.agentHandle}:${input.disposition}`);
+        calls.push(`open:${JSON.stringify(input)}`);
         return {
           conversationAnchorId: 'anchor-1',
           activeTurnId: null,
@@ -102,7 +102,10 @@ test('Agent turn subscribes before send, correlates request and turn, and requir
 
   assert.equal(text, 'Grounded ShiJing answer.');
   assert.equal(calls[0], 'permission:agents.interact');
-  assert.equal(calls[1], 'open:opaque-shijing-agent-handle:create-or-resume');
+  assert.equal(
+    calls[1],
+    'open:{"agentHandle":"opaque-shijing-agent-handle"}',
+  );
   assert.equal(calls[2], 'subscribe:anchor-1');
   assert.match(calls[3], /^send:shijing-request-1:/);
   assert.match(calls[3], /\[ShiJing consultation contract\]/);

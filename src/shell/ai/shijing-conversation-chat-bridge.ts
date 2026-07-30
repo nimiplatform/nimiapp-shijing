@@ -117,7 +117,6 @@ export async function runShijingAgentTerminalTurn(
 
   const opened = await client.conversation.open({
     agentHandle: selectedAgent.agentHandle,
-    disposition: 'create-or-resume',
   });
   const scope = {
     agentHandle: selectedAgent.agentHandle,
