@@ -1,6 +1,6 @@
 // W-c03 Settings > Response Preferences React editor.
 
-import { useState } from 'react';
+import { nimiToast } from '@nimiplatform/kit/ui';
 import {
   RESPONSE_LENGTHS,
   RESPONSE_LANGUAGES,
@@ -20,19 +20,19 @@ export function ResponsePreferencesEditor() {
   const { state, dispatch } = useShijingStore();
   const copy = useProductCopy();
   const currentPreferences = state.snapshot.settings.response_preferences;
-  const [errorCode, setErrorCode] = useState<string | null>(null);
-  const [savedAt, setSavedAt] = useState<string | null>(null);
 
-  function commitDraft(nextDraft: ResponsePreferences) {
+  // The extra-instructions textarea commits on every keystroke, so its caller
+  // passes announce=false to keep the success toast to discrete select changes.
+  function commitDraft(nextDraft: ResponsePreferences, announce = true) {
     const outcome = commitResponsePreferences(state.snapshot, nextDraft);
     if (!outcome.ok) {
-      setErrorCode(outcome.error.code);
-      setSavedAt(null);
+      nimiToast.danger(copy.responsePreferences.saveFailed(outcome.error.code));
       return;
     }
     dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
-    setErrorCode(null);
-    setSavedAt(new Date().toISOString());
+    if (announce) {
+      nimiToast.success(copy.responsePreferences.savedAt(new Date().toISOString()));
+    }
   }
 
   return (
@@ -104,21 +104,10 @@ export function ResponsePreferencesEditor() {
               placeholder={copy.responsePreferences.extraPlaceholder}
               value={currentPreferences.extra_instructions ?? ''}
               onChange={(e) =>
-                commitDraft({ ...currentPreferences, extra_instructions: e.currentTarget.value })
+                commitDraft({ ...currentPreferences, extra_instructions: e.currentTarget.value }, false)
               }
             />
           </div>
-
-          {errorCode ? (
-            <p className="sjp-alert" role="alert">
-              {copy.responsePreferences.saveFailed(errorCode)}
-            </p>
-          ) : null}
-          {savedAt ? (
-            <p className="sjp-status" role="status">
-              {copy.responsePreferences.savedAt(savedAt)}
-            </p>
-          ) : null}
         </div>
       </section>
     </>

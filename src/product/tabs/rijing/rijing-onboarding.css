@@ -342,12 +342,6 @@
   justify-content: flex-end;
 }
 
-.shijing-onboarding .shijing-settings-page--styled .sjp-inline-self-form .sjp-actions__status {
-  color: var(--sjp-accent-hover);
-  font-size: 13px;
-  font-weight: 700;
-}
-
 .shijing-onboarding .shijing-settings-page--styled .sjp-card-head {
   margin-bottom: 22px;
   padding-bottom: 18px;

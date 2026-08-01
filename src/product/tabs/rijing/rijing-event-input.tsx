@@ -11,7 +11,8 @@
 // never scroll, never navigate; the success line stays in place and
 // the textarea clears.
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { nimiToast } from '@nimiplatform/kit/ui';
 
 import { useShijingStore } from '../../state/shijing-store.tsx';
 import { upsertEventMemory } from '../../memories/memory-editor-state.ts';
@@ -38,16 +39,7 @@ export function RiJingEventInput(props: RiJingEventInputProps) {
     | { kind: 'idle' }
     | { kind: 'empty' }
     | { kind: 'invalid'; reason: string }
-    | { kind: 'saved' }
   >({ kind: 'idle' });
-
-  useEffect(() => {
-    if (submission.kind !== 'saved') return;
-    const handle = window.setTimeout(() => {
-      setSubmission((current) => (current.kind === 'saved' ? { kind: 'idle' } : current));
-    }, 4000);
-    return () => window.clearTimeout(handle);
-  }, [submission]);
 
   function onAdd() {
     const body = draft.trim();
@@ -78,7 +70,7 @@ export function RiJingEventInput(props: RiJingEventInputProps) {
     }
     dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
     setDraft('');
-    setSubmission({ kind: 'saved' });
+    nimiToast.success(copy.rijing.eventInput.successHint);
   }
 
   const disabled = draft.trim().length === 0;
@@ -94,13 +86,6 @@ export function RiJingEventInput(props: RiJingEventInputProps) {
       return (
         <span className="shijing-rijing__event-input-hint shijing-rijing__event-input-hint--warn">
           {copy.rijing.eventInput.invalidHint(submission.reason)}
-        </span>
-      );
-    }
-    if (submission.kind === 'saved') {
-      return (
-        <span className="shijing-rijing__event-input-hint shijing-rijing__event-input-hint--ok">
-          {copy.rijing.eventInput.successHint}
         </span>
       );
     }
@@ -124,7 +109,7 @@ export function RiJingEventInput(props: RiJingEventInputProps) {
         aria-label={copy.rijing.eventInput.ariaLabel}
         onChange={(e) => {
           setDraft(e.target.value);
-          if (submission.kind !== 'idle' && submission.kind !== 'saved') {
+          if (submission.kind !== 'idle') {
             setSubmission({ kind: 'idle' });
           }
         }}
@@ -133,11 +118,7 @@ export function RiJingEventInput(props: RiJingEventInputProps) {
         {hintNode ? (
           <div
             className="shijing-rijing__event-input-hint-slot"
-            role={
-              submission.kind === 'empty' || submission.kind === 'invalid'
-                ? 'alert'
-                : 'status'
-            }
+            role="alert"
           >
             {hintNode}
           </div>

@@ -13,14 +13,13 @@ export interface SelfEditorFormFieldsProps {
   readonly onChange: SelfNatalDraftChange;
   readonly idPrefix: string;
   readonly errorCode: string | null;
-  readonly savedNoticeVisible: boolean;
   readonly saving: boolean;
   readonly copy: ProductCopy;
   readonly onClose: () => void;
 }
 
 export function SelfEditorFormFields(props: SelfEditorFormFieldsProps) {
-  const { copy, draft, errorCode, idPrefix, onChange, onClose, savedNoticeVisible, saving } = props;
+  const { copy, draft, errorCode, idPrefix, onChange, onClose, saving } = props;
   return (
     <>
       <NatalFields draft={draft} onChange={onChange} idPrefix={idPrefix} />
@@ -43,11 +42,6 @@ export function SelfEditorFormFields(props: SelfEditorFormFieldsProps) {
       ) : null}
 
       <div className="sjp-actions sjp-actions--drawer">
-        {savedNoticeVisible ? (
-          <span className="sjp-actions__status" role="status">
-            {copy.common.saved}
-          </span>
-        ) : null}
         <Button
           type="submit"
           tone="primary"

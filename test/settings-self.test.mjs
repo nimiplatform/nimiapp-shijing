@@ -151,9 +151,8 @@ test('commitSelfDraft commits a valid draft and surfaces validator errors otherw
 });
 
 test('inline self editor surfaces a saved status after a successful save', () => {
-  assert.match(selfEditorSource, /setSavedNoticeVisible\(true\)/);
-  assert.match(selfEditorSource, /role="status"/);
-  assert.match(selfEditorSource, /copy\.common\.saved/);
+  assert.match(selfEditorSource, /import \{ nimiToast \} from '@nimiplatform\/kit\/ui';/);
+  assert.match(selfEditorSource, /nimiToast\.success\(copy\.common\.saved\)/);
 });
 
 test('inline self editor refreshes its draft when the persisted snapshot changes', () => {

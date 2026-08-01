@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Button, ConfirmDialog } from '@nimiplatform/kit/ui';
+import { Button, ConfirmDialog, nimiToast } from '@nimiplatform/kit/ui';
 import type { EventMemory } from '../../domain/event-memory.ts';
 import { EVENT_MEMORY_ADMISSIBLE_USES, EVENT_MEMORY_SOURCES } from '../../domain/event-memory.ts';
 import { useProductCopy } from '../i18n/copy.ts';
@@ -102,6 +102,7 @@ export function MemoryEditor() {
       return;
     }
     dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+    nimiToast.success(copy.common.saved);
     closeDrawer();
   }
 
@@ -121,7 +122,7 @@ export function MemoryEditor() {
     if (!memory) return;
     const outcome = deleteEventMemory(state.snapshot, memory.id);
     if (!outcome.ok) {
-      setErrorCode(outcome.error.code);
+      nimiToast.warning(copy.memory.saveFailed(outcome.error.code));
       setConfirmingDelete(null);
       return;
     }
@@ -203,13 +204,6 @@ export function MemoryEditor() {
       ) : (
         <p className="sjp-empty">{copy.memory.empty}</p>
       )}
-
-      {/* List-level error (e.g. delete blocked). The drawer shows its own. */}
-      {!drawerOpen && errorCode ? (
-        <p className="sjp-alert" role="alert">
-          {copy.memory.saveFailed(errorCode)}
-        </p>
-      ) : null}
 
       {drawerOpen
         ? createPortal(

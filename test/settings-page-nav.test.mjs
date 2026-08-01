@@ -129,7 +129,8 @@ test('settings cards expose stable module anchors for left navigation', () => {
 
 test('response preferences save immediately without an explicit save action', () => {
   assert.match(responsePreferencesSource, /const currentPreferences = state\.snapshot\.settings\.response_preferences/);
-  assert.match(responsePreferencesSource, /function commitDraft\(nextDraft: ResponsePreferences\)/);
+  assert.match(responsePreferencesSource, /function commitDraft\(nextDraft: ResponsePreferences, announce = true\)/);
+  assert.match(responsePreferencesSource, /commitDraft\(\{ \.\.\.currentPreferences, extra_instructions: e\.currentTarget\.value \}, false\)/);
   assert.match(responsePreferencesSource, /commitResponsePreferences\(state\.snapshot,\s*nextDraft\)/);
   assert.match(responsePreferencesSource, /value=\{currentPreferences\.tone\}/);
   assert.match(responsePreferencesSource, /value=\{currentPreferences\.length\}/);

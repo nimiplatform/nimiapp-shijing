@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { SegmentedControl } from '@nimiplatform/kit/ui';
+import { SegmentedControl, nimiToast } from '@nimiplatform/kit/ui';
 import { useTranslation } from 'react-i18next';
 import { UI_LANGUAGES, type UiLanguage } from '../../domain/settings.ts';
 import { useProductCopy } from '../i18n/copy.ts';
@@ -25,8 +25,6 @@ export function UiLanguageSwitch({
   const { state, replace_snapshot } = useShijingStore();
   const { i18n } = useTranslation();
   const copy = useProductCopy();
-  const [errorCode, setErrorCode] = useState<string | null>(null);
-  const [savedLanguage, setSavedLanguage] = useState<UiLanguage | null>(null);
   const [saving, setSaving] = useState(false);
   const value = state.snapshot.settings.ui_language;
   const items = useMemo(
@@ -43,21 +41,18 @@ export function UiLanguageSwitch({
     if (next === value || saving) return;
     const outcome = commitUiLanguage(state.snapshot, next);
     if (!outcome.ok) {
-      setErrorCode(outcome.error.code);
-      setSavedLanguage(null);
+      nimiToast.danger(copy.uiLanguage.saveFailed(outcome.error.code));
       return;
     }
     setSaving(true);
-    setErrorCode(null);
-    setSavedLanguage(null);
     const persistence = await replace_snapshot(outcome.next_space);
     setSaving(false);
     if (persistence.kind !== 'saved' && persistence.kind !== 'idle') {
-      setErrorCode(persistence.kind);
+      nimiToast.danger(copy.uiLanguage.saveFailed(persistence.kind));
       return;
     }
     await i18n.changeLanguage(next);
-    setSavedLanguage(next as UiLanguage);
+    nimiToast.success(copy.uiLanguage.saved(copy.uiLanguageLabels[next as UiLanguage]));
   }
 
   const control = (
@@ -101,16 +96,6 @@ export function UiLanguageSwitch({
       </div>
       <div className="sjp-grid">
         <div className="sjp-field sjp-field--full">{control}</div>
-        {errorCode ? (
-          <p className="sjp-alert" role="alert">
-            {copy.uiLanguage.saveFailed(errorCode)}
-          </p>
-        ) : null}
-        {savedLanguage ? (
-          <p className="sjp-status" role="status">
-            {copy.uiLanguage.saved(copy.uiLanguageLabels[savedLanguage])}
-          </p>
-        ) : null}
       </div>
     </section>
   );

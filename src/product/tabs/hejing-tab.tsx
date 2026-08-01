@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { nimiToast } from '@nimiplatform/kit/ui';
 import type { MingJingRelationshipMirrorOutput } from '../../domain/mirror-output.ts';
 import type { Person } from '../../domain/person.ts';
 import type { ReadingGenerationFailure } from '../../domain/reading.ts';
@@ -197,7 +198,7 @@ export function HeJingTab() {
 
   async function handleGenerateAdvice() {
     if (!selectedPersonRef) {
-      setStatusMessage(copy.createStatus);
+      nimiToast.success(copy.createStatus);
       return;
     }
     setLoading(true);
@@ -220,21 +221,21 @@ export function HeJingTab() {
     }
     const persistenceStatus = await replace_snapshot(outcome.next_space);
     if (persistenceStatus.kind === 'error') {
-      setStatusMessage(copy.persistenceFailureStatus);
+      nimiToast.danger(copy.persistenceFailureStatus);
       return;
     }
     setStatusMessage((outcome.reading.output as MingJingRelationshipMirrorOutput).summary);
   }
 
   function handleWriteRecord() {
-    setStatusMessage(copy.recordStatus);
+    nimiToast.success(copy.recordStatus);
     window.requestAnimationFrame(() => {
       recordsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
 
   function handleChat() {
-    setStatusMessage(copy.chatStatus);
+    nimiToast.success(copy.chatStatus);
   }
 
   const isFirstRun = state.snapshot.persons.length === 0;

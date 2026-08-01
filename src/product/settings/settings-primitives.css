@@ -157,8 +157,7 @@
 }
 
 /* ── Inline status / error ─────────────────────────────────── */
-.shijing-settings-page--styled .sjp-alert,
-.shijing-settings-page--styled .sjp-status {
+.shijing-settings-page--styled .sjp-alert {
   grid-column: 1 / -1;
   margin: 14px 0 0;
   font-size: 13px;
@@ -166,10 +165,6 @@
 
 .shijing-settings-page--styled .sjp-alert {
   color: #ef4444;
-}
-
-.shijing-settings-page--styled .sjp-status {
-  color: var(--sjp-accent-hover);
 }
 
 /* ── Empty state ───────────────────────────────────────────── */

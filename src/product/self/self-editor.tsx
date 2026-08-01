@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { nimiToast } from '@nimiplatform/kit/ui';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import type { PersistenceError } from '../persistence/persistence-client.ts';
 import { describeNatalError } from '../natal/natal-error-copy.ts';
@@ -43,7 +44,6 @@ export function SelfEditor({
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [savedNoticeVisible, setSavedNoticeVisible] = useState(false);
   const autoOpenedRef = useRef(false);
   const draftDirtyRef = useRef(false);
   const revealSensitive = profileSensitiveAccess.revealSensitive;
@@ -77,7 +77,6 @@ export function SelfEditor({
 
   function update<K extends keyof SelfNatalDraft>(key: K, value: SelfNatalDraft[K]) {
     draftDirtyRef.current = true;
-    setSavedNoticeVisible(false);
     setDraft((prev) => ({ ...prev, [key]: value }));
   }
 
@@ -105,7 +104,6 @@ export function SelfEditor({
     draftDirtyRef.current = false;
     setDraft(selfDraftFromSpace(state.snapshot));
     setErrorCode(null);
-    setSavedNoticeVisible(false);
     setEditing(true);
   }
 
@@ -114,7 +112,6 @@ export function SelfEditor({
     if (draftDirtyRef.current) return;
     setDraft(selfDraftFromSpace(state.snapshot));
     setErrorCode(null);
-    setSavedNoticeVisible(false);
   }, [inlineEditor, state.snapshot]);
 
   useEffect(() => {
@@ -129,12 +126,10 @@ export function SelfEditor({
       draftDirtyRef.current = false;
       setDraft(selfDraftFromSpace(state.snapshot));
       setErrorCode(null);
-      setSavedNoticeVisible(false);
       return;
     }
     setEditing(false);
     setErrorCode(null);
-    setSavedNoticeVisible(false);
   }
 
   async function save() {
@@ -143,29 +138,24 @@ export function SelfEditor({
     if (outcome.ok) {
       setSaving(true);
       setErrorCode(null);
-      setSavedNoticeVisible(false);
       try {
         const persistence = await replace_snapshot(outcome.next_space);
         if (persistence.kind === 'saved' || persistence.kind === 'idle') {
           draftDirtyRef.current = false;
           setDraft(selfDraftFromSpace(outcome.next_space));
           setSaving(false);
+          nimiToast.success(copy.common.saved);
           if (!inlineEditor) {
             closeEdit();
-          } else {
-            setSavedNoticeVisible(true);
           }
           return;
         }
         if (persistence.kind === 'error') {
-          setSavedNoticeVisible(false);
           setErrorCode(describePersistenceSaveError(persistence.error, copy));
           return;
         }
-        setSavedNoticeVisible(false);
         setErrorCode(copy.self.saveIncomplete(persistence.kind));
       } catch (error) {
-        setSavedNoticeVisible(false);
         setErrorCode(copy.self.saveFailed(error instanceof Error ? error.message : String(error)));
       } finally {
         setSaving(false);
@@ -178,7 +168,6 @@ export function SelfEditor({
           : err.code === 'birth_datetime_underivable'
             ? err.reason
             : err.code;
-      setSavedNoticeVisible(false);
       setErrorCode(describeNatalError(code, copy));
     }
   }
@@ -201,7 +190,6 @@ export function SelfEditor({
             onChange={update}
             idPrefix="self-inline"
             errorCode={errorCode}
-            savedNoticeVisible={savedNoticeVisible}
             saving={saving}
             copy={copy}
             onClose={closeEdit}
@@ -436,7 +424,6 @@ export function SelfEditor({
                     onChange={update}
                     idPrefix="self"
                     errorCode={errorCode}
-                    savedNoticeVisible={savedNoticeVisible}
                     saving={saving}
                     copy={copy}
                     onClose={closeEdit}

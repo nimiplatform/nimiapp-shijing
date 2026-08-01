@@ -5,7 +5,7 @@
 //
 // No CRM / customer / client / task / project vocabulary appears here.
 
-import { useState } from 'react';
+import { nimiToast } from '@nimiplatform/kit/ui';
 import type { ShijingSettingsSurfaceId } from '../../contracts/ia-contract.ts';
 import { SETTINGS_SURFACE_LABELS, useProductCopy } from '../i18n/copy.ts';
 import { ConcernTagControls } from '../concern-tags/concern-tag-controls.tsx';
@@ -22,21 +22,19 @@ import type { ShijingSettingsFocusTarget } from './settings-page-view.tsx';
 function PrivacyLocalDataSection() {
   const { persistence_status, persistence_client } = useShijingStore();
   const copy = useProductCopy();
-  const [recoveryStatus, setRecoveryStatus] = useState<string | null>(null);
   const persistenceErrorKind =
     persistence_status.kind === 'error' ? persistence_status.error.kind : null;
 
   async function handleClearLocal() {
     if (!persistence_client) {
-      setRecoveryStatus(copy.privacy.clearNoAdapter);
+      nimiToast.danger(copy.privacy.clearNoAdapter);
       return;
     }
-    setRecoveryStatus(copy.privacy.clearing);
     const result = await persistence_client.clear();
     if (result.ok) {
-      setRecoveryStatus(copy.privacy.cleared);
+      nimiToast.success(copy.privacy.cleared);
     } else {
-      setRecoveryStatus(copy.privacy.clearFailed(result.error.kind));
+      nimiToast.danger(copy.privacy.clearFailed(result.error.kind));
     }
   }
 
@@ -89,11 +87,6 @@ function PrivacyLocalDataSection() {
             {copy.privacy.clearButton}
           </button>
         </div>
-        {recoveryStatus ? (
-          <p className="sjp-status" role="status">
-            {recoveryStatus}
-          </p>
-        ) : null}
       </div>
     </section>
   );

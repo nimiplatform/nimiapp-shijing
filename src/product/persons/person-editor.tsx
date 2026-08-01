@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Button, ConfirmDialog } from '@nimiplatform/kit/ui';
+import { Button, ConfirmDialog, nimiToast } from '@nimiplatform/kit/ui';
 import type { Person } from '../../domain/person.ts';
 import { CONSENT_STATES, PERSON_RELATION_MAX_LENGTH } from '../../domain/person.ts';
 import { CONSENT_STATE_ORDER, useProductCopy } from '../i18n/copy.ts';
@@ -231,6 +231,7 @@ export function PersonEditor({
       return;
     }
     dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+    nimiToast.success(copy.common.saved);
     onSavedPerson?.(person);
     closeDrawer();
   }
@@ -244,7 +245,7 @@ export function PersonEditor({
         outcome.error.code === 'person_has_dangling_references'
           ? copy.people.deleteBlocked
           : describeNatalError(outcome.error.code, copy);
-      setErrorCode(detail);
+      nimiToast.warning(detail);
       setConfirmingDelete(null);
       return;
     }
@@ -347,10 +348,10 @@ export function PersonEditor({
         <p className="sjp-quiet-empty">{copy.people.empty}</p>
       )}
 
-      {/* List-level error (e.g. delete blocked). The drawer shows its own. */}
-      {!drawerOpen && (errorCode || profileSensitiveAccess.verificationError) ? (
+      {/* Persistent presence-verification error stays inline; delete-blocked feedback moved to a toast. The drawer shows its own. */}
+      {!drawerOpen && profileSensitiveAccess.verificationError ? (
         <p className="sjp-alert" role="alert">
-          {errorCode ?? profileSensitiveAccess.verificationError}
+          {profileSensitiveAccess.verificationError}
         </p>
       ) : null}
 

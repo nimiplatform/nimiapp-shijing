@@ -1,7 +1,7 @@
 // Settings > 推演方法 React editor — pick the active 命理 algorithm engine
 // (八字子平 / 紫微斗数). Saves immediately; new readings use the chosen method.
 
-import { useState } from 'react';
+import { nimiToast } from '@nimiplatform/kit/ui';
 import {
   DEFAULT_METHOD_PROFILE_ID,
   type MethodProfileId,
@@ -17,12 +17,11 @@ export function MethodProfileEditor() {
   const copy = useProductCopy();
   const current = state.snapshot.settings.method_profile_id ?? DEFAULT_METHOD_PROFILE_ID;
   const capabilityRows = deriveMethodProfileCapabilityRows();
-  const [savedAt, setSavedAt] = useState<string | null>(null);
 
   function onChange(value: MethodProfileId) {
     const next = commitMethodProfile(state.snapshot, value);
     dispatch({ type: 'snapshot/replace', snapshot: next });
-    setSavedAt(new Date().toISOString());
+    nimiToast.success(copy.methodProfile.switchedAt(new Date().toISOString()));
   }
 
   return (
@@ -60,11 +59,6 @@ export function MethodProfileEditor() {
           />
         </div>
         <p className="sjp-note">{copy.methodProfile.note}</p>
-        {savedAt ? (
-          <p className="sjp-status" role="status">
-            {copy.methodProfile.switchedAt(savedAt)}
-          </p>
-        ) : null}
         <div className="sjp-field sjp-field--full">
           <div className="sjp-method-capabilities" aria-label={copy.methodProfile.capabilities.title}>
             <div>
