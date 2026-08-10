@@ -1,12 +1,9 @@
-schema_version: 1
 app_id: nimi.shijing
 display_name: 时镜 ShiJing
-profile: workspace-app
+profile: standalone
 manifest_role: submitted-input
-permissions:
-  - id: agents.interact
-    reason: ShiJing needs access to the Agents on this account to complete an astrology conversation turn.
+app_access:
+  - agent.local
 local_development:
   electron:
     renderer_origin: http://127.0.0.1:1430
-    execution_profile_ref: opaque:windows-native-electron-development-v1

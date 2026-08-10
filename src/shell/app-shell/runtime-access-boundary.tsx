@@ -3,16 +3,15 @@ import { useTranslation } from 'react-i18next';
 import {
   AmbientBackground,
   Button,
-  InlineAlert,
   StatusBadge,
   Surface,
 } from '@nimiplatform/kit/ui';
 import { useAppStore } from './app-store.js';
-import type { ShijingProtectedSessionState } from './protected-session-state.js';
+import type { ShijingRuntimeAccessState } from './runtime-access-state.js';
 import { runShijingBootstrap } from '../infra/shijing-bootstrap.js';
 import { ProductArea } from '../routes/product-area.js';
 
-export function ProtectedSessionBoundary() {
+export function RuntimeAccessBoundary() {
   const { t, i18n } = useTranslation();
   const ready = useAppStore((state) => state.bootstrapReady);
   const failure = useAppStore((state) => state.bootstrapFailure);
@@ -29,9 +28,9 @@ export function ProtectedSessionBoundary() {
 
   if (ready) return <ProductArea />;
 
-  const state: ShijingProtectedSessionState = failure?.state ?? 'capability-unavailable';
-  const reasonCode = failure?.reasonCode ?? 'shijing-protected-operation-set-not-admitted';
-  const actionHint = failure?.actionHint ?? 'wait_for_shijing_protected_operation_admission';
+  const state: ShijingRuntimeAccessState = failure?.state ?? 'runtime-unavailable';
+  const reasonCode = failure?.reasonCode ?? 'shijing-runtime-access-unavailable';
+  const actionHint = failure?.actionHint ?? 'retry_same_host';
 
   return (
     <AmbientBackground variant="mesh" className="shijing-protected-gate">
@@ -57,45 +56,34 @@ export function ProtectedSessionBoundary() {
         elevation="raised"
         padding="lg"
         className="shijing-protected-gate__panel"
-        data-testid="shijing-protected-session-failure"
-        data-protected-state={state}
+        data-testid="shijing-runtime-access-failure"
+        data-access-state={state}
       >
-        <StatusBadge tone="danger" shape="dot">
-          {t(`Shell.protectedState.${state}`)}
+        <StatusBadge tone={state === 'action-required' ? 'info' : 'warning'} shape="dot">
+          {t(`Shell.accessState.${state}`)}
         </StatusBadge>
         <div className="shijing-protected-gate__copy">
-          <p className="shijing-protected-gate__eyebrow">{t('Shell.protectedSessionEyebrow')}</p>
-          <h1>{t('Shell.protectedSessionTitle')}</h1>
-          <p>{t('Shell.protectedSessionDetail')}</p>
+          <p className="shijing-protected-gate__eyebrow">{t('Shell.accessEyebrow')}</p>
+          <h1>{t('Shell.accessTitle')}</h1>
+          <p>{t('Shell.accessDetail')}</p>
         </div>
-        <InlineAlert tone="danger">
-          <div className="shijing-protected-gate__alert-copy">
-            <span>{t('Shell.protectedSessionLocked')}</span>
-            <strong>{t('Shell.reasonCode')}: {reasonCode}</strong>
-          </div>
-        </InlineAlert>
         <div className="shijing-protected-gate__action-hint">
-          <span>{t('Shell.nextStep')}</span>
-          <strong>{t(`Shell.protectedAction.${state}`)}</strong>
-          <code>{actionHint}</code>
+          <span>{t(`Shell.accessAction.${state}`)}</span>
         </div>
+        <details className="shijing-protected-gate__technical">
+          <summary>{t('Shell.technicalDetails')}</summary>
+          <code>{reasonCode}</code>
+          <code>{actionHint}</code>
+        </details>
         <div className="shijing-protected-gate__actions">
           <Button
             type="button"
-            tone="secondary"
+            tone="primary"
             onClick={retry}
             loading={retrying}
-            data-testid="shijing-protected-session-retry"
+            data-testid="shijing-runtime-access-retry"
           >
             {t('Shell.retry')}
-          </Button>
-          <Button
-            type="button"
-            tone="primary"
-            disabled
-            data-testid="shijing-protected-operations-locked"
-          >
-            {t('Shell.protectedOperationsUnavailable')}
           </Button>
         </div>
       </Surface>

@@ -4,13 +4,15 @@ import { hasCompletedMingJingStartupIntake } from '../../onboarding/startup-inta
 export { hasCompletedMingJingStartupIntake } from '../../onboarding/startup-intake.ts';
 
 export interface MingJingStartupGuideDecisionInput {
-  readonly space: ShiJingSpace;
   readonly startupGuideDismissed: boolean;
+}
+
+export function initialMingJingStartupGuideDismissed(space: ShiJingSpace): boolean {
+  return hasCompletedMingJingStartupIntake(space);
 }
 
 export function shouldShowMingJingStartupGuide(
   input: MingJingStartupGuideDecisionInput,
 ): boolean {
-  if (input.startupGuideDismissed) return false;
-  return !hasCompletedMingJingStartupIntake(input.space);
+  return !input.startupGuideDismissed;
 }

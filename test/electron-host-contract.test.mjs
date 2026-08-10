@@ -20,12 +20,10 @@ function readJson(relativePath) {
   return JSON.parse(read(relativePath));
 }
 
-test('ShiJing ships real Electron and Tauri shells with permanent acceptance entrypoints', () => {
+test('ShiJing ships real Electron and Tauri shells wired to the supervised development path', () => {
   for (const relativePath of [
     'src-electron/main.ts',
     'src-electron/preload.cts',
-    'scripts/acceptance-electron.test.mjs',
-    'scripts/acceptance-tauri.test.mjs',
     'scripts/bundle-electron-preload.mjs',
     'scripts/ensure-dev-renderer-port.mjs',
     'tsconfig.electron.json',
@@ -34,14 +32,20 @@ test('ShiJing ships real Electron and Tauri shells with permanent acceptance ent
   }
   assert.equal(existsSync(rootPath('src-electron/runtime-auth.ts')), false);
   assert.equal(existsSync(rootPath('scripts/runtime-app-storage-projection.mjs')), false);
+  // App-local acceptance harnesses are retired: acceptance runs as the
+  // platform-supervised journey (nimi-app dev --shell electron + CDP), not as
+  // app-owned playwright probes of protected surfaces.
+  assert.equal(existsSync(rootPath('scripts/acceptance-electron.test.mjs')), false);
+  assert.equal(existsSync(rootPath('scripts/acceptance-tauri.test.mjs')), false);
 
   const packageJson = readJson('package.json');
   assert.equal(packageJson.scripts.dev, 'nimi-app dev --shell electron');
   assert.equal(packageJson.scripts['dev:shell'], 'nimi-app dev');
   assert.equal(packageJson.scripts['dev:electron'], 'nimi-app dev --shell electron');
-  assert.equal(packageJson.scripts['dev:tauri'], 'nimi-app dev --shell tauri');
-  assert.match(packageJson.scripts['acceptance:electron'], /acceptance-electron\.test\.mjs/);
-  assert.match(packageJson.scripts['acceptance:tauri'], /acceptance-tauri\.test\.mjs/);
+  // Tauri is not an admitted local-development carrier; only Electron is.
+  assert.equal(packageJson.scripts['dev:tauri'], undefined);
+  assert.equal(packageJson.scripts['acceptance:electron'], undefined);
+  assert.equal(packageJson.scripts['acceptance:tauri'], undefined);
   assert.match(packageJson.devDependencies.playwright || '', /^\^?1\.61\./);
   assert.equal(packageJson.devDependencies['@grpc/grpc-js'], undefined);
 });
@@ -52,8 +56,13 @@ test('Electron registers only the fixed Kit app host', () => {
 
   assert.equal(SHIJING_APP_ID, 'nimi.shijing');
   assert.match(mainSource, /registerNimiElectronAppBridge/);
+  assert.match(mainSource, /registerNimiElectronAppAssetProtocolScheme\(protocol\)/);
   assert.match(mainSource, /appId:\s*SHIJING_APP_ID/);
   assert.match(mainSource, /allowedRendererUrls:\s*\[activeRendererUrl\(\)\]/);
+  assert.match(
+    mainSource,
+    /assetMediaPlatform:\s*\{\s*protocol,\s*webRequest:\s*session\.defaultSession\.webRequest,\s*webContents\s*\}/,
+  );
   assert.doesNotMatch(mainSource, /registerNimiElectronRuntimeBridge/);
   assert.doesNotMatch(mainSource, /runtimeEndpoint|allowedOrigins|standardShellHost/);
   assert.doesNotMatch(mainSource, /createNimiElectronInstalledHost|capabilitySetRef|commandHandlers/);

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { parseRuntimeAiOutput } from '../src/product/astrology/runtime-ai-parse.ts';
-import { createSdkRuntimeAiClient } from '../src/product/astrology/runtime-ai-sdk-factory.ts';
+import { applyRuntimeAiWordingText } from '../src/product/astrology/runtime-ai-wording-text.ts';
 import {
   rolling30DayMirrorScope,
   validMingjingRelationshipOutput,
@@ -15,20 +15,10 @@ import { MockRuntimeAiClient } from './_mock-runtime-ai-client.mjs';
 
 const TZ = 'Asia/Shanghai';
 
-function runtimeTextOutput(text) {
+function clientReturningText(text) {
   return {
-    text,
-    finishReason: 'stop',
-    usage: {},
-    trace: {},
-  };
-}
-
-function createTextRuntime({ modelId = 'local/test-text-model', generateText }) {
-  return {
-    model: {
-      model: { modelId },
-      generateText,
+    async generate(mirrorKind, request) {
+      return applyRuntimeAiWordingText(mirrorKind, request, text);
     },
   };
 }
@@ -187,84 +177,9 @@ test('MockRuntimeAiClient surfaces canned failure when configured', async () => 
   if (!result.ok) assert.equal(result.failure.kind, 'runtime_unavailable');
 });
 
-test('SdkRuntimeAiClient delegates through a vNext NimiAiModel', async () => {
-  let capturedRequest = null;
-  const runtime = createTextRuntime({
-    generateText: async (request) => {
-      capturedRequest = request;
-      return runtimeTextOutput(JSON.stringify(rijingPatch()));
-    },
-  });
-  const client = createSdkRuntimeAiClient({
-    runtime,
-    metadata: { surfaceId: 'shijing.test.runtime-ai' },
-  });
-  const result = await client.generate('rijing', minimalPromptRequest());
-  assert.equal(result.ok, true);
-  assert.equal(capturedRequest.model.modelId, 'local/test-text-model');
-  assert.equal(capturedRequest.messages[0].role, 'system');
-  assert.equal(capturedRequest.messages[0].content[0].text, 'system contract');
-  assert.equal(capturedRequest.messages[1].role, 'user');
-  assert.equal(capturedRequest.messages[1].content[0].text, 'user contract');
-  assert.equal(capturedRequest.parameters.metadata.surfaceId, 'shijing.test.runtime-ai');
-});
-
-test('SdkRuntimeAiClient fails closed when no text model is provided', async () => {
-  let called = false;
-  const runtime = createTextRuntime({
-    modelId: '',
-    generateText: async () => {
-      called = true;
-      return runtimeTextOutput(JSON.stringify(rijingPatch()));
-    },
-  });
-  const client = createSdkRuntimeAiClient({ runtime });
-  const result = await client.generate('rijing', minimalPromptRequest());
-  assert.equal(result.ok, false);
-  assert.equal(called, false);
-  if (!result.ok) {
-    assert.equal(result.failure.kind, 'runtime_unavailable');
-    assert.match(result.failure.detail, /text model/);
-  }
-});
-
-test('SdkRuntimeAiClient classifies cloud provider product activation failures', async () => {
-  const providerFailure = {
-    reasonCode: 'AI_INPUT_INVALID',
-    actionHint: 'check_input_and_extensions',
-    traceId: '',
-    retryable: false,
-    message: 'provider request failed',
-    details: {
-      provider_message:
-        'The product is not activated, please confirm that you have activated products and try again after activation.',
-    },
-  };
-  const runtime = createTextRuntime({
-    generateText: async () => {
-      throw new Error(JSON.stringify(providerFailure));
-    },
-  });
-  const client = createSdkRuntimeAiClient({ runtime });
-
-  const result = await client.generate('rijing', minimalPromptRequest());
-
-  assert.equal(result.ok, false);
-  if (!result.ok) {
-    assert.equal(result.failure.kind, 'runtime_unavailable');
-    assert.equal(
-      result.failure.detail,
-      'provider_product_not_activated:provider_message=The product is not activated, please confirm that you have activated products and try again after activation.',
-    );
-  }
-});
-
-test('SdkRuntimeAiClient uses SDK structured output extraction for fenced JSON', async () => {
+test('Runtime AI wording application uses SDK structured output extraction for fenced JSON', async () => {
   const fenced = `\`\`\`json\n${JSON.stringify(rijingPatch())}\n\`\`\``;
-  const runtime = createTextRuntime({
-    generateText: async () => runtimeTextOutput(fenced),
-  });
-  const client = createSdkRuntimeAiClient({ runtime });
+  const client = clientReturningText(fenced);
   const result = await client.generate('rijing', minimalPromptRequest());
   assert.equal(result.ok, true);
   if (result.ok) {
@@ -273,12 +188,9 @@ test('SdkRuntimeAiClient uses SDK structured output extraction for fenced JSON',
   }
 });
 
-test('SdkRuntimeAiClient accepts the first complete wording patch when Runtime appends trailing JSON', async () => {
+test('Runtime AI wording application accepts the first complete wording patch when Runtime appends trailing JSON', async () => {
   const raw = `${JSON.stringify(rijingPatch())}\n{"diagnostic":"provider appended metadata"}`;
-  const runtime = createTextRuntime({
-    generateText: async () => runtimeTextOutput(raw),
-  });
-  const client = createSdkRuntimeAiClient({ runtime });
+  const client = clientReturningText(raw);
   const result = await client.generate('rijing', minimalPromptRequest());
   assert.equal(result.ok, true);
   if (result.ok) {
@@ -287,11 +199,8 @@ test('SdkRuntimeAiClient accepts the first complete wording patch when Runtime a
   }
 });
 
-test('SdkRuntimeAiClient fails closed when wording patch violates ShiJing target identity', async () => {
-  const runtime = createTextRuntime({
-    generateText: async () => runtimeTextOutput(JSON.stringify({ ...rijingPatch(), mirror_kind: 'yuejing' })),
-  });
-  const client = createSdkRuntimeAiClient({ runtime });
+test('Runtime AI wording application fails closed when wording patch violates ShiJing target identity', async () => {
+  const client = clientReturningText(JSON.stringify({ ...rijingPatch(), mirror_kind: 'yuejing' }));
   const result = await client.generate('rijing', minimalPromptRequest());
   assert.equal(result.ok, false);
   if (!result.ok) {
@@ -300,7 +209,7 @@ test('SdkRuntimeAiClient fails closed when wording patch violates ShiJing target
   }
 });
 
-test('SdkRuntimeAiClient preserves deterministic recommendations when wording patch omits them', async () => {
+test('Runtime AI wording application preserves deterministic recommendations when wording patch omits them', async () => {
   const patch = {
     ...rijingPatch(),
     concern_projections: [
@@ -310,10 +219,7 @@ test('SdkRuntimeAiClient preserves deterministic recommendations when wording pa
       },
     ],
   };
-  const runtime = createTextRuntime({
-    generateText: async () => runtimeTextOutput(JSON.stringify(patch)),
-  });
-  const client = createSdkRuntimeAiClient({ runtime });
+  const client = clientReturningText(JSON.stringify(patch));
   const result = await client.generate('rijing', minimalPromptRequest());
   assert.equal(result.ok, true);
   if (result.ok) {
@@ -325,7 +231,7 @@ test('SdkRuntimeAiClient preserves deterministic recommendations when wording pa
   }
 });
 
-test('SdkRuntimeAiClient fails closed when YueJing wording duplicates same-date concern summaries', async () => {
+test('Runtime AI wording application fails closed when YueJing wording duplicates same-date concern summaries', async () => {
   const patch = {
     patch_kind: 'shijing.runtime_ai_wording_patch.v1',
     mirror_kind: 'yuejing',
@@ -342,10 +248,7 @@ test('SdkRuntimeAiClient fails closed when YueJing wording duplicates same-date 
       },
     ],
   };
-  const runtime = createTextRuntime({
-    generateText: async () => runtimeTextOutput(JSON.stringify(patch)),
-  });
-  const client = createSdkRuntimeAiClient({ runtime });
+  const client = clientReturningText(JSON.stringify(patch));
   const result = await client.generate('yuejing', yuejingPromptRequest());
   assert.equal(result.ok, false);
   if (!result.ok) {
@@ -355,15 +258,12 @@ test('SdkRuntimeAiClient fails closed when YueJing wording duplicates same-date 
   }
 });
 
-test('SdkRuntimeAiClient applies MingJing relationship wording patch while preserving deterministic fields', async () => {
+test('Runtime AI wording application applies MingJing relationship wording patch while preserving deterministic fields', async () => {
   const base = validMingjingRelationshipOutput({
     cited_event_memory_refs: ['mem_relationship'],
     cited_plan_item_refs: ['plan_relationship'],
   });
-  const runtime = createTextRuntime({
-    generateText: async () => runtimeTextOutput(JSON.stringify(mingjingRelationshipPatch())),
-  });
-  const client = createSdkRuntimeAiClient({ runtime });
+  const client = clientReturningText(JSON.stringify(mingjingRelationshipPatch()));
   const result = await client.generate('mingjing', mingjingRelationshipPromptRequest(base));
 
   assert.equal(result.ok, true);
@@ -386,7 +286,7 @@ test('SdkRuntimeAiClient applies MingJing relationship wording patch while prese
   assert.deepEqual(result.output.cited_plan_item_refs, ['plan_relationship']);
 });
 
-test('SdkRuntimeAiClient rejects MingJing relationship patches that include deterministic fields', async () => {
+test('Runtime AI wording application rejects MingJing relationship patches that include deterministic fields', async () => {
   const cases = [
     {
       name: 'relationship_subject',
@@ -424,10 +324,7 @@ test('SdkRuntimeAiClient rejects MingJing relationship patches that include dete
   ];
 
   for (const item of cases) {
-    const runtime = createTextRuntime({
-      generateText: async () => runtimeTextOutput(JSON.stringify(item.patch)),
-    });
-    const client = createSdkRuntimeAiClient({ runtime });
+    const client = clientReturningText(JSON.stringify(item.patch));
     const result = await client.generate('mingjing', mingjingRelationshipPromptRequest());
 
     assert.equal(result.ok, false, item.name);
@@ -438,7 +335,7 @@ test('SdkRuntimeAiClient rejects MingJing relationship patches that include dete
   }
 });
 
-test('SdkRuntimeAiClient rejects MingJing relationship patch with unknown timing window target', async () => {
+test('Runtime AI wording application rejects MingJing relationship patch with unknown timing window target', async () => {
   const patch = mingjingRelationshipPatch({
     timing_windows: [
       {
@@ -448,10 +345,7 @@ test('SdkRuntimeAiClient rejects MingJing relationship patch with unknown timing
       },
     ],
   });
-  const runtime = createTextRuntime({
-    generateText: async () => runtimeTextOutput(JSON.stringify(patch)),
-  });
-  const client = createSdkRuntimeAiClient({ runtime });
+  const client = clientReturningText(JSON.stringify(patch));
   const result = await client.generate('mingjing', mingjingRelationshipPromptRequest());
 
   assert.equal(result.ok, false);
@@ -462,7 +356,7 @@ test('SdkRuntimeAiClient rejects MingJing relationship patch with unknown timing
   }
 });
 
-test('SdkRuntimeAiClient rejects incomplete MingJing relationship wording patches', async () => {
+test('Runtime AI wording application rejects incomplete MingJing relationship wording patches', async () => {
   const cases = [
     {
       name: 'summary only',
@@ -496,10 +390,7 @@ test('SdkRuntimeAiClient rejects incomplete MingJing relationship wording patche
   ];
 
   for (const item of cases) {
-    const runtime = createTextRuntime({
-      generateText: async () => runtimeTextOutput(JSON.stringify(item.patch)),
-    });
-    const client = createSdkRuntimeAiClient({ runtime });
+    const client = clientReturningText(JSON.stringify(item.patch));
     const result = await client.generate('mingjing', mingjingRelationshipPromptRequest());
 
     assert.equal(result.ok, false, item.name);

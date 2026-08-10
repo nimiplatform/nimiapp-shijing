@@ -1,5 +1,8 @@
 import { useAppStore } from '../app-shell/app-store.js';
-import { classifyShijingProtectedSessionFailure } from '../app-shell/protected-session-state.js';
+import {
+  classifyShijingRuntimeAccessFailure,
+  shijingRuntimeAccessFromSession,
+} from '../app-shell/runtime-access-state.js';
 import {
   shijingLocalAppRuntimePlatform,
   withShijingLocalAppResponseDeadline,
@@ -16,16 +19,6 @@ export async function runShijingBootstrap(options: { force?: boolean } = {}): Pr
   return bootstrapPromise;
 }
 
-export async function ensureShijingBootstrapReady(): Promise<never> {
-  await runShijingBootstrap({ force: true });
-  const failure = useAppStore.getState().bootstrapFailure;
-  throw new Error(failure?.message || 'The protected ShiJing operation set is unavailable.');
-}
-
-export async function ensureShijingRuntimeClientReady(): Promise<never> {
-  return ensureShijingBootstrapReady();
-}
-
 async function doRunShijingBootstrap(): Promise<void> {
   const store = useAppStore.getState();
   store.setBootstrapReady(false);
@@ -37,19 +30,15 @@ async function doRunShijingBootstrap(): Promise<void> {
       shijingLocalAppRuntimePlatform.auth.status(),
       'session status bootstrap',
     );
-    if (!session.sessionBound) {
-      throw Object.assign(
-        new Error(`ShiJing local-development session is ${session.state}.`),
-        {
-          reasonCode: session.reasonCode,
-          actionHint: session.actionHint,
-          retryable: session.retryable,
-        },
-      );
+    if (session.sessionBound) {
+      store.setBootstrapReady(true);
+      return;
     }
-    store.setBootstrapReady(true);
+    const failure = shijingRuntimeAccessFromSession(session);
+    store.setBootstrapFailure(failure);
+    store.setBootstrapError(failure.message);
   } catch (error) {
-    const failure = classifyShijingProtectedSessionFailure(error);
+    const failure = classifyShijingRuntimeAccessFailure(error);
     store.setBootstrapFailure(failure);
     store.setBootstrapError(failure.message);
   }

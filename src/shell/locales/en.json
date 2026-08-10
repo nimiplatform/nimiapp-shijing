@@ -2,41 +2,38 @@
   "LocalDevelopment": {
     "badge": "Desktop-supervised local_development",
     "checking": "Checking",
-    "title": "ShiJing product UI is open in a protected development session",
-    "detail": "Consultation runs only through a Desktop-supervised Agent. Explicitly request agents.interact here, then approve it in Desktop.",
+    "title": "ShiJing is running in a Desktop-supervised development session",
+    "detail": "Consultation runs through a Nimi Agent on this account under declarative App Access. Access is established by the platform; there is no in-app sign-in or direct-connect fallback.",
     "refresh": "Refresh live state",
-    "session": "Session",
-    "sessionReason": "Session reason",
-    "permission": "Permission",
+    "session": "Nimi access",
+    "sessionReady": "Connected",
+    "sessionActionRequired": "Action required in Nimi Desktop",
+    "sessionUnavailable": "Unavailable",
+    "sessionPending": "Nimi access is not fully established yet. Finish the required action in Nimi Desktop, then refresh in place — the same host restores access.",
     "agentCount": "Available Agents",
     "selectedAgent": "Consultation Agent",
-    "permissionReason": "Permission reason",
-    "nextStep": "Next step",
-    "request": "Request Agent interaction"
+    "noAgentSelected": "None selected",
+    "accessIssue": "Nimi access could not be refreshed. Retry in place; the same host re-establishes access.",
+    "technicalDetails": "Technical details"
   },
   "Shell": {
     "language": "Language",
-    "protectedSessionEyebrow": "Protected local-development session",
-    "protectedSessionTitle": "ShiJing must be launched by Nimi Desktop",
-    "protectedSessionDetail": "Launch ShiJing through the Desktop local-development supervisor. Account, permission, and Runtime state are projected only through the protected Kit/SDK carrier; there is no in-app sign-in or direct-connect fallback.",
-    "protectedSessionLocked": "The ShiJing product area and all protected operations remain locked.",
-    "reasonCode": "Reason code",
-    "nextStep": "Next step",
-    "protectedOperationsUnavailable": "Protected operations unavailable",
-    "protectedState": {
-      "login-required": "Desktop sign-in required",
-      "runtime-unavailable": "Verified Runtime unavailable",
-      "permission-denied": "Permission denied",
-      "repair-required": "Protected carrier repair required",
-      "capability-unavailable": "Protected capability unavailable"
+    "accessEyebrow": "Declarative App Access",
+    "accessTitle": "ShiJing cannot reach Nimi right now",
+    "accessDetail": "ShiJing keeps running and your local data stays put. Nimi access is established by the platform through declarative App Access; there is no in-app sign-in or direct-connect fallback.",
+    "accessState": {
+      "action-required": "Action required in Nimi Desktop",
+      "access-ended": "Nimi access ended",
+      "runtime-unavailable": "Nimi Runtime unavailable",
+      "capability-unavailable": "Nimi capability unavailable"
     },
-    "protectedAction": {
-      "login-required": "Sign in through Nimi Desktop, then relaunch ShiJing.",
-      "runtime-unavailable": "Start the verified Runtime service from Nimi Desktop and retry.",
-      "permission-denied": "Review the exact ShiJing permission in Nimi Desktop.",
-      "repair-required": "Start a new local-development run from Nimi Desktop; do not launch the app shell directly.",
-      "capability-unavailable": "Wait for the corresponding typed operation to receive admission. Direct gRPC and renderer credentials are not supported."
+    "accessAction": {
+      "action-required": "Finish the sign-in or confirmation in Nimi Desktop, then retry here — the same host restores access.",
+      "access-ended": "Access ended or the signed-in account changed. Retry here, or relaunch ShiJing from Nimi Desktop; the platform re-establishes access.",
+      "runtime-unavailable": "Start the Nimi Runtime from Nimi Desktop, then retry here — the same host restores access.",
+      "capability-unavailable": "Retry here. If this state persists, relaunch ShiJing from Nimi Desktop."
     },
+    "technicalDetails": "Technical details",
     "retry": "Retry"
   }
 }

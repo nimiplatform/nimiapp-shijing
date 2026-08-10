@@ -33,6 +33,10 @@ const INDEXEDDB_ADAPTER_SOURCE = readFileSync(
   new URL('../src/product/persistence/indexeddb-adapter.ts', import.meta.url),
   'utf8',
 );
+const STORE_PROVIDER_SOURCE = readFileSync(
+  new URL('../src/product/state/shijing-store.tsx', import.meta.url),
+  'utf8',
+);
 
 test('installed production entry exposes no app-owned storage or account key', () => {
   assert.equal(
@@ -50,6 +54,14 @@ test('IndexedDB generation upgrade preserves existing user-data store', () => {
   assert.match(
     INDEXEDDB_ADAPTER_SOURCE,
     /if \(!db\.objectStoreNames\.contains\(SHIJING_INDEXEDDB_STORE\)\) \{\s*db\.createObjectStore\(SHIJING_INDEXEDDB_STORE\);/s,
+  );
+});
+
+test('store provider does not mount product UI over the empty seed while initial persistence is loading', () => {
+  assert.match(STORE_PROVIDER_SOURCE, /initialPersistenceLoadPending/);
+  assert.match(
+    STORE_PROVIDER_SOURCE,
+    /initialPersistenceLoadPending \? null : props\.children/,
   );
 });
 

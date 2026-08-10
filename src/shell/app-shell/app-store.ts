@@ -1,13 +1,13 @@
 import { create } from 'zustand';
-import type { ShijingProtectedSessionFailure } from './protected-session-state.js';
+import type { ShijingRuntimeAccessFailure } from './runtime-access-state.js';
 
 interface AppState {
   bootstrapReady: boolean;
   bootstrapError: string | null;
-  bootstrapFailure: ShijingProtectedSessionFailure | null;
+  bootstrapFailure: ShijingRuntimeAccessFailure | null;
   setBootstrapReady: (ready: boolean) => void;
   setBootstrapError: (error: string | null) => void;
-  setBootstrapFailure: (failure: ShijingProtectedSessionFailure | null) => void;
+  setBootstrapFailure: (failure: ShijingRuntimeAccessFailure | null) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({

@@ -22,6 +22,7 @@ import { MethodProfileSelect } from '../settings/method-profile-select.tsx';
 import { commitMethodProfile } from '../settings/method-profile-state.ts';
 import type { MethodProfileId } from '../../domain/algorithm.ts';
 import type { PersistenceError } from '../persistence/persistence-client.ts';
+import { initialMingJingStartupGuideDismissed } from '../tabs/mingjing/mingjing-startup-guide.ts';
 
 const RiJingTab = lazy(() =>
   import('../tabs/rijing-tab.tsx').then((module) => ({ default: module.RiJingTab })),
@@ -86,7 +87,9 @@ export function ShijingShell(props: ShijingShellProps) {
   const copy = useProductCopy();
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePage, setActivePage] = useState<ActiveSettingsPageState | null>(null);
-  const [startupGuideDismissed, setStartupGuideDismissed] = useState(false);
+  const [startupGuideDismissed, setStartupGuideDismissed] = useState(
+    () => initialMingJingStartupGuideDismissed(state.snapshot),
+  );
   const accountRef = useRef<HTMLDivElement>(null);
   const accountName = props.account?.name?.trim() ?? '';
 

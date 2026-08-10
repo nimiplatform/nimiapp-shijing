@@ -1,7 +1,6 @@
 import type {
   NimiLocalAppAgentHandle,
   NimiLocalAppClient,
-  NimiLocalAppConversationEvent,
 } from '@nimiplatform/sdk/app';
 import type { MirrorKind } from '../../domain/mirror-scope.ts';
 import {
@@ -13,14 +12,13 @@ import {
 } from '../../product/conversations/conversation-chat-bridge.ts';
 import {
   applyRuntimeAiWordingText,
-} from '../../product/astrology/runtime-ai-sdk-factory.ts';
+} from '../../product/astrology/runtime-ai-wording-text.ts';
 import type {
   RuntimeAiClient,
   RuntimeAiResult,
 } from '../../product/astrology/runtime-ai-client.ts';
 import type { RuntimeAiPromptRequest } from '../../product/astrology/runtime-ai-prompt.ts';
 import {
-  SHIJING_AGENTS_INTERACT_PERMISSION,
   shijingLocalAppRuntimePlatform,
 } from '../local-development/shijing-local-app-runtime.ts';
 
@@ -89,27 +87,16 @@ export async function runShijingAgentTerminalTurn(
   },
 ): Promise<string> {
   const client = options.getClient?.() ?? shijingLocalAppRuntimePlatform;
-  const permission = await client.permissions.status(
-    SHIJING_AGENTS_INTERACT_PERMISSION,
-  );
-  if (permission.posture !== 'granted') {
-    throw localAppTurnError(
-      `ShiJing Agent interaction permission is ${permission.posture}.`,
-      'shijing-agents-interact-permission-required',
-      permission.canRequest
-        ? 'request_agents_interact_from_shijing'
-        : 'review_agents_interact_in_nimi_desktop',
-    );
-  }
+  const agents = await client.agents.listReferences();
   const selectedHandle = options.getAgentHandle();
-  const selectedAgent = permission.agents.find(
+  const selectedAgent = agents.find(
     (agent) => agent.agentHandle === selectedHandle,
   );
   if (!selectedAgent) {
     throw localAppTurnError(
-      'ShiJing requires an Agent selected from the current caller-scoped grant.',
+      'ShiJing requires a consultation Agent selected from the current session Agent references.',
       'shijing-agent-handle-required',
-      permission.agents.length > 0
+      agents.length > 0
         ? 'select_shijing_consultation_agent'
         : 'wait_for_account_agent_inventory',
     );
@@ -126,7 +113,6 @@ export async function runShijingAgentTerminalTurn(
   const requestId = options.createRequestId?.() ?? createTurnRequestId();
   let runtimeTurnId = '';
   let committedText = '';
-  const sentAtMs = Date.now();
 
   try {
     await client.conversation.send({
@@ -135,24 +121,20 @@ export async function runShijingAgentTerminalTurn(
       text: composeAgentTurnText(options.system, options.user),
     });
     for await (const event of subscription) {
-      const payload = eventPayload(event);
-      const eventTurnId = stringValue(payload.turn_id ?? payload.turnId);
-      if (event.messageType === 'runtime.agent.turn.accepted') {
-        const detail = eventDetail(payload);
-        if (stringValue(detail.request_id ?? detail.requestId) !== requestId || !eventTurnId) {
+      if (event.type === 'turn-accepted') {
+        if (event.requestId !== requestId || !event.turnId) {
           continue;
         }
-        runtimeTurnId = eventTurnId;
+        runtimeTurnId = event.turnId;
         continue;
       }
-      if (!runtimeTurnId || eventTurnId !== runtimeTurnId) continue;
+      if (!runtimeTurnId || event.turnId !== runtimeTurnId) continue;
 
-      const detail = eventDetail(payload);
-      if (event.messageType === 'runtime.agent.turn.message_committed') {
-        committedText = stringValue(detail.text);
+      if (event.type === 'message-committed') {
+        committedText = event.text.trim();
         continue;
       }
-      if (event.messageType === 'runtime.agent.turn.completed') {
+      if (event.type === 'turn-completed') {
         if (!committedText) {
           throw localAppTurnError(
             'Runtime completed the ShiJing Agent turn without a committed response.',
@@ -162,20 +144,17 @@ export async function runShijingAgentTerminalTurn(
         }
         return committedText;
       }
-      if (event.messageType === 'runtime.agent.turn.failed') {
+      if (event.type === 'turn-failed') {
         throw localAppTurnError(
-          stringValue(detail.message) || 'Runtime Agent turn failed.',
+          event.message?.trim() || 'Runtime Agent turn failed.',
           event.reasonCode || 'shijing-agent-turn-failed',
           'review_agent_model_and_retry',
         );
       }
-      if (event.messageType === 'runtime.agent.turn.interrupted') {
-        const interruptReason = stringValue(detail.reason) || 'unknown';
-        const eventReasonCode = stringValue(event.reasonCode);
+      if (event.type === 'turn-interrupted') {
         throw localAppTurnError(
-          `${event.messageType} turnId=${runtimeTurnId} detail.reason=${interruptReason} `
-            + `reasonCode=${eventReasonCode || 'none'} elapsedMs=${Date.now() - sentAtMs}`,
-          eventReasonCode || 'shijing-agent-turn-interrupted',
+          'Runtime Agent turn was interrupted before committing a response.',
+          'shijing-agent-turn-interrupted',
           'retry_shijing_agent_turn',
         );
       }
@@ -207,23 +186,6 @@ function composeAgentTurnText(system: string, user: string): string {
       + '<message and end with </message>. Do not add Markdown, fences, sibling APML elements, '
       + 'or prose outside the message.',
   ].join('\n');
-}
-
-function eventPayload(event: NimiLocalAppConversationEvent): Record<string, unknown> {
-  return event.payload && typeof event.payload === 'object' && !Array.isArray(event.payload)
-    ? event.payload as Record<string, unknown>
-    : {};
-}
-
-function eventDetail(payload: Record<string, unknown>): Record<string, unknown> {
-  const detail = payload.detail;
-  return detail && typeof detail === 'object' && !Array.isArray(detail)
-    ? detail as Record<string, unknown>
-    : {};
-}
-
-function stringValue(value: unknown): string {
-  return typeof value === 'string' ? value.trim() : '';
 }
 
 function createTurnRequestId(): string {

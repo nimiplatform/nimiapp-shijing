@@ -1,9 +1,10 @@
-// SJG-ASTRO-11 — Nimi runtime SDK factory.
+// SJG-ASTRO-11 — Runtime AI wording text parse/apply boundary.
+//
+// The only production transport is the App Access Agent conversation bridge
+// (src/shell/ai/shijing-conversation-chat-bridge.ts). This module owns the
+// deterministic side of that boundary: parsing the returned wording-patch
+// text and applying it onto the deterministic output, fail-closed.
 
-import {
-  runNimiTextGenerate,
-  type NimiAiModel,
-} from '@nimiplatform/sdk/ai';
 import type {
   NimiStructuredOutputParseFailure,
 } from '@nimiplatform/sdk/features/evaluation';
@@ -21,24 +22,10 @@ import {
   type RuntimeAiWordingPatch,
 } from './runtime-ai-wording-patch.ts';
 import type {
-  RuntimeAiClient,
   RuntimeAiResult,
 } from './runtime-ai-client.ts';
 import { runtimeAiWordingPatchAppliedSource } from './runtime-ai-client.ts';
 import type { RuntimeAiPromptRequest } from './runtime-ai-prompt.ts';
-
-interface NimiRuntimeLike {
-  readonly model: NimiAiModel;
-}
-
-export interface SdkRuntimeFactoryOptions {
-  readonly runtime?: NimiRuntimeLike;
-  readonly metadata?: Record<string, string>;
-  readonly temperature?: number;
-  readonly topP?: number;
-  readonly maxTokens?: number;
-  readonly timeoutMs?: number;
-}
 
 function structuredFailureToRuntimeParseFailure(
   failure: NimiStructuredOutputParseFailure,
@@ -221,110 +208,4 @@ export function applyRuntimeAiWordingText(
       },
     };
   }
-}
-
-function recordValue(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : null;
-}
-
-function textValue(value: unknown): string {
-  return typeof value === 'string' ? value.trim() : '';
-}
-
-function parseJsonRecord(raw: string): Record<string, unknown> | null {
-  if (!raw.trim().startsWith('{')) return null;
-  try {
-    return recordValue(JSON.parse(raw));
-  } catch {
-    return null;
-  }
-}
-
-function providerMessageFromRuntimeError(message: string): string {
-  const envelope = parseJsonRecord(message);
-  const details = recordValue(envelope?.details);
-  return textValue(details?.provider_message)
-    || textValue(details?.providerMessage)
-    || '';
-}
-
-function isProviderProductNotActivated(providerMessage: string): boolean {
-  return /product\b[\s\S]{0,120}\bnot activated/i.test(providerMessage)
-    || /not activated\b[\s\S]{0,120}\bproducts?/i.test(providerMessage)
-    || /activated products/i.test(providerMessage);
-}
-
-function runtimeTextGenerateFailureDetail(error: { readonly code?: string; readonly message?: string }): string {
-  const message = textValue(error.message) || textValue(error.code) || 'Runtime text generation failed';
-  const providerMessage = providerMessageFromRuntimeError(message);
-  if (!providerMessage) return message;
-  if (isProviderProductNotActivated(providerMessage)) {
-    return `provider_product_not_activated:provider_message=${providerMessage}`;
-  }
-  return `provider_request_failed:provider_message=${providerMessage}`;
-}
-
-class SdkRuntimeAiClient implements RuntimeAiClient {
-  private readonly runtime: NimiRuntimeLike | undefined;
-  private readonly options: SdkRuntimeFactoryOptions;
-  constructor(options: SdkRuntimeFactoryOptions) {
-    this.runtime = options.runtime;
-    this.options = options;
-  }
-
-  async generate(
-    mirror_kind: MirrorKind,
-    request: RuntimeAiPromptRequest,
-  ): Promise<RuntimeAiResult> {
-    if (!this.runtime) {
-      return {
-        ok: false,
-        failure: { kind: 'runtime_unavailable', detail: 'Nimi runtime not provided to factory' },
-      };
-    }
-    const model = String(this.runtime.model.model.modelId || '').trim();
-    if (!model) {
-      return {
-        ok: false,
-        failure: {
-          kind: 'runtime_unavailable',
-          detail: 'Nimi runtime text model not provided to factory',
-        },
-      };
-    }
-    const result = await runNimiTextGenerate({
-      runtime: this.runtime,
-      request: {
-        model: this.runtime.model.model,
-        messages: [
-          { role: 'system', content: [{ type: 'text', text: request.system_prompt }] },
-          { role: 'user', content: [{ type: 'text', text: request.user_prompt }] },
-        ],
-        parameters: {
-          ...(this.options.metadata ? { metadata: this.options.metadata } : {}),
-          ...(typeof this.options.temperature === 'number'
-            ? { temperature: this.options.temperature }
-            : {}),
-          ...(typeof this.options.topP === 'number' ? { topP: this.options.topP } : {}),
-          ...(typeof this.options.maxTokens === 'number' ? { maxTokens: this.options.maxTokens } : {}),
-        },
-      },
-    });
-    if (!result.ok) {
-      return {
-        ok: false,
-        failure: {
-          kind: 'runtime_unavailable',
-          detail: runtimeTextGenerateFailureDetail(result.error),
-        },
-      };
-    }
-    return applyRuntimeAiWordingText(mirror_kind, request, result.text);
-  }
-}
-
-export function createSdkRuntimeAiClient(options: SdkRuntimeFactoryOptions): RuntimeAiClient {
-  return new SdkRuntimeAiClient(options);
 }

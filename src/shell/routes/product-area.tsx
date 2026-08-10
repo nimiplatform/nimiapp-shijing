@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { NimiLocalAppAgentHandle } from '@nimiplatform/sdk/app';
 import { buildEmptyShiJingSpace } from '../../product/dev/initial-space.ts';
+import { InMemoryPersistenceAdapter } from '../../product/persistence/in-memory-adapter.ts';
 import { ShijingShell } from '../../product/shell/shijing-shell.tsx';
 import { ShijingStoreProvider } from '../../product/state/shijing-store.tsx';
 import { ShellLayout } from '../app-shell/shell-layout.js';
@@ -10,10 +11,16 @@ import {
 } from '../ai/shijing-conversation-chat-bridge.ts';
 import { ShijingLocalDevelopmentStatus } from '../local-development/shijing-local-development-status.tsx';
 
+// Local-development session continuity only. Keeping one adapter per renderer
+// process lets a temporarily remounted product route recover its current
+// snapshot without creating durable or account-scoped app storage.
+const localDevelopmentPersistenceClient = new InMemoryPersistenceAdapter();
+
 /**
  * This route is reachable only after the protected local-app carrier reports
- * a session-bound development process. Persistence remains unmounted; Runtime
- * wording and consultation use only the selected caller-scoped Agent handle.
+ * a session-bound development process. Product data remains process-local and
+ * volatile; Runtime wording and consultation use only the selected
+ * caller-scoped Agent handle.
  */
 export function ProductArea() {
   const [selectedAgentHandle, setSelectedAgentHandle] =
@@ -43,7 +50,7 @@ export function ProductArea() {
       <ShellLayout>
         <ShijingStoreProvider
           snapshot={snapshot}
-          persistenceClient={null}
+          persistenceClient={localDevelopmentPersistenceClient}
           runtimeAiClient={runtimeAiClient}
           conversationChatBridge={conversationChatBridge}
         >

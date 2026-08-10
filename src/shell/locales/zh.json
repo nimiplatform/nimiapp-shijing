@@ -2,41 +2,38 @@
   "LocalDevelopment": {
     "badge": "Desktop 监督的 local_development",
     "checking": "检查中",
-    "title": "时镜产品 UI 已在受保护开发会话中打开",
-    "detail": "咨询仅通过 Desktop 监督的 Agent 路径运行；请在时镜内明确请求 agents.interact，再到 Desktop 完成批准。",
+    "title": "时镜正在 Desktop 监督的开发会话中运行",
+    "detail": "咨询经声明式 App Access 通过您账户上的 Nimi Agent 完成。访问由平台建立；不提供应用内登录或直连降级。",
     "refresh": "刷新真实状态",
-    "session": "会话",
-    "sessionReason": "会话原因",
-    "permission": "权限",
+    "session": "Nimi 访问",
+    "sessionReady": "已连接",
+    "sessionActionRequired": "需要在 Nimi Desktop 完成操作",
+    "sessionUnavailable": "不可用",
+    "sessionPending": "Nimi 访问尚未完全建立。请在 Nimi Desktop 完成所需操作，然后原地刷新——同一宿主会恢复访问。",
     "agentCount": "可用 Agent",
     "selectedAgent": "咨询 Agent",
-    "permissionReason": "权限原因",
-    "nextStep": "下一步",
-    "request": "请求 Agent 交互权限"
+    "noAgentSelected": "未选择",
+    "accessIssue": "Nimi 访问刷新失败。请原地重试；同一宿主会重新建立访问。",
+    "technicalDetails": "技术详情"
   },
   "Shell": {
     "language": "语言",
-    "protectedSessionEyebrow": "受保护的本地开发会话",
-    "protectedSessionTitle": "时镜需要由 Nimi Desktop 启动",
-    "protectedSessionDetail": "请从 Desktop 的本地开发监督器启动时镜。账号、权限与 Runtime 状态只通过受保护的 Kit/SDK 载体投影；不提供应用内登录或直连降级。",
-    "protectedSessionLocked": "时镜产品区与所有受保护操作保持锁定。",
-    "reasonCode": "原因代码",
-    "nextStep": "下一步",
-    "protectedOperationsUnavailable": "受保护操作不可用",
-    "protectedState": {
-      "login-required": "需要在 Desktop 登录",
-      "runtime-unavailable": "可信 Runtime 不可用",
-      "permission-denied": "权限被拒绝",
-      "repair-required": "需要修复受保护载体",
-      "capability-unavailable": "受保护能力不可用"
+    "accessEyebrow": "声明式 App Access",
+    "accessTitle": "时镜暂时无法连接 Nimi",
+    "accessDetail": "时镜保持运行，本地数据不受影响。Nimi 访问由平台通过声明式 App Access 建立；不提供应用内登录或直连降级。",
+    "accessState": {
+      "action-required": "需要在 Nimi Desktop 完成操作",
+      "access-ended": "Nimi 访问已结束",
+      "runtime-unavailable": "Nimi Runtime 不可用",
+      "capability-unavailable": "Nimi 能力不可用"
     },
-    "protectedAction": {
-      "login-required": "请在 Nimi Desktop 完成登录，然后重新启动时镜。",
-      "runtime-unavailable": "请从 Nimi Desktop 启动可信 Runtime 服务后重试。",
-      "permission-denied": "请在 Nimi Desktop 检查时镜的精确权限。",
-      "repair-required": "请从 Nimi Desktop 重新发起本地开发运行；不要直接启动应用壳。",
-      "capability-unavailable": "等待对应 typed operation 完成准入；不支持直连 gRPC 或 renderer 凭证降级。"
+    "accessAction": {
+      "action-required": "请在 Nimi Desktop 完成登录或确认，然后在此重试——同一宿主会恢复访问。",
+      "access-ended": "访问已结束或登录账号已变更。可在此重试，或从 Nimi Desktop 重新启动时镜；平台会重新建立访问。",
+      "runtime-unavailable": "请从 Nimi Desktop 启动 Nimi Runtime，然后在此重试——同一宿主会恢复访问。",
+      "capability-unavailable": "请在此重试。若状态持续，请从 Nimi Desktop 重新启动时镜。"
     },
+    "technicalDetails": "技术详情",
     "retry": "重试"
   }
 }

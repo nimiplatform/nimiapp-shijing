@@ -194,7 +194,16 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
     ],
   );
 
-  return <ShijingStoreContext.Provider value={value}>{props.children}</ShijingStoreContext.Provider>;
+  const initialPersistenceLoadPending =
+    props.persistenceClient !== null
+    && props.persistenceClient !== undefined
+    && persistenceStatus.kind === 'loading';
+
+  return (
+    <ShijingStoreContext.Provider value={value}>
+      {initialPersistenceLoadPending ? null : props.children}
+    </ShijingStoreContext.Provider>
+  );
 }
 
 export function useShijingStore(): ShijingStoreValue {

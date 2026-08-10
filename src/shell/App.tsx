@@ -1,5 +1,5 @@
-import { ProtectedSessionBoundary } from './app-shell/protected-session-boundary.js';
+import { RuntimeAccessBoundary } from './app-shell/runtime-access-boundary.js';
 
 export function App() {
-  return <ProtectedSessionBoundary />;
+  return <RuntimeAccessBoundary />;
 }

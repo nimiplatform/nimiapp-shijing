@@ -9,7 +9,7 @@ function read(relativePath) {
 }
 
 const APP_SOURCE = read('src/shell/App.tsx');
-const SESSION_BOUNDARY_SOURCE = read('src/shell/app-shell/protected-session-boundary.tsx');
+const ACCESS_BOUNDARY_SOURCE = read('src/shell/app-shell/runtime-access-boundary.tsx');
 const BOOTSTRAP_SOURCE = read('src/shell/infra/shijing-bootstrap.ts');
 const STORE_SOURCE = read('src/shell/app-shell/app-store.ts');
 const LOCAL_APP_SOURCE = read('src/shell/local-development/shijing-local-app-runtime.ts');
@@ -23,11 +23,12 @@ test('ShiJing keeps app identity public while removing portable installed-sessio
   assert.doesNotMatch(identitySource, /APP_INSTANCE_ID|RUNTIME_DEVICE_ID|RELEASE_DESCRIPTOR_REF/);
 });
 
-test('renderer mounts product only behind the Desktop-supervised session boundary', () => {
+test('renderer mounts product only behind the App Access runtime boundary', () => {
   assert.doesNotMatch(APP_SOURCE, /ProductArea|routes\/product-area/);
-  assert.match(APP_SOURCE, /ProtectedSessionBoundary/);
-  assert.match(SESSION_BOUNDARY_SOURCE, /if \(ready\) return <ProductArea/);
-  assert.doesNotMatch(SESSION_BOUNDARY_SOURCE, /ShijingLoginPage|beginLogin|completeLogin|OAuth/i);
+  assert.match(APP_SOURCE, /RuntimeAccessBoundary/);
+  assert.match(ACCESS_BOUNDARY_SOURCE, /if \(ready\) return <ProductArea/);
+  assert.doesNotMatch(ACCESS_BOUNDARY_SOURCE, /ShijingLoginPage|beginLogin|completeLogin|OAuth/i);
+  assert.doesNotMatch(ACCESS_BOUNDARY_SOURCE, /app\.quit|process\.exit/);
   assert.doesNotMatch(STORE_SOURCE, /AuthUser|AuthStatus|setAuthSession|clearAuthSession|auth:/);
   assert.doesNotMatch(STORE_SOURCE, /__SHIJING_APP_STORE__/);
   assert.equal(existsSync(new URL('../src/shell/features/auth/shijing-login-page.tsx', import.meta.url)), false);
@@ -37,7 +38,8 @@ test('renderer mounts product only behind the Desktop-supervised session boundar
 test('bootstrap consumes only Kit and SDK local-app projections', () => {
   assert.match(BOOTSTRAP_SOURCE, /shijingLocalAppRuntimePlatform\.auth\.status\(\)/);
   assert.match(BOOTSTRAP_SOURCE, /session\.sessionBound/);
-  assert.match(BOOTSTRAP_SOURCE, /classifyShijingProtectedSessionFailure/);
+  assert.match(BOOTSTRAP_SOURCE, /classifyShijingRuntimeAccessFailure/);
+  assert.match(BOOTSTRAP_SOURCE, /shijingRuntimeAccessFromSession/);
   assert.match(BOOTSTRAP_SOURCE, /setBootstrapReady\(true\)/);
   assert.doesNotMatch(BOOTSTRAP_SOURCE, /createNimiClient|configureShijingRuntimeSession/);
   assert.doesNotMatch(BOOTSTRAP_SOURCE, /Account|Realm|AIConfig|setShijingNimiClient/);
@@ -51,18 +53,18 @@ test('bootstrap consumes only Kit and SDK local-app projections', () => {
   assert.equal(existsSync(new URL('../src/shell/infra/shijing-nimi-client.ts', import.meta.url)), false);
 });
 
-test('five stable protected-session states drive retryable, disabled fail-close UI', () => {
-  const stateSource = read('src/shell/app-shell/protected-session-state.ts');
+test('four stable runtime-access states drive same-host retry fail-close UI', () => {
+  const stateSource = read('src/shell/app-shell/runtime-access-state.ts');
   for (const state of [
-    'login-required',
+    'action-required',
+    'access-ended',
     'runtime-unavailable',
-    'permission-denied',
-    'repair-required',
     'capability-unavailable',
   ]) {
     assert.match(stateSource, new RegExp(state));
   }
-  assert.match(SESSION_BOUNDARY_SOURCE, /data-testid="shijing-protected-session-failure"/);
-  assert.match(SESSION_BOUNDARY_SOURCE, /data-testid="shijing-protected-session-retry"/);
-  assert.match(SESSION_BOUNDARY_SOURCE, /data-testid="shijing-protected-operations-locked"/);
+  assert.match(ACCESS_BOUNDARY_SOURCE, /data-testid="shijing-runtime-access-failure"/);
+  assert.match(ACCESS_BOUNDARY_SOURCE, /data-testid="shijing-runtime-access-retry"/);
+  assert.match(ACCESS_BOUNDARY_SOURCE, /<details[\s>]/);
+  assert.doesNotMatch(ACCESS_BOUNDARY_SOURCE, /protected-session|protectedSession|ProtectedSession/);
 });

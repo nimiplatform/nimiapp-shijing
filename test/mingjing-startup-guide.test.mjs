@@ -4,6 +4,7 @@ import test from 'node:test';
 import { buildEmptyShiJingSpace } from '../src/product/dev/initial-space.ts';
 import {
   hasCompletedMingJingStartupIntake,
+  initialMingJingStartupGuideDismissed,
   shouldShowMingJingStartupGuide,
 } from '../src/product/tabs/mingjing/mingjing-startup-guide.ts';
 import {
@@ -16,9 +17,9 @@ test('MingJing startup guide shows only before the first self and concern intake
   const emptySpace = buildEmptyShiJingSpace('u_startup');
 
   assert.equal(hasCompletedMingJingStartupIntake(emptySpace), false);
+  assert.equal(initialMingJingStartupGuideDismissed(emptySpace), false);
   assert.equal(
     shouldShowMingJingStartupGuide({
-      space: emptySpace,
       startupGuideDismissed: false,
     }),
     true,
@@ -34,12 +35,29 @@ test('MingJing startup guide does not return after first self and concern intake
   });
 
   assert.equal(hasCompletedMingJingStartupIntake(completedSpace), true);
+  assert.equal(initialMingJingStartupGuideDismissed(completedSpace), true);
   assert.equal(
     shouldShowMingJingStartupGuide({
-      space: completedSpace,
-      startupGuideDismissed: false,
+      startupGuideDismissed: initialMingJingStartupGuideDismissed(completedSpace),
     }),
     false,
+  );
+});
+
+test('MingJing startup guide waits for explicit entry after intake becomes complete', () => {
+  const emptySpace = buildEmptyShiJingSpace('u_startup');
+  const startupGuideDismissed = initialMingJingStartupGuideDismissed(emptySpace);
+  const completedSpace = validShiJingSpace({
+    self_subject: {
+      natal_inputs: validNatalInputs({ calculation_sex: 'female' }),
+    },
+    concern_tags: [validConcernTag('tag_career')],
+  });
+
+  assert.equal(hasCompletedMingJingStartupIntake(completedSpace), true);
+  assert.equal(
+    shouldShowMingJingStartupGuide({ startupGuideDismissed }),
+    true,
   );
 });
 
@@ -57,8 +75,9 @@ test('MingJing startup guide stays dismissed after first intake even when later 
   assert.equal(hasCompletedMingJingStartupIntake(repairedByRegularReadinessSpace), true);
   assert.equal(
     shouldShowMingJingStartupGuide({
-      space: repairedByRegularReadinessSpace,
-      startupGuideDismissed: false,
+      startupGuideDismissed: initialMingJingStartupGuideDismissed(
+        repairedByRegularReadinessSpace,
+      ),
     }),
     false,
   );
@@ -69,7 +88,6 @@ test('MingJing startup guide can still be dismissed inside the current session',
 
   assert.equal(
     shouldShowMingJingStartupGuide({
-      space: emptySpace,
       startupGuideDismissed: true,
     }),
     false,

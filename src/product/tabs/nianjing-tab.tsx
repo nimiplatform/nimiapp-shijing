@@ -31,6 +31,7 @@ import type { ReadingGenerationFailure } from '../../domain/reading.ts';
 import { generateReadingForStorage } from '../reading/generate-and-store.ts';
 import { inputsSummaryStalenessForSpace } from '../astrology/inputs-summary-expiry.ts';
 import { newReadingId } from '../ids/index.ts';
+import { subjectMirrorReadiness } from '../subjects/natal-readiness.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { MIRROR_KIND_LABELS } from '../i18n/copy.ts';
 import { longHorizonMirrorScopeNextTenYears } from './mirror-scope-helpers.ts';
@@ -116,16 +117,22 @@ export function NianJingTab(props: NianJingTabProps) {
       })
     : { stale: false as const };
   const freshness = nianjingFreshnessView(staleness);
+  const selfNatalReady = subjectMirrorReadiness({
+    subject: 'self',
+    space: state.snapshot,
+    mirror_kind: 'nianjing',
+    mirror_scope: nianjingScope,
+  }).ok;
   const directDisplay = useMemo(
     () =>
-      activeTags.length > 0
+      selfNatalReady && activeTags.length > 0
         ? buildNianJingDirectDisplayOutput({
             space: state.snapshot,
             mirror_scope: nianjingScope,
             active_concern_tags: activeTags,
           })
         : null,
-    [activeTags, nianjingScope, state.snapshot],
+    [activeTags, nianjingScope, selfNatalReady, state.snapshot],
   );
 
   async function handleGenerate() {
@@ -157,10 +164,12 @@ export function NianJingTab(props: NianJingTabProps) {
   const output = persistedOutput ?? liveOutput;
   const outputReading = persistedOutput ? reading : null;
   const displayFailure =
-    failure ??
-    (!loading && activeTagIds.length > 0 && !output && directDisplay && !directDisplay.ok
-      ? directDisplay.failure
-      : null);
+    selfNatalReady
+      ? failure ??
+        (!loading && activeTagIds.length > 0 && !output && directDisplay && !directDisplay.ok
+          ? directDisplay.failure
+          : null)
+      : null;
   const importableReadingId = freshness.can_import_to_consultation ? reading?.id ?? null : null;
   const generatedAgo = reading?.created_at ? relativeTimeShort(reading.created_at) : null;
   const generatedAgoPrefix = viewingPrevious ? '上一版生成' : '上次生成';
@@ -207,7 +216,11 @@ export function NianJingTab(props: NianJingTabProps) {
         ) : undefined}
       />
 
-      {activeTagIds.length === 0 ? (
+      {!selfNatalReady ? (
+        <p role="status" className="shijing-nianjing__notice">
+          请先在「设置 → 本人」中填写出生信息,年镜会据此自动推算。
+        </p>
+      ) : activeTagIds.length === 0 ? (
         <div
           role="status"
           aria-live="polite"
@@ -229,7 +242,7 @@ export function NianJingTab(props: NianJingTabProps) {
       {loading ? (
         <p role="status" className="shijing-nianjing__notice">正在生成长程相位…</p>
       ) : null}
-      {!loading && !displayFailure && !output && activeTagIds.length > 0 ? (
+      {!loading && selfNatalReady && !displayFailure && !output && activeTagIds.length > 0 ? (
         <p role="status" className="shijing-nianjing__notice">
           当前资料还无法推导出长程相位，请先补全本命输入与关注。
         </p>

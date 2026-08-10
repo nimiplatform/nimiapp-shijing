@@ -2,14 +2,10 @@ import { createNimiClient } from '@nimiplatform/sdk';
 import type { NimiLocalAppClient } from '@nimiplatform/sdk/app';
 import { createNimiLocalAppStandardShellSurface } from '@nimiplatform/kit/shell/renderer/bridge';
 
-export const SHIJING_AGENTS_INTERACT_PERMISSION = 'agents.interact';
-export const SHIJING_AGENTS_INTERACT_REASON =
-  '允许时镜使用您账户中的 Agent 完成基于占星解读的咨询对话。';
-
 /**
  * The only renderer entry into the Desktop-supervised local-app carrier.
  * Kit owns the host bridge and SDK owns projection validation; ShiJing never
- * receives a principal, grant id, session proof, endpoint, or bearer.
+ * receives a principal, session proof, endpoint, or bearer.
  */
 export const shijingLocalAppRuntimePlatform: NimiLocalAppClient = createNimiClient({
   localApp: {

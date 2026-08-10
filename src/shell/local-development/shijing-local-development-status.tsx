@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { NimiLocalAppAgent, NimiLocalAppAgentHandle } from '@nimiplatform/sdk/app';
+import type {
+  NimiLocalAppAgentHandle,
+  NimiLocalAppAgentReference,
+} from '@nimiplatform/sdk/app';
 import {
   Button,
   InlineAlert,
@@ -8,8 +11,6 @@ import {
   Surface,
 } from '@nimiplatform/kit/ui';
 import {
-  SHIJING_AGENTS_INTERACT_PERMISSION,
-  SHIJING_AGENTS_INTERACT_REASON,
   normalizeShijingLocalAppError,
   shijingLocalAppRuntimePlatform,
   withShijingLocalAppResponseDeadline,
@@ -20,13 +21,6 @@ type SessionEvidence = {
   readonly state: string;
   readonly reasonCode: string;
   readonly actionHint: string;
-};
-
-type PermissionEvidence = {
-  readonly posture: string;
-  readonly canRequest: boolean;
-  readonly agents: readonly NimiLocalAppAgent[];
-  readonly detail: string;
 };
 
 type OperationEvidence =
@@ -43,100 +37,54 @@ export function ShijingLocalDevelopmentStatus(
 ) {
   const { t } = useTranslation();
   const [session, setSession] = useState<SessionEvidence | null>(null);
-  const [permission, setPermission] = useState<PermissionEvidence | null>(null);
+  const [agents, setAgents] = useState<readonly NimiLocalAppAgentReference[]>([]);
   const [operation, setOperation] = useState<OperationEvidence>({ state: 'idle' });
-  const [busy, setBusy] = useState<'refresh' | 'request' | null>(null);
+  const [busy, setBusy] = useState<'refresh' | null>(null);
 
-  const applyPermission = useCallback((nextPermission: PermissionEvidence) => {
-    setPermission(nextPermission);
-    const retained = nextPermission.agents.find(
+  const applyAgents = useCallback((nextAgents: readonly NimiLocalAppAgentReference[]) => {
+    setAgents(nextAgents);
+    const retained = nextAgents.find(
       (agent) => agent.agentHandle === props.selectedAgentHandle,
     );
-    props.onSelectAgent(retained?.agentHandle ?? nextPermission.agents[0]?.agentHandle ?? null);
+    props.onSelectAgent(retained?.agentHandle ?? nextAgents[0]?.agentHandle ?? null);
   }, [props.onSelectAgent, props.selectedAgentHandle]);
 
   const refresh = useCallback(async () => {
     setBusy('refresh');
     try {
-      const [nextSession, nextPermission] = await withShijingLocalAppResponseDeadline(
+      const [nextSession, nextAgents] = await withShijingLocalAppResponseDeadline(
         Promise.all([
           shijingLocalAppRuntimePlatform.auth.status(),
-          shijingLocalAppRuntimePlatform.permissions.status(
-            SHIJING_AGENTS_INTERACT_PERMISSION,
-          ),
+          shijingLocalAppRuntimePlatform.agents.listReferences(),
         ]),
-        'session and Agent permission refresh',
+        'session and Agent reference refresh',
       );
       setSession({
         state: nextSession.state,
         reasonCode: nextSession.reasonCode,
         actionHint: nextSession.actionHint,
       });
-      applyPermission({
-        posture: nextPermission.posture,
-        canRequest: nextPermission.canRequest,
-        agents: nextPermission.agents,
-        detail: nextPermission.detail ?? '',
-      });
+      applyAgents(nextAgents);
       setOperation({ state: 'idle' });
     } catch (error) {
       setOperation({ state: 'failed', ...normalizeShijingLocalAppError(error) });
     } finally {
       setBusy(null);
     }
-  }, [applyPermission]);
+  }, [applyAgents]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  useEffect(() => shijingLocalAppRuntimePlatform.permissions.subscribe(
-    SHIJING_AGENTS_INTERACT_PERMISSION,
-    (event) => {
-      applyPermission({
-        posture: event.status.posture,
-        canRequest: event.status.canRequest,
-        agents: event.status.agents,
-        detail: event.status.detail ?? '',
-      });
-    },
-    (error) => {
-      setOperation({ state: 'failed', ...normalizeShijingLocalAppError(error) });
-    },
-  ), [applyPermission]);
-
-  const requestPermission = useCallback(async () => {
-    setBusy('request');
-    setOperation({ state: 'idle' });
-    try {
-      const nextPermission = await withShijingLocalAppResponseDeadline(
-        shijingLocalAppRuntimePlatform.permissions.request({
-          permissionId: SHIJING_AGENTS_INTERACT_PERMISSION,
-          reason: SHIJING_AGENTS_INTERACT_REASON,
-        }),
-        'Agent permission request',
-      );
-      applyPermission({
-        posture: nextPermission.posture,
-        canRequest: nextPermission.canRequest,
-        agents: nextPermission.agents,
-        detail: nextPermission.detail ?? '',
-      });
-    } catch (error) {
-      setOperation({ state: 'failed', ...normalizeShijingLocalAppError(error) });
-    } finally {
-      setBusy(null);
-    }
-  }, [applyPermission]);
-
-  const permissionTone = permission?.posture === 'granted'
-    ? 'success'
-    : permission?.posture === 'pending'
-      ? 'warning'
-      : 'neutral';
-  const selectedAgent = permission?.agents.find(
+  const selectedAgent = agents.find(
     (agent) => agent.agentHandle === props.selectedAgentHandle,
   );
+  const sessionTone = !session
+    ? 'neutral'
+    : session.state === 'session-bound'
+      ? 'success'
+      : 'warning';
 
   return (
     <Surface
@@ -150,8 +98,8 @@ export function ShijingLocalDevelopmentStatus(
         <div>
           <div className="shijing-local-development__badges">
             <StatusBadge tone="info" shape="dot">{t('LocalDevelopment.badge')}</StatusBadge>
-            <StatusBadge tone={permissionTone}>
-              {permission?.posture ?? t('LocalDevelopment.checking')}
+            <StatusBadge tone={sessionTone}>
+              {t(sessionLabelKey(session?.state))}
             </StatusBadge>
           </div>
           <h2>{t('LocalDevelopment.title')}</h2>
@@ -161,7 +109,7 @@ export function ShijingLocalDevelopmentStatus(
           tone="secondary"
           size="sm"
           loading={busy === 'refresh'}
-          disabled={busy !== null && busy !== 'refresh'}
+          disabled={busy !== null}
           onClick={() => void refresh()}
           data-testid="shijing-local-development-refresh"
         >
@@ -170,72 +118,70 @@ export function ShijingLocalDevelopmentStatus(
       </div>
 
       <dl className="shijing-local-development__facts">
-        <Fact label={t('LocalDevelopment.session')} value={session?.state ?? 'loading'} />
-        <Fact label={t('LocalDevelopment.sessionReason')} value={session?.reasonCode ?? 'loading'} />
-        <Fact label={t('LocalDevelopment.permission')} value={SHIJING_AGENTS_INTERACT_PERMISSION} />
-        <Fact label={t('LocalDevelopment.agentCount')} value={String(permission?.agents.length ?? 0)} />
-        <Fact label={t('LocalDevelopment.selectedAgent')} value={selectedAgent?.displayName ?? 'none'} />
-        <Fact label={t('LocalDevelopment.permissionReason')} value={permission?.detail || permission?.posture || 'loading'} />
-        <Fact label={t('LocalDevelopment.nextStep')} value={permissionActionHint(permission)} />
+        <Fact label={t('LocalDevelopment.session')} value={t(sessionLabelKey(session?.state))} />
+        <Fact label={t('LocalDevelopment.agentCount')} value={String(agents.length)} />
+        <Fact
+          label={t('LocalDevelopment.selectedAgent')}
+          value={selectedAgent?.displayName ?? t('LocalDevelopment.noAgentSelected')}
+        />
       </dl>
 
-      <div className="shijing-local-development__actions">
-        {permission?.posture === 'granted' && permission.agents.length > 0 ? (
+      {session && session.state !== 'session-bound' ? (
+        <InlineAlert
+          tone="info"
+          data-testid="shijing-local-development-session-pending"
+        >
+          <span>{t('LocalDevelopment.sessionPending')}</span>
+        </InlineAlert>
+      ) : null}
+
+      {agents.length > 0 ? (
+        <div className="shijing-local-development__actions">
           <label>
             <span>{t('LocalDevelopment.selectedAgent')}</span>
             <select
               value={props.selectedAgentHandle ?? ''}
               onChange={(event) => {
-                const selected = permission.agents.find(
+                const selected = agents.find(
                   (agent) => agent.agentHandle === event.currentTarget.value,
                 );
                 props.onSelectAgent(selected?.agentHandle ?? null);
               }}
               data-testid="shijing-local-development-agent-select"
             >
-              {permission.agents.map((agent) => (
+              {agents.map((agent) => (
                 <option key={agent.agentHandle} value={agent.agentHandle}>
                   {agent.displayName}
                 </option>
               ))}
             </select>
           </label>
-        ) : null}
-        <Button
-          tone="primary"
-          loading={busy === 'request'}
-          disabled={busy !== null || !permission?.canRequest || permission.posture === 'pending'}
-          onClick={() => void requestPermission()}
-          data-testid="shijing-local-development-request-permission"
-        >
-          {t('LocalDevelopment.request')}
-        </Button>
-      </div>
+        </div>
+      ) : null}
 
       {operation.state === 'failed' ? (
         <InlineAlert
           tone="warning"
           data-testid="shijing-local-development-operation-failure"
         >
-          <strong>{operation.reasonCode}</strong>
-          <span>{operation.message}</span>
-          <code>{operation.actionHint}</code>
+          <span>{t('LocalDevelopment.accessIssue')}</span>
+          <details className="shijing-local-development__technical">
+            <summary>{t('LocalDevelopment.technicalDetails')}</summary>
+            <code>{operation.reasonCode}</code>
+            <code>{operation.actionHint}</code>
+            <span>{operation.message}</span>
+          </details>
         </InlineAlert>
       ) : null}
     </Surface>
   );
 }
 
-function permissionActionHint(permission: PermissionEvidence | null): string {
-  if (!permission) return 'refresh_agents_interact_permission';
-  if (permission.posture === 'granted') {
-    return permission.agents.length > 0
-      ? 'send_shijing_agent_conversation'
-      : 'wait_for_account_agent_inventory';
-  }
-  if (permission.posture === 'pending') return 'approve_agents_interact_in_nimi_desktop';
-  if (permission.canRequest) return 'request_agents_interact_from_shijing';
-  return 'review_agents_interact_in_nimi_desktop';
+function sessionLabelKey(state: string | undefined): string {
+  if (!state) return 'LocalDevelopment.checking';
+  if (state === 'session-bound') return 'LocalDevelopment.sessionReady';
+  if (state === 'action-required') return 'LocalDevelopment.sessionActionRequired';
+  return 'LocalDevelopment.sessionUnavailable';
 }
 
 function Fact({ label, value }: { readonly label: string; readonly value: string }) {

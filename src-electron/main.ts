@@ -1,9 +1,10 @@
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { app, BrowserWindow, ipcMain, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, protocol, session, webContents } from 'electron';
 import {
   createNimiElectronStandardApplicationMenuTemplate,
   isAllowedElectronRendererUrl,
+  registerNimiElectronAppAssetProtocolScheme,
   registerNimiElectronAppBridge,
 } from '@nimiplatform/kit/shell/electron/main';
 
@@ -20,6 +21,7 @@ const developmentRendererUrl = readDevelopmentRendererUrl();
 app.setName('ShiJing');
 installShijingStandardApplicationMenu();
 configureShijingElectronChromiumRuntime();
+registerNimiElectronAppAssetProtocolScheme(protocol);
 
 void app.whenReady().then(bootstrapElectron).catch(handleElectronStartupFailure);
 
@@ -27,8 +29,8 @@ async function bootstrapElectron(): Promise<void> {
   registerNimiElectronAppBridge({
     appId: SHIJING_APP_ID,
     allowedRendererUrls: [activeRendererUrl()],
+    assetMediaPlatform: { protocol, webRequest: session.defaultSession.webRequest, webContents },
     ipcMain,
-    onProtectedSessionFailure: () => app.quit(),
   });
 
   await createMainWindow();

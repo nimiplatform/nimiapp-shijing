@@ -51,7 +51,7 @@ test('shijing store exposes an injected presence verification client', () => {
 
 test('local-development product route keeps presence verification dormant', () => {
   assert.doesNotMatch(productAreaSource, /createShijingPresenceVerificationClient/);
-  assert.match(productAreaSource, /persistenceClient=\{null\}/);
+  assert.doesNotMatch(productAreaSource, /presenceVerificationClient=/);
   assert.match(productAreaSource, /ShijingStoreProvider/);
 });
 

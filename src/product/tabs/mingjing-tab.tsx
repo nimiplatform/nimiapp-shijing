@@ -28,7 +28,10 @@ import { generateReadingForStorage } from '../reading/generate-and-store.ts';
 import { newReadingId } from '../ids/index.ts';
 import { ShijingOnboarding } from '../onboarding/shijing-onboarding.tsx';
 import { mingJingReadiness } from './mingjing/mingjing-readiness.ts';
-import { shouldShowMingJingStartupGuide } from './mingjing/mingjing-startup-guide.ts';
+import {
+  initialMingJingStartupGuideDismissed,
+  shouldShowMingJingStartupGuide,
+} from './mingjing/mingjing-startup-guide.ts';
 import {
   natalMirrorScopeForToday,
 } from './mirror-scope-helpers.ts';
@@ -95,7 +98,9 @@ export function MingJingTab({
   const stagesRef = useRef<HTMLDivElement>(null);
   const scrollToStages = () =>
     stagesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  const [localStartupGuideDismissed, setLocalStartupGuideDismissed] = useState(false);
+  const [localStartupGuideDismissed, setLocalStartupGuideDismissed] = useState(
+    () => initialMingJingStartupGuideDismissed(space),
+  );
   const startupGuideDismissed = externalStartupGuideDismissed ?? localStartupGuideDismissed;
 
   const readiness = useMemo(() => mingJingReadiness(space), [space]);
@@ -152,7 +157,7 @@ export function MingJingTab({
     onStartupGuideComplete?.();
   }
 
-  if (shouldShowMingJingStartupGuide({ space, startupGuideDismissed })) {
+  if (shouldShowMingJingStartupGuide({ startupGuideDismissed })) {
     return (
       <section
         className="shijing-tab shijing-mingjing shijing-mingjing--onboarding"

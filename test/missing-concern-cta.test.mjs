@@ -46,3 +46,17 @@ test('NianJing missing-concern status routes directly to Settings concerns', () 
   assert.match(nianjingTabSource, /className="shijing-nianjing__notice-action"/);
   assert.match(nianjingTabSource, /onClick=\{\(\) => props\.onRequestOpenSettings\?\.\('concerns'\)\}/);
 });
+
+test('NianJing missing natal inputs use the same readable notice pattern as YueJing', () => {
+  assert.match(nianjingTabSource, /subjectMirrorReadiness\(\{/);
+  assert.match(nianjingTabSource, /mirror_kind: 'nianjing'/);
+  assert.match(
+    nianjingTabSource,
+    /请先在「设置 → 本人」中填写出生信息,年镜会据此自动推算。/,
+  );
+  assert.match(
+    nianjingTabSource,
+    /selfNatalReady && activeTags\.length > 0\s*\? buildNianJingDirectDisplayOutput/,
+  );
+  assert.match(nianjingTabSource, /selfNatalReady\s*\? failure \?\?/);
+});
