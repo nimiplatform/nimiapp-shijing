@@ -163,13 +163,14 @@ export function NianJingTab(props: NianJingTabProps) {
   const liveOutput = directDisplay?.ok ? directDisplay.output : null;
   const output = persistedOutput ?? liveOutput;
   const outputReading = persistedOutput ? reading : null;
+  // Surface generation failures regardless of current readiness: a failure
+  // recorded while inputs were broken must not vanish silently (the old
+  // `selfNatalReady ?` gate swallowed the banner, leaving clicks feedback-free).
   const displayFailure =
-    selfNatalReady
-      ? failure ??
-        (!loading && activeTagIds.length > 0 && !output && directDisplay && !directDisplay.ok
-          ? directDisplay.failure
-          : null)
-      : null;
+    failure ??
+    (!loading && activeTagIds.length > 0 && !output && directDisplay && !directDisplay.ok
+      ? directDisplay.failure
+      : null);
   const importableReadingId = freshness.can_import_to_consultation ? reading?.id ?? null : null;
   const generatedAgo = reading?.created_at ? relativeTimeShort(reading.created_at) : null;
   const generatedAgoPrefix = viewingPrevious ? '上一版生成' : '上次生成';
@@ -195,7 +196,7 @@ export function NianJingTab(props: NianJingTabProps) {
             {importableReadingId ? <ImportToShiJingButton readingId={importableReadingId} /> : null}
             <GeneratingButton
               className="shijing-nianjing__generate"
-              disabled={loading || activeTagIds.length === 0}
+              disabled={loading || !selfNatalReady || activeTagIds.length === 0}
               busy={loading}
               busyLabel={actionLabel}
               onClick={handleGenerate}

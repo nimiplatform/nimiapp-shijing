@@ -230,6 +230,19 @@ readonly onboarding: {
   readonly profileStageTitle: string;
   readonly concernStageTitle: string;
 };
+readonly intakeGate: {
+  readonly ariaLabel: string;
+  readonly eyebrow: string;
+  readonly title: (mirror: string) => string;
+  readonly body: string;
+  readonly selfTitle: string;
+  readonly selfPending: string;
+  readonly concernTitle: string;
+  readonly concernPending: string;
+  readonly activeCount: (active: number, limit: number) => string;
+  readonly done: string;
+  readonly action: string;
+};
 readonly concerns: {
   readonly title: string;
   readonly description: (limit: number, active: number, atLimit: boolean) => string;

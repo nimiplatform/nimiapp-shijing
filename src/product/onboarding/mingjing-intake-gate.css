@@ -1,0 +1,138 @@
+/* Soft intake gate: replaces the content area of the five non-mingjing
+   mirrors until the first self + concern intake completes. Navigation stays
+   free; this card is the typed blocker + recovery route. Also styles the
+   primary tab bar's intake-pending affordances. */
+
+.shijing-intake-gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100dvh - 148px);
+  padding: 26px 20px 34px;
+}
+
+.shijing-intake-gate__card {
+  display: grid;
+  gap: 14px;
+  width: min(460px, 100%);
+  padding: 34px 34px 30px;
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-2xl);
+  background: var(--shijing-surface-card);
+  box-shadow: var(--shijing-shadow-2);
+}
+
+.shijing-intake-gate__eyebrow {
+  margin: 0;
+  color: var(--shijing-brand-primary);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.shijing-intake-gate__title {
+  margin: 0;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.shijing-intake-gate__body {
+  margin: 0;
+  color: var(--shijing-text-secondary);
+  font-size: 13.5px;
+  line-height: 1.8;
+}
+
+.shijing-intake-gate__steps {
+  display: grid;
+  gap: 8px;
+  margin: 6px 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.shijing-intake-gate__steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--shijing-border-subtle);
+  border-radius: var(--shijing-radius-lg);
+  background: var(--shijing-surface-card-quiet);
+}
+
+.shijing-intake-gate__step-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--shijing-status-warning);
+}
+
+.shijing-intake-gate__steps li[data-complete='true'] .shijing-intake-gate__step-dot {
+  background: var(--shijing-status-success);
+}
+
+.shijing-intake-gate__steps strong {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.shijing-intake-gate__steps small {
+  margin-left: auto;
+  color: var(--shijing-text-muted);
+  font-size: 12px;
+}
+
+.shijing-intake-gate__action {
+  justify-self: start;
+  margin-top: 6px;
+  padding: 11px 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--shijing-brand-primary);
+  color: #fff;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.shijing-intake-gate__action:hover {
+  filter: brightness(1.05);
+}
+
+.shijing-intake-gate__action:focus-visible {
+  outline: 0;
+  box-shadow: var(--shijing-focus-ring);
+}
+
+/* Primary tab bar affordances while intake is pending: the five gated
+   mirrors dim slightly (still clickable), and 命镜 carries the action dot. */
+.shijing-primary-tabbar button[data-intake-gated] {
+  opacity: 0.55;
+}
+
+.shijing-primary-tabbar__intake-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: var(--shijing-status-warning);
+  vertical-align: middle;
+}
+
+@media (max-width: 560px) {
+  .shijing-intake-gate__card {
+    padding: 26px 20px 24px;
+  }
+
+  .shijing-intake-gate__action {
+    justify-self: stretch;
+  }
+}

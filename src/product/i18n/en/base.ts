@@ -277,6 +277,19 @@ onboarding: {
   profileStageTitle: 'First, set the calculation basis.',
   concernStageTitle: 'Then tell ShiJing where to look.',
 },
+intakeGate: {
+  ariaLabel: 'Intake guide',
+  eyebrow: 'Startup readiness',
+  title: (mirror) => `${mirror} needs to know you first.`,
+  body: 'This mirror derives from your natal basis. Finish your self profile and concerns in Destiny Mirror, then return here.',
+  selfTitle: 'Self profile',
+  selfPending: 'Natal inputs needed',
+  concernTitle: 'Concerns',
+  concernPending: 'Activate at least 1',
+  activeCount: (active, limit) => `${active}/${limit} active`,
+  done: 'Done',
+  action: 'Go to Destiny Mirror',
+},
 concerns: {
   title: 'Concerns',
   description: (limit, active, atLimit) =>

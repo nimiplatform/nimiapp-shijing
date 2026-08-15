@@ -326,7 +326,7 @@ export function YueJingTab(props: YueJingTabProps) {
             {latestReading?.id ? <ImportToShiJingButton readingId={latestReading.id} /> : null}
             <GeneratingButton
               className="shijing-yuejing__generate"
-              disabled={loading || activeTagIds.length === 0 || nextGenerationDate === null}
+              disabled={loading || !selfNatalReady || activeTagIds.length === 0 || nextGenerationDate === null}
               busy={loading}
               busyLabel="生成中…"
               onClick={() => {

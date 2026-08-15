@@ -58,5 +58,12 @@ test('NianJing missing natal inputs use the same readable notice pattern as YueJ
     nianjingTabSource,
     /selfNatalReady && activeTags\.length > 0\s*\? buildNianJingDirectDisplayOutput/,
   );
-  assert.match(nianjingTabSource, /selfNatalReady\s*\? failure \?\?/);
+  // Generation failures surface unconditionally — the old `selfNatalReady ?`
+  // gate swallowed the banner, leaving manual-generate clicks feedback-free.
+  assert.match(nianjingTabSource, /const displayFailure =\s*failure \?\?/);
+  assert.doesNotMatch(nianjingTabSource, /selfNatalReady\s*\?\s*failure/);
+  assert.match(
+    nianjingTabSource,
+    /disabled=\{loading \|\| !selfNatalReady \|\| activeTagIds\.length === 0\}/,
+  );
 });

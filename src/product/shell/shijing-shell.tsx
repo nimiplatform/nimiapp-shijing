@@ -23,6 +23,8 @@ import { commitMethodProfile } from '../settings/method-profile-state.ts';
 import type { MethodProfileId } from '../../domain/algorithm.ts';
 import type { PersistenceError } from '../persistence/persistence-client.ts';
 import { initialMingJingStartupGuideDismissed } from '../tabs/mingjing/mingjing-startup-guide.ts';
+import { shouldGatePrimaryTabForIntake } from '../onboarding/startup-intake.ts';
+import { MingJingIntakeGate } from '../onboarding/mingjing-intake-gate.tsx';
 
 const RiJingTab = lazy(() =>
   import('../tabs/rijing-tab.tsx').then((module) => ({ default: module.RiJingTab })),
@@ -200,11 +202,18 @@ export function ShijingShell(props: ShijingShellProps) {
             </p>
           }
         >
-          {renderActiveTab(
-            state.active_tab,
-            (page, focusTarget) => openPage(page ?? 'profile', focusTarget),
-            startupGuideDismissed,
-            () => setStartupGuideDismissed(true),
+          {shouldGatePrimaryTabForIntake(state.snapshot, state.active_tab) ? (
+            <MingJingIntakeGate
+              gatedTab={state.active_tab}
+              onGoToMingJing={() => dispatch({ type: 'tab/activate', tab: 'mingjing' })}
+            />
+          ) : (
+            renderActiveTab(
+              state.active_tab,
+              (page, focusTarget) => openPage(page ?? 'profile', focusTarget),
+              startupGuideDismissed,
+              () => setStartupGuideDismissed(true),
+            )
           )}
         </Suspense>
       </main>

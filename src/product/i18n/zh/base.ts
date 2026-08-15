@@ -277,6 +277,19 @@ onboarding: {
   profileStageTitle: '先确定推算依据。',
   concernStageTitle: '再告诉时镜该看向哪里。',
 },
+intakeGate: {
+  ariaLabel: '建档引导',
+  eyebrow: '启动准备',
+  title: (mirror) => `${mirror}需要先认识你。`,
+  body: '这面镜子的推算依据来自本命。请先在命镜完成本人资料与关注，再回到这里。',
+  selfTitle: '本人资料',
+  selfPending: '待建立本命输入',
+  concernTitle: '关注',
+  concernPending: '至少激活 1 项',
+  activeCount: (active, limit) => `${active}/${limit} 已激活`,
+  done: '已完成',
+  action: '前往命镜建档',
+},
 concerns: {
   title: '关注的事',
   description: (limit, active, atLimit) =>
