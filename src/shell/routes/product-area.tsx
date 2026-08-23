@@ -1,14 +1,13 @@
-import { useMemo, useState } from 'react';
-import type { NimiLocalAppAgentHandle } from '@nimiplatform/sdk/app';
+import { useMemo } from 'react';
 import { buildEmptyShiJingSpace } from '../../product/dev/initial-space.ts';
 import { InMemoryPersistenceAdapter } from '../../product/persistence/in-memory-adapter.ts';
 import { ShijingShell } from '../../product/shell/shijing-shell.tsx';
 import { ShijingStoreProvider } from '../../product/state/shijing-store.tsx';
 import { ShellLayout } from '../app-shell/shell-layout.js';
 import {
-  createShijingAgentRuntimeAiClient,
   createShijingConversationChatBridge,
-} from '../ai/shijing-conversation-chat-bridge.ts';
+  createShijingRuntimeAiClient,
+} from '../ai/shijing-runtime-ai.ts';
 import { ShijingLocalDevelopmentStatus } from '../local-development/shijing-local-development-status.tsx';
 
 // Local-development session continuity only. Keeping one adapter per renderer
@@ -19,34 +18,25 @@ const localDevelopmentPersistenceClient = new InMemoryPersistenceAdapter();
 /**
  * This route is reachable only after the protected local-app carrier reports
  * a session-bound development process. Product data remains process-local and
- * volatile; Runtime wording and consultation use only the selected
- * caller-scoped Agent handle.
+ * volatile; Runtime wording and consultation consume ShiJing's canonical App
+ * AIConfig through the protected runtime.consume text-candidate operation.
  */
 export function ProductArea() {
-  const [selectedAgentHandle, setSelectedAgentHandle] =
-    useState<NimiLocalAppAgentHandle | null>(null);
   const snapshot = useMemo(
     () => buildEmptyShiJingSpace('local-development-space'),
     [],
   );
-  const agentOptions = useMemo(
-    () => ({ getAgentHandle: () => selectedAgentHandle }),
-    [selectedAgentHandle],
-  );
   const runtimeAiClient = useMemo(
-    () => createShijingAgentRuntimeAiClient(agentOptions),
-    [agentOptions],
+    () => createShijingRuntimeAiClient(),
+    [],
   );
   const conversationChatBridge = useMemo(
-    () => createShijingConversationChatBridge(agentOptions),
-    [agentOptions],
+    () => createShijingConversationChatBridge(),
+    [],
   );
   return (
     <div className="shijing-local-development-shell" data-testid="shijing-product-area">
-      <ShijingLocalDevelopmentStatus
-        selectedAgentHandle={selectedAgentHandle}
-        onSelectAgent={setSelectedAgentHandle}
-      />
+      <ShijingLocalDevelopmentStatus />
       <ShellLayout>
         <ShijingStoreProvider
           snapshot={snapshot}

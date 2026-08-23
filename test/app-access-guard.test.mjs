@@ -17,10 +17,9 @@ function* walk(dir) {
   }
 }
 
-// Retired with the permission regime: request/approval surfaces, the old
-// first-party operation names, durable raw agent identifiers, and the
-// stringly-typed conversation event names. App Access replacements live in
-// the SDK client namespaces (agents.listReferences + conversation.*).
+// Retired with the permission regime and the ShiJing Agent-transport drift:
+// request/approval surfaces, LocalAgent selectors, and Agent conversation
+// operations never belong to ShiJing App self AI consumption.
 const RETIRED_PATTERNS = [
   /permissions\./,
   /agents\.interact/,
@@ -32,6 +31,10 @@ const RETIRED_PATTERNS = [
   /localAgentId/,
   /ConnectorGrant/,
   /runtime\.agent\.turn\./,
+  /agents\.listReferences/,
+  /conversation\.(?:open|send|subscribe)/,
+  /NimiLocalAppAgentHandle/,
+  /agent\.local/,
 ];
 
 test('retired permission-regime vocabulary never reappears in app sources', () => {

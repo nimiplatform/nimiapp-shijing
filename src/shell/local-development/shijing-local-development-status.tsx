@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type {
-  NimiLocalAppAgentHandle,
-  NimiLocalAppAgentReference,
-} from '@nimiplatform/sdk/app';
+import { openDesktopIntent } from '@nimiplatform/kit/shell/renderer/bridge';
 import {
   Button,
   InlineAlert,
@@ -16,6 +13,10 @@ import {
   withShijingLocalAppResponseDeadline,
   type ShijingLocalAppErrorEvidence,
 } from './shijing-local-app-runtime.ts';
+import {
+  projectShijingAIConfig,
+  type ShijingAIConfigEvidence,
+} from '../ai/shijing-ai-config.ts';
 
 type SessionEvidence = {
   readonly state: string;
@@ -27,64 +28,71 @@ type OperationEvidence =
   | { readonly state: 'idle' }
   | ({ readonly state: 'failed' } & ShijingLocalAppErrorEvidence);
 
-export type ShijingLocalDevelopmentStatusProps = {
-  readonly selectedAgentHandle: NimiLocalAppAgentHandle | null;
-  readonly onSelectAgent: (agentHandle: NimiLocalAppAgentHandle | null) => void;
-};
-
-export function ShijingLocalDevelopmentStatus(
-  props: ShijingLocalDevelopmentStatusProps,
-) {
+export function ShijingLocalDevelopmentStatus() {
   const { t } = useTranslation();
   const [session, setSession] = useState<SessionEvidence | null>(null);
-  const [agents, setAgents] = useState<readonly NimiLocalAppAgentReference[]>([]);
+  const [aiConfig, setAIConfig] = useState<ShijingAIConfigEvidence | null>(null);
   const [operation, setOperation] = useState<OperationEvidence>({ state: 'idle' });
-  const [busy, setBusy] = useState<'refresh' | null>(null);
-
-  const applyAgents = useCallback((nextAgents: readonly NimiLocalAppAgentReference[]) => {
-    setAgents(nextAgents);
-    const retained = nextAgents.find(
-      (agent) => agent.agentHandle === props.selectedAgentHandle,
-    );
-    props.onSelectAgent(retained?.agentHandle ?? nextAgents[0]?.agentHandle ?? null);
-  }, [props.onSelectAgent, props.selectedAgentHandle]);
+  const [busy, setBusy] = useState<'refresh' | 'configure' | null>(null);
 
   const refresh = useCallback(async () => {
     setBusy('refresh');
     try {
-      const [nextSession, nextAgents] = await withShijingLocalAppResponseDeadline(
+      const [nextSession, nextAIConfig] = await withShijingLocalAppResponseDeadline(
         Promise.all([
           shijingLocalAppRuntimePlatform.auth.status(),
-          shijingLocalAppRuntimePlatform.agents.listReferences(),
+          shijingLocalAppRuntimePlatform.aiConfig.get(),
         ]),
-        'session and Agent reference refresh',
+        'session and App AIConfig refresh',
       );
       setSession({
         state: nextSession.state,
         reasonCode: nextSession.reasonCode,
         actionHint: nextSession.actionHint,
       });
-      applyAgents(nextAgents);
+      setAIConfig(projectShijingAIConfig(nextAIConfig));
       setOperation({ state: 'idle' });
     } catch (error) {
       setOperation({ state: 'failed', ...normalizeShijingLocalAppError(error) });
     } finally {
       setBusy(null);
     }
-  }, [applyAgents]);
+  }, []);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  const selectedAgent = agents.find(
-    (agent) => agent.agentHandle === props.selectedAgentHandle,
-  );
+  const openConfiguration = useCallback(async () => {
+    if (busy !== null) return;
+    setBusy('configure');
+    try {
+      const result = await openDesktopIntent({
+        intent: { kind: 'open-apps', appId: 'nimi.shijing', section: 'ai-models' },
+      });
+      if (result.status === 'rejected') {
+        throw Object.assign(new Error(result.reasonCode), {
+          reasonCode: result.reasonCode,
+          actionHint: result.actionHint,
+          retryable: true,
+        });
+      }
+      setOperation({ state: 'idle' });
+    } catch (error) {
+      setOperation({ state: 'failed', ...normalizeShijingLocalAppError(error) });
+    } finally {
+      setBusy(null);
+    }
+  }, [busy]);
+
   const sessionTone = !session
     ? 'neutral'
     : session.state === 'session-bound'
       ? 'success'
       : 'warning';
+  const aiConfigTone = aiConfig?.state === 'ready'
+    ? 'success'
+    : aiConfig ? 'warning' : 'neutral';
 
   return (
     <Surface
@@ -98,72 +106,49 @@ export function ShijingLocalDevelopmentStatus(
         <div>
           <div className="shijing-local-development__badges">
             <StatusBadge tone="info" shape="dot">{t('LocalDevelopment.badge')}</StatusBadge>
-            <StatusBadge tone={sessionTone}>
-              {t(sessionLabelKey(session?.state))}
-            </StatusBadge>
+            <StatusBadge tone={sessionTone}>{t(sessionLabelKey(session?.state))}</StatusBadge>
+            <StatusBadge tone={aiConfigTone}>{t(aiConfigLabelKey(aiConfig))}</StatusBadge>
           </div>
           <h2>{t('LocalDevelopment.title')}</h2>
           <p>{t('LocalDevelopment.detail')}</p>
         </div>
-        <Button
-          tone="secondary"
-          size="sm"
-          loading={busy === 'refresh'}
-          disabled={busy !== null}
-          onClick={() => void refresh()}
-          data-testid="shijing-local-development-refresh"
-        >
-          {t('LocalDevelopment.refresh')}
-        </Button>
+        <div className="shijing-local-development__actions">
+          <Button
+            tone="secondary"
+            size="sm"
+            loading={busy === 'configure'}
+            disabled={busy !== null}
+            onClick={() => void openConfiguration()}
+            data-testid="shijing-open-ai-config"
+          >
+            {t('LocalDevelopment.configureAI')}
+          </Button>
+          <Button
+            tone="secondary"
+            size="sm"
+            loading={busy === 'refresh'}
+            disabled={busy !== null}
+            onClick={() => void refresh()}
+            data-testid="shijing-local-development-refresh"
+          >
+            {t('LocalDevelopment.refresh')}
+          </Button>
+        </div>
       </div>
 
       <dl className="shijing-local-development__facts">
         <Fact label={t('LocalDevelopment.session')} value={t(sessionLabelKey(session?.state))} />
-        <Fact label={t('LocalDevelopment.agentCount')} value={String(agents.length)} />
-        <Fact
-          label={t('LocalDevelopment.selectedAgent')}
-          value={selectedAgent?.displayName ?? t('LocalDevelopment.noAgentSelected')}
-        />
+        <Fact label={t('LocalDevelopment.aiConfig')} value={t(aiConfigLabelKey(aiConfig))} />
       </dl>
 
       {session && session.state !== 'session-bound' ? (
-        <InlineAlert
-          tone="info"
-          data-testid="shijing-local-development-session-pending"
-        >
+        <InlineAlert tone="info" data-testid="shijing-local-development-session-pending">
           <span>{t('LocalDevelopment.sessionPending')}</span>
         </InlineAlert>
       ) : null}
 
-      {agents.length > 0 ? (
-        <div className="shijing-local-development__actions">
-          <label>
-            <span>{t('LocalDevelopment.selectedAgent')}</span>
-            <select
-              value={props.selectedAgentHandle ?? ''}
-              onChange={(event) => {
-                const selected = agents.find(
-                  (agent) => agent.agentHandle === event.currentTarget.value,
-                );
-                props.onSelectAgent(selected?.agentHandle ?? null);
-              }}
-              data-testid="shijing-local-development-agent-select"
-            >
-              {agents.map((agent) => (
-                <option key={agent.agentHandle} value={agent.agentHandle}>
-                  {agent.displayName}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      ) : null}
-
       {operation.state === 'failed' ? (
-        <InlineAlert
-          tone="warning"
-          data-testid="shijing-local-development-operation-failure"
-        >
+        <InlineAlert tone="warning" data-testid="shijing-local-development-operation-failure">
           <span>{t('LocalDevelopment.accessIssue')}</span>
           <details className="shijing-local-development__technical">
             <summary>{t('LocalDevelopment.technicalDetails')}</summary>
@@ -182,6 +167,19 @@ function sessionLabelKey(state: string | undefined): string {
   if (state === 'session-bound') return 'LocalDevelopment.sessionReady';
   if (state === 'action-required') return 'LocalDevelopment.sessionActionRequired';
   return 'LocalDevelopment.sessionUnavailable';
+}
+
+function aiConfigLabelKey(evidence: ShijingAIConfigEvidence | null): string {
+  if (!evidence) return 'LocalDevelopment.aiConfigChecking';
+  if (evidence.state === 'ready') {
+    return evidence.route === 'local'
+      ? 'LocalDevelopment.aiConfigReadyLocal'
+      : 'LocalDevelopment.aiConfigReadyCloud';
+  }
+  if (evidence.state === 'not-configured') return 'LocalDevelopment.aiConfigNotConfigured';
+  if (evidence.state === 'missing') return 'LocalDevelopment.aiConfigMissing';
+  if (evidence.state === 'blocked') return 'LocalDevelopment.aiConfigBlocked';
+  return 'LocalDevelopment.aiConfigUnavailable';
 }
 
 function Fact({ label, value }: { readonly label: string; readonly value: string }) {

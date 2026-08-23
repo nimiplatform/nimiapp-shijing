@@ -97,7 +97,7 @@ units:
   - id: definition.shijing.astrology.protected-generation
     kind: definition
     title: Protected AI generation
-    meaning: Reading AI generation is owned by a separately admitted protected Nimi Runtime operation consumed through the shared SDK or Kit boundary, never by direct transport, app-selected endpoints, hardcoded provider or model literals, or fallback masking.
+    meaning: Reading AI generation uses the protected runtime.ai.text-candidate.generate Local App operation under runtime.consume through the public SDK and the canonical nimi.shijing App AIConfig, never a LocalAgent conversation, shared Agent AIConfig, direct transport, app-selected endpoint, hardcoded provider or model literal, or fallback masking.
   - id: definition.shijing.astrology.relationship-hepan
     kind: definition
     title: Relationship HePan
@@ -264,9 +264,9 @@ units:
     kind: rule
     title: Protected Runtime generation
     modality: must
-    statement: All Reading AI generation runs through a separately admitted protected ShiJing operation owned by Nimi Runtime and consumed through the shared SDK or Kit boundary; direct HTTP or gRPC, ordinary renderer shell bridges, app-selected localhost endpoints, hardcoded provider or model literals, and fallback paths masking Runtime failure remain forbidden; until the protected operation is admitted, generation stays unavailable instead of constructing an app-owned Runtime session.
+    statement: All Reading AI generation runs through the host-injected public SDK runtime.ai.text-candidate.generate operation under runtime.consume, and Runtime composes execution only from the canonical nimi.shijing App AIConfig; direct HTTP or gRPC, ordinary renderer shell bridges, app-selected localhost endpoints, hardcoded provider or model literals, LocalAgent references, Agent conversations, shared Agent AIConfig, and fallback paths masking Runtime failure remain forbidden.
     condition: Whenever Reading AI generation is requested.
-    failure: Return a typed Runtime-unavailable failure and generate no Reading.
+    failure: Return the typed Runtime, App AIConfig, or execution failure and generate no Reading without opening or mutating a LocalAgent conversation.
     relations:
       - type: applies_to
         target: definition.shijing.astrology.protected-generation

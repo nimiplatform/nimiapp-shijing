@@ -15,7 +15,8 @@ test('manifest declares App Access with the minimal domain set on the Desktop-su
   assert.match(manifest, /^profile: standalone$/m);
   assert.match(manifest, /^manifest_role: submitted-input$/m);
   assert.match(manifest, /^app_access:$/m);
-  assert.match(manifest, /^\s{2}- agent\.local$/m);
+  assert.match(manifest, /^\s{2}- runtime\.consume$/m);
+  assert.doesNotMatch(manifest, /agent\.local|agent\.configure/);
   assert.match(manifest, /^local_development:$/m);
   assert.match(manifest, /^\s{2}electron:$/m);
   assert.match(manifest, /^\s{4}renderer_origin: http:\/\/127\.0\.0\.1:1430$/m);
@@ -41,18 +42,19 @@ test('manifest declares App Access with the minimal domain set on the Desktop-su
   );
 });
 
-test('renderer consumes the App Access Agent conversation path without portable authority', () => {
+test('renderer consumes the App self text candidate path without portable authority', () => {
   const runtime = read('src/shell/local-development/shijing-local-app-runtime.ts');
   const status = read('src/shell/local-development/shijing-local-development-status.tsx');
   const productArea = read('src/shell/routes/product-area.tsx');
-  const conversation = read('src/shell/ai/shijing-conversation-chat-bridge.ts');
+  const runtimeAI = read('src/shell/ai/shijing-runtime-ai.ts');
 
   assert.match(runtime, /createNimiClient/);
   assert.match(runtime, /createNimiLocalAppStandardShellSurface/);
   assert.doesNotMatch(runtime, /SHIJING_AGENTS_INTERACT_PERMISSION|agents\.interact|permissions\./);
   assert.match(status, /auth\.status/);
-  assert.match(status, /agents\.listReferences/);
-  assert.match(status, /selectedAgentHandle/);
+  assert.match(status, /aiConfig\.get/);
+  assert.match(status, /openDesktopIntent/);
+  assert.doesNotMatch(status, /agents\.listReferences|selectedAgentHandle/);
   assert.doesNotMatch(status, /permissions\.|agents\.interact/);
   assert.match(
     productArea,
@@ -60,19 +62,15 @@ test('renderer consumes the App Access Agent conversation path without portable 
   );
   assert.match(productArea, /persistenceClient=\{localDevelopmentPersistenceClient\}/);
   assert.doesNotMatch(productArea, /IndexedDBPersistenceAdapter/);
-  assert.match(productArea, /createShijingAgentRuntimeAiClient/);
+  assert.match(productArea, /createShijingRuntimeAiClient/);
   assert.match(productArea, /createShijingConversationChatBridge/);
-  assert.match(conversation, /agents\.listReferences/);
-  assert.match(conversation, /conversation\.open/);
-  assert.match(conversation, /conversation\.subscribe/);
-  assert.match(conversation, /conversation\.send/);
-  assert.match(conversation, /turn-completed/);
+  assert.match(runtimeAI, /client\.ai\.text\.generateCandidate/);
   assert.doesNotMatch(
-    conversation,
-    /permissions\.|agents\.interact|runtime\.agent\.turn\.|agent_id|localAgentId|subjectUserId|runNimiTextGenerate/,
+    runtimeAI,
+    /agents\.listReferences|conversation\.(?:open|send|subscribe)|NimiLocalAppAgentHandle|localAgentId|subjectUserId|runNimiTextGenerate/,
   );
   assert.doesNotMatch(
-    `${runtime}\n${status}\n${conversation}`,
+    `${runtime}\n${status}\n${runtimeAI}`,
     /runtimeEndpoint|NIMI_RUNTIME_GRPC_ADDR|bearerToken|accessToken|sessionProof\s*[:=]|grantId\s*[:=]/,
   );
 });
@@ -81,6 +79,6 @@ test('app-managed Runtime model and self-auth paths are removed', () => {
   const productArea = read('src/shell/routes/product-area.tsx');
   const settings = read('src/product/settings/response-preferences-editor.tsx');
 
-  assert.doesNotMatch(productArea, /AIConfig|subjectUserId|runtimeEndpoint/);
+  assert.doesNotMatch(productArea, /subjectUserId|runtimeEndpoint|AgentHandle/);
   assert.doesNotMatch(settings, /ShijingAiModelConfigSection|settings-ai-model-config/);
 });

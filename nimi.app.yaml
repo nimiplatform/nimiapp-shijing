@@ -3,7 +3,7 @@ display_name: 时镜 ShiJing
 profile: standalone
 manifest_role: submitted-input
 app_access:
-  - agent.local
+  - runtime.consume
 local_development:
   electron:
     renderer_origin: http://127.0.0.1:1430

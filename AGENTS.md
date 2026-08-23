@@ -22,7 +22,7 @@
 | Frontend | React 19 + Vite 7 | `src/shell/renderer/` |
 | Persistence | Protected operation pending admission; product adapters remain dormant | `src/product/persistence/` |
 | Astrology pipeline | Pure-TS deterministic v1 (`bazi_ganzhi_jieqi_dayun_v1`) | `src/product/astrology/` |
-| AI wording | Protected ShiJing Runtime operation (pending admission) | shared SDK/Kit owner |
+| AI wording | Protected Local App text candidate consumption under `runtime.consume` | `@nimiplatform/sdk/app` |
 | UI components | `@nimiplatform/kit` | npm dependency |
 | State | Custom store + reducer | `src/product/state/` |
 | Dev port | 1430 | `vite.config.ts`, `src-tauri/tauri.conf.json` |
@@ -98,6 +98,9 @@ no data to migrate. Therefore:
   true-solar canonicalization, stage labels, and key windows.
 - The Runtime AI layer is an explanation layer only. It must not become the
   astrology calculation owner.
+- Runtime AI wording and consultation consume ShiJing's own App AIConfig through
+  `client.ai.text.generateCandidate`; they never select or open a LocalAgent,
+  create Runtime Agent conversation state, or depend on shared Agent AIConfig.
 - `inputs_summary` on Reading is a frozen snapshot of the inputs at the time
   of generation and has its own expiry rules (`SJG-ASTRO`); stale summary →
   reject.

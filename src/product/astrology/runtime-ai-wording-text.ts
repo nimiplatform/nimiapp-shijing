@@ -1,8 +1,8 @@
 // SJG-ASTRO-11 — Runtime AI wording text parse/apply boundary.
 //
-// The only production transport is the App Access Agent conversation bridge
-// (src/shell/ai/shijing-conversation-chat-bridge.ts). This module owns the
-// deterministic side of that boundary: parsing the returned wording-patch
+// The production transport is the protected Local App text-candidate operation
+// under runtime.consume (src/shell/ai/shijing-runtime-ai.ts). This module owns
+// the deterministic side of that boundary: parsing the returned wording-patch
 // text and applying it onto the deterministic output, fail-closed.
 
 import type {

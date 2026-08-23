@@ -45,7 +45,7 @@ units:
   - id: definition.shijing.product.protected-runtime
     kind: definition
     title: Protected Runtime boundary
-    meaning: AI access is a separately admitted protected ShiJing Runtime operation consumed through the shared SDK or Kit owner, with Runtime AI limited to wording and consultation over deterministic feature snapshots.
+    meaning: AI access uses the protected runtime.ai.text-candidate.generate Local App operation under runtime.consume through the public SDK, consumes the canonical nimi.shijing App AIConfig, and limits Runtime AI to wording and consultation over deterministic feature snapshots without any LocalAgent selector or conversation state.
   - id: definition.shijing.product.typed-generation-failure
     kind: definition
     title: Typed generation failure
@@ -61,7 +61,7 @@ units:
   - id: definition.shijing.product.installed-shell
     kind: definition
     title: Installed shell boundary
-    meaning: Desktop shells use the Kit-owned installed-app registration surface, currently artifact-only, while ShiJing-local commands are limited to genuinely app-owned product primitives and both Electron and Tauri remain fail-closed until protected operations are admitted.
+    meaning: Desktop shells use the Kit-owned protected Local App host; the public SDK projects only the current admitted session, ShiJing self AIConfig, runtime.consume text candidate, and other explicitly covered purpose-specific methods, while ShiJing-local commands remain limited to genuinely app-owned product primitives and each platform stays fail-closed until its protected session and declared operation coverage are admitted.
   - id: definition.shijing.product.protected-session-failure
     kind: definition
     title: Protected session failure
@@ -80,7 +80,7 @@ units:
     kind: rule
     title: Embedded app boundary
     modality: must
-    statement: ShiJing operates as a Nimi-embedded app in which Nimi owns account identity, login, Runtime access, and platform safety and ShiJing owns only app-local astrology data under ShiJingSpace; the installed renderer exposes no account, login, logout, account projection, portable launch identity, credential material, or app-selected Runtime endpoint, and product data remains unmounted until Runtime admits a protected ShiJing operation set bound to the installed process and account generation.
+    statement: ShiJing operates as a Nimi-embedded app in which Nimi owns account identity, login, Runtime access, and platform safety and ShiJing owns only app-local astrology data under ShiJingSpace; the installed renderer exposes no account, login, logout, account projection, portable launch identity, credential material, or app-selected Runtime endpoint, and product data remains unmounted until Runtime establishes the protected App session bound to the installed process and account generation with current runtime.consume coverage for ShiJing AI operations.
     condition: Always.
     failure: Keep product data and product operations disabled and surface the protected-session failure instead of mounting an app-owned identity or Runtime path.
     relations:
@@ -178,9 +178,9 @@ units:
     kind: rule
     title: Runtime calculation boundary
     modality: must
-    statement: AI access uses only a separately admitted protected ShiJing Runtime operation through the shared SDK or Kit owner; ordinary renderer, Tauri, or Electron Runtime bridges, public gRPC, localhost endpoints, and app-constructed Runtime clients are not installed-app transports; Runtime AI performs wording and consultation over deterministic feature snapshots and does not calculate pillars, DaYun, true solar time, stage labels, key windows, YueJing tendency classes, NianJing phase bands, or NianJing inflection points.
+    statement: AI access uses only the host-injected public SDK runtime.ai.text-candidate.generate operation under runtime.consume and the canonical nimi.shijing App AIConfig; ordinary renderer, Tauri, or Electron Runtime bridges, public gRPC, localhost endpoints, app-constructed Runtime clients, LocalAgent references, Agent conversations, and shared Agent AIConfig are not ShiJing AI transports; Runtime AI performs wording and consultation over deterministic feature snapshots and does not calculate pillars, DaYun, true solar time, stage labels, key windows, YueJing tendency classes, NianJing phase bands, or NianJing inflection points.
     condition: Whenever ShiJing requests AI wording or consultation.
-    failure: Keep generation unavailable and surface a typed Runtime failure without invoking an unadmitted transport or calculation fallback.
+    failure: Keep generation unavailable and surface a typed Runtime or configuration failure without invoking an unadmitted transport, LocalAgent conversation, shared Agent configuration, or calculation fallback.
     relations:
       - type: applies_to
         target: definition.shijing.product.protected-runtime
@@ -218,7 +218,7 @@ units:
     kind: rule
     title: Standard shell boundary
     modality: must
-    statement: Desktop shells use the Kit-owned installed-app registration surface, whose current admission is artifact-only; Runtime endpoint, ordinary gRPC construction, account or login control, launch metadata, app-scoped storage, AI config, local assets, capability selection, and command extension are not ShiJing host inputs; app-local shell commands exist only for genuinely ShiJing-owned product primitives and do not redefine standard storage roots, storage read, write, or remove operations, shell UI primitives, or host-owned platform paths; Electron and Tauri keep direct Runtime commands unavailable and do not mount the product route before protected operations are admitted; each independently unadmitted platform remains explicitly fail-closed, and compilation alone does not establish platform parity.
+    statement: Desktop shells use the Kit-owned protected Local App host and expose only the public purpose-specific SDK client, including session status, ShiJing self AIConfig, and runtime.consume text candidate generation; Runtime endpoint, ordinary gRPC construction, account or login control, launch metadata, caller-selected AIConfig owner or route, provider or model selector, local assets, capability classification, and generic command extension are not ShiJing host inputs; app-local shell commands exist only for genuinely ShiJing-owned product primitives and do not redefine standard storage roots, storage read, write, or remove operations, shell UI primitives, or host-owned platform paths; Electron and Tauri keep direct Runtime commands unavailable and do not mount the product route before their protected session and declared operation coverage are admitted; each independently unadmitted platform remains explicitly fail-closed, and compilation alone does not establish platform parity.
     condition: Whenever a desktop shell registers, mounts, or invokes ShiJing product behavior.
     failure: Keep the affected platform fail-closed, reject the unowned host input or command, and do not claim product mount or parity.
     relations:

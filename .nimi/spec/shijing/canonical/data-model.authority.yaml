@@ -294,9 +294,9 @@ units:
     kind: rule
     title: Grounded conversations
     modality: must
-    statement: Conversation contains id, created_at, source_reading_ids, concern_tag_refs, and turns and is never Person-owned; before an AI turn is appended, at least one source Reading resolves; concern_tag_refs records the creation-time active lens only as a filter and archive hint, owns neither the conversation nor a Project or View container, and never replaces cited Readings as Runtime-AI grounding; AI turns clarify cited Readings rather than becoming alternate astrology output and disclose every cited Reading, EventMemory, and PlanItem that influences the answer.
+    statement: Conversation contains id, created_at, source_reading_ids, concern_tag_refs, and turns and is never Person-owned; before an AI turn is appended, at least one source Reading resolves; concern_tag_refs records the creation-time active lens only as a filter and archive hint, owns neither the conversation nor a Project or View container, and never replaces cited Readings as Runtime-AI grounding; AI turns clarify cited Readings rather than becoming alternate astrology output and disclose every cited Reading, EventMemory, and PlanItem that influences the answer; Runtime text candidate generation returns candidate text only and never creates, mirrors, or mutates a LocalAgent conversation or Agent Memory for the same ShiJing interaction.
     condition: Whenever a conversation is created or an AI turn is appended.
-    failure: Reject an ungrounded AI turn and persist no alternate astrology output.
+    failure: Reject an ungrounded AI turn, LocalAgent-backed duplicate conversation, or Agent Memory side effect and persist no alternate astrology output.
     relations:
       - type: applies_to
         target: definition.shijing.data-model.conversation
