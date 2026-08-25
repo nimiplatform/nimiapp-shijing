@@ -17,6 +17,10 @@ import {
   projectShijingAIConfig,
   type ShijingAIConfigEvidence,
 } from '../ai/shijing-ai-config.ts';
+import {
+  applyShijingSessionFailure,
+  applyShijingSessionProjection,
+} from '../infra/shijing-bootstrap.ts';
 
 type SessionEvidence = {
   readonly state: string;
@@ -48,6 +52,12 @@ export function ShijingLocalDevelopmentStatus() {
         reasonCode: nextSession.reasonCode,
         actionHint: nextSession.actionHint,
       });
+      applyShijingSessionProjection(nextSession);
+      if (!nextSession.sessionBound) {
+        setAIConfig(null);
+        setOperation({ state: 'idle' });
+        return;
+      }
       try {
         const nextAIConfig = await withShijingLocalAppResponseDeadline(
           shijingLocalAppRuntimePlatform.aiConfig.get(),
@@ -57,11 +67,17 @@ export function ShijingLocalDevelopmentStatus() {
         setOperation({ state: 'idle' });
       } catch (error) {
         const evidence = normalizeShijingLocalAppError(error);
-        setAIConfig({ state: 'unavailable', reasonCode: evidence.reasonCode });
+        setSession(null);
+        setAIConfig(null);
         setOperation({ state: 'failed', ...evidence });
+        applyShijingSessionFailure(error);
       }
     } catch (error) {
-      setOperation({ state: 'failed', ...normalizeShijingLocalAppError(error) });
+      const evidence = normalizeShijingLocalAppError(error);
+      setSession(null);
+      setAIConfig(null);
+      setOperation({ state: 'failed', ...evidence });
+      applyShijingSessionFailure(error);
     } finally {
       setBusy(null);
     }

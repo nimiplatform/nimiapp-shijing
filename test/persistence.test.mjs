@@ -9,6 +9,10 @@ import {
 } from '../src/product/persistence/account-scope.ts';
 import { InMemoryPersistenceAdapter } from '../src/product/persistence/in-memory-adapter.ts';
 import {
+  SHIJING_SPACE_STORAGE_PATH,
+  ShijingRuntimeStoragePersistenceClient,
+} from '../src/shell/persistence/shijing-runtime-storage.ts';
+import {
   createDebouncedSaver,
   loadInitialSnapshot,
   saveSnapshotNow,
@@ -38,14 +42,70 @@ const STORE_PROVIDER_SOURCE = readFileSync(
   'utf8',
 );
 
-test('installed production entry exposes no app-owned storage or account key', () => {
+test('installed production entry delegates persistence to rootless Nimi storage', () => {
   assert.equal(
-    existsSync(new URL('../src/shell/persistence/runtime-app-storage-adapter.ts', import.meta.url)),
-    false,
+    existsSync(new URL('../src/shell/persistence/shijing-runtime-storage.ts', import.meta.url)),
+    true,
   );
   assert.doesNotMatch(TAURI_MAIN_SOURCE, /storage_read_json|storage_write_json|storage_remove_json/);
   assert.doesNotMatch(TAURI_MAIN_SOURCE, /StandardAppStorageRoot|DataRootBinding/);
   assert.doesNotMatch(APP_SOURCE, /ProductArea|IndexedDBPersistenceAdapter|InMemoryPersistenceAdapter/);
+});
+
+test('Nimi storage adapter round-trips the canonical ShiJingSpace document', async () => {
+  const documents = new Map();
+  const storage = {
+    async readJson(relativePath) {
+      if (!documents.has(relativePath)) {
+        throw Object.assign(new Error('not found'), {
+          reasonCode: 'not-found',
+          actionHint: 'create_document',
+          retryable: false,
+        });
+      }
+      return { value: structuredClone(documents.get(relativePath)), sizeBytes: 1 };
+    },
+    async writeJson(relativePath, value) {
+      documents.set(relativePath, structuredClone(value));
+      return { value: structuredClone(value), sizeBytes: 1 };
+    },
+    async removeJson(relativePath) {
+      return { removed: documents.delete(relativePath) };
+    },
+  };
+  const adapter = new ShijingRuntimeStoragePersistenceClient({ storage });
+  const initial = await adapter.load();
+  assert.deepEqual(initial, { ok: true, snapshot: null });
+
+  const snapshot = validShiJingSpace({ concern_tags: [validConcernTag('career')] });
+  assert.deepEqual(await adapter.save(snapshot), { ok: true });
+  const loaded = await adapter.load();
+  assert.equal(loaded.ok, true);
+  if (loaded.ok) assert.deepEqual(loaded.snapshot, snapshot);
+  assert.equal(documents.has(SHIJING_SPACE_STORAGE_PATH), true);
+
+  assert.deepEqual(await adapter.clear(), { ok: true });
+  assert.equal(documents.has(SHIJING_SPACE_STORAGE_PATH), false);
+});
+
+test('Nimi storage adapter rejects an invalid persisted root', async () => {
+  const adapter = new ShijingRuntimeStoragePersistenceClient({
+    storage: {
+      async readJson() {
+        return { value: { ...validShiJingSpace(), views: [] }, sizeBytes: 1 };
+      },
+      async writeJson(_relativePath, value) {
+        return { value, sizeBytes: 1 };
+      },
+      async removeJson() {
+        return { removed: true };
+      },
+    },
+  });
+
+  const loaded = await adapter.load();
+  assert.equal(loaded.ok, false);
+  if (!loaded.ok) assert.equal(loaded.error.kind, 'load_invalid_snapshot');
 });
 
 test('IndexedDB generation upgrade preserves existing user-data store', () => {

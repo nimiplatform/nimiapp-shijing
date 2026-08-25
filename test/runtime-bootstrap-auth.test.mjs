@@ -37,12 +37,13 @@ test('renderer mounts product only behind the App Access runtime boundary', () =
 
 test('bootstrap consumes only Kit and SDK local-app projections', () => {
   assert.match(BOOTSTRAP_SOURCE, /shijingLocalAppRuntimePlatform\.auth\.status\(\)/);
+  assert.match(BOOTSTRAP_SOURCE, /shijingLocalAppRuntimePlatform\.aiConfig\.get\(\)/);
   assert.match(BOOTSTRAP_SOURCE, /session\.sessionBound/);
   assert.match(BOOTSTRAP_SOURCE, /classifyShijingRuntimeAccessFailure/);
   assert.match(BOOTSTRAP_SOURCE, /shijingRuntimeAccessFromSession/);
   assert.match(BOOTSTRAP_SOURCE, /setBootstrapReady\(true\)/);
   assert.doesNotMatch(BOOTSTRAP_SOURCE, /createNimiClient|configureShijingRuntimeSession/);
-  assert.doesNotMatch(BOOTSTRAP_SOURCE, /Account|Realm|AIConfig|setShijingNimiClient/);
+  assert.doesNotMatch(BOOTSTRAP_SOURCE, /Account|Realm|setShijingNimiClient/);
   assert.match(LOCAL_APP_SOURCE, /createNimiClient/);
   assert.match(LOCAL_APP_SOURCE, /createNimiLocalAppStandardShellSurface/);
   assert.doesNotMatch(

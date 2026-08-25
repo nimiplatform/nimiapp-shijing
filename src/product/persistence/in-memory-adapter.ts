@@ -1,5 +1,5 @@
-// Wave-2 — in-memory PersistenceClient used by tests and as the non-browser
-// fallback. Every load / save still runs validateShiJingSpace.
+// Wave-2 — in-memory PersistenceClient used only by explicit tests and visual
+// previews. The installed/local-development product route uses Nimi storage.
 
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts';

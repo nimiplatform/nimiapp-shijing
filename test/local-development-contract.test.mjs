@@ -58,10 +58,10 @@ test('renderer consumes the App self text candidate path without portable author
   assert.doesNotMatch(status, /permissions\.|agents\.interact/);
   assert.match(
     productArea,
-    /const localDevelopmentPersistenceClient = new InMemoryPersistenceAdapter\(\)/,
+    /new ShijingRuntimeStoragePersistenceClient\(/,
   );
-  assert.match(productArea, /persistenceClient=\{localDevelopmentPersistenceClient\}/);
-  assert.doesNotMatch(productArea, /IndexedDBPersistenceAdapter/);
+  assert.match(productArea, /persistenceClient=\{shijingPersistenceClient\}/);
+  assert.doesNotMatch(productArea, /IndexedDBPersistenceAdapter|InMemoryPersistenceAdapter/);
   assert.match(productArea, /createShijingRuntimeAiClient/);
   assert.match(productArea, /createShijingConversationChatBridge/);
   assert.match(runtimeAI, /client\.ai\.text\.generateCandidate/);
@@ -90,6 +90,22 @@ test('local development status reserves layout space instead of covering product
     styles,
     /\.shijing-local-development\s*\{[^}]*position:\s*fixed/s,
   );
+});
+
+test('session loss clears stale status and unmounts the product gate', () => {
+  const boundary = read('src/shell/app-shell/runtime-access-boundary.tsx');
+  const bootstrap = read('src/shell/infra/shijing-bootstrap.ts');
+  const status = read('src/shell/local-development/shijing-local-development-status.tsx');
+
+  assert.match(boundary, /setInterval\(revalidate, 5_000\)/);
+  assert.match(boundary, /addEventListener\('focus', revalidate\)/);
+  assert.match(bootstrap, /store\.setBootstrapReady\(false\)/);
+  assert.match(bootstrap, /applyShijingSessionFailure/);
+  assert.match(bootstrap, /aiConfig\.get\(\)/);
+  assert.match(status, /setSession\(null\)/);
+  assert.match(status, /setAIConfig\(null\)/);
+  assert.match(status, /applyShijingSessionProjection\(nextSession\)/);
+  assert.match(status, /applyShijingSessionFailure\(error\)/);
 });
 
 test('app-managed Runtime model and self-auth paths are removed', () => {

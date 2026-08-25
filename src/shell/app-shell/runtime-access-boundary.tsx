@@ -19,6 +19,15 @@ export function RuntimeAccessBoundary() {
 
   useEffect(() => {
     void runShijingBootstrap();
+    const revalidate = () => {
+      void runShijingBootstrap({ force: true, preserveReady: true });
+    };
+    const interval = window.setInterval(revalidate, 5_000);
+    window.addEventListener('focus', revalidate);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', revalidate);
+    };
   }, []);
 
   const retry = useCallback(() => {
