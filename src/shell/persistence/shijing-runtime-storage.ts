@@ -34,7 +34,7 @@ export class ShijingRuntimeStoragePersistenceClient implements PersistenceClient
       value = (await this.client.storage.readJson(this.relativePath)).value;
     } catch (error) {
       const evidence = normalizeShijingLocalAppError(error);
-      if (evidence.reasonCode === 'not-found') {
+      if (evidence.code === 'not-found') {
         return { ok: true, snapshot: null };
       }
       return {
@@ -105,6 +105,7 @@ export class ShijingRuntimeStoragePersistenceClient implements PersistenceClient
 }
 
 function persistenceCause(evidence: {
+  readonly code: string;
   readonly reasonCode: string;
   readonly actionHint: string;
   readonly message: string;

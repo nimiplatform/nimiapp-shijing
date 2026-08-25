@@ -20,6 +20,7 @@ import { newEventMemoryId } from '../../ids/index.ts';
 import type { EventMemory } from '../../../domain/event-memory.ts';
 import { useProductCopy } from '../../i18n/copy.ts';
 import { RiJingReferenceList } from './rijing-reference-list.tsx';
+import { persistenceWriteSucceeded } from '../../state/persistence-bridge.ts';
 
 function nowIso(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -33,7 +34,7 @@ export interface RiJingEventInputProps {
 
 export function RiJingEventInput(props: RiJingEventInputProps) {
   const copy = useProductCopy();
-  const { state, dispatch } = useShijingStore();
+  const { state, replace_snapshot } = useShijingStore();
   const [draft, setDraft] = useState('');
   const [submission, setSubmission] = useState<
     | { kind: 'idle' }
@@ -41,7 +42,7 @@ export function RiJingEventInput(props: RiJingEventInputProps) {
     | { kind: 'invalid'; reason: string }
   >({ kind: 'idle' });
 
-  function onAdd() {
+  async function onAdd() {
     const body = draft.trim();
     if (body.length === 0) {
       setSubmission({ kind: 'empty' });
@@ -68,7 +69,14 @@ export function RiJingEventInput(props: RiJingEventInputProps) {
       setSubmission({ kind: 'invalid', reason: detail });
       return;
     }
-    dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+    const persistence = await replace_snapshot(outcome.next_space);
+    if (!persistenceWriteSucceeded(persistence)) {
+      setSubmission({
+        kind: 'invalid',
+        reason: persistence.kind === 'error' ? persistence.error.kind : persistence.kind,
+      });
+      return;
+    }
     setDraft('');
     nimiToast.success(copy.rijing.eventInput.successHint);
   }

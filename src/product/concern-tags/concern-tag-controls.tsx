@@ -24,6 +24,7 @@ import {
   trimmedConcernLabel,
 } from './concern-presets.ts';
 import { useProductCopy } from '../i18n/copy.ts';
+import { persistenceWriteSucceeded } from '../state/persistence-bridge.ts';
 
 // Compared against `trimmedConcernLabel` (which drops the leading `#`), so the
 // preset labels are trimmed to match — otherwise every concern reads as custom.
@@ -54,7 +55,7 @@ type Suggestion =
   | { readonly kind: 'preset'; readonly preset: ConcernPreset };
 
 export function ConcernTagControls(props: ConcernTagControlsProps) {
-  const { state, dispatch } = useShijingStore();
+  const { state, replace_snapshot } = useShijingStore();
   const copy = useProductCopy();
   const [draftInput, setDraftInput] = useState('');
   const [confirmingDelete, setConfirmingDelete] = useState<{
@@ -89,13 +90,15 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
     return [...archived, ...presetSuggestions];
   }, [tags]);
 
-  function commitTags(next: readonly ConcernTag[]) {
-    dispatch({ type: 'snapshot/replace', snapshot: { ...state.snapshot, concern_tags: next } });
+  async function commitTags(next: readonly ConcernTag[]) {
+    const persistence = await replace_snapshot({ ...state.snapshot, concern_tags: next });
+    if (!persistenceWriteSucceeded(persistence)) return false;
     props.onChange?.(next);
+    return true;
   }
 
   function archiveTag(id: string) {
-    commitTags(
+    void commitTags(
       tags.map((t) =>
         t.id === id ? { ...t, status: 'archived', updated_at: nowIso() } : t,
       ),
@@ -109,7 +112,7 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
     return !PRESET_LABELS.has(trimmedConcernLabel(tag));
   }
 
-  function deleteTag(id: string) {
+  async function deleteTag(id: string) {
     // Hard-remove the tag, and strip its id from any event memory that
     // referenced it so no dangling concern_tag_ref is left behind.
     const nextTags = tags.filter((t) => t.id !== id);
@@ -118,22 +121,25 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
         ? { ...m, concern_tag_refs: m.concern_tag_refs.filter((ref) => ref !== id) }
         : m,
     );
-    dispatch({
-      type: 'snapshot/replace',
-      snapshot: { ...state.snapshot, concern_tags: nextTags, event_memories: nextMemories },
+    const persistence = await replace_snapshot({
+      ...state.snapshot,
+      concern_tags: nextTags,
+      event_memories: nextMemories,
     });
+    if (!persistenceWriteSucceeded(persistence)) return false;
     props.onChange?.(nextTags);
+    return true;
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!confirmingDelete) return;
-    deleteTag(confirmingDelete.id);
+    if (!await deleteTag(confirmingDelete.id)) return;
     setConfirmingDelete(null);
   }
 
   function activateExisting(id: string) {
     if (atLimit) return;
-    commitTags(
+    void commitTags(
       tags.map((t) =>
         t.id === id ? { ...t, status: 'active', updated_at: nowIso() } : t,
       ),
@@ -160,10 +166,10 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
       created_at: ts,
       updated_at: ts,
     };
-    commitTags([...tags, tag]);
+    void commitTags([...tags, tag]);
   }
 
-  function addCustom() {
+  async function addCustom() {
     if (atLimit) return;
     const parsed = parsedPreview;
     const trimmed = parsed.raw_input.trim();
@@ -180,7 +186,7 @@ export function ConcernTagControls(props: ConcernTagControlsProps) {
       created_at: ts,
       updated_at: ts,
     };
-    commitTags([...tags, tag]);
+    if (!await commitTags([...tags, tag])) return;
     setDraftInput('');
   }
 

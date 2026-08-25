@@ -18,6 +18,7 @@ import {
 import { newEventMemoryId } from '../ids/index.ts';
 import { SjpSelect } from '../components/sjp-select.tsx';
 import { useShijingStore } from '../state/shijing-store.tsx';
+import { persistenceWriteSucceeded } from '../state/persistence-bridge.ts';
 import { deleteEventMemory, upsertEventMemory } from './memory-editor-state.ts';
 import { cascadeOnEntityRemoval } from '../reading/cascade-delete.ts';
 
@@ -46,7 +47,7 @@ function emptyDraft(): MemoryDraft {
 }
 
 export function MemoryEditor() {
-  const { state, dispatch } = useShijingStore();
+  const { state, replace_snapshot } = useShijingStore();
   const copy = useProductCopy();
   const [draft, setDraft] = useState<MemoryDraft>(emptyDraft);
   const [errorCode, setErrorCode] = useState<string | null>(null);
@@ -79,7 +80,7 @@ export function MemoryEditor() {
     setErrorCode(null);
   }
 
-  function add() {
+  async function add() {
     const ts = nowIso();
     const memory: EventMemory = {
       id: draft.id,
@@ -101,7 +102,11 @@ export function MemoryEditor() {
       setErrorCode(detail);
       return;
     }
-    dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+    const persistence = await replace_snapshot(outcome.next_space);
+    if (!persistenceWriteSucceeded(persistence)) {
+      setErrorCode(persistence.kind === 'error' ? persistence.error.kind : persistence.kind);
+      return;
+    }
     nimiToast.success(copy.common.saved);
     closeDrawer();
   }
@@ -117,7 +122,7 @@ export function MemoryEditor() {
     return copy.memory.deleteMessage(memory.body, extra);
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     const memory = confirmingDelete;
     if (!memory) return;
     const outcome = deleteEventMemory(state.snapshot, memory.id);
@@ -126,7 +131,13 @@ export function MemoryEditor() {
       setConfirmingDelete(null);
       return;
     }
-    dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+    const persistence = await replace_snapshot(outcome.next_space);
+    if (!persistenceWriteSucceeded(persistence)) {
+      nimiToast.warning(copy.memory.saveFailed(
+        persistence.kind === 'error' ? persistence.error.kind : persistence.kind,
+      ));
+      return;
+    }
     setErrorCode(null);
     setConfirmingDelete(null);
   }

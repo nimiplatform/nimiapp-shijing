@@ -25,7 +25,7 @@ export interface ConcernFocusBarProps {
 }
 
 export function ConcernFocusBar({ onManage }: ConcernFocusBarProps) {
-  const { state, dispatch } = useShijingStore();
+  const { state, replace_snapshot } = useShijingStore();
   const copy = useProductCopy();
   const tags = state.snapshot.concern_tags;
   const activeCount = useMemo(
@@ -39,14 +39,11 @@ export function ConcernFocusBar({ onManage }: ConcernFocusBarProps) {
     // Respect the active cap when re-activating; archiving is always allowed.
     if (next === 'active' && atLimit) return;
     const ts = nowIso();
-    dispatch({
-      type: 'snapshot/replace',
-      snapshot: {
-        ...state.snapshot,
-        concern_tags: tags.map((t) =>
-          t.id === id ? { ...t, status: next, updated_at: ts } : t,
-        ),
-      },
+    void replace_snapshot({
+      ...state.snapshot,
+      concern_tags: tags.map((t) =>
+        t.id === id ? { ...t, status: next, updated_at: ts } : t,
+      ),
     });
   }
 

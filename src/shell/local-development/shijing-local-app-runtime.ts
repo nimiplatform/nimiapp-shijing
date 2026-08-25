@@ -14,6 +14,7 @@ export const shijingLocalAppRuntimePlatform: NimiLocalAppClient = createNimiClie
 });
 
 export type ShijingLocalAppErrorEvidence = {
+  readonly code: string;
   readonly reasonCode: string;
   readonly actionHint: string;
   readonly message: string;
@@ -57,14 +58,16 @@ export function normalizeShijingLocalAppError(
     : firstText(direct?.message) || String(error || '').trim();
   const embedded = parseEmbeddedRecord(message);
   const envelope = asRecord(direct?.envelope) ?? asRecord(embedded?.envelope);
-  const reasonCode = firstText(
-    direct?.reasonCode,
-    embedded?.reasonCode,
-    envelope?.reasonCode,
+  const code = firstText(
     direct?.code,
     embedded?.code,
     envelope?.code,
   ) || 'local-app-operation-failed';
+  const reasonCode = firstText(
+    direct?.reasonCode,
+    embedded?.reasonCode,
+    envelope?.reasonCode,
+  ) || code;
   const actionHint = firstText(
     direct?.actionHint,
     embedded?.actionHint,
@@ -76,6 +79,7 @@ export function normalizeShijingLocalAppError(
     envelope?.retryable,
   ) ?? false;
   return {
+    code,
     reasonCode,
     actionHint,
     message: message || reasonCode,

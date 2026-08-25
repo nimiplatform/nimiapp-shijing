@@ -19,6 +19,10 @@ export interface PersistenceLoadOutcome {
   readonly status: PersistenceLifecycleStatus;
 }
 
+export function persistenceWriteSucceeded(status: PersistenceLifecycleStatus): boolean {
+  return status.kind === 'idle' || status.kind === 'saved';
+}
+
 export async function loadInitialSnapshot(client: PersistenceClient): Promise<PersistenceLoadOutcome> {
   const result = await client.load();
   if (!result.ok) {

@@ -51,7 +51,7 @@ export interface NianJingTabProps {
 }
 
 export function NianJingTab(props: NianJingTabProps) {
-  const { state, dispatch, runtime_ai_client } = useShijingStore();
+  const { state, replace_snapshot, runtime_ai_client } = useShijingStore();
   const [loading, setLoading] = useState(false);
   const [failure, setFailure] = useState<ReadingGenerationFailure | null>(null);
   const [filterTagId, setFilterTagId] = useState<string | null>(null);
@@ -150,7 +150,7 @@ export function NianJingTab(props: NianJingTabProps) {
     });
     setLoading(false);
     if (outcome.ok) {
-      dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+      void replace_snapshot(outcome.next_space);
     } else {
       setFailure(outcome.failure);
     }

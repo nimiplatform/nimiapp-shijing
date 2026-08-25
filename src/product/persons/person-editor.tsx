@@ -17,6 +17,7 @@ import {
   type ProfileSensitiveAccess,
 } from '../privacy/profile-sensitive-access.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
+import { persistenceWriteSucceeded } from '../state/persistence-bridge.ts';
 import { NatalFields } from '../natal/natal-fields.tsx';
 import {
   buildSelfNatalInputs,
@@ -90,7 +91,7 @@ export function PersonEditor({
   dialogTitle,
   onSavedPerson,
 }: PersonEditorProps) {
-  const { state, dispatch } = useShijingStore();
+  const { state, replace_snapshot } = useShijingStore();
   const copy = useProductCopy();
   const [meta, setMeta] = useState<PersonMetaDraft>(emptyMeta);
   const [natal, setNatal] = useState<SelfNatalDraft>(emptyNatalDraft);
@@ -201,7 +202,7 @@ export function PersonEditor({
     setErrorCode(null);
   }
 
-  function savePerson() {
+  async function savePerson() {
     // A Person is a first-class astrology subject (SJG-PROD-06): it carries
     // its own complete natal inputs rather than inheriting the self subject's.
     const built = buildSelfNatalInputs(natal);
@@ -230,13 +231,20 @@ export function PersonEditor({
       setErrorCode(describeNatalError(code, copy));
       return;
     }
-    dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+    const persistence = await replace_snapshot(outcome.next_space);
+    if (!persistenceWriteSucceeded(persistence)) {
+      setErrorCode(describeNatalError(
+        persistence.kind === 'error' ? persistence.error.kind : persistence.kind,
+        copy,
+      ));
+      return;
+    }
     nimiToast.success(copy.common.saved);
     onSavedPerson?.(person);
     closeDrawer();
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     const person = confirmingDelete;
     if (!person) return;
     const outcome = deletePerson(state.snapshot, person.id);
@@ -249,7 +257,13 @@ export function PersonEditor({
       setConfirmingDelete(null);
       return;
     }
-    dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+    const persistence = await replace_snapshot(outcome.next_space);
+    if (!persistenceWriteSucceeded(persistence)) {
+      nimiToast.warning(copy.shell.persistenceFailed(
+        persistence.kind === 'error' ? persistence.error.kind : persistence.kind,
+      ));
+      return;
+    }
     setErrorCode(null);
     setConfirmingDelete(null);
   }

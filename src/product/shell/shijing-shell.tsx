@@ -21,7 +21,7 @@ import { usePersistedUiLanguageSync } from '../settings/ui-language-switch.tsx';
 import { MethodProfileSelect } from '../settings/method-profile-select.tsx';
 import { commitMethodProfile } from '../settings/method-profile-state.ts';
 import type { MethodProfileId } from '../../domain/algorithm.ts';
-import type { PersistenceError } from '../persistence/persistence-client.ts';
+import { describePersistenceError } from '../persistence/persistence-error-detail.ts';
 import { initialMingJingStartupGuideDismissed } from '../tabs/mingjing/mingjing-startup-guide.ts';
 import { shouldGatePrimaryTabForIntake } from '../onboarding/startup-intake.ts';
 import { MingJingIntakeGate } from '../onboarding/mingjing-intake-gate.tsx';
@@ -57,15 +57,6 @@ function avatarInitial(name: string): string {
   return name ? Array.from(name)[0] : '·';
 }
 
-function persistenceErrorDetail(error: PersistenceError): string {
-  if ('cause' in error) return `${error.kind}: ${error.cause}`;
-  if ('reason' in error) return `${error.kind}: ${error.reason}`;
-  if ('validation_error' in error) return `${error.kind}: ${error.validation_error.code}`;
-  if ('expected_user_id' in error) return `${error.kind}: snapshot belongs to another Nimi account`;
-  const exhaustive = error as { readonly kind?: string };
-  return exhaustive.kind ?? 'unknown';
-}
-
 export interface ShijingShellAccount {
   readonly name?: string;
   readonly avatarUrl?: string;
@@ -84,7 +75,7 @@ interface ActiveSettingsPageState {
 }
 
 export function ShijingShell(props: ShijingShellProps) {
-  const { state, dispatch, persistence_status } = useShijingStore();
+  const { state, dispatch, replace_snapshot, persistence_status } = useShijingStore();
   usePersistedUiLanguageSync();
   const copy = useProductCopy();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -130,10 +121,7 @@ export function ShijingShell(props: ShijingShellProps) {
   }));
 
   function handleMethodProfileChange(methodProfileId: MethodProfileId) {
-    dispatch({
-      type: 'snapshot/replace',
-      snapshot: commitMethodProfile(state.snapshot, methodProfileId),
-    });
+    void replace_snapshot(commitMethodProfile(state.snapshot, methodProfileId));
   }
 
   return (
@@ -192,7 +180,7 @@ export function ShijingShell(props: ShijingShellProps) {
         ) : null}
         {persistence_status.kind === 'error' ? (
           <p className="shijing-shell__error" role="alert">
-            {copy.shell.persistenceFailed(persistenceErrorDetail(persistence_status.error))}
+            {copy.shell.persistenceFailed(describePersistenceError(persistence_status.error))}
           </p>
         ) : null}
         <Suspense

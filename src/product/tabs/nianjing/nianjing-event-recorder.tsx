@@ -28,6 +28,7 @@ import {
   upsertEventMemory,
 } from '../../memories/memory-editor-state.ts';
 import { useShijingStore } from '../../state/shijing-store.tsx';
+import { persistenceWriteSucceeded } from '../../state/persistence-bridge.ts';
 import { ArrowUpIcon } from '../shijing/shijing-icons.tsx';
 
 function nowIso(): string {
@@ -70,7 +71,7 @@ export interface NianJingEventRecorderProps {
 }
 
 export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
-  const { state, dispatch } = useShijingStore();
+  const { state, dispatch, replace_snapshot } = useShijingStore();
   const today = todayIsoDate();
   const tagId = props.concernTag.id;
 
@@ -98,7 +99,7 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
       .sort((a, b) => Date.parse(b.occurred_at) - Date.parse(a.occurred_at));
   }, [state.snapshot.event_memories, tagId, props.rangeStart, props.rangeEnd, props.fixedDate]);
 
-  function commit(memory: EventMemory, onOk: () => void) {
+  async function commit(memory: EventMemory, onOk: () => void) {
     const outcome = upsertEventMemory(state.snapshot, memory);
     if (!outcome.ok) {
       const detail =
@@ -108,12 +109,16 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
       setError(detail);
       return;
     }
-    dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+    const persistence = await replace_snapshot(outcome.next_space);
+    if (!persistenceWriteSucceeded(persistence)) {
+      setError(persistence.kind === 'error' ? persistence.error.kind : persistence.kind);
+      return;
+    }
     setError(null);
     onOk();
   }
 
-  function saveNew() {
+  async function saveNew() {
     const body = draft.trim();
     if (body.length === 0) return;
     const ts = nowIso();
@@ -128,7 +133,7 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
       created_at: ts,
       updated_at: ts,
     };
-    commit(memory, () => setDraft(''));
+    await commit(memory, () => setDraft(''));
   }
 
   function startEdit(memory: EventMemory) {
@@ -141,13 +146,13 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
     setEditDraft('');
   }
 
-  function saveEdit(memory: EventMemory) {
+  async function saveEdit(memory: EventMemory) {
     const body = editDraft.trim();
     if (body.length === 0) return;
-    commit({ ...memory, body, updated_at: nowIso() }, cancelEdit);
+    await commit({ ...memory, body, updated_at: nowIso() }, cancelEdit);
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     const memory = confirmingDelete;
     if (!memory) return;
     const outcome = deleteEventMemory(state.snapshot, memory.id);
@@ -156,7 +161,11 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
       setConfirmingDelete(null);
       return;
     }
-    dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+    const persistence = await replace_snapshot(outcome.next_space);
+    if (!persistenceWriteSucceeded(persistence)) {
+      setError(persistence.kind === 'error' ? persistence.error.kind : persistence.kind);
+      return;
+    }
     setError(null);
     if (editingId === memory.id) cancelEdit();
     setConfirmingDelete(null);

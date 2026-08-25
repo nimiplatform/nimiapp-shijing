@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { ConfirmDialog, Tooltip } from '@nimiplatform/kit/ui';
 
 import { useShijingStore } from '../../state/shijing-store.tsx';
+import { persistenceWriteSucceeded } from '../../state/persistence-bridge.ts';
 import { upsertEventMemory, deleteEventMemory } from '../../memories/memory-editor-state.ts';
 import type { EventMemory } from '../../../domain/event-memory.ts';
 import { PencilIcon, TrashIcon } from './rijing-icons.tsx';
@@ -37,7 +38,7 @@ function nowIso(): string {
 
 export function RiJingReferenceList(props: RiJingReferenceListProps) {
   const copy = useProductCopy();
-  const { state, dispatch } = useShijingStore();
+  const { state, replace_snapshot } = useShijingStore();
   const [rowStates, setRowStates] = useState<Record<string, RowState>>({});
   const [confirmingDelete, setConfirmingDelete] = useState<EventMemory | null>(null);
 
@@ -67,7 +68,7 @@ export function RiJingReferenceList(props: RiJingReferenceListProps) {
     });
   }
 
-  function saveEdit(memory: EventMemory) {
+  async function saveEdit(memory: EventMemory) {
     const rowState = rowStates[memory.id];
     if (!rowState || rowState.mode !== 'editing') return;
     const body = rowState.draft.trim();
@@ -85,7 +86,15 @@ export function RiJingReferenceList(props: RiJingReferenceListProps) {
       setRow(memory.id, { mode: 'editing', draft: rowState.draft, error: detail });
       return;
     }
-    dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+    const persistence = await replace_snapshot(outcome.next_space);
+    if (!persistenceWriteSucceeded(persistence)) {
+      setRow(memory.id, {
+        mode: 'editing',
+        draft: rowState.draft,
+        error: persistence.kind === 'error' ? persistence.error.kind : persistence.kind,
+      });
+      return;
+    }
     clearRow(memory.id);
   }
 
@@ -93,7 +102,7 @@ export function RiJingReferenceList(props: RiJingReferenceListProps) {
     setConfirmingDelete(memory);
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     const memory = confirmingDelete;
     if (!memory) return;
     const outcome = deleteEventMemory(state.snapshot, memory.id);
@@ -102,7 +111,11 @@ export function RiJingReferenceList(props: RiJingReferenceListProps) {
       setConfirmingDelete(null);
       return;
     }
-    dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+    const persistence = await replace_snapshot(outcome.next_space);
+    if (!persistenceWriteSucceeded(persistence)) {
+      setRow(memory.id, { mode: 'delete_refused', reason: copy.rijing.heroMemories.deleteFailed });
+      return;
+    }
     clearRow(memory.id);
     setConfirmingDelete(null);
   }

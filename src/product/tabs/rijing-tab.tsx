@@ -148,7 +148,13 @@ export interface RiJingTabProps {
 
 export function RiJingTab(props: RiJingTabProps) {
   const copy = useProductCopy();
-  const { state, dispatch, persistence_status, persistence_client, runtime_ai_client } = useShijingStore();
+  const {
+    state,
+    replace_snapshot,
+    persistence_status,
+    persistence_client,
+    runtime_ai_client,
+  } = useShijingStore();
   const [loading, setLoading] = useState(false);
   const [failure, setFailure] = useState<ReadingGenerationFailure | null>(null);
 
@@ -268,7 +274,7 @@ export function RiJingTab(props: RiJingTabProps) {
     });
     setLoading(false);
     if (outcome.ok) {
-      dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+      void replace_snapshot(outcome.next_space);
     } else {
       setFailure(outcome.failure);
     }

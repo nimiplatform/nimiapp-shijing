@@ -43,10 +43,15 @@ import {
   createUnavailablePresenceVerificationClient,
   type PresenceVerificationClient,
 } from '../privacy/presence-verification.ts';
+import { describePersistenceError } from '../persistence/persistence-error-detail.ts';
+import { useProductCopy } from '../i18n/copy.ts';
+
+type ShijingTransientAction = Exclude<ShijingAction, { readonly type: 'snapshot/replace' }>;
+type InitialPersistenceLoadState = 'pending' | 'ready' | 'failed';
 
 interface ShijingStoreValue {
   readonly state: ShijingViewState;
-  readonly dispatch: Dispatch<ShijingAction>;
+  readonly dispatch: Dispatch<ShijingTransientAction>;
   readonly replace_snapshot: (snapshot: ShiJingSpace) => Promise<PersistenceLifecycleStatus>;
   readonly persistence_status: PersistenceLifecycleStatus;
   readonly persistence_client: PersistenceClient | null;
@@ -77,6 +82,8 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
       ? { kind: 'loading', adapter: props.persistenceClient.adapter_kind }
       : { kind: 'idle' },
   );
+  const [initialPersistenceLoadState, setInitialPersistenceLoadState] =
+    useState<InitialPersistenceLoadState>(props.persistenceClient ? 'pending' : 'ready');
   const saverRef = useRef<DebouncedSaver | null>(null);
   const lastSavedRef = useRef<ShiJingSpace | null>(null);
 
@@ -84,10 +91,12 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
     if (!props.persistenceClient) {
       saverRef.current = null;
       lastSavedRef.current = null;
+      setInitialPersistenceLoadState('ready');
       return;
     }
     const client = props.persistenceClient;
     setPersistenceStatus({ kind: 'loading', adapter: client.adapter_kind });
+    setInitialPersistenceLoadState('pending');
     lastSavedRef.current = null;
     let cancelled = false;
     saverRef.current = createDebouncedSaver(client, {
@@ -107,6 +116,7 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
         lastSavedRef.current = props.snapshot;
       }
       setPersistenceStatus(outcome.status);
+      setInitialPersistenceLoadState(outcome.status.kind === 'loaded' ? 'ready' : 'failed');
     });
     return () => {
       cancelled = true;
@@ -124,6 +134,11 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
       rawDispatch({ type: 'snapshot/replace', snapshot });
       return { kind: 'idle' };
     }
+    if (initialPersistenceLoadState !== 'ready') {
+      return persistenceStatus.kind === 'error'
+        ? persistenceStatus
+        : { kind: 'loading', adapter: client.adapter_kind };
+    }
     if (saver) {
       await saver.flush();
     }
@@ -132,15 +147,11 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
     lastSavedRef.current = snapshot;
     rawDispatch({ type: 'snapshot/replace', snapshot });
     return status;
-  }, [props.persistenceClient]);
+  }, [initialPersistenceLoadState, persistenceStatus, props.persistenceClient]);
 
-  const dispatch = useCallback<Dispatch<ShijingAction>>((action) => {
-    if (action.type === 'snapshot/replace') {
-      void replaceSnapshot(action.snapshot);
-      return;
-    }
+  const dispatch = useCallback<Dispatch<ShijingTransientAction>>((action) => {
     rawDispatch(action);
-  }, [replaceSnapshot]);
+  }, []);
 
   useEffect(() => {
     function flushPendingPersistence() {
@@ -194,15 +205,31 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
     ],
   );
 
+  const hasPersistenceClient = props.persistenceClient !== null && props.persistenceClient !== undefined;
   const initialPersistenceLoadPending =
-    props.persistenceClient !== null
-    && props.persistenceClient !== undefined
-    && persistenceStatus.kind === 'loading';
+    hasPersistenceClient && initialPersistenceLoadState === 'pending';
+  const initialPersistenceLoadFailed =
+    hasPersistenceClient && initialPersistenceLoadState === 'failed';
 
   return (
     <ShijingStoreContext.Provider value={value}>
-      {initialPersistenceLoadPending ? null : props.children}
+      {initialPersistenceLoadPending
+        ? null
+        : initialPersistenceLoadFailed && persistenceStatus.kind === 'error'
+          ? <InitialPersistenceFailure status={persistenceStatus} />
+          : props.children}
     </ShijingStoreContext.Provider>
+  );
+}
+
+function InitialPersistenceFailure(props: {
+  readonly status: Extract<PersistenceLifecycleStatus, { readonly kind: 'error' }>;
+}) {
+  const copy = useProductCopy();
+  return (
+    <p className="shijing-shell__error" role="alert" data-testid="shijing-persistence-load-failed">
+      {copy.shell.persistenceFailed(describePersistenceError(props.status.error))}
+    </p>
   );
 }
 

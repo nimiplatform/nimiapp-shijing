@@ -7,6 +7,7 @@ import type { PlanItem } from '../../../domain/plan-item.ts';
 import { TENDENCY_CLASS_LABELS } from '../../i18n/copy.ts';
 import { newEventMemoryId, newPlanItemId } from '../../ids/index.ts';
 import { useShijingStore } from '../../state/shijing-store.tsx';
+import { persistenceWriteSucceeded } from '../../state/persistence-bridge.ts';
 import { trimmedConcernLabel as yuejingTagLabel } from '../../concern-tags/concern-presets.ts';
 import { AskIcon, ClipboardIcon, CloseIcon, PencilIcon, TrashIcon } from './yuejing-icons.tsx';
 import { classifyDay, deriveYueJingCalendarDetails, nowIso, shortMonthDay, WEEKDAY_SHORT, weekdayIndexMondayFirst, yuejingCellDetail } from './yuejing-model.ts';
@@ -21,7 +22,7 @@ export function YueJingDayPanel(props: {
   readonly filterTagId: string | null;
   readonly onClose: () => void;
 }) {
-  const { state, dispatch } = useShijingStore();
+  const { state, dispatch, replace_snapshot } = useShijingStore();
   const [draft, setDraft] = useState('');
   // In-place editing state for the 已记录 list. `editingId` is the id
   // of the EventMemory / PlanItem currently being edited; `editDraft`
@@ -78,7 +79,7 @@ export function YueJingDayPanel(props: {
     [state.snapshot.plan_items, props.date],
   );
 
-  function saveEntry() {
+  async function saveEntry() {
     const body = draft.trim();
     if (body.length === 0) return;
     const ts = nowIso();
@@ -96,13 +97,11 @@ export function YueJingDayPanel(props: {
         created_at: ts,
         updated_at: ts,
       };
-      dispatch({
-        type: 'snapshot/replace',
-        snapshot: {
-          ...state.snapshot,
-          plan_items: [...state.snapshot.plan_items, plan],
-        },
+      const persistence = await replace_snapshot({
+        ...state.snapshot,
+        plan_items: [...state.snapshot.plan_items, plan],
       });
+      if (!persistenceWriteSucceeded(persistence)) return;
     } else {
       const memory: EventMemory = {
         id: newEventMemoryId(),
@@ -115,13 +114,11 @@ export function YueJingDayPanel(props: {
         created_at: ts,
         updated_at: ts,
       };
-      dispatch({
-        type: 'snapshot/replace',
-        snapshot: {
-          ...state.snapshot,
-          event_memories: [...state.snapshot.event_memories, memory],
-        },
+      const persistence = await replace_snapshot({
+        ...state.snapshot,
+        event_memories: [...state.snapshot.event_memories, memory],
       });
+      if (!persistenceWriteSucceeded(persistence)) return;
     }
     setDraft('');
   }
@@ -136,31 +133,27 @@ export function YueJingDayPanel(props: {
     setEditDraft('');
   }
 
-  function commitEdit() {
+  async function commitEdit() {
     if (!editingId) return;
     const body = editDraft.trim();
     if (body.length === 0) return;
     const ts = nowIso();
     if (isPlan) {
-      dispatch({
-        type: 'snapshot/replace',
-        snapshot: {
-          ...state.snapshot,
-          plan_items: state.snapshot.plan_items.map((p) =>
-            p.id === editingId ? { ...p, body, updated_at: ts } : p,
-          ),
-        },
+      const persistence = await replace_snapshot({
+        ...state.snapshot,
+        plan_items: state.snapshot.plan_items.map((p) =>
+          p.id === editingId ? { ...p, body, updated_at: ts } : p,
+        ),
       });
+      if (!persistenceWriteSucceeded(persistence)) return;
     } else {
-      dispatch({
-        type: 'snapshot/replace',
-        snapshot: {
-          ...state.snapshot,
-          event_memories: state.snapshot.event_memories.map((m) =>
-            m.id === editingId ? { ...m, body, updated_at: ts } : m,
-          ),
-        },
+      const persistence = await replace_snapshot({
+        ...state.snapshot,
+        event_memories: state.snapshot.event_memories.map((m) =>
+          m.id === editingId ? { ...m, body, updated_at: ts } : m,
+        ),
       });
+      if (!persistenceWriteSucceeded(persistence)) return;
     }
     cancelEdit();
   }
@@ -168,26 +161,22 @@ export function YueJingDayPanel(props: {
   // These records feed back into RiJing / NianJing / ShiJing consultation
   // retrieval (`admissible_use: 'eligible_for_retrieval'`), so a destructive
   // delete needs a deliberate confirmation step (ConfirmDialog below).
-  function confirmDelete() {
+  async function confirmDelete() {
     const record = confirmingDelete;
     if (!record) return;
     const id = record.id;
     if (isPlan) {
-      dispatch({
-        type: 'snapshot/replace',
-        snapshot: {
-          ...state.snapshot,
-          plan_items: state.snapshot.plan_items.filter((p) => p.id !== id),
-        },
+      const persistence = await replace_snapshot({
+        ...state.snapshot,
+        plan_items: state.snapshot.plan_items.filter((p) => p.id !== id),
       });
+      if (!persistenceWriteSucceeded(persistence)) return;
     } else {
-      dispatch({
-        type: 'snapshot/replace',
-        snapshot: {
-          ...state.snapshot,
-          event_memories: state.snapshot.event_memories.filter((m) => m.id !== id),
-        },
+      const persistence = await replace_snapshot({
+        ...state.snapshot,
+        event_memories: state.snapshot.event_memories.filter((m) => m.id !== id),
       });
+      if (!persistenceWriteSucceeded(persistence)) return;
     }
     if (editingId === id) cancelEdit();
     setConfirmingDelete(null);

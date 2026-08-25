@@ -11,16 +11,23 @@ import { useProductCopy } from '../i18n/copy.ts';
 import { deriveMethodProfileCapabilityRows } from './method-profile-capabilities.ts';
 import { MethodProfileSelect } from './method-profile-select.tsx';
 import { commitMethodProfile } from './method-profile-state.ts';
+import { persistenceWriteSucceeded } from '../state/persistence-bridge.ts';
 
 export function MethodProfileEditor() {
-  const { state, dispatch } = useShijingStore();
+  const { state, replace_snapshot } = useShijingStore();
   const copy = useProductCopy();
   const current = state.snapshot.settings.method_profile_id ?? DEFAULT_METHOD_PROFILE_ID;
   const capabilityRows = deriveMethodProfileCapabilityRows();
 
-  function onChange(value: MethodProfileId) {
+  async function onChange(value: MethodProfileId) {
     const next = commitMethodProfile(state.snapshot, value);
-    dispatch({ type: 'snapshot/replace', snapshot: next });
+    const persistence = await replace_snapshot(next);
+    if (!persistenceWriteSucceeded(persistence)) {
+      nimiToast.danger(copy.shell.persistenceFailed(
+        persistence.kind === 'error' ? persistence.error.kind : persistence.kind,
+      ));
+      return;
+    }
     nimiToast.success(copy.methodProfile.switchedAt(new Date().toISOString()));
   }
 

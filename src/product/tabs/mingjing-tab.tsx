@@ -87,7 +87,7 @@ export function MingJingTab({
   startupGuideDismissed: externalStartupGuideDismissed,
   onStartupGuideComplete,
 }: MingJingTabProps) {
-  const { state, dispatch, runtime_ai_client } = useShijingStore();
+  const { state, replace_snapshot, runtime_ai_client } = useShijingStore();
   const copy = useProductCopy();
   const m = copy.mingjing;
   const space = state.snapshot;
@@ -142,14 +142,14 @@ export function MingJingTab({
     });
     setLoading(false);
     if (outcome.ok) {
-      dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+      void replace_snapshot(outcome.next_space);
     } else {
       setFailure(outcome.failure);
     }
   }
 
   function handleSpaceChange(next: ShiJingSpace) {
-    dispatch({ type: 'snapshot/replace', snapshot: next });
+    void replace_snapshot(next);
   }
 
   function handleStartupGuideComplete() {

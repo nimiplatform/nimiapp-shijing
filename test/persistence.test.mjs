@@ -58,7 +58,8 @@ test('Nimi storage adapter round-trips the canonical ShiJingSpace document', asy
     async readJson(relativePath) {
       if (!documents.has(relativePath)) {
         throw Object.assign(new Error('not found'), {
-          reasonCode: 'not-found',
+          code: 'not-found',
+          reasonCode: 'electron-standard-storage-json-not-found',
           actionHint: 'create_document',
           retryable: false,
         });
@@ -117,12 +118,14 @@ test('IndexedDB generation upgrade preserves existing user-data store', () => {
   );
 });
 
-test('store provider does not mount product UI over the empty seed while initial persistence is loading', () => {
+test('store provider does not mount product UI over the empty seed while initial persistence is unresolved', () => {
   assert.match(STORE_PROVIDER_SOURCE, /initialPersistenceLoadPending/);
   assert.match(
     STORE_PROVIDER_SOURCE,
-    /initialPersistenceLoadPending \? null : props\.children/,
+    /initialPersistenceLoadFailed && persistenceStatus\.kind === 'error'/,
   );
+  assert.match(STORE_PROVIDER_SOURCE, /<InitialPersistenceFailure status=\{persistenceStatus\} \/>/);
+  assert.doesNotMatch(STORE_PROVIDER_SOURCE, /void replaceSnapshot\(action\.snapshot\)/);
 });
 
 test('persistence account scope accepts only snapshots owned by the expected account', () => {

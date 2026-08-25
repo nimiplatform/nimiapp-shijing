@@ -55,6 +55,7 @@ import {
   type ArchiveConcernOption,
   type SeedItem,
 } from './shijing/shijing-session-model.ts';
+import { persistenceWriteSucceeded } from '../state/persistence-bridge.ts';
 
 export interface ShiJingTabProps {
   readonly onRequestOpenSettings?: (page?: ShijingSettingsPageId) => void;
@@ -236,7 +237,8 @@ export function ShiJingTab(_props: ShiJingTabProps) {
         setFailure(followUpFailureAsReadingFailure(outcome.failure, followUpConversation.source_reading_ids));
         return;
       }
-      dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+      const persistence = await replace_snapshot(outcome.next_space);
+      if (!persistenceWriteSucceeded(persistence)) return;
       setPendingConversation(null);
       setPendingTurnIds([]);
       setSelectedConversationId(followUpConversation.id);
@@ -325,7 +327,8 @@ export function ShiJingTab(_props: ShiJingTabProps) {
       ...outcome.next_space,
       conversations: [...outcome.next_space.conversations, conv],
     };
-    dispatch({ type: 'snapshot/replace', snapshot: nextSpace });
+    const persistence = await replace_snapshot(nextSpace);
+    if (!persistenceWriteSucceeded(persistence)) return;
     setPendingConversation(null);
     setPendingTurnIds([]);
     setSelectedArchiveConcernIds([]);

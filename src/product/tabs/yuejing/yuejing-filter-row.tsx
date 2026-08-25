@@ -88,7 +88,7 @@ function FilterPill(props: {
 // editing) still live in Settings → 关注.
 
 function YueJingConcernEditorPopover(props: { readonly onClose: () => void }) {
-  const { state, dispatch } = useShijingStore();
+  const { state, replace_snapshot } = useShijingStore();
   const [draftInput, setDraftInput] = useState('');
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const tags = state.snapshot.concern_tags;
@@ -121,10 +121,7 @@ function YueJingConcernEditorPopover(props: { readonly onClose: () => void }) {
   }, [props]);
 
   function commitTags(next: readonly ConcernTag[]) {
-    dispatch({
-      type: 'snapshot/replace',
-      snapshot: { ...state.snapshot, concern_tags: next },
-    });
+    void replace_snapshot({ ...state.snapshot, concern_tags: next });
   }
 
   function archiveTag(id: string) {

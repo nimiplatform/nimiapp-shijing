@@ -14,22 +14,29 @@ import {
 } from '../i18n/copy.ts';
 import { SjpSelect } from '../components/sjp-select.tsx';
 import { useShijingStore } from '../state/shijing-store.tsx';
+import { persistenceWriteSucceeded } from '../state/persistence-bridge.ts';
 import { commitResponsePreferences } from './response-preferences-state.ts';
 
 export function ResponsePreferencesEditor() {
-  const { state, dispatch } = useShijingStore();
+  const { state, replace_snapshot } = useShijingStore();
   const copy = useProductCopy();
   const currentPreferences = state.snapshot.settings.response_preferences;
 
   // The extra-instructions textarea commits on every keystroke, so its caller
   // passes announce=false to keep the success toast to discrete select changes.
-  function commitDraft(nextDraft: ResponsePreferences, announce = true) {
+  async function commitDraft(nextDraft: ResponsePreferences, announce = true) {
     const outcome = commitResponsePreferences(state.snapshot, nextDraft);
     if (!outcome.ok) {
       nimiToast.danger(copy.responsePreferences.saveFailed(outcome.error.code));
       return;
     }
-    dispatch({ type: 'snapshot/replace', snapshot: outcome.next_space });
+    const persistence = await replace_snapshot(outcome.next_space);
+    if (!persistenceWriteSucceeded(persistence)) {
+      nimiToast.danger(copy.responsePreferences.saveFailed(
+        persistence.kind === 'error' ? persistence.error.kind : persistence.kind,
+      ));
+      return;
+    }
     if (announce) {
       nimiToast.success(copy.responsePreferences.savedAt(new Date().toISOString()));
     }
