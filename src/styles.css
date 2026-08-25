@@ -288,17 +288,24 @@ body {
 }
 
 .shijing-local-development-shell {
-  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.shijing-local-development-shell > .shijing-app {
+  height: 100%;
+  min-height: 0;
 }
 
 .shijing-local-development {
-  position: fixed;
-  right: 18px;
-  bottom: 18px;
-  z-index: 80;
+  position: relative;
+  z-index: 1;
   display: grid;
-  width: min(440px, calc(100vw - 36px));
-  max-height: min(620px, calc(100vh - 36px));
+  width: auto;
+  max-height: min(38vh, 320px);
   gap: 14px;
   overflow: auto;
   border: 1px solid var(--shijing-border-default);
@@ -413,10 +420,8 @@ body {
   }
 
   .shijing-local-development {
-    right: 10px;
-    bottom: 10px;
-    width: calc(100vw - 20px);
-    max-height: min(48vh, 420px);
+    width: auto;
+    max-height: min(42vh, 360px);
     gap: 10px;
   }
 

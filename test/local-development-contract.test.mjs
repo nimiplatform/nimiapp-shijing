@@ -75,6 +75,23 @@ test('renderer consumes the App self text candidate path without portable author
   );
 });
 
+test('local development status reserves layout space instead of covering product controls', () => {
+  const styles = read('src/styles.css');
+
+  assert.match(
+    styles,
+    /\.shijing-local-development-shell\s*\{[^}]*grid-template-rows:\s*auto minmax\(0, 1fr\)/s,
+  );
+  assert.match(
+    styles,
+    /\.shijing-local-development-shell\s*>\s*\.shijing-app\s*\{[^}]*height:\s*100%/s,
+  );
+  assert.doesNotMatch(
+    styles,
+    /\.shijing-local-development\s*\{[^}]*position:\s*fixed/s,
+  );
+});
+
 test('app-managed Runtime model and self-auth paths are removed', () => {
   const productArea = read('src/shell/routes/product-area.tsx');
   const settings = read('src/product/settings/response-preferences-editor.tsx');
