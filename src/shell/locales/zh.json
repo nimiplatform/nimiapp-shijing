@@ -20,6 +20,7 @@
     "aiConfigUnavailable": "模型状态不可用",
     "configureAI": "配置 AI 模型",
     "accessIssue": "Nimi 访问刷新失败。请原地重试；同一宿主会重新建立访问。",
+    "aiConfigIssue": "时镜 AI 配置刷新失败，但 Nimi 访问仍已连接。请在 Nimi Desktop 配置模型后回到此处重试。",
     "technicalDetails": "技术详情"
   },
   "Shell": {

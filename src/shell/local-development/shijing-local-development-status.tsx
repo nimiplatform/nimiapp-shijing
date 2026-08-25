@@ -28,6 +28,7 @@ type OperationEvidence =
   | { readonly state: 'idle' }
   | ({ readonly state: 'failed' } & ShijingLocalAppErrorEvidence);
 
+// @nimi-authority: rule.shijing.product.r015
 export function ShijingLocalDevelopmentStatus() {
   const { t } = useTranslation();
   const [session, setSession] = useState<SessionEvidence | null>(null);
@@ -38,20 +39,27 @@ export function ShijingLocalDevelopmentStatus() {
   const refresh = useCallback(async () => {
     setBusy('refresh');
     try {
-      const [nextSession, nextAIConfig] = await withShijingLocalAppResponseDeadline(
-        Promise.all([
-          shijingLocalAppRuntimePlatform.auth.status(),
-          shijingLocalAppRuntimePlatform.aiConfig.get(),
-        ]),
-        'session and App AIConfig refresh',
+      const nextSession = await withShijingLocalAppResponseDeadline(
+        shijingLocalAppRuntimePlatform.auth.status(),
+        'session refresh',
       );
       setSession({
         state: nextSession.state,
         reasonCode: nextSession.reasonCode,
         actionHint: nextSession.actionHint,
       });
-      setAIConfig(projectShijingAIConfig(nextAIConfig));
-      setOperation({ state: 'idle' });
+      try {
+        const nextAIConfig = await withShijingLocalAppResponseDeadline(
+          shijingLocalAppRuntimePlatform.aiConfig.get(),
+          'App AIConfig refresh',
+        );
+        setAIConfig(projectShijingAIConfig(nextAIConfig));
+        setOperation({ state: 'idle' });
+      } catch (error) {
+        const evidence = normalizeShijingLocalAppError(error);
+        setAIConfig({ state: 'unavailable', reasonCode: evidence.reasonCode });
+        setOperation({ state: 'failed', ...evidence });
+      }
     } catch (error) {
       setOperation({ state: 'failed', ...normalizeShijingLocalAppError(error) });
     } finally {
@@ -149,7 +157,7 @@ export function ShijingLocalDevelopmentStatus() {
 
       {operation.state === 'failed' ? (
         <InlineAlert tone="warning" data-testid="shijing-local-development-operation-failure">
-          <span>{t('LocalDevelopment.accessIssue')}</span>
+          <span>{t(session ? 'LocalDevelopment.aiConfigIssue' : 'LocalDevelopment.accessIssue')}</span>
           <details className="shijing-local-development__technical">
             <summary>{t('LocalDevelopment.technicalDetails')}</summary>
             <code>{operation.reasonCode}</code>

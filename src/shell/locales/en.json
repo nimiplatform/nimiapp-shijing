@@ -20,6 +20,7 @@
     "aiConfigUnavailable": "Model state unavailable",
     "configureAI": "Configure AI model",
     "accessIssue": "Nimi access could not be refreshed. Retry in place; the same host re-establishes access.",
+    "aiConfigIssue": "ShiJing's AI configuration could not be refreshed. Nimi access remains connected; configure the model in Nimi Desktop, then retry here.",
     "technicalDetails": "Technical details"
   },
   "Shell": {

@@ -6,8 +6,7 @@ import {
 } from '../src/shell/ai/shijing-ai-config.ts';
 
 function localSnapshot({
-  loadoutRef = 'shijing-text',
-  selectedLoadoutRef = loadoutRef,
+  selectedLoadoutRef = 'shijing-text',
   state = 'ready',
 } = {}) {
   return {
@@ -16,7 +15,7 @@ function localSnapshot({
       capabilities: [{
         capabilityContract: 'text.generate',
         requiredFeatures: [],
-        route: { oneofKind: 'local', local: { loadoutRef } },
+        route: { oneofKind: 'local', local: {} },
       }],
     },
     revision: '1',
@@ -48,7 +47,7 @@ test('ShiJing reports canonical App AIConfig absence', () => {
   }), { state: 'not-configured' });
 });
 
-test('ShiJing reports an exact ready App-local selection', () => {
+test('ShiJing reports the Runtime-selected ready App-local resource', () => {
   assert.deepEqual(projectShijingAIConfig(localSnapshot()), {
     state: 'ready',
     route: 'local',
@@ -61,7 +60,7 @@ test('ShiJing keeps blocked and stale effective facts non-ready', () => {
     reasonCode: 'AI_LOADOUT_NOT_READY',
   });
   assert.deepEqual(projectShijingAIConfig(localSnapshot({ selectedLoadoutRef: 'other-loadout' })), {
-    state: 'unavailable',
-    reasonCode: 'ai-config-effective-ref-mismatch',
+    state: 'ready',
+    route: 'local',
   });
 });

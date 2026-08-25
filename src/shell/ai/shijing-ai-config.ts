@@ -8,6 +8,7 @@ export type ShijingAIConfigEvidence =
       readonly reasonCode: string;
     };
 
+// @nimi-authority: rule.shijing.product.r015
 export function projectShijingAIConfig(
   snapshot: NimiAIConfigSnapshot,
 ): ShijingAIConfigEvidence {
@@ -32,7 +33,6 @@ export function projectShijingAIConfig(
   }
   if (intent.route.oneofKind === 'local') {
     return selection.resource?.oneofKind === 'local'
-      && selection.resource.local.loadoutRef === intent.route.local.loadoutRef
       ? { state: 'ready', route: 'local' }
       : { state: 'unavailable', reasonCode: 'ai-config-effective-ref-mismatch' };
   }
