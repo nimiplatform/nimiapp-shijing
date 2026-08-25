@@ -44,3 +44,12 @@ export function projectShijingAIConfig(
   }
   return { state: 'unavailable', reasonCode: 'ai-config-route-missing' };
 }
+
+export function shouldApplyShijingAIConfigRefresh(
+  currentRevision: string | null,
+  refreshedRevision: string,
+  expectedRevision: string,
+): boolean {
+  return currentRevision === expectedRevision
+    && refreshedRevision === expectedRevision;
+}

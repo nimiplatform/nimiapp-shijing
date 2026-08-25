@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
   projectShijingAIConfig,
+  shouldApplyShijingAIConfigRefresh,
 } from '../src/shell/ai/shijing-ai-config.ts';
 
 function localSnapshot({
@@ -63,4 +65,27 @@ test('ShiJing keeps blocked and stale effective facts non-ready', () => {
     state: 'ready',
     route: 'local',
   });
+});
+
+test('ShiJing restores effective facts only for the acknowledged AIConfig revision', () => {
+  assert.equal(shouldApplyShijingAIConfigRefresh('2', '2', '2'), true);
+  assert.equal(shouldApplyShijingAIConfigRefresh('3', '2', '2'), false);
+  assert.equal(shouldApplyShijingAIConfigRefresh('2', '1', '2'), false);
+  assert.equal(shouldApplyShijingAIConfigRefresh(null, '2', '2'), false);
+});
+
+test('ShiJing mounts its covered self-owner AIConfig editor without a Desktop write bridge', async () => {
+  const source = await readFile(new URL(
+    '../src/shell/local-development/shijing-local-development-status.tsx',
+    import.meta.url,
+  ), 'utf8');
+  assert.match(source, /ModelConfigAIConfigSurface/u);
+  assert.match(source, /shijingLocalAppRuntimePlatform\.aiConfig\.overwrite/u);
+  assert.match(source, /shijingLocalAppRuntimePlatform\.aiConfig\.listOptions/u);
+  assert.match(
+    source,
+    /applyAIConfigSnapshot\(acknowledgedSnapshot\)[\s\S]*refreshAIConfigEffectiveSelections\(result\.revision\)/u,
+  );
+  assert.match(source, /capabilityContracts=\{\['text\.generate'\]\}/u);
+  assert.doesNotMatch(source, /loadoutRef/u);
 });

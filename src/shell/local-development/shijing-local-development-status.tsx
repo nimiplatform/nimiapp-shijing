@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { openDesktopIntent } from '@nimiplatform/kit/shell/renderer/bridge';
+import { ModelConfigAIConfigSurface } from '@nimiplatform/kit/features/model-config';
 import {
   Button,
   InlineAlert,
@@ -15,12 +16,14 @@ import {
 } from './shijing-local-app-runtime.ts';
 import {
   projectShijingAIConfig,
+  shouldApplyShijingAIConfigRefresh,
   type ShijingAIConfigEvidence,
 } from '../ai/shijing-ai-config.ts';
 import {
   applyShijingSessionFailure,
   applyShijingSessionProjection,
 } from '../infra/shijing-bootstrap.ts';
+import type { NimiAIConfigSnapshot } from '@nimiplatform/sdk/ai';
 
 type SessionEvidence = {
   readonly state: string;
@@ -37,8 +40,40 @@ export function ShijingLocalDevelopmentStatus() {
   const { t } = useTranslation();
   const [session, setSession] = useState<SessionEvidence | null>(null);
   const [aiConfig, setAIConfig] = useState<ShijingAIConfigEvidence | null>(null);
+  const [aiConfigSnapshot, setAIConfigSnapshot] = useState<NimiAIConfigSnapshot | null>(null);
   const [operation, setOperation] = useState<OperationEvidence>({ state: 'idle' });
   const [busy, setBusy] = useState<'refresh' | 'configure' | null>(null);
+  const aiConfigRevisionRef = useRef<string | null>(null);
+
+  const applyAIConfigSnapshot = useCallback((snapshot: NimiAIConfigSnapshot) => {
+    aiConfigRevisionRef.current = snapshot.revision;
+    setAIConfigSnapshot(snapshot);
+    setAIConfig(projectShijingAIConfig(snapshot));
+  }, []);
+
+  const clearAIConfigSnapshot = useCallback(() => {
+    aiConfigRevisionRef.current = null;
+    setAIConfigSnapshot(null);
+    setAIConfig(null);
+  }, []);
+
+  const refreshAIConfigEffectiveSelections = useCallback(async (expectedRevision: string) => {
+    try {
+      const refreshed = await withShijingLocalAppResponseDeadline(
+        shijingLocalAppRuntimePlatform.aiConfig.get(),
+        'App AIConfig effective-selection refresh',
+      );
+      if (!shouldApplyShijingAIConfigRefresh(
+        aiConfigRevisionRef.current,
+        refreshed.revision,
+        expectedRevision,
+      )) return;
+      applyAIConfigSnapshot(refreshed);
+    } catch {
+      // The overwrite acknowledgement remains authoritative. Effective facts
+      // stay unknown until the next successful matching read.
+    }
+  }, [applyAIConfigSnapshot]);
 
   const refresh = useCallback(async () => {
     setBusy('refresh');
@@ -54,7 +89,7 @@ export function ShijingLocalDevelopmentStatus() {
       });
       applyShijingSessionProjection(nextSession);
       if (!nextSession.sessionBound) {
-        setAIConfig(null);
+        clearAIConfigSnapshot();
         setOperation({ state: 'idle' });
         return;
       }
@@ -63,25 +98,25 @@ export function ShijingLocalDevelopmentStatus() {
           shijingLocalAppRuntimePlatform.aiConfig.get(),
           'App AIConfig refresh',
         );
-        setAIConfig(projectShijingAIConfig(nextAIConfig));
+        applyAIConfigSnapshot(nextAIConfig);
         setOperation({ state: 'idle' });
       } catch (error) {
         const evidence = normalizeShijingLocalAppError(error);
         setSession(null);
-        setAIConfig(null);
+        clearAIConfigSnapshot();
         setOperation({ state: 'failed', ...evidence });
         applyShijingSessionFailure(error);
       }
     } catch (error) {
       const evidence = normalizeShijingLocalAppError(error);
       setSession(null);
-      setAIConfig(null);
+      clearAIConfigSnapshot();
       setOperation({ state: 'failed', ...evidence });
       applyShijingSessionFailure(error);
     } finally {
       setBusy(null);
     }
-  }, []);
+  }, [applyAIConfigSnapshot, clearAIConfigSnapshot]);
 
   useEffect(() => {
     void refresh();
@@ -182,6 +217,38 @@ export function ShijingLocalDevelopmentStatus() {
           </details>
         </InlineAlert>
       ) : null}
+
+      <ModelConfigAIConfigSurface
+        className="shijing-local-development__ai-config"
+        context={{ owner: 'app-ai-config', appId: 'nimi.shijing' }}
+        capabilityContracts={['text.generate']}
+        capabilities={aiConfigSnapshot?.config?.capabilities
+          ?? (aiConfigSnapshot ? null : undefined)}
+        revision={aiConfigSnapshot?.revision}
+        effectiveSelections={aiConfigSnapshot?.effectiveSelections}
+        listOptions={(query) => withShijingLocalAppResponseDeadline(
+          shijingLocalAppRuntimePlatform.aiConfig.listOptions(query),
+          'App AIConfig options',
+        )}
+        onOverwrite={async (input) => {
+          const result = await withShijingLocalAppResponseDeadline(
+            shijingLocalAppRuntimePlatform.aiConfig.overwrite(input),
+            'App AIConfig overwrite',
+          );
+          const acknowledgedSnapshot = {
+            config: result.config,
+            revision: result.revision,
+            effectiveSelections: [],
+          } satisfies NimiAIConfigSnapshot;
+          applyAIConfigSnapshot(acknowledgedSnapshot);
+          setOperation({ state: 'idle' });
+          void refreshAIConfigEffectiveSelections(result.revision);
+          return result;
+        }}
+        onOpenOwnerConfiguration={() => { void openConfiguration(); }}
+        onRetry={() => { void refresh(); }}
+        disabled={busy !== null || session?.state !== 'session-bound'}
+      />
     </Surface>
   );
 }
