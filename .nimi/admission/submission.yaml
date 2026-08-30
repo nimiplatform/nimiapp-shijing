@@ -1,7 +1,7 @@
 app_id: nimi.shijing
-display_name: ShiJing
+display_name: 时镜 ShiJing
 profile: standalone
-npm_package_name: @nimiplatform/shijing
+npm_package_name: nimiapp-shijing
 cargo_package_name: nimiplatform-shijing-shell
 tauri_identifier: ai.nimi.apps.nimi.shijing
 package_author: Nimi Team
@@ -10,8 +10,27 @@ publish_readiness:
   install_command: pnpm install
   dev_command: pnpm dev
   dev_shell_command: pnpm dev:shell -- --shell electron
-  build_command: pnpm run build
-  pack_command: pnpm run pack
+  build_command: pnpm run build:shell
+capability_contract_refs:
+  - text.generate
+required_standardized_feature_refs: []
+storage_policy:
+  kind: nimi-mediated-default
+support_manifest:
+  diagnostics_fields:
+    - app_version
+    - runtime_status
+  redaction_rules:
+    - credentials
+    - personal_birth_data
+  issue_categories:
+    - startup
+    - runtime
+    - calculation
+    - display
+  escalation_route: https://github.com/nimiplatform/nimiapp-shijing/issues
+  kill_switch_visibility: visible
+  recovery_instructions: Restart ShiJing from Nimi Desktop. If the problem persists, reinstall the current admitted release.
 review_inputs:
   manifest: nimi.app.yaml
   build_profile: .nimi/config/build-profile.yaml

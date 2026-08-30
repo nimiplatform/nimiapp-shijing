@@ -1,6 +1,6 @@
 app_id: nimi.shijing
-display_name: ShiJing
-npm_package_name: @nimiplatform/shijing
+display_name: 时镜 ShiJing
+npm_package_name: nimiapp-shijing
 cargo_package_name: nimiplatform-shijing-shell
 tauri_identifier: ai.nimi.apps.nimi.shijing
 package_author: Nimi Team
