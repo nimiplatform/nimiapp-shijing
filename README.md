@@ -81,10 +81,6 @@ pnpm dev
 
 # Explicit Desktop-supervised shell selection
 pnpm dev:shell -- --shell electron
-pnpm dev:shell -- --shell tauri
-
-# Equivalent explicit Tauri entry
-pnpm dev:tauri
 
 # Renderer-only; protected operations and product mounting fail closed
 pnpm dev:renderer
