@@ -28,6 +28,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   both the Node `--test` runner and the Vite/Tauri renderer without
   `node:crypto`.
 
+### Changed
+- 命镜 流年关键窗口 narrative is now composed per window (nature lead + up to
+  three basis-grounded sentences drawn from the window's own salience reasons +
+  nature guidance) instead of one static sentence per tendency class, so
+  distinct windows no longer share identical wording.
+- 年镜 phase wording now carries concern-specific BaZi and Ziwei driver
+  evidence into both deterministic guidance and the Runtime AI wording target;
+  transient concern prompt text and cited plan summaries are included without
+  persisting their raw text in Reading provenance.
+- 问镜 follow-ups now include the existing conversation turns as read-only
+  continuity context while cited Readings remain the astrology authority.
+- 命镜 refreshes a missing, failed, or stale AI reading after an observed
+  App AIConfig not-ready to ready transition, subject to projection and
+  persistence readiness gates.
+- Refined the intake blocker, HeJing empty state, MingJing event recorder, and
+  ShiJing consultation layouts for a unified responsive glass-shell experience;
+  local-development session and AIConfig status now lives in Settings.
+
 ### Resolved
 - `@nimiplatform/kit@^0.1.2` published to npm — `pnpm install` works end-to-end.
 - `nimi-shell-tauri@0.1.0` published to crates.io — `src-tauri/Cargo.toml`

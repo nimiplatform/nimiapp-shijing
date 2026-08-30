@@ -4,7 +4,8 @@
 // startup, persistence, and generation actions. Route components own
 // method-specific deterministic modules.
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { nimiToast } from '@nimiplatform/kit/ui';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { useProductCopy, type ProductCopy } from '../i18n/copy.ts';
 import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
@@ -24,10 +25,15 @@ import {
 import {
   latestMingJingNatalReading,
 } from '../reading/reading-selectors.ts';
-import { generateReadingForStorage } from '../reading/generate-and-store.ts';
+import {
+  generateReadingForStorage,
+  type GenerateAndStoreOutcome,
+} from '../reading/generate-and-store.ts';
 import { newReadingId } from '../ids/index.ts';
 import { ShijingOnboarding } from '../onboarding/shijing-onboarding.tsx';
 import { mingJingReadiness } from './mingjing/mingjing-readiness.ts';
+import { shouldRefreshMingJingReadingForAiReady } from './mingjing/mingjing-ai-refresh.ts';
+import { persistenceReadyForAutoGeneration } from './auto-generation-readiness.ts';
 import {
   initialMingJingStartupGuideDismissed,
   shouldShowMingJingStartupGuide,
@@ -87,7 +93,14 @@ export function MingJingTab({
   startupGuideDismissed: externalStartupGuideDismissed,
   onStartupGuideComplete,
 }: MingJingTabProps) {
-  const { state, replace_snapshot, runtime_ai_client } = useShijingStore();
+  const {
+    state,
+    replace_snapshot,
+    runtime_ai_client,
+    persistence_status,
+    persistence_client,
+    ai_config_ready,
+  } = useShijingStore();
   const copy = useProductCopy();
   const m = copy.mingjing;
   const space = state.snapshot;
@@ -125,8 +138,8 @@ export function MingJingTab({
     return current !== cited || inputsSummaryExpired(reading, new Date());
   }, [reading, space.event_memories]);
 
-  async function handleGenerate() {
-    if (!projection || !projection.ok || loading) return;
+  async function handleGenerate(): Promise<GenerateAndStoreOutcome | null> {
+    if (!projection || !projection.ok || loading) return null;
     setLoading(true);
     setFailure(null);
     const outcome = await generateReadingForStorage({
@@ -146,7 +159,49 @@ export function MingJingTab({
     } else {
       setFailure(outcome.failure);
     }
+    return outcome;
   }
+
+  // AI-ready edge refresh: when the user finishes AI setup and returns, the
+  // app-level readiness flips false -> true. Refresh a missing, failed, or
+  // stale reading immediately and announce it, instead of leaving the old
+  // state on screen until the manual button is clicked.
+  const generateRef = useRef(handleGenerate);
+  generateRef.current = handleGenerate;
+  const aiConfigReadyRef = useRef<boolean | null>(ai_config_ready);
+  useEffect(() => {
+    const previous = aiConfigReadyRef.current;
+    aiConfigReadyRef.current = ai_config_ready;
+    const shouldRefresh = shouldRefreshMingJingReadingForAiReady({
+      previous,
+      current: ai_config_ready,
+      loading,
+      projectionReady: projection?.ok === true,
+      persistenceReady: persistenceReadyForAutoGeneration({
+        persistence_status,
+        has_persistence_client: persistence_client !== null,
+      }),
+      hasReading: reading !== null,
+      stale,
+      hasFailure: failure !== null,
+    });
+    if (!shouldRefresh) return;
+    const toastCopy = m.reading.aiReadyRefresh;
+    nimiToast.info(toastCopy.refreshing);
+    void generateRef.current().then((outcome) => {
+      if (outcome?.ok) nimiToast.success(toastCopy.updated);
+    });
+  }, [
+    ai_config_ready,
+    loading,
+    projection,
+    persistence_status,
+    persistence_client,
+    reading,
+    stale,
+    failure,
+    m,
+  ]);
 
   function handleSpaceChange(next: ShiJingSpace) {
     void replace_snapshot(next);

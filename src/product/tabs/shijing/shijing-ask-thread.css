@@ -24,7 +24,7 @@
   padding: 2px 8px !important;
 }
 
-/* ----- Result thread ----- */
+/* ----- Result thread (transparent region inside the console) ----- */
 
 .shijing-ask .shijing-ask__result {
   display: flex;
@@ -32,12 +32,6 @@
   gap: 12px;
   margin: 0;
   padding: 22px 24px;
-  background: var(--shijing-ask-glass-bg);
-  backdrop-filter: var(--shijing-ask-glass-blur);
-  -webkit-backdrop-filter: var(--shijing-ask-glass-blur);
-  border: 1px solid var(--shijing-ask-glass-border);
-  border-radius: 24px;
-  box-shadow: var(--shijing-ask-glass-shadow);
 }
 
 .shijing-ask__thread {
@@ -255,9 +249,14 @@
 @media (max-width: 900px) {
   .shijing-ask__layout {
     grid-template-columns: 1fr;
+    /* Back to content-sized implicit rows in single-column flow. */
+    grid-template-rows: none;
   }
   .shijing-ask__rail {
     order: 2;
+    /* Stacked under the main column: the divider moves from the side to the top. */
+    border-right: 0;
+    border-top: 1px solid rgba(15, 23, 42, 0.07);
   }
   .shijing-ask__rail-empty {
     margin-top: 32px;

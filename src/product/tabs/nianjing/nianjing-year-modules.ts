@@ -358,6 +358,9 @@ export function buildNianJingSelectedYearDetail(input: {
     const driverGuidance = buildNianJingDriverGuidance({
       nature: cell.primary_nature,
       driver_refs: cell.primary_segment?.band.driver_refs ?? [],
+      concern_label: tag?.label ?? cell.label,
+      start_date: cell.primary_segment?.start_date,
+      end_date: cell.primary_segment?.end_date,
     });
     return {
       concern_tag_ref: cell.concern_tag_ref,

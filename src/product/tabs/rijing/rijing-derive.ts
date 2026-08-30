@@ -78,7 +78,12 @@ export interface RiJingHeroPerspective {
 export interface RiJingHeroReferenceEvent {
   readonly title: string;
   readonly event_body: string;
+  // 解析主体: the reading's daily_overview, which the RiJing wording prompt
+  // requires to be written as the event-specific 今日事件解析 whenever a
+  // reference event is cited.
   readonly guidance: string;
+  // Optional concrete next action distilled from the concern projections.
+  readonly action?: string;
 }
 
 export type RiJingEmptyStateKind =
@@ -165,9 +170,10 @@ function referenceEventForReading(
   return {
     title: copy.rijing.hero.eventInsightLabel,
     event_body: memory.body,
-    guidance: firstRecommendation
-      ? `${copy.rijing.hero.eventActionLead}${firstRecommendation}`
-      : description,
+    guidance: description,
+    ...(firstRecommendation
+      ? { action: `${copy.rijing.hero.eventActionLead}${firstRecommendation}` }
+      : {}),
   };
 }
 

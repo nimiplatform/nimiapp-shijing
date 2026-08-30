@@ -44,6 +44,7 @@ test('ShiJing follow-up appends turns to the active conversation without creatin
 
   assert.equal(result.ok, true);
   assert.deepEqual(bridgeCalls.map((call) => call.source_readings.map((r) => r.id)), [['r_source']]);
+  assert.deepEqual(bridgeCalls[0]?.conversation_turns, conversation.turns);
   if (!result.ok) return;
 
   assert.equal(result.next_space.readings.length, 2);

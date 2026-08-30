@@ -89,7 +89,7 @@ export function MingJingEvents({
 
       <div className="shijing-mj-events__recorder">
         <label className="shijing-mj-events__field shijing-mj-events__field--date">
-          <span>{m.dateLabel}</span>
+          <span className="shijing-mj-events__sr">{m.dateLabel}</span>
           <div className="shijing-mj-events__datepicker">
             <DatePicker
               id="mingjing-event-date"
@@ -104,7 +104,7 @@ export function MingJingEvents({
           </div>
         </label>
         <label className="shijing-mj-events__field shijing-mj-events__field--grow">
-          <span>{m.bodyLabel}</span>
+          <span className="shijing-mj-events__sr">{m.bodyLabel}</span>
           <input
             type="text"
             value={body}
@@ -128,29 +128,35 @@ export function MingJingEvents({
               const r = resonanceByRef.get(event.id);
               return (
                 <li key={event.id} className="shijing-mj-events__item" data-nature={r?.dayun_nature}>
-                  <div className="shijing-mj-events__when">
-                    <span className="shijing-mj-events__year">{event.occurred_at.slice(0, 10)}</span>
+                  <time className="shijing-mj-events__date" dateTime={event.occurred_at}>
+                    {event.occurred_at.slice(0, 10)}
+                  </time>
+                  <div className="shijing-mj-events__main">
+                    <p className="shijing-mj-events__body">{event.body}</p>
+                    {r ? (
+                      <div className="shijing-mj-events__resonance">
+                        <span className="shijing-mj-events__chip" data-nature={r.dayun_nature}>
+                          <span className="shijing-mj-events__chip-label">{m.dayunColumn}</span>
+                          <span className="shijing-mj-events__chip-value">
+                            {r.dayun_pillar ? pillarHanzi(r.dayun_pillar) : '—'}
+                            {r.dayun_ten_god ? `·${r.dayun_ten_god}` : ''}
+                          </span>
+                          <span className="shijing-mj-events__chip-nature">
+                            {tendencyLabels[r.dayun_nature]}
+                          </span>
+                        </span>
+                        <span className="shijing-mj-events__chip" data-nature={r.liunian_nature}>
+                          <span className="shijing-mj-events__chip-label">{m.liunianColumn}</span>
+                          <span className="shijing-mj-events__chip-value">
+                            {pillarHanzi(r.liunian_pillar)}
+                          </span>
+                          <span className="shijing-mj-events__chip-nature">
+                            {tendencyLabels[r.liunian_nature]}
+                          </span>
+                        </span>
+                      </div>
+                    ) : null}
                   </div>
-                  <p className="shijing-mj-events__body">{event.body}</p>
-                  {r ? (
-                    <dl className="shijing-mj-events__resonance">
-                      <div>
-                        <dt>{m.dayunColumn}</dt>
-                        <dd>
-                          {r.dayun_pillar ? pillarHanzi(r.dayun_pillar) : '—'}
-                          {r.dayun_ten_god ? `·${r.dayun_ten_god}` : ''}
-                          <span data-favor={r.dayun_favor}>（{tendencyLabels[r.dayun_nature]}）</span>
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>{m.liunianColumn}</dt>
-                        <dd>
-                          {pillarHanzi(r.liunian_pillar)}
-                          <span data-favor={r.liunian_favor}>（{tendencyLabels[r.liunian_nature]}）</span>
-                        </dd>
-                      </div>
-                    </dl>
-                  ) : null}
                   <button
                     type="button"
                     className="shijing-mj-events__delete"

@@ -166,6 +166,10 @@ export interface MingJingCopy {
     readonly empty: string;
     readonly stale: string;
     readonly failureTitle: string;
+    readonly aiReadyRefresh: {
+      readonly refreshing: string;
+      readonly updated: string;
+    };
   };
   readonly ziweiRoute: {
     readonly chartAria: string;

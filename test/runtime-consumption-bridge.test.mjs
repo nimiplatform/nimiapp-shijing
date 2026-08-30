@@ -93,6 +93,7 @@ test('ShiJing-owned consultation remains grounded and uses no Runtime Agent conv
   const result = await bridge.send({
     user_message: 'What should I focus on?',
     source_readings: [validReading()],
+    conversation_turns: [],
   });
 
   assert.deepEqual(result, { ok: true, text: 'Grounded ShiJing answer.' });

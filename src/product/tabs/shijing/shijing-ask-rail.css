@@ -1,24 +1,35 @@
 
+/* The whole consultation surface is ONE glass console: the layout panel
+ * carries the glass chrome and inner regions (rail / composer / context
+ * footer) are separated only by hairline dividers, so the page reads as a
+ * single calm surface instead of a stack of floating cards. */
 .shijing-ask__layout {
   display: grid;
   grid-template-columns: 272px 1fr;
-  gap: 24px;
+  /* A single minmax row lets both columns stretch to the layout's height,
+   * so the rail and the main column fill the viewport instead of hugging
+   * the top. */
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
   align-items: stretch;
-}
-
-/* ----- History rail (glass, full height) ----- */
-
-.shijing-ask__rail {
-  display: flex;
-  flex-direction: column;
+  flex: 1;
   min-height: 0;
-  padding: 18px 16px;
   background: var(--shijing-ask-glass-bg);
   backdrop-filter: var(--shijing-ask-glass-blur);
   -webkit-backdrop-filter: var(--shijing-ask-glass-blur);
   border: 1px solid var(--shijing-ask-glass-border);
   border-radius: var(--shijing-radius-3xl);
   box-shadow: var(--shijing-ask-glass-shadow);
+}
+
+/* ----- History rail (plain region + right hairline, full height) ----- */
+
+.shijing-ask__rail {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 20px 16px;
+  border-right: 1px solid rgba(15, 23, 42, 0.07);
 }
 
 .shijing-ask__rail-head {
@@ -181,14 +192,14 @@
   font-size: 12px;
 }
 
-/* Empty state — upper-middle of the rail. */
+/* Empty state — vertically centered inside the full-height rail. */
 .shijing-ask__rail-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 8px;
-  margin: 76px auto 0;
+  margin: auto;
   padding: 0 10px;
 }
 

@@ -92,6 +92,8 @@ function renderBandContent(
     nature: band.nature,
     summary: band.summary,
     driver_refs: band.driver_refs,
+    start_date: band.start_date,
+    end_date: band.end_date,
   });
 
   return (

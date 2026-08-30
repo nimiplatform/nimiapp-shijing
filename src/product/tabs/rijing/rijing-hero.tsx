@@ -149,9 +149,14 @@ export function RiJingHero(props: RiJingHeroProps) {
               <p className="shijing-rijing__hero-block-body">
                 {content.reference_event.event_body}
               </p>
-              <p className="shijing-rijing__hero-block-body shijing-rijing__hero-block-body--soft">
+              <p className="shijing-rijing__hero-block-body">
                 {content.reference_event.guidance}
               </p>
+              {content.reference_event.action ? (
+                <p className="shijing-rijing__hero-block-body shijing-rijing__hero-block-body--soft">
+                  {content.reference_event.action}
+                </p>
+              ) : null}
             </section>
           ) : null}
         </div>

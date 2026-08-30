@@ -214,6 +214,10 @@ export const ZH_MINGJING_COPY: ProductCopy['mingjing'] = {
     empty: '基于本命盘与你记录的历史事件，生成核心特点与长期阶段策略。',
     stale: '生辰或历史事件已更新,可重新生成解读。',
     failureTitle: '解读生成未成功',
+    aiReadyRefresh: {
+      refreshing: '检测到 AI 已配置完成，正在刷新命镜解读…',
+      updated: '命镜解读已根据新的 AI 配置更新。',
+    },
   },
   ziweiRoute: {
     chartAria: '紫微命镜命盘依据',
@@ -340,8 +344,8 @@ export const ZH_MINGJING_COPY: ProductCopy['mingjing'] = {
     invalidHint: '请填写日期与事件内容。',
     empty: '还没有记录历史事件。记录后即可看到它落在命盘时间轴的位置。',
     delete: '删除',
-    dayunColumn: '所在大运',
-    liunianColumn: '当年流年',
+    dayunColumn: '大运',
+    liunianColumn: '流年',
     preGenHint: '以下为确定性时间轴定位;生成解读后,AI 会结合这些经历给出更贴合的叙述。',
   },
   rectify: {

@@ -8,6 +8,7 @@ import {
   withShijingLocalAppResponseDeadline,
 } from '../local-development/shijing-local-app-runtime.ts';
 import type { NimiAppAuthProjection } from '@nimiplatform/sdk/app';
+import { projectShijingAIConfig } from '../ai/shijing-ai-config.ts';
 
 let bootstrapPromise: Promise<void> | null = null;
 
@@ -35,13 +36,18 @@ async function doRunShijingBootstrap(preserveReady: boolean): Promise<void> {
       'session status bootstrap',
     );
     if (session.sessionBound) {
-      await withShijingLocalAppResponseDeadline(
+      const aiConfigSnapshot = await withShijingLocalAppResponseDeadline(
         shijingLocalAppRuntimePlatform.aiConfig.get(),
         'App AIConfig access revalidation',
       );
+      store.setAiConfigReady(projectShijingAIConfig(aiConfigSnapshot).state === 'ready');
+    } else {
+      store.setAiConfigReady(null);
     }
     applyShijingSessionProjection(session);
   } catch (error) {
+    // Keep the last known AIConfig readiness on transient bootstrap failures:
+    // clearing it here would fabricate a not-ready -> ready edge on recovery.
     applyShijingSessionFailure(error);
   }
 }

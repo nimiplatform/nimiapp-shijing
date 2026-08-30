@@ -9,6 +9,8 @@ export default defineConfig([
   globalIgnores([
     'dist/**',
     'dist-electron/**',
+    'artifacts/**',
+    '.codex-artifacts/**',
     'src-tauri/target/**',
     'src-tauri/gen/**',
     'node_modules/**',

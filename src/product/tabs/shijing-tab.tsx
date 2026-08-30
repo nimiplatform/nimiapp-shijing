@@ -510,67 +510,69 @@ export function ShiJingTab(_props: ShiJingTabProps) {
             </>
           ) : (
             <>
-              <ShiJingComposer
-                chatActive={chatActive}
-                seedItems={seedItems}
-                question={question}
-                composerPlaceholder={composerPlaceholder}
-                canAsk={canAsk}
-                askReason={askReason}
-                submitTitle={submitTitle}
-                submitLabel={submitLabel}
-                submitting={loading}
-                textareaRef={composerRef}
-                onSubmit={handleAsk}
-                onQuestionChange={setQuestion}
-                onClearSeed={clearSeedItem}
-              />
+              <div className="shijing-ask__welcome">
+                <ShiJingComposer
+                  chatActive={chatActive}
+                  seedItems={seedItems}
+                  question={question}
+                  composerPlaceholder={composerPlaceholder}
+                  canAsk={canAsk}
+                  askReason={askReason}
+                  submitTitle={submitTitle}
+                  submitLabel={submitLabel}
+                  submitting={loading}
+                  textareaRef={composerRef}
+                  onSubmit={handleAsk}
+                  onQuestionChange={setQuestion}
+                  onClearSeed={clearSeedItem}
+                />
 
-          <QuestionArchiveRecall
-            conversations={archiveRecallConversations}
-            concernTags={state.snapshot.concern_tags}
-            onSelectConversation={selectConversation}
-          />
+                <QuestionArchiveRecall
+                  conversations={archiveRecallConversations}
+                  concernTags={state.snapshot.concern_tags}
+                  onSelectConversation={selectConversation}
+                />
 
-          <ArchiveTray
-            options={archiveTrayOptions}
-            selectedIds={selectedArchiveConcernIds}
-            onToggleOption={toggleArchiveOption}
-            onRemoveOption={removeArchiveOption}
-          />
+                <ArchiveTray
+                  options={archiveTrayOptions}
+                  selectedIds={selectedArchiveConcernIds}
+                  onToggleOption={toggleArchiveOption}
+                  onRemoveOption={removeArchiveOption}
+                />
 
-          {failure ? <FailureBanner failure={failure} /> : null}
+                {failure ? <FailureBanner failure={failure} /> : null}
 
-          <ContextFocusBar tags={state.snapshot.concern_tags} />
+                <div className="shijing-ask__suggest">
+                  <span className="shijing-ask__suggest-label">{copy.shijing.suggestLabel}</span>
+                  <div className="shijing-ask__chips">
+                    {copy.shijing.suggestedQuestions.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        className="shijing-ask__chip"
+                        onClick={() => setQuestion(s)}
+                      >
+                        ✦ {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-          <div className="shijing-ask__suggest">
-            <span className="shijing-ask__suggest-label">{copy.shijing.suggestLabel}</span>
-            <div className="shijing-ask__chips">
-              {copy.shijing.suggestedQuestions.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className="shijing-ask__chip"
-                  onClick={() => setQuestion(s)}
-                >
-                  ✦ {s}
-                </button>
-              ))}
-            </div>
-          </div>
+                {resultConversation ? (
+                  <article className="shijing-ask__result" aria-label={copy.shijing.resultAria}>
+                    <ConversationThread
+                      conversation={resultConversation}
+                      pendingTurnIds={pendingTurnIds}
+                      thinkingLabel={copy.shijing.thinking}
+                    />
+                    {showLatestCitation ? (
+                      <CitationDrawer reading={latestConsultation} />
+                    ) : null}
+                  </article>
+                ) : null}
+              </div>
 
-          {resultConversation ? (
-            <article className="shijing-ask__result" aria-label={copy.shijing.resultAria}>
-              <ConversationThread
-                conversation={resultConversation}
-                pendingTurnIds={pendingTurnIds}
-                thinkingLabel={copy.shijing.thinking}
-              />
-              {showLatestCitation ? (
-                <CitationDrawer reading={latestConsultation} />
-              ) : null}
-            </article>
-          ) : null}
+              <ContextFocusBar tags={state.snapshot.concern_tags} />
             </>
           )}
         </div>

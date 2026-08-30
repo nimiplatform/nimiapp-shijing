@@ -148,7 +148,11 @@ test('deriveRiJingHero builds the overview from a reading and its cited referenc
   // Leanings carry the tendency tone, dominant first.
   assert.equal(hero.leanings[0]?.tone, 'supportive');
   assert.equal(hero.reference_event?.event_body, '下午要谈一个重要合作，心里有点不确定。');
-  assert.match(hero.reference_event?.guidance ?? '', /三条必须确认的问题/);
+  // 今日事件解析 carries the daily_overview interpretation verbatim; the
+  // projection recommendation moves to the follow-up action line.
+  assert.match(hero.reference_event?.guidance ?? '', /重要合作拆成可确认的边界/);
+  assert.match(hero.reference_event?.action ?? '', /可以先落到一个小动作：/);
+  assert.match(hero.reference_event?.action ?? '', /三条必须确认的问题/);
   assert.match(hero.closing_wish, /运由己造/);
 });
 

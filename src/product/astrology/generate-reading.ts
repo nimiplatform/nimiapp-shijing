@@ -165,7 +165,9 @@ export async function generateReading(
     feature_snapshot: featureSnapshot,
     mirror_context: mirrorContext,
     deterministic_output: deterministicResult.output,
+    active_concern_tags: activeTags,
     event_memories: memoriesResult.memories,
+    plan_items: plansResult.plans,
   });
   if (!runtimeResult.ok) return { ok: false, failure: runtimeResult.failure };
 

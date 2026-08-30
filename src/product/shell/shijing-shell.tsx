@@ -11,7 +11,10 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { ActionMenu, type NimiMenuItem } from '@nimiplatform/kit/ui';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { PrimaryTabBar } from '../navigation/tab-router.tsx';
-import type { ShijingSettingsFocusTarget } from '../settings/settings-page-view.tsx';
+import type {
+  SettingsPageExtraModule,
+  ShijingSettingsFocusTarget,
+} from '../settings/settings-page-view.tsx';
 import {
   SHIJING_SETTINGS_PAGES,
   type ShijingSettingsPageId,
@@ -67,6 +70,10 @@ export interface ShijingShellProps {
   // so the dev preview and tests can mount the shell without an auth
   // session; absent → a neutral avatar with no name.
   readonly account?: ShijingShellAccount;
+  // Optional host-injected module on the 设置 sub-page. The local-development
+  // carrier uses it to place the session / AI-config status inside settings
+  // instead of above the product shell.
+  readonly settingsExtras?: SettingsPageExtraModule | null;
 }
 
 interface ActiveSettingsPageState {
@@ -218,6 +225,7 @@ export function ShijingShell(props: ShijingShellProps) {
             focusTarget={activePage.focusTarget}
             onBack={() => setActivePage(null)}
             onNavigate={(pageId) => setActivePage({ pageId, focusTarget: null })}
+            settingsExtras={props.settingsExtras ?? null}
           />
         </Suspense>
       ) : null}

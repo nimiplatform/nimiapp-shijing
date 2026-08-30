@@ -289,7 +289,7 @@ body {
 
 .shijing-local-development-shell {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   height: 100vh;
   min-height: 0;
   overflow: hidden;
@@ -300,14 +300,15 @@ body {
   min-height: 0;
 }
 
+/* The development-session status renders as one card inside the 设置 settings
+   sub-page (injected via ShijingShell settingsExtras), so it flows with the
+   settings scroll container instead of capping its own height. */
 .shijing-local-development {
   position: relative;
   z-index: 1;
   display: grid;
   width: auto;
-  max-height: min(38vh, 320px);
   gap: 14px;
-  overflow: auto;
   border: 1px solid var(--shijing-border-default);
   box-shadow: var(--shijing-shadow-2);
 }
@@ -421,7 +422,6 @@ body {
 
   .shijing-local-development {
     width: auto;
-    max-height: min(42vh, 360px);
     gap: 10px;
   }
 

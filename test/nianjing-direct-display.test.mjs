@@ -111,15 +111,27 @@ test('NianJing generator words phase summaries from selected method driver refs'
             concern_tag_ref: 'tag_career',
             start_date: '2026-01-01',
             end_date: '2026-12-31',
-            nature: 'steady',
-            driver_refs: ['ziwei:daxian@官禄', 'ziwei:daxian_hua@官禄@2026'],
+            nature: 'supportive',
+            driver_refs: [
+              'ziwei:daxian@田宅',
+              'ziwei:domain.career',
+              'ziwei:concern_palace@官禄',
+              'ziwei:daxian_period@2019-2028',
+              'ziwei:daxian_transform.禄@武曲@官禄@本宫@2019',
+            ],
           },
           {
             concern_tag_ref: 'tag_love',
             start_date: '2026-01-01',
             end_date: '2026-12-31',
-            nature: 'steady',
-            driver_refs: ['ziwei:daxian@夫妻', 'ziwei:daxian_hua@夫妻@2026'],
+            nature: 'watch',
+            driver_refs: [
+              'ziwei:daxian@田宅',
+              'ziwei:domain.love',
+              'ziwei:concern_palace@夫妻',
+              'ziwei:daxian_period@2019-2028',
+              'ziwei:daxian_transform.忌@廉贞@迁移@三方四正@2019',
+            ],
           },
         ],
         nianjing_inflection_drivers: [],
@@ -149,4 +161,6 @@ test('NianJing generator words phase summaries from selected method driver refs'
   );
   assert.match(result.value.phase_bands[0].summary, /ziwei|紫微|官禄/);
   assert.match(result.value.phase_bands[1].summary, /ziwei|紫微|夫妻/);
+  assert.match(result.value.phase_bands[0].summary, /武曲化禄入本宫/);
+  assert.match(result.value.phase_bands[1].summary, /廉贞化忌入三方四正/);
 });

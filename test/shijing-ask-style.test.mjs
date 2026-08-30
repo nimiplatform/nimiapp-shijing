@@ -71,8 +71,9 @@ test('Ask ShiJing topbar and main area match NianJing transparent chrome', () =>
   assert.match(askLocalMain, /padding-top:\s*12px/);
 });
 
-test('Ask ShiJing cards use the same light glass system as NianJing', () => {
+test('Ask ShiJing surface is one unified glass console, not stacked cards', () => {
   const root = cssBlock(shijingStyles, '.shijing-tab.shijing-ask');
+  const layout = cssBlock(shijingStyles, '.shijing-ask__layout');
   const rail = cssBlock(shijingStyles, '.shijing-ask__rail');
   const composer = cssBlock(shijingStyles, '.shijing-ask .shijing-ask__composer');
   const contextBar = cssBlock(shijingStyles, '.shijing-ctx');
@@ -83,13 +84,23 @@ test('Ask ShiJing cards use the same light glass system as NianJing', () => {
   assert.match(root, /--shijing-ask-glass-blur:\s*var\(--shijing-shared-glass-blur\)/);
   assert.match(root, /--shijing-ask-glass-shadow:\s*var\(--shijing-shared-glass-shadow\)/);
 
+  // The layout panel is the only glass carrier on the page.
+  assert.match(layout, /background:\s*var\(--shijing-ask-glass-bg\)/);
+  assert.match(layout, /backdrop-filter:\s*var\(--shijing-ask-glass-blur\)/);
+  assert.match(layout, /-webkit-backdrop-filter:\s*var\(--shijing-ask-glass-blur\)/);
+  assert.match(layout, /border:\s*1px solid var\(--shijing-ask-glass-border\)/);
+  assert.match(layout, /box-shadow:\s*var\(--shijing-ask-glass-shadow\)/);
+
+  // Inner regions carry no card chrome of their own.
   for (const block of [rail, composer, contextBar, result]) {
-    assert.match(block, /background:\s*var\(--shijing-ask-glass-bg\)/);
-    assert.match(block, /backdrop-filter:\s*var\(--shijing-ask-glass-blur\)/);
-    assert.match(block, /-webkit-backdrop-filter:\s*var\(--shijing-ask-glass-blur\)/);
-    assert.match(block, /border:\s*1px solid var\(--shijing-ask-glass-border\)/);
-    assert.match(block, /box-shadow:\s*var\(--shijing-ask-glass-shadow\)/);
+    assert.doesNotMatch(block, /background:\s*var\(--shijing-ask-glass-bg\)/);
+    assert.doesNotMatch(block, /box-shadow:\s*var\(--shijing-ask-glass-shadow\)/);
+    assert.doesNotMatch(block, /border:\s*1px solid var\(--shijing-ask-glass-border\)/);
   }
+
+  // Regions are separated by hairline dividers instead of card borders.
+  assert.match(rail, /border-right:\s*1px solid rgba\(15, 23, 42, 0\.07\)/);
+  assert.match(contextBar, /border-top:\s*1px solid rgba\(15, 23, 42, 0\.07\)/);
 });
 
 test('Ask ShiJing hero and content start higher as one composition', () => {
@@ -180,10 +191,10 @@ test('Ask ShiJing switches to a chat window once a conversation exists', () => {
     '.shijing-ask__main[data-chat-active="true"] .shijing-ask__composer',
   );
 
-  assert.match(mainChat, /height:\s*calc\(100vh - 220px\)/);
-  assert.match(mainChat, /max-height:\s*calc\(100vh - 220px\)/);
+  assert.match(mainChat, /min-height:\s*0/);
   assert.match(mainChat, /overflow:\s*hidden/);
   assert.match(mainChat, /justify-content:\s*stretch/);
+  assert.doesNotMatch(mainChat, /100vh/);
   assert.match(resultChat, /flex:\s*1 1 0/);
   assert.match(resultChat, /overflow-y:\s*auto/);
   assert.match(resultChat, /overscroll-behavior:\s*contain/);
@@ -192,6 +203,34 @@ test('Ask ShiJing switches to a chat window once a conversation exists', () => {
   assert.match(composerChat, /position:\s*relative/);
   assert.match(composerChat, /bottom:\s*auto/);
   assert.doesNotMatch(composerChat, /position:\s*sticky/);
+});
+
+test('Ask ShiJing fills the shell main area vertically instead of hugging the top', () => {
+  const askTab = cssBlock(shijingStyles, '.shijing-tab.shijing-ask');
+  const askTabChat = cssBlock(
+    shijingStyles,
+    '.shijing-tab.shijing-ask:has(.shijing-ask__main[data-chat-active="true"])',
+  );
+  const layout = cssBlock(shijingStyles, '.shijing-ask__layout');
+
+  assert.match(askTab, /box-sizing:\s*border-box/);
+  assert.match(askTab, /min-height:\s*100%/);
+  assert.match(askTabChat, /height:\s*100%/);
+  assert.match(layout, /flex:\s*1/);
+  assert.match(layout, /min-height:\s*0/);
+  assert.match(layout, /grid-template-rows:\s*minmax\(0, 1fr\)/);
+});
+
+test('Ask ShiJing empty state centers the composer group vertically', () => {
+  assert.match(shijingTabSource, /className="shijing-ask__welcome"/);
+
+  const welcome = cssBlock(shijingStyles, '.shijing-ask__welcome');
+
+  assert.match(welcome, /flex:\s*1/);
+  assert.match(welcome, /min-height:\s*0/);
+  assert.match(welcome, /display:\s*flex/);
+  assert.match(welcome, /flex-direction:\s*column/);
+  assert.match(welcome, /justify-content:\s*center/);
 });
 
 test('Ask ShiJing immediately previews a submitted question in the chat thread', () => {
@@ -390,7 +429,9 @@ test('Ask ShiJing recalls archived conversations from the current question text'
   const recallButton = cssBlock(shijingStyles, '.shijing-ask .shijing-recall__item');
 
   assert.match(recall, /display:\s*flex/);
-  assert.match(recall, /border:\s*1px solid rgba\(67, 198, 165, 0\.22\)/);
+  assert.match(recall, /border-radius:\s*16px/);
+  assert.match(recall, /background:\s*rgba\(67, 198, 165, 0\.07\)/);
+  assert.doesNotMatch(recall, /box-shadow:/);
   assert.match(recallButton, /display:\s*grid/);
   assert.match(recallButton, /grid-template-columns:\s*1fr auto/);
 });

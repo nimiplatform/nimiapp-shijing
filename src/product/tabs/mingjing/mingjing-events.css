@@ -1,38 +1,75 @@
 /* ── 历史事件验证 (Wave 2) ───────────────────────────────────────────────── */
 
+/* Recorder: one composer bar — date picker and event input share a single
+ * glass container; the add button docks at the trailing edge. */
+
 .shijing-mj-events__recorder {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  align-items: flex-end;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--mingjing-glass-regular-border);
+  border-radius: var(--shijing-radius-xl);
+  background: rgba(255, 255, 255, 0.52);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.shijing-mj-events__recorder:focus-within {
+  border-color: color-mix(in srgb, var(--mingjing-accent) 42%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mingjing-accent) 14%, transparent);
+}
+
+/* Field labels stay available to assistive tech; the composer relies on
+ * placeholders for visual labeling. */
+.shijing-mj-events__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .shijing-mj-events__field {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--shijing-text-muted);
+  align-items: center;
+  min-width: 0;
+}
+
+.shijing-mj-events__field--date {
+  flex: 0 1 188px;
+  min-width: 168px;
 }
 
 .shijing-mj-events__field--grow { flex: 1 1 220px; }
-
-.shijing-mj-events__field--date {
-  flex: 0 0 170px;
-  min-width: 160px;
-}
 
 .shijing-mj-events__datepicker {
   width: 100%;
 }
 
-.shijing-mj-events__field input {
-  padding: 8px 10px;
-  border: 1px solid var(--mingjing-glass-regular-border);
+/* Strip per-input chrome so both fields read as one row; the composer
+ * container owns border and focus indication. */
+.shijing-mj-events__recorder .shijing-mj-events__field input {
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
   border-radius: var(--shijing-radius-md);
+  background: transparent;
+  box-shadow: none;
   font-size: 14px;
-  background: rgba(255, 255, 255, 0.52);
   color: var(--shijing-text-primary);
+}
+
+.shijing-mj-events__recorder .shijing-mj-events__field input:focus {
+  outline: none;
+  box-shadow: none;
 }
 
 .shijing-mj-events__field .shijing-mj-events__date-input {
@@ -78,13 +115,15 @@
   gap: 8px;
 }
 
+/* Event row: date rail + body with resonance chips + quiet delete affordance.
+ * The left accent strip keeps the 大运 nature colour of the period the event
+ * fell in. */
 .shijing-mj-events__item {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-  padding: 10px 36px 10px 14px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 14px;
+  padding: 12px 12px 12px 14px;
   border-radius: var(--shijing-radius-lg);
   background: var(--mingjing-card-quiet-bg);
   border: 1px solid var(--mingjing-glass-regular-border);
@@ -97,31 +136,112 @@
 .shijing-mj-events__item[data-nature='steady'] { --mj-nature: var(--mj-steady); }
 .shijing-mj-events__item[data-nature='turning'] { --mj-nature: var(--mj-turning); }
 
-.shijing-mj-events__when { flex: 0 0 84px; }
-.shijing-mj-events__year { font-size: 13px; font-weight: 600; color: var(--shijing-text-secondary); }
-.shijing-mj-events__body { flex: 1 1 220px; margin: 0; font-size: 14px; color: var(--shijing-text-primary); }
-
-.shijing-mj-events__resonance {
-  flex: 1 1 100%;
-  display: flex;
-  gap: 18px;
-  margin: 2px 0 0;
-  font-size: 11px;
+.shijing-mj-events__date {
+  padding-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--shijing-text-secondary);
 }
 
-.shijing-mj-events__resonance dt { color: var(--shijing-text-muted); display: inline; }
-.shijing-mj-events__resonance dd { margin: 0; display: inline; color: var(--shijing-text-secondary); }
+.shijing-mj-events__main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
 
-.shijing-mj-events__delete {
-  position: absolute;
-  top: 8px;
-  right: 10px;
+.shijing-mj-events__body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-mj-events__resonance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.shijing-mj-events__chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1.5;
+  background: color-mix(in srgb, var(--mj-chip, var(--shijing-text-disabled)) 9%, rgba(255, 255, 255, 0.55));
+  border: 1px solid color-mix(in srgb, var(--mj-chip, var(--shijing-text-disabled)) 24%, transparent);
+}
+
+.shijing-mj-events__chip[data-nature='supportive'] { --mj-chip: var(--mj-supportive); }
+.shijing-mj-events__chip[data-nature='blocked'] { --mj-chip: var(--mj-blocked); }
+.shijing-mj-events__chip[data-nature='watch'] { --mj-chip: var(--mj-watch); }
+.shijing-mj-events__chip[data-nature='steady'] { --mj-chip: var(--mj-steady); }
+.shijing-mj-events__chip[data-nature='turning'] { --mj-chip: var(--mj-turning); }
+
+.shijing-mj-events__chip-label {
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--shijing-text-muted);
+}
+
+.shijing-mj-events__chip-value {
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--shijing-text-primary);
+}
+
+.shijing-mj-events__chip-nature {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--mj-chip, var(--shijing-text-muted)) 80%, var(--mingjing-ink-strong));
+}
+
+.shijing-mj-events__chip-nature::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--mj-chip, var(--shijing-text-muted));
+}
+
+/* Override the `.shijing-tab button` brand-fill baseline (styles-mirror-v1.css):
+ * the delete affordance stays a quiet ghost until hover. */
+.shijing-mingjing .shijing-mj-events__delete {
   appearance: none;
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 18px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 15px;
   line-height: 1;
   color: var(--shijing-text-disabled);
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
 }
-.shijing-mj-events__delete:hover { color: var(--shijing-status-danger); }
+
+.shijing-mingjing .shijing-mj-events__delete:hover {
+  color: var(--shijing-status-danger);
+  background: color-mix(in srgb, var(--shijing-status-danger) 10%, transparent);
+}
+
+.shijing-mingjing .shijing-mj-events__delete:focus-visible {
+  outline: none;
+  box-shadow: var(--shijing-focus-ring);
+}

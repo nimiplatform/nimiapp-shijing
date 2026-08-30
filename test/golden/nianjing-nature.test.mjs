@@ -178,6 +178,13 @@ test('紫微 年镜: phase nature is 大限四化×三方四正-derived and genu
   // that a single-palace 四化 check collapsed to (only 三方四正 fixes the latter).
   assert.ok(natures.size >= 2, `expected varied natures, got ${[...natures].join(',')}`);
   assert.ok(phases.every((p) => p.driver_refs.some((ref) => ref.startsWith('ziwei:daxian'))), '大限 evidence ref present');
+  assert.ok(phases.every((p) => p.driver_refs.some((ref) => ref.startsWith('ziwei:concern_palace@'))), '关注宫位 evidence ref present');
+  assert.ok(
+    phases.filter((p) => p.nature !== 'steady').every((p) =>
+      p.driver_refs.some((ref) => ref.startsWith('ziwei:daxian_transform.'))
+    ),
+    'non-steady phases cite the exact 四化 hit and whether it lands in 本宫 or 三方四正',
+  );
 });
 
 test('紫微 年镜: a 大限 boundary year is not duplicated as an annual transition (audit P3)', () => {

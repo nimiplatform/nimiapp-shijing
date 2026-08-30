@@ -23,6 +23,7 @@ import {
   applyShijingSessionFailure,
   applyShijingSessionProjection,
 } from '../infra/shijing-bootstrap.ts';
+import { useAppStore } from '../app-shell/app-store.js';
 import type { NimiAIConfigSnapshot } from '@nimiplatform/sdk/ai';
 
 type SessionEvidence = {
@@ -48,13 +49,18 @@ export function ShijingLocalDevelopmentStatus() {
   const applyAIConfigSnapshot = useCallback((snapshot: NimiAIConfigSnapshot) => {
     aiConfigRevisionRef.current = snapshot.revision;
     setAIConfigSnapshot(snapshot);
-    setAIConfig(projectShijingAIConfig(snapshot));
+    const evidence = projectShijingAIConfig(snapshot);
+    setAIConfig(evidence);
+    // Mirror readiness app-wide so product surfaces react to AI setup the
+    // moment the overwrite is acknowledged, not on the next bootstrap poll.
+    useAppStore.getState().setAiConfigReady(evidence.state === 'ready');
   }, []);
 
   const clearAIConfigSnapshot = useCallback(() => {
     aiConfigRevisionRef.current = null;
     setAIConfigSnapshot(null);
     setAIConfig(null);
+    useAppStore.getState().setAiConfigReady(null);
   }, []);
 
   const refreshAIConfigEffectiveSelections = useCallback(async (expectedRevision: string) => {

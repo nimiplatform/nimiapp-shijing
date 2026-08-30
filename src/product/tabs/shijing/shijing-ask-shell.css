@@ -29,4 +29,15 @@
   gap: 18px;
   padding-top: 0;
   padding-bottom: 24px;
+  /* Fill the shell's main area vertically so a fullscreen window does not
+   * leave the lower half of the page empty; border-box keeps the bottom
+   * padding inside the 100% height. */
+  box-sizing: border-box;
+  min-height: 100%;
+}
+
+/* Chat-active: pin the tab to the main area's height so the thread scrolls
+ * internally and the composer stays visible instead of growing the page. */
+.shijing-tab.shijing-ask:has(.shijing-ask__main[data-chat-active="true"]) {
+  height: 100%;
 }

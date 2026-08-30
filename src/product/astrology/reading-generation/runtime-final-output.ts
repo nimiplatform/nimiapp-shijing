@@ -6,6 +6,8 @@ import type { RuntimeAiClient, RuntimeAiFailure, RuntimeAiResult } from '../runt
 import { isRuntimeAiWordingPatchAppliedSource } from '../runtime-ai-client.ts';
 import { buildRuntimeAiPromptRequest } from '../runtime-ai-prompt.ts';
 import type { EventMemory } from '../../../domain/event-memory.ts';
+import type { ConcernTag } from '../../../domain/concern-tag.ts';
+import type { PlanItem } from '../../../domain/plan-item.ts';
 import type { GenerateReadingInput } from './types.ts';
 import { resolveSourceReadings } from './context.ts';
 
@@ -19,7 +21,9 @@ interface BuildRuntimeFinalOutputInput {
   readonly feature_snapshot: AstrologyFeatureSnapshot;
   readonly mirror_context: MirrorContextSnapshot;
   readonly deterministic_output: MirrorOutput;
+  readonly active_concern_tags: readonly ConcernTag[];
   readonly event_memories: readonly EventMemory[];
+  readonly plan_items: readonly PlanItem[];
 }
 
 async function refineWithRuntimeAi(
@@ -86,7 +90,9 @@ export async function buildRuntimeFinalOutput(
       mirror_context: build.mirror_context,
       deterministic_output: build.deterministic_output,
       response_preferences: input.space.settings.response_preferences,
+      active_concern_tags: build.active_concern_tags,
       cited_event_memories: build.event_memories,
+      cited_plan_items: build.plan_items,
       current_time: input.created_at,
       ...(input.question ? { question: input.question } : {}),
       ...(sourceReadings?.ok ? { source_readings: sourceReadings.readings } : {}),

@@ -35,7 +35,9 @@
     "nimicoding:doctor": "nimicoding doctor",
     "spec:authority:check": "nimicoding authority check .nimi/spec",
     "spec:authority:compile": "nimicoding authority compile .nimi/spec",
-    "nimicoding:validate-ai-governance": "pnpm exec nimicoding validate-ai-governance"
+    "nimicoding:validate-ai-governance": "pnpm exec nimicoding validate-ai-governance",
+    "eval:wording": "node scripts/wording-eval/run.mjs",
+    "eval:wording:score": "node scripts/wording-eval/score.mjs"
   },
   "dependencies": {
     "@nimiplatform/kit": "link:../../nimi/kit",

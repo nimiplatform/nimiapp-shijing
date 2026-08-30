@@ -24,17 +24,20 @@
     display: none;
   }
 
-  .shijing-hejing .shijing-hejing__value-cards {
+  .shijing-hejing .shijing-hejing__empty-values {
     grid-template-columns: 1fr;
+    padding-top: 0;
   }
 
-  .shijing-hejing__empty-card {
-    grid-template-columns: 1fr;
+  .shijing-hejing__empty-value,
+  .shijing-hejing__empty-value:first-child,
+  .shijing-hejing__empty-value:last-child {
+    padding: 18px 0;
   }
 
-  .shijing-hejing__empty-visual {
-    border-right: 0;
-    border-bottom: 1px solid var(--hejing-line);
+  .shijing-hejing__empty-value + .shijing-hejing__empty-value {
+    border-left: 0;
+    border-top: 1px solid var(--hejing-line);
   }
 }
 
@@ -96,18 +99,8 @@
     justify-self: start;
   }
 
-  .shijing-hejing__empty-intro {
-    grid-template-columns: 1fr;
-    align-items: start;
-    gap: 14px;
-  }
-
-  .shijing-hejing__empty-intro .shijing-hejing__new-button {
-    justify-self: start;
-  }
-
-  .shijing-hejing__empty-panel {
-    padding: 24px;
+  .shijing-hejing__empty-visual .shijing-hejing__empty-venn {
+    max-width: 320px;
   }
 }
 

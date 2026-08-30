@@ -58,6 +58,9 @@ interface ShijingStoreValue {
   readonly runtime_ai_client: RuntimeAiClient;
   readonly conversation_chat_bridge: ConversationChatBridge;
   readonly presence_verification_client: PresenceVerificationClient;
+  // App AIConfig readiness mirrored from the shell app store: null = not yet
+  // observed, false = observed not-ready, true = observed ready.
+  readonly ai_config_ready: boolean | null;
 }
 
 const ShijingStoreContext = createContext<ShijingStoreValue | null>(null);
@@ -69,6 +72,7 @@ interface ShijingStoreProviderProps {
   readonly runtimeAiClient?: RuntimeAiClient;
   readonly conversationChatBridge?: ConversationChatBridge;
   readonly presenceVerificationClient?: PresenceVerificationClient;
+  readonly aiConfigReady?: boolean | null;
   readonly children: ReactNode;
 }
 
@@ -192,6 +196,7 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
       runtime_ai_client: runtimeAiClient,
       conversation_chat_bridge: conversationChatBridge,
       presence_verification_client: presenceVerificationClient,
+      ai_config_ready: props.aiConfigReady ?? null,
     }),
     [
       state,
@@ -202,6 +207,7 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
       runtimeAiClient,
       conversationChatBridge,
       presenceVerificationClient,
+      props.aiConfigReady,
     ],
   );
 

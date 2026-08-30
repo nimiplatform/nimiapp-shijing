@@ -11,6 +11,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
   type TouchEvent,
   type WheelEvent,
 } from 'react';
@@ -34,6 +35,17 @@ export type ShijingSettingsFocusTarget =
   | 'method_profile'
   | 'privacy_local_data';
 
+// Host-injected extra module rendered as one more card at the end of the
+// 设置 sub-page, with a matching entry in the module nav. The product layer
+// owns no such module itself — the local-development carrier uses this to
+// place its session / AI-config status inside settings instead of above the
+// product shell. Absent in previews and tests.
+export interface SettingsPageExtraModule {
+  readonly targetId: string;
+  readonly navLabel: string;
+  readonly content: ReactNode;
+}
+
 const SETTINGS_FOCUS_TARGET_IDS: Partial<Record<ShijingSettingsFocusTarget, string>> = {
   method_profile: 'settings-method-profile',
   privacy_local_data: 'settings-privacy-local-data',
@@ -47,6 +59,8 @@ export interface SettingsPageViewProps {
   // menu (see the subnav below). Drives the same `activePage` state in the
   // shell that the avatar menu sets.
   readonly onNavigate: (pageId: ShijingSettingsPageId) => void;
+  // Optional host-injected extra module on the 设置 sub-page only.
+  readonly settingsExtras?: SettingsPageExtraModule | null;
 }
 
 interface SettingsModuleNavItem {
@@ -59,6 +73,7 @@ export function SettingsPageView({
   focusTarget,
   onBack,
   onNavigate,
+  settingsExtras,
 }: SettingsPageViewProps) {
   const copy = useProductCopy();
   const { state, presence_verification_client } = useShijingStore();
@@ -182,6 +197,10 @@ export function SettingsPageView({
           ? copy.settings.memoryIntro
           : copy.settings.settingsIntro;
 
+  // The extra module only belongs to the 设置 sub-page; on sibling sub-pages
+  // it is neither rendered nor listed in the module nav.
+  const extras = page.id === 'settings' ? (settingsExtras ?? null) : null;
+
   const settingsModuleNavItems: readonly SettingsModuleNavItem[] =
     page.id === 'settings'
       ? [
@@ -190,6 +209,7 @@ export function SettingsPageView({
           { targetId: 'settings-response-preferences', label: copy.responsePreferences.title },
           { targetId: 'settings-privacy-local-data', label: copy.privacy.title },
           { targetId: 'settings-diagnostics', label: copy.diagnostics.title },
+          ...(extras ? [{ targetId: extras.targetId, label: extras.navLabel }] : []),
         ]
       : [];
 
@@ -293,6 +313,15 @@ export function SettingsPageView({
             profileSensitiveAccess={profileSensitiveAccess}
           />
         ))}
+        {extras ? (
+          <div
+            id={extras.targetId}
+            className="shijing-settings-page__extra-module"
+            tabIndex={-1}
+          >
+            {extras.content}
+          </div>
+        ) : null}
       </div>
     ) : (
       <div className="shijing-settings">

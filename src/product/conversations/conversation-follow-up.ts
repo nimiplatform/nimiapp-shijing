@@ -87,6 +87,7 @@ export async function sendConversationFollowUp(
   const bridgeResult = await input.bridge.send({
     user_message: question,
     source_readings: sourceReadings.readings,
+    conversation_turns: conversation.turns,
   });
   if (!bridgeResult.ok) {
     return {

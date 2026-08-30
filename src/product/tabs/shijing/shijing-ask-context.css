@@ -7,10 +7,8 @@
   min-height: 46px;
   margin: -6px 4px 0;
   padding: 8px 10px 8px 14px;
-  border: 1px solid rgba(67, 198, 165, 0.22);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.66);
-  box-shadow: 0 8px 24px -18px rgba(15, 23, 38, 0.18);
+  background: rgba(67, 198, 165, 0.07);
 }
 
 .shijing-archive__lead {
@@ -89,22 +87,17 @@
   background: rgba(15, 23, 42, 0.05);
 }
 
-/* ----- 上下文焦点 bar ----- */
+/* ----- 上下文焦点 footer strip (hairline-separated, no card chrome) ----- */
 
 .shijing-ctx {
   position: relative;
   display: flex;
   align-items: center;
   gap: 14px;
-  min-height: 80px;
+  min-height: 72px;
   margin: 0;
-  padding: 14px 22px;
-  background: var(--shijing-ask-glass-bg);
-  backdrop-filter: var(--shijing-ask-glass-blur);
-  -webkit-backdrop-filter: var(--shijing-ask-glass-blur);
-  border: 1px solid var(--shijing-ask-glass-border);
-  border-radius: 20px;
-  box-shadow: var(--shijing-ask-glass-shadow);
+  padding: 12px 24px;
+  border-top: 1px solid rgba(15, 23, 42, 0.07);
 }
 
 .shijing-ctx__lead {

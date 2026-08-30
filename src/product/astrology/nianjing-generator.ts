@@ -55,6 +55,7 @@ export function generateNianJingOutput(
   }
 
   const methodId = input.feature_snapshot.method_profile.id;
+  const concernLabels = new Map(input.active_concern_tags.map((tag) => [tag.id, tag.label]));
   const phaseBands: NianJingPhaseBand[] = phaseDrivers.map((driver) => ({
     concern_tag_ref: driver.concern_tag_ref,
     start_date: driver.start_date,
@@ -65,6 +66,7 @@ export function generateNianJingOutput(
       nature: driver.nature,
       driver_refs: driver.driver_refs,
       method_id: methodId,
+      concern_label: concernLabels.get(driver.concern_tag_ref),
     }),
   }));
   const inflectionPoints: NianJingInflectionPoint[] = inflectionDrivers.map((driver) => ({

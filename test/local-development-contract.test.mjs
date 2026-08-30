@@ -75,12 +75,24 @@ test('renderer consumes the App self text candidate path without portable author
   );
 });
 
-test('local development status reserves layout space instead of covering product controls', () => {
+test('local development status renders inside the settings page, not above the product shell', () => {
+  const productArea = read('src/shell/routes/product-area.tsx');
+  const shell = read('src/product/shell/shijing-shell.tsx');
+  const settingsPage = read('src/product/settings/settings-page-view.tsx');
   const styles = read('src/styles.css');
 
+  // The status panel is injected into the 设置 sub-page as an extra module.
+  assert.match(productArea, /targetId: 'settings-local-development'/);
+  assert.match(productArea, /<ShijingShell settingsExtras=\{settingsExtras\} \/>/);
+  assert.doesNotMatch(productArea, /^\s*<ShijingLocalDevelopmentStatus \/>$/m);
+  assert.match(shell, /settingsExtras=\{props\.settingsExtras \?\? null\}/);
+  assert.match(settingsPage, /extras\.targetId/);
+  assert.match(settingsPage, /extras\.content/);
+
+  // The shell grid is single-row again: no status band above the product.
   assert.match(
     styles,
-    /\.shijing-local-development-shell\s*\{[^}]*grid-template-rows:\s*auto minmax\(0, 1fr\)/s,
+    /\.shijing-local-development-shell\s*\{[^}]*grid-template-rows:\s*minmax\(0, 1fr\)/s,
   );
   assert.match(
     styles,
@@ -88,7 +100,17 @@ test('local development status reserves layout space instead of covering product
   );
   assert.doesNotMatch(
     styles,
+    /\.shijing-local-development-shell\s*\{[^}]*grid-template-rows:\s*auto/s,
+  );
+  // The panel flows with the settings scroll container instead of capping its
+  // own height, and it is never fixed-positioned over product controls.
+  assert.doesNotMatch(
+    styles,
     /\.shijing-local-development\s*\{[^}]*position:\s*fixed/s,
+  );
+  assert.doesNotMatch(
+    styles,
+    /\.shijing-local-development\s*\{[^}]*max-height/s,
   );
 });
 

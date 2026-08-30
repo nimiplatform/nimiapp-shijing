@@ -403,6 +403,86 @@ test('NianJing bazi guidance varies the yi/ji actions by concern domain', async 
   assert.ok(favorableFirstLines[1].includes('事业'));
   assert.ok(favorableFirstLines[2].includes('身体'));
   assert.ok(favorableFirstLines[3].includes('财运'));
+  assert.match(detail.concern_cards[1].driver_guidance.basis_label, /命局喜火.*官杀.*事业直接命中/);
+  assert.match(detail.concern_cards[1].driver_guidance.favorable[1], /官杀.*职位责任.*正式授权/);
+  assert.match(detail.concern_cards[1].driver_guidance.favorable[2], /2026 年.*主动表达.*权责/);
+  assert.match(detail.concern_cards[2].driver_guidance.favorable[1], /印星.*睡眠补给.*恢复支持/);
+  assert.match(detail.concern_cards[2].driver_guidance.guarded[1], /命局喜火不等于越多越好/);
+});
+
+test('NianJing Ziwei guidance translates exact daxian transform hits for each concern', async () => {
+  const {
+    buildNianJingSelectedYearDetail,
+    buildNianJingYearModules,
+  } = await loadYearModules();
+  const tags = [
+    { id: 'tag_career', label: '#事业', status: 'active' },
+    { id: 'tag_body', label: '#身体', status: 'active' },
+    { id: 'tag_family', label: '#家人', status: 'active' },
+  ];
+  const ziweiOutput = {
+    ...output,
+    phase_bands: [
+      {
+        concern_tag_ref: 'tag_career',
+        start_date: '2026-01-01',
+        end_date: '2026-12-31',
+        nature: 'supportive',
+        driver_refs: [
+          'ziwei:daxian@田宅',
+          'ziwei:domain.career',
+          'ziwei:concern_palace@官禄',
+          'ziwei:daxian_period@2019-2028',
+          'ziwei:daxian_transform.权@紫微@官禄@本宫@2019',
+        ],
+        summary: 'career transform',
+      },
+      {
+        concern_tag_ref: 'tag_body',
+        start_date: '2026-01-01',
+        end_date: '2026-12-31',
+        nature: 'watch',
+        driver_refs: [
+          'ziwei:daxian@田宅',
+          'ziwei:domain.health',
+          'ziwei:concern_palace@疾厄',
+          'ziwei:daxian_period@2019-2028',
+          'ziwei:daxian_transform.忌@廉贞@迁移@三方四正@2019',
+        ],
+        summary: 'health transform',
+      },
+      {
+        concern_tag_ref: 'tag_family',
+        start_date: '2026-01-01',
+        end_date: '2026-12-31',
+        nature: 'supportive',
+        driver_refs: [
+          'ziwei:daxian@田宅',
+          'ziwei:domain.family',
+          'ziwei:concern_palace@田宅',
+          'ziwei:daxian_period@2019-2028',
+          'ziwei:daxian_transform.禄@天府@田宅@本宫@2019',
+        ],
+        summary: 'family transform',
+      },
+    ],
+    inflection_points: [],
+    citations: [{ method: 'ziwei_sanhe_v1', reference: 'fixture' }],
+  };
+  const modules = buildNianJingYearModules({
+    output: ziweiOutput,
+    active_concern_tags: tags,
+    today: '2026-08-15',
+  });
+  const detail = buildNianJingSelectedYearDetail({
+    module: modules[0],
+    active_concern_tags: tags,
+  });
+
+  assert.match(detail.concern_cards[0].driver_guidance.basis_label, /大限田宅.*事业取官禄宫.*紫微化权入本宫/);
+  assert.match(detail.concern_cards[0].driver_guidance.favorable[1], /岗位权责.*决策空间/);
+  assert.match(detail.concern_cards[1].driver_guidance.guarded[1], /廉贞化忌.*三方四正.*疲劳累积/);
+  assert.match(detail.concern_cards[2].driver_guidance.favorable[1], /天府化禄.*家庭支持.*居住资源/);
 });
 test('NianJing phase drawer copy is generated from the selected band summary and driver refs', async () => {
   const { buildNianJingPhaseDetailCopy } = await import('../src/product/astrology/nianjing-driver-copy.ts');

@@ -3,7 +3,9 @@
 // The 命盘 numbers are deterministic (MingJingChart, SJG-ALGO-16). This module
 // turns those numbers into the always-on plain-language wording the 命镜 surface
 // shows around them — the hero archetype + persona, the 大运 era labels and
-// per-decade guidance, and the 流年 window badges + guidance. It is rule-based
+// per-decade guidance, and the 流年 window badges + per-window composite
+// narrative (lead by nature, grounded in the window's own basis, closed with
+// nature guidance). It is rule-based
 // and bilingual; it NEVER recomputes a tendency, band, or inflection (those come
 // from the chart). The deep, history-grounded AI 解读 stays a separate on-demand
 // layer (MingJingMirrorOutput).
@@ -61,8 +63,23 @@ interface NarrativeContent {
   readonly weakUnderPressure: string;
   readonly natureGuidance: Record<TendencyClass, string>;
   readonly windowBadge: Record<TendencyClass, string>;
-  readonly windowNarrative: Record<TendencyClass, string>;
+  readonly windowLead: Record<TendencyClass, string>;
+  readonly windowGuidance: Record<TendencyClass, string>;
+  readonly windowBasis: Record<string, string>;
 }
+
+// Engine basis tags (bazi-liunian.ts) in the order they should surface in the
+// window narrative; the first two present in a window's basis are used.
+const WINDOW_BASIS_PRIORITY: readonly string[] = [
+  '交大运',
+  '冲提纲',
+  '冲日支',
+  '忌神当值',
+  '喜用得力',
+  '合日支',
+  '逢刑',
+  '忌神',
+];
 
 const ZH: NarrativeContent = {
   elementJoin: '、',
@@ -147,12 +164,29 @@ const ZH: NarrativeContent = {
     blocked: '留意阻力',
     turning: '转折窗口',
   },
-  windowNarrative: {
-    supportive: '能量顺、机会多，是这几年里值得主动把握的窗口。适合推进事业、启动计划，做长期布局。',
-    steady: '总体平稳，按部就班推进即可，适合巩固已有的局面、稳步积累。',
-    watch: '节奏放缓的过渡期，适合观察、修整与积累，不宜冒进。把握好这段时间，为下一轮蓄力。',
-    blocked: '阻力与摩擦偏多，人际或健康容易有波动。宜守成、稳住节奏，避免重大投资与冒险决定。',
-    turning: '处在转折窗口，旧局面收尾、新方向开启，重要的决定可以放在这里通盘考虑。',
+  windowLead: {
+    supportive: '能量顺、机会多，是这几年里值得主动把握的窗口。',
+    steady: '总体平稳，起伏不大。',
+    watch: '节奏放缓的过渡期，适合放慢脚步。',
+    blocked: '阻力与摩擦偏多，人际或健康容易有波动。',
+    turning: '处在转折窗口，旧局面收尾、新方向开启。',
+  },
+  windowGuidance: {
+    supportive: '适合推进事业、启动计划，做长期布局。',
+    steady: '按部就班推进即可，重在巩固已有的局面、稳步积累。',
+    watch: '宜观察、修整与积累，不宜冒进；把这段时间用好，是在为下一轮蓄力。',
+    blocked: '宜守成、稳住节奏，避免重大投资与冒险决定。',
+    turning: '重要的决定适合放在这里通盘考虑，想清楚再动。',
+  },
+  windowBasis: {
+    交大运: '期间恰逢大运交接，长期气场正在转换，前后几年的感受会有明显差别。',
+    冲提纲: '流年冲动月令提纲，牵动的是环境与发展方向，变化往往来得比较大。',
+    冲日支: '流年直冲日支，变动感集中在自身状态与身边亲近关系上。',
+    忌神当值: '这几年流年正是命局所忌、且力量集中，阻滞感会比平时明显。',
+    忌神: '流年五行偏命局所忌，同样的事容易多费一些周折。',
+    喜用得力: '流年五行正是命局所喜，做事顺手、借得上力。',
+    合日支: '流年与日支相合，事情多通过合作与人际关系牵动。',
+    逢刑: '流年逢刑，过程中容易有磕绊、口舌或反复，重要的事多留一手。',
   },
 };
 
@@ -239,16 +273,49 @@ const EN: NarrativeContent = {
     blocked: 'Headwinds',
     turning: 'Turning point',
   },
-  windowNarrative: {
-    supportive: 'Energy flows and opportunities cluster — a window worth taking the initiative in. Good for advancing work, starting plans, and longer-term moves.',
-    steady: 'Largely steady; proceed methodically. A good time to consolidate and accumulate.',
-    watch: 'A slower transitional stretch — observe, repair and accumulate rather than rush. Use it to build up for the next rise.',
-    blocked: 'More friction than usual, with bumps in relationships or health. Hold your ground, keep the pace, and avoid big investments or risky bets.',
-    turning: 'A turning window — one situation wraps up and a new direction opens; weigh major decisions here.',
+  windowLead: {
+    supportive: 'Energy flows and opportunities cluster — a window worth taking the initiative in.',
+    steady: 'Largely steady, with little turbulence.',
+    watch: 'A slower transitional stretch — a time to ease off the pace.',
+    blocked: 'More friction than usual, with bumps in relationships or health.',
+    turning: 'A turning window — one situation wraps up and a new direction opens.',
+  },
+  windowGuidance: {
+    supportive: 'Good for advancing work, starting plans, and making longer-term moves.',
+    steady: 'Proceed methodically; the priority is consolidating what you have and accumulating steadily.',
+    watch: 'Observe, repair and accumulate rather than rush; used well, this stretch builds up for the next rise.',
+    blocked: 'Hold your ground, keep the pace, and avoid big investments or risky bets.',
+    turning: 'Weigh major decisions here as a whole before you move.',
+  },
+  windowBasis: {
+    交大运: 'This stretch crosses a DaYun boundary — the decade-long backdrop is shifting, and the years before and after feel distinctly different.',
+    冲提纲: 'The transit years agitate the month command, so change tends to arrive at the level of environment and direction.',
+    冲日支: 'The transit branches clash with your day branch, concentrating the sense of change in your own state and closest relationships.',
+    忌神当值: 'These years carry the chart’s adverse element at full strength, so resistance feels sharper than usual.',
+    忌神: 'The years lean toward the chart’s adverse element, so the same effort tends to cost more.',
+    喜用得力: 'The years carry exactly the elements the chart favors — things move smoothly and support is easy to draw on.',
+    合日支: 'The transit branches combine with your day branch, so much of the movement arrives through cooperation and relationships.',
+    逢刑: 'The years meet a xing relation — expect friction, disputes or repetition, and keep a margin on what matters.',
   },
 };
 
 const CONTENT: Record<UiLanguage, NarrativeContent> = { zh: ZH, en: EN };
+
+// Compose the per-window plain-language narrative: nature lead, up to three
+// basis sentences drawn from the window's own salience reasons, then nature
+// guidance. Deterministic wording only — it never recomputes the chart.
+export function composeWindowNarrative(lang: UiLanguage, window: LiuNianWindow): string {
+  const c = CONTENT[lang];
+  const parts = [c.windowLead[window.nature]];
+  for (const basis of WINDOW_BASIS_PRIORITY) {
+    if (parts.length >= 4) break;
+    if (!window.basis.includes(basis)) continue;
+    const sentence = c.windowBasis[basis];
+    if (sentence) parts.push(sentence);
+  }
+  parts.push(c.windowGuidance[window.nature]);
+  return parts.join(lang === 'zh' ? '' : ' ');
+}
 
 export interface MingJingNarrative {
   archetype(chart: MingJingChart): Archetype;
@@ -312,7 +379,7 @@ export function useMingJingNarrative(): MingJingNarrative {
       return c.windowBadge[window.nature];
     },
     windowNarrative(window) {
-      return c.windowNarrative[window.nature];
+      return composeWindowNarrative(lang, window);
     },
   };
 }

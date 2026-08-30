@@ -215,6 +215,10 @@ export const EN_MINGJING_COPY: ProductCopy['mingjing'] = {
     empty: 'Generate the core character and life-stage strategy from this chart and your recorded history.',
     stale: 'Birth data or history changed — you can regenerate the reading.',
     failureTitle: 'Reading could not be generated',
+    aiReadyRefresh: {
+      refreshing: 'AI setup detected — refreshing the Destiny Mirror reading…',
+      updated: 'Destiny Mirror reading updated with the new AI configuration.',
+    },
   },
   ziweiRoute: {
     chartAria: 'Ziwei MingJing chart basis',

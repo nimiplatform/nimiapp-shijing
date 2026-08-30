@@ -21,6 +21,17 @@ test('createConversationChatBridge sends the structured ShiJing answer brief for
   const result = await bridge.send({
     user_message: '接下来三个月适合换工作吗？',
     source_readings: [validReading({ id: 'r_source_01' })],
+    conversation_turns: [
+      {
+        id: 'turn_prior_user',
+        role: 'user',
+        body: '我上一轮问的是要不要接受外地项目。',
+        cited_reading_ids: [],
+        cited_event_memory_refs: [],
+        cited_plan_item_refs: [],
+        created_at: '2026-05-24T00:00:00Z',
+      },
+    ],
   });
 
   assert.equal(result.ok, true);
@@ -43,6 +54,8 @@ test('createConversationChatBridge sends the structured ShiJing answer brief for
   assert.equal(captured.system.includes('只围绕 source_readings 回答'), false);
   assert.ok(captured.user.includes('接下来三个月适合换工作吗？'));
   assert.ok(captured.user.includes('current_time'));
+  assert.ok(captured.user.includes('conversation_history'));
+  assert.ok(captured.user.includes('我上一轮问的是要不要接受外地项目'));
   assert.ok(captured.user.includes('instruction'));
   assert.ok(captured.user.includes('不要在回答里提及 source_readings、Reading、系统记录、已有解读、现有信息、当前信息显示'));
 });

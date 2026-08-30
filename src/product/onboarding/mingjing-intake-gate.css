@@ -1,9 +1,15 @@
 /* Soft intake gate: replaces the content area of the five non-mingjing
    mirrors until the first self + concern intake completes. Navigation stays
-   free; this card is the typed blocker + recovery route. Also styles the
-   primary tab bar's intake-pending affordances. */
+   free; this stage is the typed blocker + recovery route. Also styles the
+   primary tab bar's intake-pending affordances.
+
+   Visual concept: a "mirror awakening" stage — the gated mirror floats as a
+   halo disc above serif copy, the two readiness items read as a timeline
+   (not a form), and the recovery route is a single gradient CTA. Each mirror
+   retints the stage through --intake-acc. */
 
 .shijing-intake-gate {
+  --intake-acc: #4ecca3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11,104 +17,355 @@
   padding: 26px 20px 34px;
 }
 
-.shijing-intake-gate__card {
-  display: grid;
-  gap: 14px;
-  width: min(460px, 100%);
-  padding: 34px 34px 30px;
-  border: 1px solid var(--shijing-border-subtle);
-  border-radius: var(--shijing-radius-2xl);
-  background: var(--shijing-surface-card);
-  box-shadow: var(--shijing-shadow-2);
+.shijing-intake-gate[data-mirror-kind='rijing'] {
+  --intake-acc: #e0a458;
 }
 
+.shijing-intake-gate[data-mirror-kind='yuejing'] {
+  --intake-acc: #8b7cd6;
+}
+
+.shijing-intake-gate[data-mirror-kind='nianjing'] {
+  --intake-acc: #7da3c9;
+}
+
+.shijing-intake-gate[data-mirror-kind='hejing'] {
+  --intake-acc: #3d7a5a;
+}
+
+.shijing-intake-gate__stage {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(560px, 100%);
+  text-align: center;
+}
+
+/* Soft accent aura anchoring the stage on the aurora canvas. */
+.shijing-intake-gate__stage::before {
+  content: '';
+  position: absolute;
+  inset: -12% -18%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 30% at 50% 12%, color-mix(in srgb, var(--intake-acc) 22%, transparent), transparent 72%),
+    radial-gradient(30% 26% at 82% 68%, color-mix(in srgb, var(--intake-acc) 10%, transparent), transparent 70%);
+  filter: blur(6px);
+}
+
+/* ── Mirror halo ────────────────────────────────────────────────────────── */
+
+.shijing-intake-gate__halo {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 148px;
+  height: 148px;
+  animation: shijing-intake-float 7s ease-in-out infinite;
+}
+
+/* Ambient glow behind the disc. */
+.shijing-intake-gate__halo::before {
+  content: '';
+  position: absolute;
+  inset: 12%;
+  border-radius: 999px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--intake-acc) 38%, transparent), transparent 68%);
+  filter: blur(14px);
+}
+
+.shijing-intake-gate__halo-ring {
+  position: absolute;
+  inset: 8px;
+  border: 1px solid color-mix(in srgb, var(--intake-acc) 34%, transparent);
+  border-radius: 999px;
+}
+
+.shijing-intake-gate__halo-orbit {
+  position: absolute;
+  inset: 0;
+  border: 1px dashed color-mix(in srgb, var(--intake-acc) 42%, transparent);
+  border-radius: 999px;
+  animation: shijing-intake-spin 36s linear infinite;
+}
+
+.shijing-intake-gate__halo-dot {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--shijing-surface-card) 72%, transparent);
+}
+
+.shijing-intake-gate__halo-dot--accent {
+  top: -3.5px;
+  left: calc(50% - 3.5px);
+  background: var(--intake-acc);
+}
+
+.shijing-intake-gate__halo-dot--gold {
+  bottom: 4%;
+  right: 9%;
+  width: 5px;
+  height: 5px;
+  background: #d8b36a;
+}
+
+.shijing-intake-gate__halo-disc {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, #ffffff 78%, transparent);
+  border-radius: 999px;
+  background:
+    linear-gradient(150deg, rgba(255, 255, 255, 0.92) 8%, color-mix(in srgb, var(--intake-acc) 20%, #ffffff) 58%, color-mix(in srgb, var(--intake-acc) 34%, #ffffff) 100%);
+  box-shadow:
+    0 18px 34px -18px color-mix(in srgb, var(--intake-acc) 55%, rgba(15, 23, 38, 0.28)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -6px 14px -8px color-mix(in srgb, var(--intake-acc) 40%, transparent);
+}
+
+/* Glass sheen across the mirror face. */
+.shijing-intake-gate__halo-disc::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 8%;
+  right: 8%;
+  height: 46%;
+  border-radius: 0 0 999px 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+.shijing-intake-gate__halo-glyph {
+  position: relative;
+  z-index: 1;
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  font-size: 38px;
+  font-weight: 600;
+  line-height: 1;
+  color: color-mix(in srgb, var(--intake-acc) 58%, var(--shijing-text-primary));
+  transform: translateY(-1px);
+}
+
+/* ── Copy ───────────────────────────────────────────────────────────────── */
+
 .shijing-intake-gate__eyebrow {
-  margin: 0;
-  color: var(--shijing-brand-primary);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 30px 0 0;
+  color: color-mix(in srgb, var(--intake-acc) 62%, var(--shijing-text-primary));
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
 }
 
+.shijing-intake-gate__eyebrow::before,
+.shijing-intake-gate__eyebrow::after {
+  content: '';
+  width: 26px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--intake-acc) 55%, transparent));
+}
+
+.shijing-intake-gate__eyebrow::after {
+  transform: scaleX(-1);
+}
+
 .shijing-intake-gate__title {
-  margin: 0;
+  margin: 14px 0 0;
   font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
-  font-size: clamp(24px, 3vw, 32px);
+  font-size: clamp(26px, 3.4vw, 34px);
   font-weight: 650;
-  line-height: 1.15;
-  letter-spacing: 0;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
 }
 
 .shijing-intake-gate__body {
-  margin: 0;
+  margin: 12px 0 0;
+  max-width: 42ch;
   color: var(--shijing-text-secondary);
   font-size: 13.5px;
-  line-height: 1.8;
+  line-height: 1.9;
 }
+
+/* ── Readiness timeline ─────────────────────────────────────────────────── */
 
 .shijing-intake-gate__steps {
   display: grid;
-  gap: 8px;
-  margin: 6px 0 4px;
-  padding: 0;
+  width: min(420px, 100%);
+  margin: 30px 0 0;
+  padding: 6px 22px;
   list-style: none;
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--shijing-surface-card) 62%, transparent);
+  box-shadow:
+    0 24px 48px -34px rgba(15, 23, 38, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
 }
 
 .shijing-intake-gate__steps li {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border: 1px solid var(--shijing-border-subtle);
-  border-radius: var(--shijing-radius-lg);
-  background: var(--shijing-surface-card-quiet);
+  gap: 14px;
+  padding: 17px 2px;
 }
 
-.shijing-intake-gate__step-dot {
+.shijing-intake-gate__steps li + li {
+  border-top: 1px solid color-mix(in srgb, var(--shijing-text-primary) 6%, transparent);
+}
+
+/* Dashed journey line from one marker to the next. */
+.shijing-intake-gate__steps li:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  top: calc(17px + 32px + 5px);
+  bottom: -6px;
+  left: calc(2px + 16px);
+  border-left: 1.5px dashed color-mix(in srgb, var(--intake-acc) 38%, transparent);
+}
+
+.shijing-intake-gate__step-marker {
+  position: relative;
+  z-index: 1;
   flex: none;
-  width: 8px;
-  height: 8px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
-  background: var(--shijing-status-warning);
+  border: 1.5px dashed color-mix(in srgb, var(--shijing-status-warning) 65%, transparent);
+  background: color-mix(in srgb, var(--shijing-status-warning) 9%, var(--shijing-surface-card));
+  color: color-mix(in srgb, var(--shijing-status-warning) 82%, var(--shijing-text-primary));
 }
 
-.shijing-intake-gate__steps li[data-complete='true'] .shijing-intake-gate__step-dot {
-  background: var(--shijing-status-success);
+.shijing-intake-gate__step-marker svg {
+  width: 13px;
+  height: 13px;
+}
+
+.shijing-intake-gate__step-index {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.shijing-intake-gate__steps li[data-complete='true'] .shijing-intake-gate__step-marker {
+  border: 0;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--shijing-status-success) 82%, #ffffff), var(--shijing-status-success));
+  color: #ffffff;
+  box-shadow: 0 8px 16px -8px color-mix(in srgb, var(--shijing-status-success) 70%, transparent);
 }
 
 .shijing-intake-gate__steps strong {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 650;
+  letter-spacing: 0.01em;
 }
 
-.shijing-intake-gate__steps small {
+.shijing-intake-gate__step-status {
   margin-left: auto;
-  color: var(--shijing-text-muted);
-  font-size: 12px;
+  flex: none;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--shijing-status-warning) 11%, transparent);
+  color: color-mix(in srgb, var(--shijing-status-warning) 84%, var(--shijing-text-primary));
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
+
+.shijing-intake-gate__steps li[data-complete='true'] .shijing-intake-gate__step-status {
+  background: color-mix(in srgb, var(--shijing-status-success) 13%, transparent);
+  color: color-mix(in srgb, var(--shijing-status-success) 88%, var(--shijing-text-primary));
+}
+
+/* ── Recovery CTA ───────────────────────────────────────────────────────── */
 
 .shijing-intake-gate__action {
-  justify-self: start;
-  margin-top: 6px;
-  padding: 11px 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 30px;
+  padding: 13px 28px;
   border: 0;
   border-radius: 999px;
-  background: var(--shijing-brand-primary);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--shijing-brand-primary) 88%, #ffffff), var(--shijing-brand-primary) 62%);
   color: #fff;
   font: inherit;
   font-size: 13.5px;
   font-weight: 650;
+  letter-spacing: 0.04em;
   cursor: pointer;
+  box-shadow:
+    0 16px 30px -16px color-mix(in srgb, var(--shijing-brand-primary) 72%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
 }
 
 .shijing-intake-gate__action:hover {
-  filter: brightness(1.05);
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow:
+    0 20px 36px -16px color-mix(in srgb, var(--shijing-brand-primary) 78%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26);
+}
+
+.shijing-intake-gate__action:active {
+  transform: translateY(0);
 }
 
 .shijing-intake-gate__action:focus-visible {
   outline: 0;
   box-shadow: var(--shijing-focus-ring);
+}
+
+.shijing-intake-gate__action-arrow {
+  font-size: 14px;
+  line-height: 1;
+  transition: transform 160ms ease;
+}
+
+.shijing-intake-gate__action:hover .shijing-intake-gate__action-arrow {
+  transform: translateX(3px);
+}
+
+@keyframes shijing-intake-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes shijing-intake-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shijing-intake-gate__halo,
+  .shijing-intake-gate__halo-orbit {
+    animation: none;
+  }
 }
 
 /* Primary tab bar affordances while intake is pending: the five gated
@@ -128,11 +385,26 @@
 }
 
 @media (max-width: 560px) {
-  .shijing-intake-gate__card {
-    padding: 26px 20px 24px;
+  .shijing-intake-gate__halo {
+    width: 126px;
+    height: 126px;
+  }
+
+  .shijing-intake-gate__halo-disc {
+    width: 78px;
+    height: 78px;
+  }
+
+  .shijing-intake-gate__halo-glyph {
+    font-size: 32px;
+  }
+
+  .shijing-intake-gate__steps {
+    padding: 4px 16px;
   }
 
   .shijing-intake-gate__action {
-    justify-self: stretch;
+    justify-content: center;
+    width: min(320px, 100%);
   }
 }

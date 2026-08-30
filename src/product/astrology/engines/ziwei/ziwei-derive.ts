@@ -69,25 +69,47 @@ function sanFangSiZhengNames(concernPalace: string, palaces: readonly PalaceSeat
   );
 }
 
+const ZIWEI_TRANSFORM_NAMES = ['禄', '权', '科', '忌'] as const;
+
+interface ZiweiDaxianTransformHit {
+  readonly transform: (typeof ZIWEI_TRANSFORM_NAMES)[number];
+  readonly star: string;
+  readonly palace: string;
+  readonly scope: '本宫' | '三方四正';
+}
+
+interface ZiweiDaxianSignal {
+  readonly nature: TendencyClass;
+  readonly hits: readonly ZiweiDaxianTransformHit[];
+}
+
 // 大限 phase nature: the decade's 四化 飞入 the concern's 三方四正 — not just the
-// single 本宫, which fires too rarely and collapses every band to 平稳.
-function daxianNature(
+// single 本宫, which fires too rarely and collapses every band to 平稳. Return the
+// exact admitted hits alongside the nature so downstream wording can explain why.
+function daxianSignal(
   mutagen: readonly string[],
   concernPalace: string,
   palaces: readonly PalaceSeat[],
   starToPalace: ReadonlyMap<string, string>,
-): TendencyClass {
-  const [lu, quan, ke, ji] = mutagen;
+): ZiweiDaxianSignal {
   const zone = sanFangSiZhengNames(concernPalace, palaces);
-  const inZone = (s: string | undefined) => {
-    const p = s ? starToPalace.get(s) : undefined;
-    return p !== undefined && zone.has(p);
+  const hits = mutagen.flatMap((star, index): ZiweiDaxianTransformHit[] => {
+    const transform = ZIWEI_TRANSFORM_NAMES[index];
+    const palace = star ? starToPalace.get(star) : undefined;
+    if (!transform || !palace || !zone.has(palace)) return [];
+    return [{
+      transform,
+      star,
+      palace,
+      scope: palace === concernPalace ? '本宫' : '三方四正',
+    }];
+  });
+  const favorable = hits.some((hit) => hit.transform !== '忌');
+  const burdened = hits.some((hit) => hit.transform === '忌');
+  return {
+    nature: burdened ? (favorable ? 'turning' : 'watch') : favorable ? 'supportive' : 'steady',
+    hits,
   };
-  const favorable = [lu, quan, ke].some(inZone);
-  const burdened = inZone(ji);
-  if (burdened) return favorable ? 'turning' : 'watch';
-  if (favorable) return 'supportive';
-  return 'steady';
 }
 
 function stageFromYearMutagen(
@@ -190,13 +212,28 @@ function buildNianjing(
       const bandStart = Math.max(d.startYear, startYear);
       const bandEnd = Math.min(d.endYear, endYear);
       const palace = concernPalaceName(tag);
+      const domain = concernDomainFor(tag);
+      const signal = daxianSignal(
+        bandMutagen.get(d.name) ?? [],
+        palace,
+        self.chart.palaces,
+        self.starToPalace,
+      );
       phases.push({
         concern_tag_ref: tag.id,
         start_date: `${bandStart}-01-01`,
         end_date: `${bandEnd}-12-31`,
         // 大限 phase nature from its 四化 飞入 the concern's 三方四正 — not a blanket 转折.
-        nature: daxianNature(bandMutagen.get(d.name) ?? [], palace, self.chart.palaces, self.starToPalace),
-        driver_refs: [`ziwei:daxian@${d.name}`, `ziwei:daxian_hua@${palace}@${d.startYear}`],
+        nature: signal.nature,
+        driver_refs: [
+          `ziwei:daxian@${d.name}`,
+          `ziwei:domain.${domain}`,
+          `ziwei:concern_palace@${palace}`,
+          `ziwei:daxian_period@${d.startYear}-${d.endYear}`,
+          ...signal.hits.map((hit) =>
+            `ziwei:daxian_transform.${hit.transform}@${hit.star}@${hit.palace}@${hit.scope}@${d.startYear}`
+          ),
+        ],
       });
       if (d.startYear >= startYear && d.startYear <= endYear) {
         inflections.push({ concern_tag_ref: tag.id, date: `${d.startYear}-01-01`, kind: 'dayun_boundary', driver_refs: [`ziwei:daxian@${d.name}`] });

@@ -93,12 +93,13 @@ export const HEJING_PAGE_COPY = {
   emptyTypeBody: (relationshipType: string) =>
     `添加一位${relationshipType}关系人物后，合镜会以“我 + TA”的出生资料建立分析对象。`,
   emptyTypeAction: (relationshipType: string) => `新建${relationshipType}合镜 +`,
-  emptyTypeHint: '添加后先确认出生日期、时间、地点与授权来源，再生成正式关系分析。',
   emptyTypeDisclaimer: '合镜只使用本人和一个关系人物的出生资料，不创建关系图、客户档案或项目式关系管理。',
   empty: {
     title: '看见你与 TA 之间的相处节奏',
     lead: '合镜基于两个人的出生信息，帮你理解彼此的相处状态、容易卡住的地方与阶段性的相处节奏。',
-    primaryCta: '创建第一面合镜',
+    startCta: '创建第一面合镜',
+    existingCta: '从已有档案选择',
+    steps: ['选择关系类型', '填写出生信息', '生成合镜解读'],
     valueAria: '合镜创建后能看到什么',
     valueCards: [
       { id: 'baseline', index: '01', title: '关系状态', body: '一眼看清今年的关系主线、状态与最重要的提醒。' },
@@ -108,11 +109,6 @@ export const HEJING_PAGE_COPY = {
     visualSelf: '我',
     visualMirror: '合',
     visualOther: 'TA',
-    cardTitle: '创建你的第一面合镜',
-    cardBody: '选择一位关系对象，填写出生日期、时间与地点后，系统会生成“我 + TA”的关系分析。',
-    steps: ['选择关系类型', '填写出生信息', '生成合镜解读'],
-    startCta: '开始创建合镜',
-    existingCta: '从已有档案选择',
     privacy: '资料仅用于当前合镜分析，本地保存，可随时修改或删除。',
   },
 } as const;

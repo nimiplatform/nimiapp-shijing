@@ -226,3 +226,28 @@
 
   .shijing-mingjing .shijing-mingjing__title { font-size: 32px; }
 }
+
+@media (max-width: 560px) {
+  /* Event rows stack: date + delete on the first row, body and resonance
+   * chips full-width below. */
+  .shijing-mj-events__item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 6px;
+  }
+
+  .shijing-mj-events__date {
+    grid-column: 1;
+    grid-row: 1;
+    padding-top: 0;
+  }
+
+  .shijing-mj-events__main {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .shijing-mingjing .shijing-mj-events__delete {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}

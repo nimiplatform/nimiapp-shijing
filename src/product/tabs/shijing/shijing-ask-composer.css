@@ -4,11 +4,25 @@
   flex-direction: column;
   gap: 18px;
   min-width: 0;
+  min-height: 0;
 }
 
+/* Empty-state welcome group: the composer and its companions are centered
+ * vertically in the main column, so a fullscreen window reads as a calm
+ * centered consultation surface instead of a top-anchored strip. The
+ * context-focus bar stays outside the group, pinned to the column bottom. */
+.shijing-ask__welcome {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+}
+
+/* The layout chain (tab → layout → main) already provides a definite
+ * height, so chat mode only needs to contain overflow — no vh math. */
 .shijing-ask__main[data-chat-active="true"] {
-  height: calc(100vh - 220px);
-  max-height: calc(100vh - 220px);
   min-height: 0;
   overflow: hidden;
   justify-content: stretch;
@@ -28,9 +42,8 @@
   flex: 0 0 auto;
   margin-top: auto;
   min-height: 0;
-  padding: 12px 16px 10px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.72);
+  padding: 14px 24px 12px;
+  border-top: 1px solid rgba(15, 23, 42, 0.07);
 }
 
 .shijing-ask__main[data-chat-active="true"] .shijing-ask__composer-title {
@@ -42,6 +55,17 @@
   min-height: calc(2 * 1.8em);
   max-height: calc(2 * 1.8em);
   line-height: 1.8;
+  /* In chat mode the composer carries no card chrome, so the textarea itself
+   * becomes the visible input affordance. */
+  padding: 4px 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+}
+
+.shijing-ask__main[data-chat-active="true"] .shijing-ask__textarea:focus {
+  border-color: rgba(67, 198, 165, 0.5);
+  box-shadow: 0 0 0 3px rgba(67, 198, 165, 0.15);
 }
 
 .shijing-ask__main[data-chat-active="true"] .shijing-ask__toolbar {
@@ -49,7 +73,7 @@
   padding-top: 0;
 }
 
-/* ----- Composer card (the visual lead) ----- */
+/* ----- Composer region (no card chrome — part of the console) ----- */
 
 .shijing-ask .shijing-ask__composer {
   display: flex;
@@ -57,12 +81,6 @@
   min-height: 0;
   margin: 0;
   padding: 28px 30px;
-  background: var(--shijing-ask-glass-bg);
-  backdrop-filter: var(--shijing-ask-glass-blur);
-  -webkit-backdrop-filter: var(--shijing-ask-glass-blur);
-  border: 1px solid var(--shijing-ask-glass-border);
-  border-radius: 28px;
-  box-shadow: var(--shijing-ask-glass-shadow);
 }
 
 .shijing-ask .shijing-ask__composer-title {

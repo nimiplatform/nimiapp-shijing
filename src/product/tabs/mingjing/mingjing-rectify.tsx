@@ -116,7 +116,7 @@ export function MingJingRectify({
 
       <div className="shijing-mj-events__recorder">
         <label className="shijing-mj-events__field shijing-mj-events__field--date">
-          <span>{e.dateLabel}</span>
+          <span className="shijing-mj-events__sr">{e.dateLabel}</span>
           <div className="shijing-mj-events__datepicker">
             <DatePicker
               id="mingjing-rectify-event-date"
@@ -131,7 +131,7 @@ export function MingJingRectify({
           </div>
         </label>
         <label className="shijing-mj-events__field shijing-mj-events__field--grow">
-          <span>{e.bodyLabel}</span>
+          <span className="shijing-mj-events__sr">{e.bodyLabel}</span>
           <input type="text" value={body} placeholder={e.bodyPlaceholder} onChange={(ev) => setBody(ev.target.value)} />
         </label>
         <button type="button" className="shijing-mj-events__add" onClick={handleAdd}>{e.add}</button>
