@@ -45,7 +45,8 @@ test('manifest declares App Access with the minimal domain set on the Desktop-su
   assert.equal(packageJson.scripts.sync, 'nimi-app sync');
   assert.equal(packageJson.scripts['check:platform'], 'nimi-app check');
   assert.match(packageJson.scripts.check, /^pnpm run check:platform && /);
-  assert.equal(packageJson.scripts.pack, 'node scripts/pack.mjs');
+  assert.equal(packageJson.scripts.pack, 'nimi-app pack');
+  assert.equal(packageJson.scripts.doctor, undefined);
   assert.equal(packageJson.scripts['prepare:workspace-surfaces'], undefined);
   assert.match(packageJson.scripts['build:electron'], /tsc -p tsconfig\.electron\.json/);
   assert.match(packageJson.scripts['build:electron'], /bundle-electron-preload\.mjs/);

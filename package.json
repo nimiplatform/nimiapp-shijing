@@ -24,12 +24,13 @@
     "lint": "pnpm run i18n:check && pnpm run i18n:audit && pnpm run typecheck && eslint . --max-warnings 0 && (cd src-tauri && cargo check)",
     "test": "node --test test/*.test.mjs test/golden/*.test.mjs",
     "sync": "nimi-app sync",
-    "doctor": "nimi-app doctor",
     "validate": "node scripts/validate.mjs",
     "local-audit": "node scripts/local-audit.mjs",
-    "pack": "node scripts/pack.mjs",
+    "app:build": "nimi-app build",
+    "pack": "nimi-app pack",
+    "publish": "nimi-app publish",
     "check:platform": "nimi-app check",
-    "check": "pnpm run check:platform && pnpm run doctor && pnpm run validate && pnpm run local-audit && pnpm run check:ai-context-budget && pnpm run check:ai-structure-budget && pnpm run typecheck && pnpm run test && pnpm run lint",
+    "check": "pnpm run check:platform && pnpm run validate && pnpm run local-audit && pnpm run check:ai-context-budget && pnpm run check:ai-structure-budget && pnpm run typecheck && pnpm run test && pnpm run lint",
     "check:ai-context-budget": "pnpm nimicoding:validate-ai-governance --profile shijing --scope context-budget",
     "check:ai-structure-budget": "pnpm nimicoding:validate-ai-governance --profile shijing --scope structure-budget",
     "i18n:check": "node scripts/i18n-check.mjs",
@@ -43,8 +44,6 @@
     "eval:wording:score": "node scripts/wording-eval/score.mjs"
   },
   "dependencies": {
-    "@nimiplatform/kit": "link:../../nimi/kit",
-    "@nimiplatform/sdk": "link:../../nimi/sdks/typescript",
     "@tauri-apps/api": "^2.9.1",
     "astronomy-engine": "^2.1.19",
     "i18next": "^25.10.10",
@@ -53,13 +52,12 @@
     "react-dom": "^19.1.0",
     "react-i18next": "^16.6.6",
     "tyme4ts": "^1.5.0",
-    "zustand": "^5.0.13"
+    "zustand": "^5.0.13",
+    "@nimiplatform/sdk": "^0.7.0-rc.1",
+    "@nimiplatform/kit": "^0.3.0-rc.1"
   },
   "devDependencies": {
-    "@nimiplatform/app-tools": "link:../../nimi/app-tools",
-    "@nimiplatform/kit-protected-local-win32-x64": "link:../../nimi/kit/shell/protected-local-node/npm/win32-x64",
     "@eslint/js": "^10.0.1",
-    "@nimiplatform/nimi-coding": "0.6.1",
     "@tailwindcss/vite": "^4.3.0",
     "@tauri-apps/cli": "^2.11.2",
     "@types/node": "^24.10.1",
@@ -75,7 +73,9 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.4",
     "vite": "^7.2.4",
-    "yaml": "^2.9.0"
+    "yaml": "^2.9.0",
+    "@nimiplatform/app-tools": "^0.2.0-rc.1",
+    "@nimiplatform/nimi-coding": "0.6.1"
   },
   "author": "Nimi Team",
   "license": "Apache-2.0"

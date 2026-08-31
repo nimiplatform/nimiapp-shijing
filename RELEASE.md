@@ -1,111 +1,43 @@
-# Release Process
+# ShiJing release path
 
-ShiJing (时镜) ships as a Tauri 2 desktop app for macOS, Windows, and Linux.
+ShiJing uses the same third-party Nimi App path as every ordinary catalog App. Nimi ownership does not create a release or install shortcut.
 
-This document describes the manual / GitHub-Actions release flow for the
-standalone single-app layout.
+```text
+public repository
+  -> protected v<version> tag
+  -> tag-triggered nimi-app-release workflow
+  -> immutable GitHub Release
+  -> publisher-fork registry PR
+  -> reviewed registry main
+  -> Runtime install
+  -> Desktop exact Host launch
+```
 
-## Triggers
+## Local preparation
 
-There are two ways to start a release:
-
-1. **Tag push** — push an annotated tag matching `v[0-9]+.[0-9]+.[0-9]+` (or
-   pre-release `vX.Y.Z-rc.N`) to `main`. The workflow runs with `publish=true`
-   and produces a published GitHub Release.
-2. **Manual dispatch** — run `release.yml` from the Actions UI with:
-   - `version`: the semver string (with or without leading `v`)
-   - `publish`: `false` → dry-run, artifacts go to workflow run outputs only.
-     `true` → publish a real GitHub Release at tag `vX.Y.Z`.
-
-The default for manual dispatch is `publish=false`.
-
-## Versioning
-
-Semantic Versioning ([semver.org](https://semver.org/)).
-
-- **MAJOR** — Incompatible schema/migration, breaking a persisted
-  `ShiJingSpace` snapshot on disk, or removing or weakening an active
-  canonical authority unit.
-- **MINOR** — New feature, new admitted canonical unit, new
-  `MirrorKind`/`MirrorScope`, or new tab.
-- **PATCH** — Bug fix, dependency bump, internal refactor with no contract
-  change.
-
-Pre-releases use `vX.Y.Z-rc.N` / `vX.Y.Z-beta.N`.
-
-The version string lives in three places that **must stay in lockstep**:
-
-| File | Field |
-|------|-------|
-| `package.json` | `"version"` |
-| `src-tauri/tauri.conf.json` | `"version"` |
-| `src-tauri/Cargo.toml` | `[package].version` |
-
-## Pre-flight Checklist
-
-1. **Lockstep version bump**
-
-   ```bash
-   NEW_VERSION=0.2.0
-   npm version --no-git-tag-version "$NEW_VERSION"
-   sed -i '' "s/\"version\": \".*\"/\"version\": \"$NEW_VERSION\"/" src-tauri/tauri.conf.json
-   sed -i '' "s/^version = \".*\"/version = \"$NEW_VERSION\"/" src-tauri/Cargo.toml
-   ```
-
-2. **Update CHANGELOG.md** — promote `[Unreleased]` to `[X.Y.Z] - YYYY-MM-DD`,
-   open a fresh `[Unreleased]` above it.
-
-3. **Run the full local verification**:
-
-   ```bash
-   pnpm install
-   pnpm spec:authority:check
-   pnpm spec:authority:compile
-   pnpm exec nimicoding sync --check
-   pnpm nimicoding:doctor
-   pnpm typecheck
-   pnpm test
-   pnpm lint
-   pnpm run build
-   (cd src-tauri && cargo check)
-   ```
-
-4. **Commit, tag, push**:
-
-   ```bash
-   git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml CHANGELOG.md
-   git commit -m "release: v$NEW_VERSION"
-   git tag -a "v$NEW_VERSION" -m "ShiJing v$NEW_VERSION"
-   git push origin main
-   git push origin "v$NEW_VERSION"
-   ```
-
-5. **Monitor the release workflow** — once all three platform builds succeed,
-   the GitHub Release is published automatically.
-
-## Authority tooling sync
-
-If `@nimiplatform/nimi-coding` ships a new minor/major version, bump it in
-`package.json` and rerun:
+Keep `package.json`, `nimi.app.yaml`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json` and `.nimi` identity/submission inputs on the same exact semantic version. Then run:
 
 ```bash
 pnpm install
-pnpm exec nimicoding sync --apply
-pnpm nimicoding:doctor
+pnpm exec nimi-app sync
+pnpm exec nimi-app check
+pnpm exec nimi-app test
+pnpm exec nimi-app build --target windows-x86_64
+pnpm exec nimi-app pack --target windows-x86_64
 ```
 
-Commit the updated `.nimi/methodology/authority-authoring.yaml` alongside
-the `package.json` bump in the same release.
+Local pack output is explicitly development-unsigned and cannot be admitted as a production target.
 
-## Hotfix
+## GitHub prerequisites
 
-For a hotfix off a published release:
+- The repository is public.
+- A repository ruleset protects `v*` tags.
+- GitHub immutable releases are enabled.
+- `GITHUB_REPOSITORY_ADMIN_TOKEN` has repository Administration read permission so the workflow can verify, but not mutate, those settings.
+- The tag-only `build --production` step applies the publisher PFX to the exact declared Windows Host; `pack --production` only re-verifies Authenticode and rejects unsigned bytes.
 
-```bash
-git checkout -b hotfix/vX.Y.(Z+1) vX.Y.Z
-# apply fix, run pre-flight checklist
-git tag -a "vX.Y.$((Z+1))" -m "ShiJing vX.Y.$((Z+1)) hotfix"
-git push origin "hotfix/vX.Y.$((Z+1))" "vX.Y.$((Z+1))"
-```
+Manual workflow dispatch is dry-run only, including when a tag ref is selected, and creates no tag, Release or registry mutation. Production starts only from the protected version-tag push, and the workflow creates or safely resumes the exact draft, attaches the aggregate candidate plus every declared target `.nimiapp` without clobbering assets, then publishes and verifies the immutable Release.
 
-Open a PR from `hotfix/*` into `main` so the fix lands on the main line.
+The first pilot Release declares Windows only. macOS may be built ordinarily without a production claim; signed/notarized/stapled macOS enters only through a later version whose immutable descriptor declares that target. Team ID and Apple credentials affect only macOS native signing/notarization and its production pack/release acceptance.
+
+`nimi-app publish` is the eventual preflight/tag/observation/registry-PR command. Until the shared installed Tauri/Kit carrier, GitHub orchestration and repository prerequisites are implemented and verified, production check/publish fail closed and no manual substitute is allowed.
