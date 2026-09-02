@@ -4,32 +4,27 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
-    inputs:
-      dry_run:
-        description: Run the non-production App lifecycle
-        required: true
-        default: true
-        type: boolean
+  workflow_dispatch: {}
 permissions:
   contents: read
 jobs:
   prepare:
-    if: github.event_name != 'workflow_dispatch' || inputs.dry_run == true
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v6
+          persist-credentials: false
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 24
+          package-manager-cache: false
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec nimi-app sync
-      - run: git diff --exit-code
+      - run: test -z "$(git status --porcelain)"
       - run: pnpm exec nimi-app check --json > .nimi-targets.json
       - run: pnpm exec nimi-app test
       - name: Require tag/version lockstep
@@ -41,7 +36,16 @@ jobs:
         run: |
           test "$(git cat-file -t "refs/tags/$GITHUB_REF_NAME")" = tag
           test "$(git rev-parse "refs/tags/$GITHUB_REF_NAME^{}")" = "$GITHUB_SHA"
-      - name: Require the shared installed App carrier
+      - name: Require tagged commit on canonical default branch
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        env:
+          NIMI_APP_CANONICAL_BRANCH: ${{ github.event.repository.default_branch }}
+        shell: bash
+        run: |
+          test -n "$NIMI_APP_CANONICAL_BRANCH"
+          git fetch --no-tags origin "refs/heads/$NIMI_APP_CANONICAL_BRANCH:refs/remotes/origin/$NIMI_APP_CANONICAL_BRANCH"
+          git merge-base --is-ancestor "$GITHUB_SHA" "refs/remotes/origin/$NIMI_APP_CANONICAL_BRANCH"
+      - name: Run production release preflight
         if: github.event_name == 'push' && github.ref_type == 'tag'
         run: pnpm exec nimi-app check --production
       - name: Require protected tags and immutable releases
@@ -60,7 +64,7 @@ jobs:
               if [[ "refs/tags/$GITHUB_REF_NAME" == $pattern ]]; then excluded=true; break; fi
             done < <(jq -r '.conditions.ref_name.exclude[]?' <<<"$ruleset")
             if test "$excluded" = true; then continue; fi
-            if jq -e '(.conditions.ref_name.include | index("refs/tags/v*")) != null and ([.rules[].type] | index("creation") != null and index("update") != null and index("deletion") != null)' <<<"$ruleset" >/dev/null; then
+            if jq -e '(.conditions.ref_name.include | index("refs/tags/v*")) != null and ([.rules[].type] | index("update") != null and index("deletion") != null)' <<<"$ruleset" >/dev/null; then
               protected=true
               break
             fi
@@ -82,35 +86,46 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 24
+          package-manager-cache: false
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - name: Build development target
         if: github.event_name != 'push' || github.ref_type != 'tag'
-        run: pnpm exec nimi-app build --target ${{ matrix.target }}
+        env:
+          NIMI_APP_TARGET: ${{ matrix.target }}
+        shell: pwsh
+        run: pnpm exec nimi-app build --target $env:NIMI_APP_TARGET
       - name: Build and sign production target
         if: github.event_name == 'push' && github.ref_type == 'tag'
-        run: pnpm exec nimi-app build --target ${{ matrix.target }} --production
         env:
+          NIMI_APP_TARGET: ${{ matrix.target }}
           NIMI_APP_PRODUCTION: true
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        shell: pwsh
+        run: pnpm exec nimi-app build --target $env:NIMI_APP_TARGET --production
+      - name: Require build to preserve the tracked source tree
+        shell: bash
+        run: test -z "$(git status --porcelain)"
       - name: Pack development target
         if: github.event_name != 'push' || github.ref_type != 'tag'
-        run: pnpm exec nimi-app pack --target ${{ matrix.target }}
+        env:
+          NIMI_APP_TARGET: ${{ matrix.target }}
+        shell: pwsh
+        run: pnpm exec nimi-app pack --target $env:NIMI_APP_TARGET
       - name: Verify native trust and pack production target
         if: github.event_name == 'push' && github.ref_type == 'tag'
-        run: pnpm exec nimi-app pack --target ${{ matrix.target }} --production
-      - uses: actions/upload-artifact@v7
+        env:
+          NIMI_APP_TARGET: ${{ matrix.target }}
+        shell: pwsh
+        run: pnpm exec nimi-app pack --target $env:NIMI_APP_TARGET --production
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: nimi-app-${{ matrix.target }}
           path: |
@@ -130,30 +145,33 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: nimi-app-${{ matrix.target }}
           path: attest-assets
-      - uses: actions/attest@v4
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: attest-assets/*.nimiapp
   aggregate:
     needs: build-target
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 24
+          package-manager-cache: false
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: nimi-app-*
           path: dist/nimi-app
           merge-multiple: true
       - run: pnpm exec nimi-app pack --aggregate
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: nimi-app-release-candidate
           path: |
@@ -168,7 +186,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: nimi-app-release-candidate
           path: release-assets
