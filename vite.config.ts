@@ -2,7 +2,6 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
-import path from 'node:path';
 
 const appReact = fileURLToPath(new URL('./node_modules/react/index.js', import.meta.url));
 const appReactDom = fileURLToPath(new URL('./node_modules/react-dom/index.js', import.meta.url));
@@ -11,20 +10,14 @@ const appReactJsxRuntime = fileURLToPath(
 );
 const appTauriApiCore = fileURLToPath(new URL('./node_modules/@tauri-apps/api/core.js', import.meta.url));
 const appTauriApiEvent = fileURLToPath(new URL('./node_modules/@tauri-apps/api/event.js', import.meta.url));
-const appRoot = fileURLToPath(new URL('.', import.meta.url));
-const nimiRepoRoot = path.resolve(appRoot, '../../nimi');
-const nimiSdkSourceRoot = path.resolve(nimiRepoRoot, 'sdks/typescript');
-const nimiKitSourceRoot = path.resolve(nimiRepoRoot, 'kit');
-
 function normalizeId(id: string): string {
-  return id.split(path.sep).join('/');
+  return id.replaceAll('\\', '/');
 }
 
 function isNimiSdkModule(normalizedId: string): boolean {
   return (
     normalizedId.includes('/node_modules/@nimiplatform/sdk/')
     || normalizedId.includes('/node_modules/.pnpm/@nimiplatform+sdk@')
-    || normalizedId.includes('/nimi-realm/nimi/sdks/typescript/')
   );
 }
 
@@ -32,7 +25,6 @@ function isNimiKitModule(normalizedId: string): boolean {
   return (
     normalizedId.includes('/node_modules/@nimiplatform/kit/')
     || normalizedId.includes('/node_modules/.pnpm/@nimiplatform+kit@')
-    || normalizedId.includes('/nimi-realm/nimi/kit/')
   );
 }
 
@@ -74,69 +66,8 @@ export default defineConfig({
       { find: /^react\/jsx-runtime$/, replacement: appReactJsxRuntime },
       { find: /^@tauri-apps\/api\/core$/, replacement: appTauriApiCore },
       { find: /^@tauri-apps\/api\/event$/, replacement: appTauriApiEvent },
-      { find: /^@nimiplatform\/sdk$/, replacement: path.resolve(nimiSdkSourceRoot, 'index.ts') },
-      { find: /^@nimiplatform\/sdk\/ai$/, replacement: path.resolve(nimiSdkSourceRoot, 'core/ai/index.ts') },
-      { find: /^@nimiplatform\/sdk\/features\/evaluation$/, replacement: path.resolve(nimiSdkSourceRoot, 'features/evaluation/index.ts') },
-      { find: /^@nimiplatform\/sdk\/runtime$/, replacement: path.resolve(nimiSdkSourceRoot, 'runtime/index.ts') },
-      { find: /^@nimiplatform\/sdk\/runtime\/generated$/, replacement: path.resolve(nimiSdkSourceRoot, 'runtime/generated.ts') },
-      { find: /^@nimiplatform\/sdk\/runtime\/wire-types$/, replacement: path.resolve(nimiSdkSourceRoot, 'runtime/wire-types/index.ts') },
-      { find: /^@nimiplatform\/sdk\/types$/, replacement: path.resolve(nimiSdkSourceRoot, 'types/index.ts') },
-      { find: /^@nimiplatform\/kit\/auth$/, replacement: path.resolve(nimiKitSourceRoot, 'auth/src/index.ts') },
-      { find: /^@nimiplatform\/kit\/auth\/shell$/, replacement: path.resolve(nimiKitSourceRoot, 'auth/src/shell/index.ts') },
-      { find: /^@nimiplatform\/kit\/auth\/styles\.css$/, replacement: path.resolve(nimiKitSourceRoot, 'auth/src/styles.css') },
-      { find: /^@nimiplatform\/kit\/core\/model-config$/, replacement: path.resolve(nimiKitSourceRoot, 'core/src/model-config/index.ts') },
-      { find: /^@nimiplatform\/kit\/core\/oauth$/, replacement: path.resolve(nimiKitSourceRoot, 'core/src/oauth/index.ts') },
-      { find: /^@nimiplatform\/kit\/core\/offline-coordinator$/, replacement: path.resolve(nimiKitSourceRoot, 'core/src/offline-coordinator.ts') },
-      { find: /^@nimiplatform\/kit\/core\/sdk-contract$/, replacement: path.resolve(nimiKitSourceRoot, 'core/src/sdk-contract.ts') },
-      { find: /^@nimiplatform\/kit\/core\/shell-mode$/, replacement: path.resolve(nimiKitSourceRoot, 'core/src/shell-mode.ts') },
-      { find: /^@nimiplatform\/kit\/core\/storage-json$/, replacement: path.resolve(nimiKitSourceRoot, 'core/src/storage-json.ts') },
-      { find: /^@nimiplatform\/kit\/features\/model-config$/, replacement: path.resolve(nimiKitSourceRoot, 'features/model-config/src/index.ts') },
-      { find: /^@nimiplatform\/kit\/features\/model-config\/headless$/, replacement: path.resolve(nimiKitSourceRoot, 'features/model-config/src/headless.ts') },
-      { find: /^@nimiplatform\/kit\/features\/model-picker$/, replacement: path.resolve(nimiKitSourceRoot, 'features/model-picker/src/index.ts') },
-      { find: /^@nimiplatform\/kit\/features\/model-picker\/runtime$/, replacement: path.resolve(nimiKitSourceRoot, 'features/model-picker/src/runtime.ts') },
-      { find: /^@nimiplatform\/kit\/features\/model-picker\/ui$/, replacement: path.resolve(nimiKitSourceRoot, 'features/model-picker/src/ui.ts') },
-      { find: /^@nimiplatform\/kit\/shell\/capabilities$/, replacement: path.resolve(nimiKitSourceRoot, 'shell/capabilities/src/index.ts') },
-      { find: /^@nimiplatform\/kit\/shell\/renderer\/bridge$/, replacement: path.resolve(nimiKitSourceRoot, 'shell/renderer/src/bridge/index.ts') },
-      { find: /^@nimiplatform\/kit\/ui$/, replacement: path.resolve(nimiKitSourceRoot, 'ui/src/index.ts') },
-      { find: /^@nimiplatform\/kit\/ui\/styles\.css$/, replacement: path.resolve(nimiKitSourceRoot, 'ui/src/styles.css') },
-      { find: /^@nimiplatform\/kit\/ui\/themes\/(.+\.css)$/, replacement: path.resolve(nimiKitSourceRoot, 'ui/src/themes/$1') },
-      { find: /^@nimiplatform\/kit\/ui\/(.+)$/, replacement: path.resolve(nimiKitSourceRoot, 'ui/src/$1') },
     ],
     dedupe: ['react', 'react-dom', 'react/jsx-runtime'],
-  },
-  optimizeDeps: {
-    exclude: [
-      '@nimiplatform/kit',
-      '@nimiplatform/kit/ui',
-      '@nimiplatform/kit/auth',
-      '@nimiplatform/kit/core/model-config',
-      '@nimiplatform/kit/core/offline-coordinator',
-      '@nimiplatform/kit/core/sdk-contract',
-      '@nimiplatform/kit/core/shell-mode',
-      '@nimiplatform/kit/core/storage-json',
-      '@nimiplatform/kit/features/model-config',
-      '@nimiplatform/kit/features/model-config/headless',
-      '@nimiplatform/kit/features/model-picker',
-      '@nimiplatform/kit/features/model-picker/runtime',
-      '@nimiplatform/kit/features/model-picker/ui',
-      '@nimiplatform/kit/shell/capabilities',
-      '@nimiplatform/kit/shell/renderer/bridge',
-      '@nimiplatform/sdk',
-      '@nimiplatform/sdk/ai',
-      '@nimiplatform/sdk/features/evaluation',
-      '@nimiplatform/sdk/runtime',
-      '@nimiplatform/sdk/runtime/generated',
-      '@nimiplatform/sdk/runtime/wire-types',
-      '@nimiplatform/sdk/types',
-    ],
-  },
-  server: {
-    fs: {
-      allow: [
-        appRoot,
-        nimiRepoRoot,
-      ],
-    },
   },
   build: {
     chunkSizeWarningLimit: 3000,

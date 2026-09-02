@@ -1,5 +1,5 @@
 scaffold_contract: P-SCAF
-profile: workspace-app
+profile: standalone
 public_admission_truth: not-generated
 local_audit_role: pre-submission-self-check
 permission_declarations: transparency-input-only

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-import { SHIJING_APP_ID } from '../src/contracts/app-identity.ts';
+import { SHIJING_APP_ID, SHIJING_TAURI_IDENTIFIER } from '../src/contracts/app-identity.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -55,6 +55,7 @@ test('Electron registers only the fixed Kit app host', () => {
   const preloadSource = read('src-electron/preload.cts');
 
   assert.equal(SHIJING_APP_ID, 'nimi.shijing');
+  assert.equal(SHIJING_TAURI_IDENTIFIER, 'ai.nimi.apps.nimi.shijing');
   assert.match(mainSource, /registerNimiElectronAppBridge/);
   assert.match(mainSource, /registerNimiElectronAppAssetProtocolScheme\(protocol\)/);
   assert.match(mainSource, /appId:\s*SHIJING_APP_ID/);

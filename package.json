@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.32.1",
+  "packageManager": "pnpm@10.34.5",
   "engines": {
     "node": ">=24.0.0",
     "pnpm": ">=10.0.0"
@@ -23,25 +23,23 @@
     "build:shell": "tauri build",
     "lint": "pnpm run i18n:check && pnpm run i18n:audit && pnpm run typecheck && eslint . --max-warnings 0 && (cd src-tauri && cargo check)",
     "test": "node --test test/*.test.mjs test/golden/*.test.mjs",
-    "doctor": "nimi-app doctor",
+    "sync": "nimi-app sync",
     "validate": "node scripts/validate.mjs",
     "local-audit": "node scripts/local-audit.mjs",
-    "check": "pnpm run doctor && pnpm run validate && pnpm run local-audit && pnpm run check:ai-context-budget && pnpm run check:ai-structure-budget && pnpm run typecheck && pnpm run test && pnpm run lint",
-    "check:ai-context-budget": "pnpm nimicoding:validate-ai-governance --profile shijing --scope context-budget",
-    "check:ai-structure-budget": "pnpm nimicoding:validate-ai-governance --profile shijing --scope structure-budget",
+    "app:build": "nimi-app build",
+    "pack": "nimi-app pack",
+    "check:platform": "nimi-app check",
+    "check": "pnpm run check:platform && pnpm run validate && pnpm run local-audit && pnpm run typecheck && pnpm run test && pnpm run lint",
     "i18n:check": "node scripts/i18n-check.mjs",
     "i18n:audit": "node scripts/i18n-audit.mjs",
     "nimicoding": "nimicoding",
     "nimicoding:doctor": "nimicoding doctor",
     "spec:authority:check": "nimicoding authority check .nimi/spec",
     "spec:authority:compile": "nimicoding authority compile .nimi/spec",
-    "nimicoding:validate-ai-governance": "pnpm exec nimicoding validate-ai-governance",
     "eval:wording": "node scripts/wording-eval/run.mjs",
     "eval:wording:score": "node scripts/wording-eval/score.mjs"
   },
   "dependencies": {
-    "@nimiplatform/kit": "link:../../nimi/kit",
-    "@nimiplatform/sdk": "link:../../nimi/sdks/typescript",
     "@tauri-apps/api": "^2.9.1",
     "astronomy-engine": "^2.1.19",
     "i18next": "^25.10.10",
@@ -50,13 +48,12 @@
     "react-dom": "^19.1.0",
     "react-i18next": "^16.6.6",
     "tyme4ts": "^1.5.0",
-    "zustand": "^5.0.13"
+    "zustand": "^5.0.13",
+    "@nimiplatform/sdk": "^0.7.0",
+    "@nimiplatform/kit": "^0.3.0"
   },
   "devDependencies": {
-    "@nimiplatform/app-tools": "link:../../nimi/app-tools",
-    "@nimiplatform/kit-protected-local-win32-x64": "link:../../nimi/kit/shell/protected-local-node/npm/win32-x64",
     "@eslint/js": "^10.0.1",
-    "@nimiplatform/nimi-coding": "0.5.0",
     "@tailwindcss/vite": "^4.3.0",
     "@tauri-apps/cli": "^2.11.2",
     "@types/node": "^24.10.1",
@@ -71,8 +68,10 @@
     "tailwindcss": "^4.3.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.4",
-    "vite": "^7.2.4",
-    "yaml": "^2.9.0"
+    "vite": "^7.3.6",
+    "yaml": "^2.9.0",
+    "@nimiplatform/app-tools": "^0.2.1",
+    "@nimiplatform/nimi-coding": "0.6.1"
   },
   "author": "Nimi Team",
   "license": "Apache-2.0"
