@@ -68,9 +68,9 @@
     "tailwindcss": "^4.3.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.4",
-    "vite": "^7.2.4",
+    "vite": "^7.3.6",
     "yaml": "^2.9.0",
-    "@nimiplatform/app-tools": "^0.2.0",
+    "@nimiplatform/app-tools": "^0.2.1",
     "@nimiplatform/nimi-coding": "0.6.1"
   },
   "author": "Nimi Team",
