@@ -74,5 +74,5 @@
     "@nimiplatform/nimi-coding": "0.6.1"
   },
   "author": "Nimi Team",
-  "license": "Apache-2.0"
+  "license": "MIT"
 }
