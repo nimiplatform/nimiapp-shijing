@@ -9,11 +9,11 @@ importers:
   .:
     dependencies:
       '@nimiplatform/kit':
-        specifier: ^0.3.0
-        version: 0.3.0(@types/node@24.12.4)(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(electron@42.5.0)(react-dom@19.2.6(react@19.2.6))(react-i18next@16.6.6(i18next@25.10.10(typescript@5.9.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.9.3))(react@19.2.6)
+        specifier: ^0.4.0
+        version: 0.4.0(@types/node@24.12.4)(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(electron@42.5.0)(react-dom@19.2.6(react@19.2.6))(react-i18next@16.6.6(i18next@25.10.10(typescript@5.9.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.9.3))(react@19.2.6)
       '@nimiplatform/sdk':
-        specifier: ^0.7.0
-        version: 0.7.0(@grpc/grpc-js@1.14.4)
+        specifier: ^0.8.0
+        version: 0.8.0(@grpc/grpc-js@1.14.4)
       '@tauri-apps/api':
         specifier: ^2.9.1
         version: 2.11.0
@@ -46,8 +46,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.4.0(jiti@2.7.0))
       '@nimiplatform/app-tools':
-        specifier: ^0.2.1
-        version: 0.2.1(vite@7.3.6(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))
+        specifier: ^0.2.3
+        version: 0.2.3(vite@7.3.6(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))
       '@nimiplatform/nimi-coding':
         specifier: 0.6.1
         version: 0.6.1
@@ -620,8 +620,8 @@ packages:
   '@js-sdsl/ordered-map@4.4.2':
     resolution: {integrity: sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw==}
 
-  '@nimiplatform/app-tools@0.2.1':
-    resolution: {integrity: sha512-1jEFifEIisul+ck19dcz7W2MLncGI3WeqUD5H6vtSB80Hrl74WhnBUSZxWkqmhyM5CkjXUaMTWBWp7lsNZTV4g==}
+  '@nimiplatform/app-tools@0.2.3':
+    resolution: {integrity: sha512-DqQ73zCloKcSTF5oC6a/d5JbBScCS5tFk5Anc4ipeB0XyOaG7CxQ+vbnEQ+EyNP7gmyU/G5FLDxjRJZK0g/jpw==}
     engines: {node: '>=24.0.0'}
     hasBin: true
     peerDependencies:
@@ -630,8 +630,8 @@ packages:
       vite:
         optional: true
 
-  '@nimiplatform/kit@0.3.0':
-    resolution: {integrity: sha512-6HUAwxiF+wKW/N0FyYMtwsVMWMLiGC7qNY/3rE33LvoEdyf5afXV5YTEpZjeltGGEQSv+L9e3Xfn7YloqUdCcQ==}
+  '@nimiplatform/kit@0.4.0':
+    resolution: {integrity: sha512-y+sqj64TfQW+WJGcDKngdQxoPAexEcResvn3fIUt2jvaM/PbS9delxP0lW0MQBEjE65Nk6eBdKqjL9GztgxdlA==}
     peerDependencies:
       electron: ^42.5.0
       react: ^19.0.0
@@ -650,8 +650,8 @@ packages:
     engines: {node: '>=24.0.0', pnpm: '>=10.0.0'}
     hasBin: true
 
-  '@nimiplatform/sdk@0.7.0':
-    resolution: {integrity: sha512-jTBUIYfSNPyHaZsgieD0BjpUf0o2WEFLDrBlxfzQbsuCRYYu0O1xfetJUyFajb5S02JNkpwfq45N8bedk4Igzg==}
+  '@nimiplatform/sdk@0.8.0':
+    resolution: {integrity: sha512-py/ZWpnAC+xOxxW8wGYJLzChaDuhFTN6J0kfTXBnxeRHPCiUEZgVO2KsXPiISmIKjrb9PmSE02DIlqnvFSe0Tw==}
     peerDependencies:
       '@grpc/grpc-js': ^1.14.4
     peerDependenciesMeta:
@@ -3030,7 +3030,7 @@ snapshots:
 
   '@js-sdsl/ordered-map@4.4.2': {}
 
-  '@nimiplatform/app-tools@0.2.1(vite@7.3.6(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))':
+  '@nimiplatform/app-tools@0.2.3(vite@7.3.6(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))':
     dependencies:
       postcss: 8.5.26
       postcss-selector-parser: 7.1.5
@@ -3040,10 +3040,10 @@ snapshots:
     optionalDependencies:
       vite: 7.3.6(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)
 
-  '@nimiplatform/kit@0.3.0(@types/node@24.12.4)(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(electron@42.5.0)(react-dom@19.2.6(react@19.2.6))(react-i18next@16.6.6(i18next@25.10.10(typescript@5.9.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.9.3))(react@19.2.6)':
+  '@nimiplatform/kit@0.4.0(@types/node@24.12.4)(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(electron@42.5.0)(react-dom@19.2.6(react@19.2.6))(react-i18next@16.6.6(i18next@25.10.10(typescript@5.9.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.9.3))(react@19.2.6)':
     dependencies:
       '@grpc/grpc-js': 1.14.4
-      '@nimiplatform/sdk': 0.7.0(@grpc/grpc-js@1.14.4)
+      '@nimiplatform/sdk': 0.8.0(@grpc/grpc-js@1.14.4)
       '@radix-ui/react-avatar': 1.2.6(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@radix-ui/react-dialog': 1.1.23(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@radix-ui/react-popover': 1.1.23(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -3083,7 +3083,7 @@ snapshots:
       typescript: 5.9.3
       yaml: 2.9.0
 
-  '@nimiplatform/sdk@0.7.0(@grpc/grpc-js@1.14.4)':
+  '@nimiplatform/sdk@0.8.0(@grpc/grpc-js@1.14.4)':
     dependencies:
       '@protobuf-ts/runtime': 2.11.1
     optionalDependencies:

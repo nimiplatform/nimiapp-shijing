@@ -11,6 +11,7 @@ export default defineConfig([
     'dist-electron/**',
     'artifacts/**',
     '.codex-artifacts/**',
+    '.nimi/local/**',
     'src-tauri/target/**',
     'src-tauri/gen/**',
     'node_modules/**',
