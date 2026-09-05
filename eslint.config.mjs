@@ -9,6 +9,7 @@ export default defineConfig([
   globalIgnores([
     'dist/**',
     'dist-electron/**',
+    'dist-electron-package/**',
     'artifacts/**',
     '.codex-artifacts/**',
     '.nimi/local/**',
