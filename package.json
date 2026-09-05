@@ -1,6 +1,6 @@
 {
   "name": "nimiapp-shijing",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "type": "module",
   "main": "dist-electron/main.js",
@@ -73,7 +73,7 @@
     "typescript-eslint": "^8.59.4",
     "vite": "^7.3.6",
     "yaml": "^2.9.0",
-    "@nimiplatform/app-tools": "^0.2.6",
+    "@nimiplatform/app-tools": "^0.2.7",
     "@nimiplatform/nimi-coding": "0.6.1"
   },
   "author": "Nimi Team",
