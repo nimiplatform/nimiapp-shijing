@@ -1,3 +1,4 @@
+// @nimi-authority: rule.shijing.product.r015
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { app, BrowserWindow, ipcMain, Menu, protocol, session, webContents } from 'electron';
@@ -9,6 +10,9 @@ import {
 } from '@nimiplatform/kit/shell/electron/main';
 
 const SHIJING_APP_ID = 'nimi.shijing';
+declare const __NIMI_ELECTRON_PRODUCTION__: boolean;
+const IS_PRODUCTION_BUNDLE = typeof __NIMI_ELECTRON_PRODUCTION__ !== 'undefined'
+  && __NIMI_ELECTRON_PRODUCTION__;
 
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(currentFilePath);
@@ -96,7 +100,13 @@ function activeRendererUrl(): string {
 }
 
 function readDevelopmentRendererUrl(): string {
+  const flag = '--nimi-dev-renderer-url';
   const prefix = '--nimi-dev-renderer-url=';
+  const hasDevelopmentRendererArgument = process.argv.some((value) => value === flag || value.startsWith(prefix));
+  if (IS_PRODUCTION_BUNDLE && hasDevelopmentRendererArgument) {
+    throw new Error('The production Electron bundle rejects --nimi-dev-renderer-url.');
+  }
+  if (process.argv.includes(flag)) throw new Error('Nimi development renderer URL is missing.');
   const values = process.argv.filter((value) => value.startsWith(prefix));
   if (values.length === 0) return '';
   if (values.length !== 1) throw new Error('Nimi development renderer URL must be singular.');

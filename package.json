@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "dist-electron/main.js",
   "packageManager": "pnpm@10.34.5",
   "engines": {
     "node": ">=24.0.0",
@@ -19,9 +20,10 @@
     "typecheck:electron": "tsc -p tsconfig.electron.json --noEmit",
     "typecheck": "pnpm run typecheck:renderer && pnpm run typecheck:electron",
     "build:electron": "tsc -p tsconfig.electron.json && node scripts/bundle-electron-preload.mjs",
-    "build": "pnpm run typecheck && pnpm run build:renderer && (cd src-tauri && cargo check)",
-    "build:shell": "tauri build",
-    "lint": "pnpm run i18n:check && pnpm run i18n:audit && pnpm run typecheck && eslint . --max-warnings 0 && (cd src-tauri && cargo check)",
+    "build:electron:production": "node scripts/clean-electron-production.mjs && pnpm run build && pnpm run build:electron && node scripts/package-electron-production.mjs",
+    "build": "pnpm run typecheck && pnpm run build:renderer",
+    "build:tauri:production": "tauri build",
+    "lint": "pnpm run i18n:check && pnpm run i18n:audit && pnpm run typecheck && eslint . --max-warnings 0",
     "test": "node --test test/*.test.mjs test/golden/*.test.mjs",
     "sync": "nimi-app sync",
     "validate": "node scripts/validate.mjs",
@@ -53,6 +55,7 @@
     "@nimiplatform/kit": "^0.4.0"
   },
   "devDependencies": {
+    "@electron/packager": "^20.3.0",
     "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.3.0",
     "@tauri-apps/cli": "^2.11.2",

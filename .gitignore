@@ -1,6 +1,7 @@
 node_modules/
 dist/
 dist-electron/
+dist-electron-package/
 artifacts/
 .codex-artifacts/
 .DS_Store
