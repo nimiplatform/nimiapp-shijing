@@ -70,7 +70,7 @@
     "typescript-eslint": "^8.59.4",
     "vite": "^7.3.6",
     "yaml": "^2.9.0",
-    "@nimiplatform/app-tools": "^0.2.3",
+    "@nimiplatform/app-tools": "^0.2.4",
     "@nimiplatform/nimi-coding": "0.6.1"
   },
   "author": "Nimi Team",

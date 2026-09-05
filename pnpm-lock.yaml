@@ -46,8 +46,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.4.0(jiti@2.7.0))
       '@nimiplatform/app-tools':
-        specifier: ^0.2.3
-        version: 0.2.3(vite@7.3.6(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))
+        specifier: ^0.2.4
+        version: 0.2.4(vite@7.3.6(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))
       '@nimiplatform/nimi-coding':
         specifier: 0.6.1
         version: 0.6.1
@@ -620,8 +620,8 @@ packages:
   '@js-sdsl/ordered-map@4.4.2':
     resolution: {integrity: sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw==}
 
-  '@nimiplatform/app-tools@0.2.3':
-    resolution: {integrity: sha512-DqQ73zCloKcSTF5oC6a/d5JbBScCS5tFk5Anc4ipeB0XyOaG7CxQ+vbnEQ+EyNP7gmyU/G5FLDxjRJZK0g/jpw==}
+  '@nimiplatform/app-tools@0.2.4':
+    resolution: {integrity: sha512-YnCiahf0hAhKM1vmZ8tN59br7BFO4d0ZNnmsI8mU+diySWwfzNAYhgDbZMq/mc0FyYzO8V9zEt00Hlk89uSfMQ==}
     engines: {node: '>=24.0.0'}
     hasBin: true
     peerDependencies:
@@ -3030,7 +3030,7 @@ snapshots:
 
   '@js-sdsl/ordered-map@4.4.2': {}
 
-  '@nimiplatform/app-tools@0.2.3(vite@7.3.6(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))':
+  '@nimiplatform/app-tools@0.2.4(vite@7.3.6(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))':
     dependencies:
       postcss: 8.5.26
       postcss-selector-parser: 7.1.5
