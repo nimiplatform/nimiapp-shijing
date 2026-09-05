@@ -49,8 +49,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.4.0(jiti@2.7.0))
       '@nimiplatform/app-tools':
-        specifier: ^0.2.5
-        version: 0.2.5(vite@7.3.6(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))
+        specifier: ^0.2.6
+        version: 0.2.6(vite@7.3.6(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))
       '@nimiplatform/nimi-coding':
         specifier: 0.6.1
         version: 0.6.1
@@ -655,8 +655,8 @@ packages:
     resolution: {integrity: sha512-1DpKU0Z5ThltBwjNySMC14g0CkbyhCaz9FkhxqNsZI6uAPJXFS8cMXlBKo26FJ8ZuW6S9GCMcR9IO5k2X5/9Fg==}
     engines: {node: '>= 12.13.0'}
 
-  '@nimiplatform/app-tools@0.2.5':
-    resolution: {integrity: sha512-QkD838ze+GLcpRwjrBMhj+gKZv+cYiIX0n2Huv1WYS012MmoOqmyYucC4/VXljNeU6glNpzI2SjfTKiiBHf9xg==}
+  '@nimiplatform/app-tools@0.2.6':
+    resolution: {integrity: sha512-egzBVE7iQdLIpA2q3cCBQnDWl2OMtDWkPaIEiZDWP89f0Lay8ICi2fz1DWzBSniG33MOuB5cutyf/A0qTomMPw==}
     engines: {node: '>=24.0.0'}
     hasBin: true
     peerDependencies:
@@ -3220,7 +3220,7 @@ snapshots:
     dependencies:
       cross-spawn: 7.0.6
 
-  '@nimiplatform/app-tools@0.2.5(vite@7.3.6(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))':
+  '@nimiplatform/app-tools@0.2.6(vite@7.3.6(@types/node@24.12.4)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))':
     dependencies:
       postcss: 8.5.26
       postcss-selector-parser: 7.1.5

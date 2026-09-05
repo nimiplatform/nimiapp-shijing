@@ -9,7 +9,7 @@ import { build } from 'esbuild';
 
 const APP_EXECUTABLE_NAME = "nimiapp-shijing-shell";
 const APP_PRODUCT_NAME = "时镜 ShiJing";
-const APP_VERSION = "0.1.0";
+const APP_VERSION = "0.1.1";
 function resolveWindowsResourceVersion(appVersion) {
   const semverPattern = /^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?(?:\+[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?$/u;
   if (typeof appVersion !== 'string' || !semverPattern.test(appVersion)) {
