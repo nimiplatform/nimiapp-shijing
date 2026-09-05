@@ -3,7 +3,7 @@ display_name: 时镜 ShiJing
 version: 0.1.0
 profile: standalone
 npm_package_name: nimiapp-shijing
-cargo_package_name: nimiplatform-shijing-shell
+cargo_package_name: nimiapp-shijing-shell
 tauri_identifier: ai.nimi.apps.nimi.shijing
 package_author: Nimi Team
 submission_role: developer-submitted-input

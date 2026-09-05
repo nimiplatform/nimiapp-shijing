@@ -51,7 +51,7 @@ jobs:
       - name: Require protected tags and immutable releases
         if: github.event_name == 'push' && github.ref_type == 'tag'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_REPOSITORY_ADMIN_TOKEN }}
+          GH_TOKEN: ${{ secrets.NIMI_REPOSITORY_ADMIN_TOKEN }}
         shell: bash
         run: |
           test -n "$GH_TOKEN"
@@ -101,13 +101,11 @@ jobs:
           NIMI_APP_TARGET: ${{ matrix.target }}
         shell: pwsh
         run: pnpm exec nimi-app build --target $env:NIMI_APP_TARGET
-      - name: Build and sign production target
+      - name: Build production target
         if: github.event_name == 'push' && github.ref_type == 'tag'
         env:
           NIMI_APP_TARGET: ${{ matrix.target }}
           NIMI_APP_PRODUCTION: true
-          WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
-          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
         shell: pwsh
         run: pnpm exec nimi-app build --target $env:NIMI_APP_TARGET --production
       - name: Require build to preserve the tracked source tree

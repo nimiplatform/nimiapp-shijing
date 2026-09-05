@@ -18,7 +18,8 @@
 
 | Layer | Technology | Location |
 |-------|-----------|----------|
-| Desktop shell | Tauri 2 | `src-tauri/` |
+| Desktop shell | Electron | `src-electron/` |
+| Optional carrier diagnostics | Tauri 2 | `src-tauri/` |
 | Frontend | React 19 + Vite 7 | `src/shell/renderer/` |
 | Persistence | Runtime-owned Registered-App-Subject JSON storage through the public SDK | `src/shell/persistence/`, `src/product/persistence/` |
 | Astrology pipeline | Pure-TS deterministic v1 (`bazi_ganzhi_jieqi_dayun_v1`) | `src/product/astrology/` |
@@ -173,7 +174,9 @@ lockfiles, `.nimi/cache/`, `.nimi/local/`, `.nimi/topics/`.
   utf-8 + hex-lowercase. The pure-JS implementation in
   `src/product/astrology/canonical-hash.ts` is the only authority; do not
   reintroduce `node:crypto` (it does not exist in the Vite/Tauri renderer).
-- Tauri host glue is consumed from `nimi-shell-tauri` (crates.io).
+- Electron is the production and Desktop-supervised development carrier. The
+  optional Tauri diagnostic glue consumes `nimi-shell-tauri` from crates.io and
+  must not produce a second Windows production candidate for this version.
 
 <!-- nimicoding:managed:agents:start -->
 # Nimi Coding Managed Block

@@ -1,7 +1,7 @@
 # nimiapp-shijing
 
 时镜 (ShiJing) — A personal astrology reading companion grounded in classical
-bazi/ganzhi/jieqi/dayun, packaged as a standalone Tauri 2 + React 19 desktop
+bazi/ganzhi/jieqi/dayun, packaged as a standalone Electron + React 19 desktop
 app.
 
 > Migrated from the `apps/shijing` workspace in the `nimi-realm` monorepo.
@@ -12,7 +12,8 @@ app.
 
 | Layer | Technology | Location |
 |-------|-----------|----------|
-| Desktop shell | Tauri 2 | `src-tauri/` |
+| Desktop shell | Electron | `src-electron/` |
+| Optional carrier diagnostics | Tauri 2 | `src-tauri/` |
 | Frontend | React 19 + Vite 7 | `src/shell/renderer/` |
 | Persistence | Protected operation pending admission; IndexedDB/in-memory remain dev/test-only | `src/product/persistence/` |
 | Astrology pipeline | Pure-TS deterministic v1 (`bazi_ganzhi_jieqi_dayun_v1`) | `src/product/astrology/` |
@@ -61,7 +62,8 @@ host owned.
 
 - Node.js ≥ 24 (uses native `--experimental-strip-types`)
 - pnpm ≥ 10
-- Rust (stable) + Cargo, with the Tauri 2 toolchain for `src-tauri`
+- Windows x64 for the selected production package
+- Rust + Cargo and Tauri 2 only for optional `src-tauri` diagnostics
 
 ## Install
 
@@ -69,9 +71,9 @@ host owned.
 pnpm install
 ```
 
-All runtime dependencies resolve from npm (`@nimiplatform/kit`,
-`@nimiplatform/sdk`) and crates.io (`nimi-shell-tauri`); no sibling
-`nimi-realm` checkout is required.
+Electron dependencies resolve from public npm, including the Kit-owned Windows
+native binding. No sibling Nimi checkout is required to build the App. Optional
+Tauri diagnostics additionally use `nimi-shell-tauri` from crates.io.
 
 ## Development
 
@@ -89,13 +91,13 @@ pnpm dev:renderer
 ## Build & Verify
 
 ```bash
-# Type-check + renderer build + cargo check
+# Type-check + renderer build
 pnpm run build
 
 # Test suite (Node 24 native --test runner on .mjs files)
 pnpm test
 
-# Lint (typecheck + eslint + cargo check)
+# Lint (i18n + typecheck + eslint)
 pnpm lint
 
 # Canonical authority
@@ -103,8 +105,13 @@ pnpm spec:authority:check
 pnpm spec:authority:compile
 pnpm exec nimicoding sync --check
 
-# Native bundle (DMG / NSIS / AppImage depending on host)
-pnpm build:shell
+# The single Windows Electron production package
+pnpm run build:electron:production
+pnpm exec nimi-app pack --target windows-x86_64 --production
+pnpm exec nimi-app pack --aggregate
+
+# Optional Tauri diagnostic build; not a second release candidate
+pnpm run build:tauri:production
 ```
 
 ## Astrology Pipeline
