@@ -1,8 +1,8 @@
 {
   "LocalDevelopment": {
-    "badge": "Desktop 监督的 local_development",
+    "badge": "Nimi 访问",
     "checking": "检查中",
-    "title": "时镜正在 Desktop 监督的开发会话中运行",
+    "title": "时镜的 Nimi 连接与 AI 配置",
     "detail": "Runtime 文案和咨询通过声明式 App Access 使用时镜自己的 AI 配置。访问由平台建立；不提供应用内登录或直连降级。",
     "refresh": "刷新真实状态",
     "session": "Nimi 访问",

@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-09-09
+
+### Fixed
+- Show Nimi connection and AI configuration without incorrectly describing
+  Registry-installed Apps as development sessions.
+
+### Pre-Alpha storage boundary
+- Version 0.1.3 switched from Runtime JSON objects to streamed App-private
+  assets. Updating preserves the registered App subject and both storage
+  partitions, but does not automatically convert older JSON snapshots.
+- Versions 0.1.3 and 0.1.4 use the same streamed snapshot path. There is no
+  legacy reader or automatic migration in the App.
+
 ## [0.1.3] - 2026-09-09
 
 ### Fixed

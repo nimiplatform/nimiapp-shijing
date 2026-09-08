@@ -1,8 +1,8 @@
 {
   "LocalDevelopment": {
-    "badge": "Desktop-supervised local_development",
+    "badge": "Nimi access",
     "checking": "Checking",
-    "title": "ShiJing is running in a Desktop-supervised development session",
+    "title": "ShiJing's Nimi connection and AI configuration",
     "detail": "Runtime wording and consultation use ShiJing's own AI configuration under declarative App Access. Access is established by the platform; there is no in-app sign-in or direct-connect fallback.",
     "refresh": "Refresh live state",
     "session": "Nimi access",
