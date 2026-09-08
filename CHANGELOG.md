@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-09-09
+
+### Fixed
+- Preserve complete readings and consultation state through the public SDK's
+  App-private asset storage, including after restarting the App.
+- Align reading calculation dates and apply the accepted calendar corrections.
+- Update the Electron carrier to the published SDK 0.9.1, Kit 0.5.1, and
+  app-tools 0.2.8 integration verified during local acceptance.
+- Read the packaged App version from package.json so release updates also
+  update the Windows executable and bundled manifest versions.
+
 ## [Unreleased]
 
 ### Added

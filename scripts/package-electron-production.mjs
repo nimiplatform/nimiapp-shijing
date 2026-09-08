@@ -9,7 +9,6 @@ import { build } from 'esbuild';
 
 const APP_EXECUTABLE_NAME = "nimiapp-shijing-shell";
 const APP_PRODUCT_NAME = "时镜 ShiJing";
-const APP_VERSION = "0.1.2";
 function resolveWindowsResourceVersion(appVersion) {
   const semverPattern = /^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?(?:\+[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?$/u;
   if (typeof appVersion !== 'string' || !semverPattern.test(appVersion)) {
@@ -21,7 +20,6 @@ function resolveWindowsResourceVersion(appVersion) {
   }
   return `${coreComponents.join('.')}.0`;
 }
-const WINDOWS_RESOURCE_VERSION = resolveWindowsResourceVersion(APP_VERSION);
 const NATIVE_BINDING_PACKAGE = '@nimiplatform/kit-protected-local-win32-x64';
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const outputRoot = path.join(appRoot, 'dist-electron-package');
@@ -32,6 +30,8 @@ if (process.platform !== 'win32' || process.arch !== 'x64') {
 }
 
 const appPackage = JSON.parse(await readFile(path.join(appRoot, 'package.json'), 'utf8'));
+const APP_VERSION = appPackage.version;
+const WINDOWS_RESOURCE_VERSION = resolveWindowsResourceVersion(APP_VERSION);
 for (const sectionName of ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies']) {
   if (Object.hasOwn(appPackage[sectionName] || {}, NATIVE_BINDING_PACKAGE)) {
     throw new Error('The protected native binding must arrive through the Kit optional dependency.');
