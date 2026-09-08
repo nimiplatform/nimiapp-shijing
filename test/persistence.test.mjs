@@ -25,8 +25,8 @@ import {
   validShiJingSpace,
 } from './_fixtures.mjs';
 
-const TAURI_MAIN_SOURCE = readFileSync(
-  new URL('../src-tauri/src/main.rs', import.meta.url),
+const ELECTRON_MAIN_SOURCE = readFileSync(
+  new URL('../src-electron/main.ts', import.meta.url),
   'utf8',
 );
 const APP_SOURCE = readFileSync(
@@ -47,15 +47,16 @@ test('installed production entry delegates persistence to rootless Nimi storage'
     existsSync(new URL('../src/shell/persistence/shijing-runtime-storage.ts', import.meta.url)),
     true,
   );
-  assert.doesNotMatch(TAURI_MAIN_SOURCE, /storage_read_json|storage_write_json|storage_remove_json/);
-  assert.doesNotMatch(TAURI_MAIN_SOURCE, /StandardAppStorageRoot|DataRootBinding/);
+  assert.doesNotMatch(ELECTRON_MAIN_SOURCE, /storage_read_json|storage_write_json|storage_remove_json/);
+  assert.doesNotMatch(ELECTRON_MAIN_SOURCE, /StandardAppStorageRoot|DataRootBinding/);
   assert.doesNotMatch(APP_SOURCE, /ProductArea|IndexedDBPersistenceAdapter|InMemoryPersistenceAdapter/);
 });
 
-test('Nimi storage adapter round-trips the canonical ShiJingSpace document', async () => {
+test('Nimi storage adapter round-trips a complete snapshot larger than the JSON document bound', async () => {
   const documents = new Map();
   const storage = {
-    async readJson(relativePath) {
+    assets: {
+    async read({ relativePath }) {
       if (!documents.has(relativePath)) {
         throw Object.assign(new Error('not found'), {
           code: 'not-found',
@@ -64,21 +65,31 @@ test('Nimi storage adapter round-trips the canonical ShiJingSpace document', asy
           retryable: false,
         });
       }
-      return { value: structuredClone(documents.get(relativePath)), sizeBytes: 1 };
+      const bytes = documents.get(relativePath);
+      return { body: (async function* () {
+        for (let offset = 0; offset < bytes.length; offset += 19) yield bytes.slice(offset, offset + 19);
+      })() };
     },
-    async writeJson(relativePath, value) {
-      documents.set(relativePath, structuredClone(value));
-      return { value: structuredClone(value), sizeBytes: 1 };
+    async write({ relativePath, body, mediaType, overwrite }) {
+      assert.equal(mediaType, 'application/json');
+      assert.equal(overwrite, true);
+      documents.set(relativePath, body.slice());
+      return { sizeBytes: body.byteLength };
     },
-    async removeJson(relativePath) {
+    async remove(relativePath) {
       return { removed: documents.delete(relativePath) };
+    },
     },
   };
   const adapter = new ShijingRuntimeStoragePersistenceClient({ storage });
   const initial = await adapter.load();
   assert.deepEqual(initial, { ok: true, snapshot: null });
 
-  const snapshot = validShiJingSpace({ concern_tags: [validConcernTag('career')] });
+  const snapshot = validShiJingSpace({
+    concern_tags: [validConcernTag('tag_love')],
+    readings: Array.from({ length: 200 }, (_, index) => validReading({ id: `reading_${index}` })),
+  });
+  assert.ok(new TextEncoder().encode(JSON.stringify(snapshot)).byteLength > 256 * 1024);
   assert.deepEqual(await adapter.save(snapshot), { ok: true });
   const loaded = await adapter.load();
   assert.equal(loaded.ok, true);
@@ -92,14 +103,12 @@ test('Nimi storage adapter round-trips the canonical ShiJingSpace document', asy
 test('Nimi storage adapter rejects an invalid persisted root', async () => {
   const adapter = new ShijingRuntimeStoragePersistenceClient({
     storage: {
-      async readJson() {
-        return { value: { ...validShiJingSpace(), views: [] }, sizeBytes: 1 };
-      },
-      async writeJson(_relativePath, value) {
-        return { value, sizeBytes: 1 };
-      },
-      async removeJson() {
-        return { removed: true };
+      assets: {
+        async read() {
+          return { body: (async function* () {
+            yield new TextEncoder().encode(JSON.stringify({ ...validShiJingSpace(), views: [] }));
+          })() };
+        },
       },
     },
   });

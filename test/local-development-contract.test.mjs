@@ -11,7 +11,6 @@ test('manifest declares App Access with the minimal domain set on the Desktop-su
   const appIdentity = read('.nimi/config/app-identity.yaml');
   const submission = read('.nimi/admission/submission.yaml');
   const packageJson = JSON.parse(read('package.json'));
-  const tauriConfig = JSON.parse(read('src-tauri/tauri.conf.json'));
   const electronMain = read('src-electron/main.ts');
 
   assert.match(manifest, /^app_id: nimi\.shijing$/m);
@@ -32,7 +31,6 @@ test('manifest declares App Access with the minimal domain set on the Desktop-su
   assert.match(submission, /^app_id: nimi\.shijing$/m);
   assert.match(submission, /^profile: standalone$/m);
   assert.match(submission, /^tauri_identifier: ai\.nimi\.apps\.nimi\.shijing$/m);
-  assert.equal(tauriConfig.identifier, 'ai.nimi.apps.nimi.shijing');
   assert.equal(existsSync(new URL('../.nimi/scaffold.lock.json', import.meta.url)), false);
   assert.doesNotMatch(electronMain, /onProtectedSessionFailure/);
   assert.equal(packageJson.scripts.dev, 'nimi-app dev --shell electron');

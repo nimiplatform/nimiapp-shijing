@@ -163,7 +163,7 @@ export function RiJingTab(props: RiJingTabProps) {
     [state.snapshot.concern_tags],
   );
   const activeTagIds = useMemo(() => activeTags.map((t) => t.id), [activeTags]);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = dailyMirrorScopeForToday().date;
   const dailyScope = useMemo(() => dailyMirrorScopeForToday(), [today]);
   const referenceEventRefs = useMemo(
     () =>

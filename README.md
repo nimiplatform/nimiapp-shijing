@@ -13,7 +13,6 @@ app.
 | Layer | Technology | Location |
 |-------|-----------|----------|
 | Desktop shell | Electron | `src-electron/` |
-| Optional carrier diagnostics | Tauri 2 | `src-tauri/` |
 | Frontend | React 19 + Vite 7 | `src/shell/renderer/` |
 | Persistence | Protected operation pending admission; IndexedDB/in-memory remain dev/test-only | `src/product/persistence/` |
 | Astrology pipeline | Pure-TS deterministic v1 (`bazi_ganzhi_jieqi_dayun_v1`) | `src/product/astrology/` |
@@ -63,7 +62,6 @@ host owned.
 - Node.js ≥ 24 (uses native `--experimental-strip-types`)
 - pnpm ≥ 10
 - Windows x64 for the selected production package
-- Rust + Cargo and Tauri 2 only for optional `src-tauri` diagnostics
 
 ## Install
 
@@ -73,7 +71,6 @@ pnpm install
 
 Electron dependencies resolve from public npm, including the Kit-owned Windows
 native binding. No sibling Nimi checkout is required to build the App. Optional
-Tauri diagnostics additionally use `nimi-shell-tauri` from crates.io.
 
 ## Development
 
@@ -110,8 +107,6 @@ pnpm run build:electron:production
 pnpm exec nimi-app pack --target windows-x86_64 --production
 pnpm exec nimi-app pack --aggregate
 
-# Optional Tauri diagnostic build; not a second release candidate
-pnpm run build:tauri:production
 ```
 
 ## Astrology Pipeline
@@ -142,7 +137,7 @@ deterministic pipeline. See `.nimi/spec/shijing/canonical/algorithm.authority.ya
 Canonical hashing (`SJG-ALGO-11`) uses sha256 + json-c14n-v1 + NFC + utf-8 +
 hex-lowercase. The implementation lives in
 `src/product/astrology/canonical-hash.ts` as a pure-JS SHA-256 so it works
-identically in the Node `--test` runner and the Vite/Tauri renderer.
+identically in the Node `--test` runner and the Vite renderer.
 
 ## Authority tooling sync
 

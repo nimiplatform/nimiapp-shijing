@@ -6,6 +6,7 @@ import type {
   NianJingPhaseBand,
 } from '../../../domain/mirror-output.ts';
 import type { ConcernTag } from '../../../domain/concern-tag.ts';
+import { dailyMirrorScopeForToday } from '../mirror-scope-helpers.ts';
 import { NIANJING_INFLECTION_KIND_LABELS } from '../../i18n/copy.ts';
 
 export function nowIso(): string {
@@ -13,7 +14,7 @@ export function nowIso(): string {
 }
 
 export function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10);
+  return dailyMirrorScopeForToday().date;
 }
 
 export function dateToMs(date: string): number {

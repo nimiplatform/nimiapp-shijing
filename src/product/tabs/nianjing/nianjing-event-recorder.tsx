@@ -30,13 +30,14 @@ import {
 import { useShijingStore } from '../../state/shijing-store.tsx';
 import { persistenceWriteSucceeded } from '../../state/persistence-bridge.ts';
 import { ArrowUpIcon } from '../shijing/shijing-icons.tsx';
+import { dailyMirrorScopeForToday } from '../mirror-scope-helpers.ts';
 
 function nowIso(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
 function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10);
+  return dailyMirrorScopeForToday().date;
 }
 
 function dateLabel(occurredAt: string): string {

@@ -31,7 +31,12 @@ export class ShijingRuntimeStoragePersistenceClient implements PersistenceClient
   async load(): Promise<LoadResult> {
     let value: unknown;
     try {
-      value = (await this.client.storage.readJson(this.relativePath)).value;
+      const result = await this.client.storage.assets.read({ relativePath: this.relativePath });
+      const decoder = new TextDecoder('utf-8', { fatal: true });
+      let text = '';
+      for await (const chunk of result.body) text += decoder.decode(chunk, { stream: true });
+      text += decoder.decode();
+      value = JSON.parse(text);
     } catch (error) {
       const evidence = normalizeShijingLocalAppError(error);
       if (evidence.code === 'not-found') {
@@ -73,7 +78,12 @@ export class ShijingRuntimeStoragePersistenceClient implements PersistenceClient
       };
     }
     try {
-      await this.client.storage.writeJson(this.relativePath, snapshot as never);
+      await this.client.storage.assets.write({
+        relativePath: this.relativePath,
+        body: new TextEncoder().encode(JSON.stringify(snapshot)),
+        mediaType: 'application/json',
+        overwrite: true,
+      });
       return { ok: true };
     } catch (error) {
       return {
@@ -89,7 +99,7 @@ export class ShijingRuntimeStoragePersistenceClient implements PersistenceClient
 
   async clear(): Promise<ClearResult> {
     try {
-      await this.client.storage.removeJson(this.relativePath);
+      await this.client.storage.assets.remove(this.relativePath);
       return { ok: true };
     } catch (error) {
       return {

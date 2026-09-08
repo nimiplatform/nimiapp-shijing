@@ -14,15 +14,13 @@
     "dev:renderer": "vite --host 127.0.0.1 --port 1430 --strictPort",
     "dev:electron": "nimi-app dev --shell electron",
     "dev:shell": "nimi-app dev",
-    "tauri": "tauri",
     "build:renderer": "vite build",
     "typecheck:renderer": "tsc --noEmit",
     "typecheck:electron": "tsc -p tsconfig.electron.json --noEmit",
     "typecheck": "pnpm run typecheck:renderer && pnpm run typecheck:electron",
     "build:electron": "tsc -p tsconfig.electron.json && node scripts/bundle-electron-preload.mjs",
-    "build:electron:production": "node scripts/clean-electron-production.mjs && pnpm run build && pnpm run build:electron && node scripts/package-electron-production.mjs",
-    "build": "pnpm run typecheck && pnpm run build:renderer",
-    "build:tauri:production": "tauri build",
+    "build:electron:production": "node scripts/clean-electron-production.mjs && pnpm run build && node scripts/package-electron-production.mjs",
+    "build": "pnpm run typecheck && pnpm run build:renderer && pnpm run build:electron",
     "lint": "pnpm run i18n:check && pnpm run i18n:audit && pnpm run typecheck && eslint . --max-warnings 0",
     "test": "node --test test/*.test.mjs test/golden/*.test.mjs",
     "sync": "nimi-app sync",
@@ -39,10 +37,10 @@
     "spec:authority:check": "nimicoding authority check .nimi/spec",
     "spec:authority:compile": "nimicoding authority compile .nimi/spec",
     "eval:wording": "node scripts/wording-eval/run.mjs",
-    "eval:wording:score": "node scripts/wording-eval/score.mjs"
+    "eval:wording:score": "node scripts/wording-eval/score.mjs",
+    "postinstall": "install-electron"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2.9.1",
     "astronomy-engine": "^2.1.19",
     "i18next": "^25.10.10",
     "iztro": "^2.5.8",
@@ -51,14 +49,13 @@
     "react-i18next": "^16.6.6",
     "tyme4ts": "^1.5.0",
     "zustand": "^5.0.13",
-    "@nimiplatform/sdk": "^0.9.0",
-    "@nimiplatform/kit": "^0.5.0"
+    "@nimiplatform/sdk": "^0.9.1",
+    "@nimiplatform/kit": "^0.5.1"
   },
   "devDependencies": {
     "@electron/packager": "^20.3.0",
     "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.3.0",
-    "@tauri-apps/cli": "^2.11.2",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -73,7 +70,7 @@
     "typescript-eslint": "^8.59.4",
     "vite": "^7.3.6",
     "yaml": "^2.9.0",
-    "@nimiplatform/app-tools": "^0.2.7",
+    "@nimiplatform/app-tools": "^0.2.8",
     "@nimiplatform/nimi-coding": "0.6.1"
   },
   "author": "Nimi Team",

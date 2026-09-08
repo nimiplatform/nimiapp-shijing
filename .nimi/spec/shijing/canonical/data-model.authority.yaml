@@ -156,7 +156,7 @@ units:
     kind: rule
     title: Single data root
     modality: must
-    statement: ShiJingSpace is the only ShiJing root user-data entity and contains user_id, exactly one self_subject, persons, concern_tags, event_memories, plan_items, readings, conversations, and settings; each collection is unique by id; at most five ConcernTags are active; and the root contains no catalog snapshot, View data, Relation data, report data, trend-chart data, luck-score data, CRM data, or project-management data.
+    statement: ShiJingSpace is the only ShiJing root user-data entity and contains user_id, exactly one self_subject, persons, concern_tags, event_memories, plan_items, readings, conversations, and settings; each collection is unique by id; at most five ConcernTags are active; and the root contains no catalog snapshot, View data, Relation data, report data, trend-chart data, luck-score data, CRM data, or project-management data. Production persistence validates the complete root and stores its UTF-8 JSON as one application/json asset through the public SDK storage.assets stream in the current Runtime-owned App-private partition; overwrites use the Runtime atomic asset commit, reads reconstruct and validate the complete root, and no record truncation, bounded JSON-document fallback, or automatic legacy migration is admitted.
     condition: Whenever ShiJing user data is validated or persisted.
     failure: Reject the entire root payload before persistence.
     relations:

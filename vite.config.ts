@@ -8,8 +8,6 @@ const appReactDom = fileURLToPath(new URL('./node_modules/react-dom/index.js', i
 const appReactJsxRuntime = fileURLToPath(
   new URL('./node_modules/react/jsx-runtime.js', import.meta.url),
 );
-const appTauriApiCore = fileURLToPath(new URL('./node_modules/@tauri-apps/api/core.js', import.meta.url));
-const appTauriApiEvent = fileURLToPath(new URL('./node_modules/@tauri-apps/api/event.js', import.meta.url));
 function normalizeId(id: string): string {
   return id.replaceAll('\\', '/');
 }
@@ -65,8 +63,6 @@ export default defineConfig({
       { find: /^react$/, replacement: appReact },
       { find: /^react-dom$/, replacement: appReactDom },
       { find: /^react\/jsx-runtime$/, replacement: appReactJsxRuntime },
-      { find: /^@tauri-apps\/api\/core$/, replacement: appTauriApiCore },
-      { find: /^@tauri-apps\/api\/event$/, replacement: appTauriApiEvent },
     ],
     dedupe: ['react', 'react-dom', 'react/jsx-runtime'],
   },

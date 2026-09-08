@@ -1,4 +1,5 @@
 import { SolarDay } from 'tyme4ts';
+import { dailyMirrorScopeForToday } from '../mirror-scope-helpers.ts';
 import type { MethodProfileId } from '../../../domain/algorithm.ts';
 import type { YueJingCell, YueJingMirrorOutput, TendencyClass } from '../../../domain/mirror-output.ts';
 import type { Reading } from '../../../domain/reading.ts';
@@ -12,7 +13,7 @@ export function nowIso(): string {
 }
 
 export function todayLocalDate(): string {
-  return new Date().toISOString().slice(0, 10);
+  return dailyMirrorScopeForToday().date;
 }
 
 export const WEEKDAY_HEADERS = ['一', '二', '三', '四', '五', '六', '日'] as const;

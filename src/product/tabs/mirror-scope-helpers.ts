@@ -14,22 +14,27 @@ import type { SubjectRef } from '../../domain/subject-ref.ts';
 const DEFAULT_BASIS_TIME_ZONE = 'Asia/Shanghai';
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-function isoLocalDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
+// @nimi-authority: rule.shijing.algorithm.r003
+function isoLocalDate(d: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone, calendar: 'gregory', numberingSystem: 'latn',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(d);
+  return `${parts.find((part) => part.type === 'year')!.value}-${parts.find((part) => part.type === 'month')!.value}-${parts.find((part) => part.type === 'day')!.value}`;
 }
 
 export function dailyMirrorScopeForToday(
   now: Date = new Date(),
   basis_time_zone: string = DEFAULT_BASIS_TIME_ZONE,
 ): DailyMirrorScope {
-  return { kind: 'daily', date: isoLocalDate(now), basis_time_zone };
+  return { kind: 'daily', date: isoLocalDate(now, basis_time_zone), basis_time_zone };
 }
 
 export function rolling30DayMirrorScopeFromToday(
   now: Date = new Date(),
   basis_time_zone: string = DEFAULT_BASIS_TIME_ZONE,
 ): Rolling30DayMirrorScope {
-  return rolling30DayMirrorScopeFromDate(isoLocalDate(now), basis_time_zone);
+  return rolling30DayMirrorScopeFromDate(isoLocalDate(now, basis_time_zone), basis_time_zone);
 }
 
 export function rolling30DayMirrorScopeFromDate(
@@ -37,7 +42,7 @@ export function rolling30DayMirrorScopeFromDate(
   basis_time_zone: string = DEFAULT_BASIS_TIME_ZONE,
 ): Rolling30DayMirrorScope {
   const start = new Date(`${startDate}T00:00:00Z`);
-  const endDate = isoLocalDate(new Date(start.getTime() + 29 * MS_PER_DAY));
+  const endDate = new Date(start.getTime() + 29 * MS_PER_DAY).toISOString().slice(0, 10);
   return { kind: 'rolling_30_day', start_date: startDate, end_date: endDate, basis_time_zone };
 }
 
@@ -45,7 +50,7 @@ export function longHorizonMirrorScopeNextTenYears(
   now: Date = new Date(),
   basis_time_zone: string = DEFAULT_BASIS_TIME_ZONE,
 ): LongHorizonMirrorScope {
-  const startYear = now.getUTCFullYear();
+  const startYear = Number(isoLocalDate(now, basis_time_zone).slice(0, 4));
   return {
     kind: 'long_horizon',
     start_date: `${startYear}-01-01`,
@@ -58,7 +63,7 @@ export function natalMirrorScopeForToday(
   now: Date = new Date(),
   basis_time_zone: string = DEFAULT_BASIS_TIME_ZONE,
 ): NatalMirrorScope {
-  return { kind: 'natal', anchor_year: now.getUTCFullYear(), basis_time_zone };
+  return { kind: 'natal', anchor_year: Number(isoLocalDate(now, basis_time_zone).slice(0, 4)), basis_time_zone };
 }
 
 export function relationshipNatalMirrorScopeForToday(
@@ -69,7 +74,7 @@ export function relationshipNatalMirrorScopeForToday(
   return {
     kind: 'relationship_natal',
     related_person_ref,
-    anchor_year: now.getUTCFullYear(),
+    anchor_year: Number(isoLocalDate(now, basis_time_zone).slice(0, 4)),
     basis_time_zone,
   };
 }

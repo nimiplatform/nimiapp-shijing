@@ -8,7 +8,6 @@
 - **App name (English)**: ShiJing
 - **Canonical Nimi app_id**: `nimi.shijing`
 - **Product slug**: `shijing`
-- **Tauri identifier**: `ai.nimi.apps.nimi.shijing`
 - **One-line**: A personal astrology reading companion grounded in classical
   bazi/ganzhi/jieqi/dayun, with a deterministic feature pipeline and a
   Runtime-AI wording boundary.
@@ -19,14 +18,13 @@
 | Layer | Technology | Location |
 |-------|-----------|----------|
 | Desktop shell | Electron | `src-electron/` |
-| Optional carrier diagnostics | Tauri 2 | `src-tauri/` |
 | Frontend | React 19 + Vite 7 | `src/shell/renderer/` |
-| Persistence | Runtime-owned Registered-App-Subject JSON storage through the public SDK | `src/shell/persistence/`, `src/product/persistence/` |
+| Persistence | Complete JSON snapshot through public SDK streamed App-private assets | `src/shell/persistence/`, `src/product/persistence/` |
 | Astrology pipeline | Pure-TS deterministic v1 (`bazi_ganzhi_jieqi_dayun_v1`) | `src/product/astrology/` |
 | AI wording | Protected Local App text candidate consumption under `runtime.consume` | `@nimiplatform/sdk/app` |
 | UI components | `@nimiplatform/kit` | npm dependency |
 | State | Custom store + reducer | `src/product/state/` |
-| Dev port | 1430 | `vite.config.ts`, `src-tauri/tauri.conf.json` |
+| Dev port | 1430 | `package.json` |
 
 ## Spec Authority & Sync
 
@@ -131,7 +129,7 @@ no data to migrate. Therefore:
 ### Privacy Boundary
 
 - Production and local-development shells persist through the admitted
-  Runtime-owned App-private JSON partition. IndexedDB and in-memory adapters
+  Runtime-owned App-private asset partition. IndexedDB and in-memory adapters
   remain explicit test/preview-only components, not installed account truth.
   No cloud upload or third-party SDK data collection.
 - Runtime AI sends only the deterministic feature snapshot + the frozen
@@ -145,9 +143,6 @@ pnpm typecheck
 pnpm test
 pnpm lint
 pnpm run build
-
-# Rust layer
-(cd src-tauri && cargo check)
 
 # Governance layer
 pnpm nimicoding:doctor
@@ -173,10 +168,8 @@ lockfiles, `.nimi/cache/`, `.nimi/local/`, `.nimi/topics/`.
 - Canonical hashing (`SJG-ALGO-11`) uses sha256 + json-c14n-v1 + NFC +
   utf-8 + hex-lowercase. The pure-JS implementation in
   `src/product/astrology/canonical-hash.ts` is the only authority; do not
-  reintroduce `node:crypto` (it does not exist in the Vite/Tauri renderer).
-- Electron is the production and Desktop-supervised development carrier. The
-  optional Tauri diagnostic glue consumes `nimi-shell-tauri` from crates.io and
-  must not produce a second Windows production candidate for this version.
+  reintroduce `node:crypto` (it does not exist in the Vite renderer).
+- Electron is the production and Desktop-supervised development carrier.
 
 <!-- nimicoding:managed:agents:start -->
 # Nimi Coding Managed Block

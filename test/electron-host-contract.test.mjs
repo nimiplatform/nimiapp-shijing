@@ -20,7 +20,7 @@ function readJson(relativePath) {
   return JSON.parse(read(relativePath));
 }
 
-test('ShiJing ships real Electron and Tauri shells wired to the supervised development path', () => {
+test('ShiJing ships a real Electron shell wired to the supervised development path', () => {
   for (const relativePath of [
     'src-electron/main.ts',
     'src-electron/preload.cts',
@@ -79,23 +79,6 @@ test('Electron registers only the fixed Kit app host', () => {
   assert.match(mainSource, /will-navigate/);
   assert.match(preloadSource, /@nimiplatform\/kit\/shell\/electron\/preload-cjs/);
   assert.match(preloadSource, /installNimiElectronRuntimeBridge/);
-});
-
-test('Tauri debug uses the local-app carrier while release fails closed without app-owned authority', () => {
-  const source = read('src-tauri/src/main.rs');
-
-  assert.match(source, /#\[cfg\(debug_assertions\)\]/);
-  assert.match(source, /RuntimeBridgeLocalAppHost::platform_default\(\)/);
-  assert.match(source, /nimi_shell_tauri_local_app_standard_shell_handler!\[\]/);
-  assert.match(source, /#\[cfg\(not\(debug_assertions\)\)\]/);
-  assert.match(source, /fail-closed release shell/);
-  assert.doesNotMatch(source, /RuntimeBridgeAppHost|installed_app_standard_shell_handler/);
-  assert.doesNotMatch(source, /runtime_bridge_unary|runtime_bridge_stream/);
-  assert.doesNotMatch(source, /ai_config_get|ai_config_set/);
-  assert.doesNotMatch(source, /storage_read_json|storage_write_json|storage_remove_json/);
-  assert.doesNotMatch(source, /resolve_installed_nimi_app_launch_binding_from_env/);
-  assert.doesNotMatch(source, /append_invoke_initialization_script/);
-  assert.doesNotMatch(source, /dotenv|NIMI_APP_|NIMI_RUNTIME_/);
 });
 
 test('app-owned development runners are removed', () => {
