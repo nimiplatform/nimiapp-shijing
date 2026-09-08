@@ -85,6 +85,16 @@ pnpm dev:shell -- --shell electron
 pnpm dev:renderer
 ```
 
+### Commits and releases
+
+Daily development can commit and push directly to `main`. Feature branches and
+pull requests are optional. The remote branch protection prevents deletion and
+force pushes, without requiring PRs or passing status checks before a push.
+
+Run the checks relevant to each change and its risks. Full production builds,
+packaging, and release verification run in the release workflow on `v*` tags;
+the workflow also supports optional PR builds and manual development builds.
+
 ## Build & Verify
 
 ```bash

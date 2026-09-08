@@ -135,6 +135,17 @@ no data to migrate. Therefore:
 - Runtime AI sends only the deterministic feature snapshot + the frozen
   `inputs_summary` over the runtime bridge; no raw user diary entries leak.
 
+## Development Workflow
+
+- ShiJing is a personal, pre-launch project. Daily work may be committed and
+  pushed directly to `main`; feature branches and pull requests are optional.
+- The remote `main` ruleset prevents branch deletion and non-fast-forward
+  pushes. It does not require pull requests, approvals, or status checks.
+- Run checks proportionate to the change and its actual risks. A daily commit
+  or push does not require a full release build.
+- Production build, packaging, and release verification remain in the release
+  workflow. Publishing a release must satisfy that workflow's existing gates.
+
 ## Verification
 
 ```bash
