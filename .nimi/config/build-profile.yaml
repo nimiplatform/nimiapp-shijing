@@ -12,4 +12,10 @@ targets:
     build_command: pnpm run build:electron:production
     payload_path: dist-electron-package/nimiapp-shijing-shell-win32-x64
     runtime_entry: payload/nimiapp-shijing-shell.exe
+  macos-aarch64:
+    os: macos
+    arch: arm64
+    build_command: pnpm run build:electron:production
+    payload_path: dist-electron-package/nimiapp-shijing-shell-darwin-arm64
+    runtime_entry: payload/nimiapp-shijing-shell.app/Contents/MacOS/nimiapp-shijing-shell
 profile_role: developer-workflow-input
