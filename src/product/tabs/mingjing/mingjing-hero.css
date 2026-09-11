@@ -73,7 +73,7 @@
   padding: clamp(24px, 3vw, 32px) clamp(28px, 4.2vw, 48px);
   border-radius: 18px;
   color: #fff;
-  background: #86be9c;
+  background: #527c63;
   box-shadow:
     0 22px 46px -28px rgba(40, 78, 58, 0.58),
     inset 0 1px 0 rgba(255, 255, 255, 0.16);
@@ -100,7 +100,7 @@
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .shijing-mingjing .shijing-mj-hero__title {
@@ -121,7 +121,7 @@
   gap: 8px;
   font-size: 15px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(255, 255, 255, 0.96);
 }
 
 .shijing-mingjing .shijing-mj-hero__dot { opacity: 0.5; }
@@ -131,7 +131,7 @@
   max-width: 46ch;
   font-size: 14.5px;
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .shijing-mingjing .shijing-mj-hero__panel {
@@ -151,7 +151,7 @@
   margin: 0 0 6px;
   font-size: 12.5px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .shijing-mingjing .shijing-mj-hero__chips {
@@ -182,12 +182,12 @@
 .shijing-mingjing .shijing-mj-hero__chip[data-element='water'] { --mj-chip-bg: rgba(122, 170, 206, 0.48); }
 
 .shijing-mingjing .shijing-mj-hero__chip--muted { opacity: 0.78; filter: saturate(0.65); }
-.shijing-mingjing .shijing-mj-hero__chip-empty { color: rgba(255, 255, 255, 0.6); font-size: 15px; }
+.shijing-mingjing .shijing-mj-hero__chip-empty { color: rgba(255, 255, 255, 0.72); font-size: 15px; }
 
 .shijing-mingjing .shijing-mj-hero__favor-hint {
   margin: 6px 0 0;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.66);
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .shijing-mingjing .shijing-mj-hero__favor--adverse {
@@ -203,7 +203,7 @@
 .shijing-mingjing .shijing-mj-hero__stage-label {
   margin: 0 0 6px;
   font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .shijing-mingjing .shijing-mj-hero__stage-value {
@@ -222,7 +222,7 @@
 
 .shijing-mingjing .shijing-mj-hero__stage-text {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .shijing-mingjing .shijing-mj-hero__stage-badge {
@@ -234,7 +234,7 @@
   color: #fff;
 }
 
-.shijing-mingjing .shijing-mj-hero__stage-value--empty { font-size: 13px; color: rgba(255, 255, 255, 0.78); }
+.shijing-mingjing .shijing-mj-hero__stage-value--empty { font-size: 13px; color: rgba(255, 255, 255, 0.85); }
 
 .shijing-mingjing .shijing-mj-hero__cta {
   appearance: none;

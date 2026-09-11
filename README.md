@@ -1,5 +1,7 @@
 # nimiapp-shijing
 
+专业AI个人命理解读伙伴
+
 时镜 (ShiJing) — A personal astrology reading companion grounded in classical
 bazi/ganzhi/jieqi/dayun, packaged as a standalone Electron + React 19 desktop
 app.
