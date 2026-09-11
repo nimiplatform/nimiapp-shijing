@@ -104,13 +104,11 @@ readonly settings: {
 };
 readonly uiLanguage: {
   readonly title: string;
-  readonly description: string;
   readonly saved: (languageLabel: string) => string;
   readonly saveFailed: (code: string) => string;
 };
 readonly responsePreferences: {
   readonly title: string;
-  readonly description: string;
   readonly tone: string;
   readonly length: string;
   readonly aiLanguage: string;
@@ -118,7 +116,7 @@ readonly responsePreferences: {
   readonly extraPlaceholder: string;
   readonly saveButton: string;
   readonly saveFailed: (code: string) => string;
-  readonly savedAt: (savedAt: string) => string;
+  readonly saved: () => string;
 };
 readonly self: {
   readonly title: string;
@@ -265,9 +263,10 @@ readonly concerns: {
   readonly toggleOnTitle: string;
   readonly manage: string;
 };
-readonly privacy: {
+readonly localData: {
   readonly title: string;
-  readonly description: string;
+};
+readonly privacy: {
   readonly status: string;
   readonly error: (kind: string) => string;
   readonly clearButton: string;
@@ -277,20 +276,15 @@ readonly privacy: {
   readonly clearFailed: (kind: string) => string;
 };
 readonly diagnostics: {
-  readonly title: string;
-  readonly description: string;
   readonly snapshotStatus: string;
   readonly validationCode: string;
 };
 readonly methodProfile: {
   readonly title: string;
-  readonly description: string;
   readonly algorithm: string;
-  readonly note: string;
-  readonly switchedAt: (savedAt: string) => string;
+  readonly switched: (methodLabel: string) => string;
   readonly capabilities: {
     readonly title: string;
-    readonly description: string;
     readonly current: string;
     readonly algorithmNeutralTitle: string;
     readonly mingjingRouteTitle: string;
@@ -298,6 +292,7 @@ readonly methodProfile: {
     readonly unavailable: string;
     readonly noRouteFeatures: string;
     readonly failClosePrefix: string;
+    readonly viewAll: string;
     readonly featureLabels: {
       readonly 'rijing.daily_reading': string;
       readonly 'yuejing.rolling_30_day_reading': string;

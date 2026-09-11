@@ -264,10 +264,18 @@
  * which styles correctly even though the drawer is portaled to <body> outside
  * the `.shijing-settings-page--styled` scope. Row layout is handled by the
  * `.sjp-actions--drawer` rule above. The one thing the kit can't know about is
- * stacking: its Select panel portals to <body> at --nimi-z-popover (100), but
+ * stacking: its Select panel portals to <body> at --nimi-z-popover (80), but
  * the drawer sits at z-index 120 — so without lifting the popper, a dropdown
  * opened inside the drawer renders BEHIND it and looks unresponsive. Raise the
  * Radix popper content above the drawer. */
 [data-radix-popper-content-wrapper] {
   z-index: 200 !important;
+}
+
+/* The kit DatePicker panel has the same stacking problem: it portals to
+ * <body> with z-index var(--nimi-z-popover) (80), below the drawer's 120, so
+ * the birth-date panel opens behind the modal and looks dead. Lift it to the
+ * same level as the app-owned wheel panels (.sjp-birth-wheel-panel, 240). */
+.nimi-date-picker-panel {
+  z-index: 240;
 }

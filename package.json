@@ -23,6 +23,7 @@
     "build": "pnpm run typecheck && pnpm run build:renderer && pnpm run build:electron",
     "lint": "pnpm run i18n:check && pnpm run i18n:audit && pnpm run typecheck && eslint . --max-warnings 0",
     "test": "node --test test/*.test.mjs test/golden/*.test.mjs",
+    "test:browser": "node --test test/browser/*.test.mjs",
     "sync": "nimi-app sync",
     "validate": "node scripts/validate.mjs",
     "local-audit": "node scripts/local-audit.mjs",

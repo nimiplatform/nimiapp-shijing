@@ -2,18 +2,20 @@
 //
 // The account avatar opens a compact menu of the settings sub-pages (see
 // SHIJING_SETTINGS_PAGES). Selecting an entry opens this full-surface detail
-// page, which renders that page's surfaces. The `.shijing-settings` wrapper
-// keeps the existing surface/editor styling (h3 / button / recover) intact.
+// page. The 设置 sub-page renders every module as a row inside one stacked
+// card — no left module rail, so all settings stay visible in a single
+// scroll; deep links scroll the owning row into view. Sibling sub-pages
+// (档案 / 关注 / 发生过的事) render their surfaces as one flowing column of
+// `.sjp-card`s. The `.shijing-settings` wrapper keeps the existing
+// surface/editor styling (h3 / button / recover) intact.
 
 import {
+  Fragment,
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
-  type TouchEvent,
-  type WheelEvent,
 } from 'react';
 import { PageDetailLayout } from '@nimiplatform/kit/ui';
 import {
@@ -28,18 +30,22 @@ import {
   selfProfilePresenceVerificationFailureReason,
 } from '../self/self-profile-privacy.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
+import { LocalDataDiagnosticsSection } from './local-data-diagnostics-section.tsx';
+import { MethodProfileEditor } from './method-profile-editor.tsx';
+import { ResponsePreferencesEditor } from './response-preferences-editor.tsx';
+import { SettingsRow } from './settings-row.tsx';
 import { SettingsSurfaceSection } from './settings-surfaces.tsx';
+import { UiLanguageSwitch } from './ui-language-switch.tsx';
 
 export type ShijingSettingsFocusTarget =
   | 'self_profile_editor'
   | 'method_profile'
   | 'privacy_local_data';
 
-// Host-injected extra module rendered as one more card at the end of the
-// 设置 sub-page, with a matching entry in the module nav. The product layer
-// owns no such module itself — the local-development carrier uses this to
-// place its session / AI-config status inside settings instead of above the
-// product shell. Absent in previews and tests.
+// Host-injected extra module rendered as the last row on the 设置 sub-page.
+// The product layer owns no such module itself — the local-development
+// carrier uses this to place its session / AI-config status inside settings
+// instead of above the product shell. Absent in previews and tests.
 export interface SettingsPageExtraModule {
   readonly targetId: string;
   readonly navLabel: string;
@@ -63,11 +69,7 @@ export interface SettingsPageViewProps {
   readonly settingsExtras?: SettingsPageExtraModule | null;
 }
 
-interface SettingsModuleNavItem {
-  readonly targetId: string;
-  readonly label: string;
-}
-
+// @nimi-authority: rule.shijing.ia.r004
 export function SettingsPageView({
   pageId,
   focusTarget,
@@ -77,15 +79,9 @@ export function SettingsPageView({
 }: SettingsPageViewProps) {
   const copy = useProductCopy();
   const { state, presence_verification_client } = useShijingStore();
-  const settingsScrollRef = useRef<HTMLDivElement | null>(null);
-  const settingsNavRef = useRef<HTMLElement | null>(null);
-  const touchScrollRef = useRef<{ y: number; scrollTop: number } | null>(null);
   const [verifiedUntilMs, setVerifiedUntilMs] = useState(0);
   const [verificationPending, setVerificationPending] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
-  const [activeSettingsModuleId, setActiveSettingsModuleId] = useState<string | null>(
-    'settings-ui-language',
-  );
   const page =
     SHIJING_SETTINGS_PAGES.find((candidate) => candidate.id === pageId) ??
     SHIJING_SETTINGS_PAGES[0];
@@ -100,8 +96,7 @@ export function SettingsPageView({
 
   // 档案 (profile), 关注 (concerns), 发生过的事 (memory), and 设置 (settings)
   // all share the polished personal-data card system (see styles-personal-data.css),
-  // keyed off `--styled` — every settings sub-page renders self-contained
-  // `.sjp-card`s.
+  // keyed off `--styled`.
   const pageClassName = `shijing-settings-page shijing-settings-page--styled shijing-settings-page--${page.id}`;
 
   const isProfile = page.id === 'profile';
@@ -198,130 +193,76 @@ export function SettingsPageView({
           : copy.settings.settingsIntro;
 
   // The extra module only belongs to the 设置 sub-page; on sibling sub-pages
-  // it is neither rendered nor listed in the module nav.
+  // it is not rendered.
   const extras = page.id === 'settings' ? (settingsExtras ?? null) : null;
+  const localDataSurfaces = page.surfaces.filter(
+    (surface) => surface === 'privacy_local_data' || surface === 'diagnostics',
+  );
 
-  const settingsModuleNavItems: readonly SettingsModuleNavItem[] =
-    page.id === 'settings'
-      ? [
-          { targetId: 'settings-ui-language', label: copy.uiLanguage.title },
-          { targetId: 'settings-method-profile', label: copy.methodProfile.title },
-          { targetId: 'settings-response-preferences', label: copy.responsePreferences.title },
-          { targetId: 'settings-privacy-local-data', label: copy.privacy.title },
-          { targetId: 'settings-diagnostics', label: copy.diagnostics.title },
-          ...(extras ? [{ targetId: extras.targetId, label: extras.navLabel }] : []),
-        ]
-      : [];
-
+  // Deep links (e.g. a mirror readiness blocker pointing at 推演方法) scroll
+  // the owning row into view now that every module stays on the page.
   useEffect(() => {
-    setActiveSettingsModuleId(settingsModuleNavItems[0]?.targetId ?? null);
-  }, [page.id]);
-
-  const updateActiveSettingsModule = useCallback(() => {
-    const nav = settingsNavRef.current;
-    if (!nav || settingsModuleNavItems.length === 0) return;
-
-    const navTop = nav.getBoundingClientRect().top;
-    let nextActiveTargetId = settingsModuleNavItems[0]?.targetId ?? null;
-
-    for (const item of settingsModuleNavItems) {
-      const target = document.getElementById(item.targetId);
-      if (!(target instanceof HTMLElement)) continue;
-
-      const targetTop = target.getBoundingClientRect().top;
-      if (targetTop <= navTop + 8) {
-        nextActiveTargetId = item.targetId;
-      }
-    }
-
-    setActiveSettingsModuleId((previous) =>
-      previous === nextActiveTargetId ? previous : nextActiveTargetId,
-    );
-  }, [settingsModuleNavItems]);
-
-  const scrollToSettingsModule = useCallback((targetId: string) => {
-    const scrollContainer = settingsScrollRef.current;
-    const nav = settingsNavRef.current;
-    const target = document.getElementById(targetId);
-    if (!(target instanceof HTMLElement) || !scrollContainer || !nav) return;
-
-    setActiveSettingsModuleId(targetId);
-    const targetRect = target.getBoundingClientRect();
-    const navRect = nav.getBoundingClientRect();
-    const nextTop = scrollContainer.scrollTop + targetRect.top - navRect.top;
-    scrollContainer.scrollTo({ top: nextTop, behavior: 'smooth' });
-  }, []);
-
-  const handleSettingsContentScroll = useCallback(() => {
-    updateActiveSettingsModule();
-  }, [updateActiveSettingsModule]);
-
-  const handleSettingsBodyWheel = useCallback((event: WheelEvent<HTMLDivElement>) => {
-    const scrollContainer = settingsScrollRef.current;
-    if (!scrollContainer || event.deltaY === 0) return;
-    if (Math.abs(event.deltaY) < Math.abs(event.deltaX)) return;
-
-    event.preventDefault();
-    scrollContainer.scrollTop += event.deltaY;
-  }, []);
-
-  const handleSettingsBodyTouchStart = useCallback((event: TouchEvent<HTMLDivElement>) => {
-    const touch = event.touches[0];
-    const scrollContainer = settingsScrollRef.current;
-    if (!touch || !scrollContainer) return;
-
-    touchScrollRef.current = {
-      y: touch.clientY,
-      scrollTop: scrollContainer.scrollTop,
-    };
-  }, []);
-
-  const handleSettingsBodyTouchMove = useCallback((event: TouchEvent<HTMLDivElement>) => {
-    const touch = event.touches[0];
-    const scrollContainer = settingsScrollRef.current;
-    const touchScroll = touchScrollRef.current;
-    if (!touch || !scrollContainer || !touchScroll) return;
-
-    event.preventDefault();
-    scrollContainer.scrollTop = touchScroll.scrollTop + touchScroll.y - touch.clientY;
-  }, []);
-
-  const handleSettingsBodyTouchEnd = useCallback(() => {
-    touchScrollRef.current = null;
-  }, []);
-
-  useEffect(() => {
-    if (!focusTarget) return;
+    if (!focusTarget || page.id !== 'settings') return;
     const id = SETTINGS_FOCUS_TARGET_IDS[focusTarget];
     if (!id) return;
-    const timer = window.setTimeout(() => scrollToSettingsModule(id), 0);
-    return () => window.clearTimeout(timer);
-  }, [focusTarget, pageId, scrollToSettingsModule]);
+    const target = document.getElementById(id);
+    if (!target) return;
+    target.scrollIntoView({ block: 'start' });
+    target.focus({ preventScroll: true });
+  }, [focusTarget, page.id]);
 
   const settingsContent =
-    settingsModuleNavItems.length > 0 ? (
-      <div
-        ref={settingsScrollRef}
-        className="shijing-settings shijing-settings-page__content-scroll"
-        onScroll={handleSettingsContentScroll}
-      >
-        {page.surfaces.map((surface) => (
-          <SettingsSurfaceSection
-            key={surface}
-            surface={surface}
-            focusTarget={focusTarget}
-            profileSensitiveAccess={profileSensitiveAccess}
-          />
-        ))}
-        {extras ? (
-          <div
-            id={extras.targetId}
-            className="shijing-settings-page__extra-module"
-            tabIndex={-1}
-          >
-            {extras.content}
-          </div>
-        ) : null}
+    page.id === 'settings' ? (
+      <div className="shijing-settings-stack">
+        <div className="sjp-stack">
+          {page.surfaces.map((surface) => {
+            if (surface === 'response_preferences') {
+              return (
+                <Fragment key={surface}>
+                  <UiLanguageSwitch />
+                  <MethodProfileEditor />
+                  <ResponsePreferencesEditor />
+                </Fragment>
+              );
+            }
+            if (surface === localDataSurfaces[0]) {
+              return <LocalDataDiagnosticsSection key={surface} surfaces={localDataSurfaces} />;
+            }
+            if (surface === 'privacy_local_data' || surface === 'diagnostics') return null;
+            return (
+              <SettingsSurfaceSection
+                key={surface}
+                surface={surface}
+                focusTarget={focusTarget}
+                profileSensitiveAccess={profileSensitiveAccess}
+              />
+            );
+          })}
+          {extras ? (
+            <SettingsRow
+              id={extras.targetId}
+              icon={
+                <svg
+                  className="sjp-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M21 8l-9-5-9 5v8l9 5 9-5V8z" />
+                  <path d="M3.3 8.3L12 13l8.7-4.7" />
+                  <path d="M12 13v9" />
+                </svg>
+              }
+              title={extras.navLabel}
+            >
+              {extras.content}
+            </SettingsRow>
+          ) : null}
+        </div>
       </div>
     ) : (
       <div className="shijing-settings">
@@ -410,47 +351,7 @@ export function SettingsPageView({
           ) : undefined
         }
       >
-        {settingsModuleNavItems.length > 0 ? (
-          <div
-            className="shijing-settings-page__body"
-            onWheel={handleSettingsBodyWheel}
-            onTouchStart={handleSettingsBodyTouchStart}
-            onTouchMove={handleSettingsBodyTouchMove}
-            onTouchEnd={handleSettingsBodyTouchEnd}
-            onTouchCancel={handleSettingsBodyTouchEnd}
-          >
-            <nav
-              ref={settingsNavRef}
-              className="shijing-settings-page__surface-nav"
-              aria-label={copy.settings.subnavAriaLabel}
-            >
-              <ol className="shijing-settings-page__surface-nav-list">
-                {settingsModuleNavItems.map((item) => {
-                  const active = item.targetId === activeSettingsModuleId;
-                  return (
-                    <li key={item.targetId}>
-                      <button
-                        type="button"
-                        className="shijing-settings-page__surface-nav-item"
-                        aria-controls={item.targetId}
-                        aria-current={active ? 'location' : undefined}
-                        data-active={active ? 'true' : undefined}
-                        onClick={() => {
-                          scrollToSettingsModule(item.targetId);
-                        }}
-                      >
-                        {item.label}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ol>
-            </nav>
-            {settingsContent}
-          </div>
-        ) : (
-          settingsContent
-        )}
+        {settingsContent}
       </PageDetailLayout>
     </div>
   );

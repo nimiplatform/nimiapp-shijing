@@ -73,6 +73,7 @@ export const settingsCssFiles = [
   '../src/product/settings/settings-shell.css',
   '../src/product/settings/settings-primitives.css',
   '../src/product/settings/settings-forms.css',
+  '../src/product/settings/settings-rows.css',
   '../src/product/settings/settings-checks.css',
   '../src/product/settings/method-profile.css',
   '../src/product/self/self-editor.css',

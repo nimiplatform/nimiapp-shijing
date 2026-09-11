@@ -4,6 +4,7 @@
 @import './product/settings/settings-shell.css';
 @import './product/settings/settings-primitives.css';
 @import './product/settings/settings-forms.css';
+@import './product/settings/settings-rows.css';
 @import './product/settings/settings-checks.css';
 @import './product/settings/method-profile.css';
 @import './product/self/self-editor.css';

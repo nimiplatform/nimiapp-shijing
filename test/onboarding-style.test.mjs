@@ -176,7 +176,7 @@ test('onboarding editor cards keep their card frames instead of clearing sjp-car
 
   assert.match(
     personalDataStyles,
-    /\.shijing-settings-page--styled \.sjp-card\s*\{[^}]*background-image:\s*var\(--sjp-surface-hero\)[^}]*border:\s*1px solid rgba\(255, 255, 255, 0\.6\)[^}]*border-radius:\s*var\(--sjp-radius-xl\)[^}]*box-shadow:\s*var\(--sjp-elevation-raised\)[^}]*padding:\s*34px 36px/s,
+    /\.shijing-settings-page--styled \.sjp-card\s*\{[^}]*background-image:\s*var\(--sjp-surface-hero\)[^}]*border:\s*1px solid rgba\(255, 255, 255, 0\.6\)[^}]*border-radius:\s*var\(--sjp-radius-xl\)[^}]*box-shadow:\s*(?!none)[^;]+[^}]*padding:\s*34px 36px/s,
   );
 
   for (const [sourceName, reset] of [

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { UI_LANGUAGES, type UiLanguage } from '../../domain/settings.ts';
 import { useProductCopy } from '../i18n/copy.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
+import { SettingsRow } from './settings-row.tsx';
 import { commitUiLanguage } from './ui-language-state.ts';
 
 export function usePersistedUiLanguageSync() {
@@ -17,11 +18,7 @@ export function usePersistedUiLanguageSync() {
   }, [i18n, uiLanguage]);
 }
 
-export function UiLanguageSwitch({
-  variant = 'compact',
-}: {
-  readonly variant?: 'compact' | 'card';
-}) {
+export function UiLanguageSwitch() {
   const { state, replace_snapshot } = useShijingStore();
   const { i18n } = useTranslation();
   const copy = useProductCopy();
@@ -55,48 +52,38 @@ export function UiLanguageSwitch({
     nimiToast.success(copy.uiLanguage.saved(copy.uiLanguageLabels[next as UiLanguage]));
   }
 
-  const control = (
-    <SegmentedControl
-      ariaLabel={copy.shell.languageSwitch}
-      size="sm"
-      value={value}
-      onValueChange={(next) => {
-        void changeLanguage(next);
-      }}
-      items={items}
-      className="shijing-ui-language-switch__control"
-    />
-  );
-
-  if (variant === 'compact') {
-    return <div className="shijing-ui-language-switch">{control}</div>;
-  }
-
   return (
-    <section id="settings-ui-language" className="sjp-card" tabIndex={-1}>
-      <div className="sjp-card-head">
-        <span className="sjp-card-icon">
-          <svg
-            className="sjp-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M4 5h16M4 19h16M7 5c1.8 6.3 5.2 10.7 10 14M17 5c-1.8 6.3-5.2 10.7-10 14" />
-          </svg>
-        </span>
-        <div>
-          <h2 className="sjp-card-title">{copy.uiLanguage.title}</h2>
-          <p className="sjp-card-desc">{copy.uiLanguage.description}</p>
-        </div>
-      </div>
-      <div className="sjp-grid">
-        <div className="sjp-field sjp-field--full">{control}</div>
-      </div>
-    </section>
+    <SettingsRow
+      id="settings-ui-language"
+      align="center"
+      icon={
+        <svg
+          className="sjp-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3 12h18" />
+          <path d="M12 3a13.5 13.5 0 0 1 3.5 9 13.5 13.5 0 0 1-3.5 9 13.5 13.5 0 0 1-3.5-9A13.5 13.5 0 0 1 12 3z" />
+        </svg>
+      }
+      title={copy.uiLanguage.title}
+    >
+      <SegmentedControl
+        ariaLabel={copy.shell.languageSwitch}
+        size="sm"
+        value={value}
+        onValueChange={(next) => {
+          void changeLanguage(next);
+        }}
+        items={items}
+        className="shijing-ui-language-switch__control shijing-ui-language-switch__control--card"
+      />
+    </SettingsRow>
   );
 }

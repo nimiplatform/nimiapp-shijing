@@ -1,0 +1,235 @@
+/* Settings 设置 sub-page stacked rows — one white card holding every module
+ * as a horizontal row (meta left, controls right) with hairline dividers.
+ * Replaces the left module rail: all modules stay visible in one scroll. */
+
+/* ── Stacked card container ────────────────────────────────── */
+.shijing-settings-page--styled .sjp-stack {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: var(--sjp-radius-xl);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  overflow: hidden;
+}
+
+/* ── Row ───────────────────────────────────────────────────── */
+.shijing-settings-page--styled .sjp-row {
+  display: grid;
+  grid-template-columns: minmax(200px, 264px) minmax(0, 1fr);
+  gap: 20px 40px;
+  align-items: start;
+  margin: 0;
+  padding: 30px 36px;
+  outline: none;
+}
+
+.shijing-settings-page--styled .sjp-row + .sjp-row {
+  border-top: 1px solid var(--sjp-border-subtle);
+}
+
+.shijing-settings-page--styled .sjp-row--center {
+  align-items: center;
+}
+
+.shijing-settings-page--styled .sjp-row:focus-visible {
+  box-shadow: inset 0 0 0 3px var(--sjp-accent-soft);
+}
+
+/* ── Row meta (icon + title + description) ─────────────────── */
+.shijing-settings-page--styled .sjp-row__meta {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+
+.shijing-settings-page--styled .sjp-row__headtext {
+  min-width: 0;
+}
+
+.shijing-settings-page--styled .sjp-row__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  color: var(--sjp-fg-1);
+}
+
+/* Icon chip inside a row: vertically nudge against the title's first line. */
+.shijing-settings-page--styled .sjp-row__meta .sjp-card-icon {
+  margin-top: 1px;
+}
+
+/* ── Row control column ────────────────────────────────────── */
+.shijing-settings-page--styled .sjp-row__control {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.shijing-settings-page--styled .sjp-row--center .sjp-row__control {
+  align-items: flex-end;
+}
+
+/* two-up field pair (语气 / 长度) */
+.shijing-settings-page--styled .sjp-row__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* label and control on one line (命理算法) */
+.shijing-settings-page--styled .sjp-inline-field {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.shijing-settings-page--styled .sjp-inline-field .sjp-label {
+  flex-shrink: 0;
+}
+
+.shijing-settings-page--styled .sjp-inline-field .sjp-select-trigger {
+  flex: 1;
+  min-width: 0;
+}
+
+/* compact capability chip groups (统一镜面 / 命镜路线) */
+.shijing-settings-page--styled .sjp-row__chips-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shijing-settings-page--styled .sjp-row__chips-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.shijing-settings-page--styled .sjp-row__chips-group > .sjp-method-capability__section-title {
+  flex-shrink: 0;
+  margin-top: 7px;
+  font-weight: 600;
+  color: var(--sjp-fg-3);
+}
+
+/* button row inside a control column */
+.shijing-settings-page--styled .sjp-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.shijing-settings-page--styled .sjp-row__actions .sjp-btn {
+  margin-top: 0;
+}
+
+/* ── Status stat cards (本地数据与诊断) ────────────────────── */
+.shijing-settings-page--styled .sjp-statuscards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.shijing-settings-page--styled .sjp-statuscard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--sjp-border-subtle);
+  border-radius: var(--sjp-radius-md);
+}
+
+.shijing-settings-page--styled .sjp-statuscard__icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  color: var(--sjp-fg-3);
+  background: rgba(15, 23, 42, 0.04);
+  border-radius: var(--sjp-radius-sm);
+}
+
+.shijing-settings-page--styled .sjp-statuscard__text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.shijing-settings-page--styled .sjp-statuscard__label {
+  font-size: 12px;
+  color: var(--sjp-fg-3);
+  line-height: 1.35;
+}
+
+.shijing-settings-page--styled .sjp-statuscard__value {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--sjp-fg-1);
+  overflow-wrap: anywhere;
+}
+
+.shijing-settings-page--styled .sjp-statuscard__dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--sjp-fg-4);
+}
+
+.shijing-settings-page--styled .sjp-statuscard[data-tone='ok'] .sjp-statuscard__dot {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.16);
+}
+
+.shijing-settings-page--styled .sjp-statuscard[data-tone='error'] .sjp-statuscard__dot {
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.14);
+}
+
+/* ── Danger action (清理本地持久化数据) ────────────────────── */
+.shijing-settings-page--styled .sjp-btn--danger {
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.28);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.shijing-settings-page--styled .sjp-btn--danger:hover {
+  border-color: rgba(220, 38, 38, 0.45);
+  background: rgba(220, 38, 38, 0.05);
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.1);
+}
+
+/* ── Textarea with character counter ───────────────────────── */
+.shijing-settings-page--styled .sjp-textarea-wrap {
+  position: relative;
+}
+
+.shijing-settings-page--styled .sjp-textarea-wrap .sjp-textarea {
+  padding-bottom: 30px;
+}
+
+.shijing-settings-page--styled .sjp-textarea-count {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  font-size: 11px;
+  color: var(--sjp-fg-4);
+  pointer-events: none;
+}
+
+/* ── Language segmented control in a centered row ──────────── */
+.shijing-settings-page--styled .sjp-row__control > .shijing-ui-language-switch__control--card {
+  align-self: flex-end;
+}

@@ -1,32 +1,38 @@
 /* Responsive settings layout adjustments. */
 
-
-@media (max-width: 960px) {
-  .shijing-settings-page--styled .shijing-settings-page__body {
+/* 设置 sub-page rows stack: meta above controls, full-width fields. */
+@media (max-width: 860px) {
+  .shijing-settings-page--styled .sjp-row {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 18px;
+    padding: 26px 24px;
   }
 
-  .shijing-settings-page--styled .shijing-settings-page__surface-nav {
-    position: relative;
-    top: auto;
-    overflow-x: auto;
-    padding: 8px;
+  .shijing-settings-page--styled .sjp-row--center .sjp-row__control {
+    align-items: stretch;
   }
 
-  .shijing-settings-page--styled .shijing-settings-page__surface-nav-list {
-    flex-direction: row;
-    min-width: max-content;
-  }
-
-  .shijing-settings-page--styled .shijing-settings-page__surface-nav-item {
-    white-space: nowrap;
+  .shijing-settings-page--styled .sjp-row__control > .shijing-ui-language-switch__control--card {
+    align-self: flex-start;
+    width: min(100%, 320px);
   }
 }
 
 @media (max-width: 680px) {
   .shijing-settings-page--styled .sjp-grid {
     grid-template-columns: 1fr;
+  }
+  .shijing-settings-page--styled .sjp-row__fields,
+  .shijing-settings-page--styled .sjp-statuscards {
+    grid-template-columns: 1fr;
+  }
+  .shijing-settings-page--styled .sjp-inline-field {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
+  }
+  .shijing-settings-page--styled .sjp-row {
+    padding: 22px 18px;
   }
   /* On narrow screens drop the core grid to two columns: 性别 takes the full
      first row, leaving 出生日期 · 出生时间 paired on the second. */

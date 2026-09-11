@@ -6,7 +6,9 @@
   background-image: var(--sjp-surface-hero);
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: var(--sjp-radius-xl);
-  box-shadow: var(--sjp-elevation-raised);
+  /* Soft resting elevation — the glass border and aurora canvas already
+   * separate the card, so keep the shadow light. */
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   padding: 34px 36px;

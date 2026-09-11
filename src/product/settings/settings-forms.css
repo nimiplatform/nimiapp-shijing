@@ -17,6 +17,47 @@
   gap: 7px;
 }
 
+/* Settings-row language switch: a macOS-style segmented control — a hairline
+ * pill track with a crisp white thumb for the selection. Kept light so it
+ * sits cleanly on the mint aurora (a heavy gray track reads muddy here). It
+ * renders inside the 界面与语言 row's control column (see settings-rows.css). */
+.shijing-settings-page--styled .shijing-ui-language-switch__control--card {
+  align-self: flex-start;
+  gap: 2px;
+  width: min(100%, 280px);
+  padding: 3px;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: var(--sjp-radius-full);
+  background: rgba(15, 23, 42, 0.04);
+  box-shadow: none;
+}
+
+.shijing-settings-page--styled .shijing-ui-language-switch__control--card .nimi-segmented-control__item {
+  flex: 1;
+  justify-content: center;
+  min-height: 38px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--sjp-fg-3);
+  border-radius: var(--sjp-radius-full);
+  transition: color 160ms, background 160ms, box-shadow 160ms;
+}
+
+.shijing-settings-page--styled .shijing-ui-language-switch__control--card .nimi-segmented-control__item:not(.nimi-segmented-control__item--selected):not([aria-checked='true']):hover {
+  color: var(--sjp-fg-1);
+}
+
+.shijing-settings-page--styled .shijing-ui-language-switch__control--card .nimi-segmented-control__item--selected,
+.shijing-settings-page--styled .shijing-ui-language-switch__control--card .nimi-segmented-control__item[aria-checked='true'] {
+  background: #fff;
+  color: var(--sjp-accent-hover);
+  font-weight: 600;
+  box-shadow:
+    0 1px 4px rgba(15, 23, 42, 0.12),
+    0 0 0 0.5px rgba(15, 23, 42, 0.05);
+}
+
 .shijing-settings-page--styled .sjp-field--full {
   grid-column: 1 / -1;
 }
@@ -148,33 +189,6 @@
   border: 1px solid var(--sjp-border-subtle);
   border-radius: var(--sjp-radius-lg);
   padding: 22px 24px;
-}
-
-.shijing-settings-page--styled .sjp-subpanel-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 18px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--sjp-fg-3);
-}
-
-.shijing-settings-page--styled .sjp-subpanel-title::before {
-  content: "";
-  width: 5px;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--sjp-accent);
-}
-
-/* When a subpanel-title is used as a standalone divider row inside the form
- * grid (not as the heading of a nested .sjp-subpanel), the grid row-gap already
- * supplies the spacing — drop the heading's own bottom margin. */
-.shijing-settings-page--styled .sjp-field > .sjp-subpanel-title {
-  margin-bottom: 0;
 }
 
 /* ── ID chip ───────────────────────────────────────────────── */

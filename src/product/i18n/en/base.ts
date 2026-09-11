@@ -132,7 +132,7 @@ shell: {
   settingsMenu: 'Settings',
   languageSwitch: 'Interface language',
   snapshotInvalid: (code) =>
-    `Data snapshot validation failed: ${code}. Open Settings -> Privacy and local data from the account menu, clear local data, then try again.`,
+    `Data snapshot validation failed: ${code}. Open Settings -> Local data & diagnostics from the account menu, clear local data, then try again.`,
   persistenceFailed: (detail) => `Local data read/write failed: ${detail}`,
   loadingMirror: 'Loading mirror...',
   loadingSettings: 'Loading settings...',
@@ -147,14 +147,12 @@ settings: {
   localOnlyTag: 'Saved locally · Not public',
 },
 uiLanguage: {
-  title: 'Interface language',
-  description: 'Switch ShiJing interface copy. This does not change AI response language, calculation inputs, or existing readings.',
+  title: 'Interface & language',
   saved: (languageLabel) => `Interface language switched to ${languageLabel}`,
   saveFailed: (code) => `Language switch failed: ${code}`,
 },
 responsePreferences: {
   title: 'Response preferences',
-  description: 'Adjust ShiJing response tone, length, and AI response language',
   tone: 'Tone',
   length: 'Length',
   aiLanguage: 'AI response language',
@@ -162,7 +160,7 @@ responsePreferences: {
   extraPlaceholder: 'For example: be more direct and avoid generic reminders',
   saveButton: 'Save response preferences',
   saveFailed: (code) => `Save failed: ${code}`,
-  savedAt: (savedAt) => `Saved (${savedAt})`,
+  saved: () => 'Saved',
 },
 self: {
   title: 'Self profile',
@@ -310,9 +308,10 @@ concerns: {
   toggleOnTitle: 'Click: add to focus',
   manage: 'Manage',
 },
+localData: {
+  title: 'Local data & diagnostics',
+},
 privacy: {
-  title: 'Privacy and local data',
-  description: 'Your data stays on this device · Review local storage status and clear it when needed',
   status: 'Local persistence status',
   error: (kind) => `Local persistence error: ${kind}. Possible cause: a snapshot from an older schema is stored locally and rejected by current validation.`,
   clearButton: 'Clear local persisted data',
@@ -322,20 +321,15 @@ privacy: {
   clearFailed: (kind) => `Clear failed: ${kind}`,
 },
 diagnostics: {
-  title: 'Diagnostics',
-  description: 'Review the current data snapshot validation status for troubleshooting',
   snapshotStatus: 'Current snapshot validation',
   validationCode: 'Validation error code',
 },
 methodProfile: {
   title: 'Calculation method',
-  description: 'Choose the astrology engine for newly generated Daily, Monthly, Yearly, and Consultation Mirror readings',
   algorithm: 'Astrology algorithm',
-  note: 'Changes take effect immediately; existing readings keep their original method and can be compared side by side.',
-  switchedAt: (savedAt) => `Switched (${savedAt})`,
+  switched: (methodLabel) => `Switched to ${methodLabel}`,
   capabilities: {
     title: 'Feature support declaration',
-    description: 'Review mirror support before switching methods. Daily, Monthly, Yearly, and Consultation Mirrors use one product interface; Destiny Mirror is routed by method.',
     current: 'Current',
     algorithmNeutralTitle: 'Unified mirrors',
     mingjingRouteTitle: 'Destiny Mirror route',
@@ -343,6 +337,7 @@ methodProfile: {
     unavailable: 'Unavailable',
     noRouteFeatures: 'This route has no Destiny Mirror product modules yet',
     failClosePrefix: 'Fail-close',
+    viewAll: 'Compare capabilities across all methods',
     featureLabels: {
       'rijing.daily_reading': 'Daily Mirror',
       'yuejing.rolling_30_day_reading': 'Monthly Mirror',

@@ -3,17 +3,17 @@
 /* =====================================================================
  * Personal-data settings pages — full-surface restyle.
  *
- * Shared by the "your data" detail pages: 档案 (self & people),
- * 关注 (concerns — concern tags) and 发生过的事 (memory — the EventMemory
- * archive). They carry the `.shijing-settings-page--styled` modifier, so
- * the mint accent, aurora canvas, and card/grid form treatment apply to
- * them and never leak into the 设置 sub-page or the six-tab mirror surfaces.
- * Class names are `sjp-*` prefixed to stay collision-free with the kit
- * and Tailwind.
+ * Shared by the settings detail pages: 档案 (self & people), 关注 (concerns
+ * — concern tags), 发生过的事 (memory — the EventMemory archive) and 设置
+ * (app settings). They carry the `.shijing-settings-page--styled` modifier,
+ * so the mint accent, aurora canvas, and card/grid form treatment apply to
+ * them and never leak into the six-tab mirror surfaces. Class names are
+ * `sjp-*` prefixed to stay collision-free with the kit and Tailwind.
  *
  * Mirrors the approved design mock: glass-thick cards over a mint-biased
  * aurora, serif hero with an accent dot, two-column field grid, nested
- * sub-panels, and a gradient primary button.
+ * sub-panels, and a gradient primary button. The 设置 sub-page composes the
+ * same tokens as stacked rows (see settings-rows.css).
  * ===================================================================== */
 
 .shijing-settings-page--styled {
@@ -48,22 +48,14 @@
   isolation: isolate;
 }
 
-/* Match the mirror content measure while keeping the settings module rail in-flow. */
+/* Match the mirror content measure. The whole page scrolls natively — the
+ * 设置 sub-page stacks all modules in one card, so no pane-level scroll
+ * container or pinned chrome is needed. */
 .shijing-settings-page--styled .nimi-page-detail-layout {
   max-width: 920px;
   padding-left: 24px;
   padding-right: 24px;
   padding-bottom: 96px;
-}
-
-.shijing-settings-page--styled.shijing-settings-page--settings {
-  overflow: hidden;
-}
-
-.shijing-settings-page--styled.shijing-settings-page--settings .nimi-page-detail-layout {
-  box-sizing: border-box;
-  height: 100vh;
-  overflow: hidden;
 }
 
 /* hero: serif title with an accent dot + descriptive subtitle */
@@ -150,109 +142,11 @@
   cursor: default;
 }
 
-.shijing-settings-page--styled .shijing-settings-page__body {
-  display: grid;
-  grid-template-columns: minmax(150px, 188px) minmax(0, 1fr);
-  gap: 30px;
-  align-items: start;
-  height: max(420px, calc(100vh - 300px));
-  overflow: hidden;
-}
-
-.shijing-settings-page--styled .shijing-settings-page__surface-nav {
-  position: sticky;
-  top: 0;
-  align-self: start;
-  max-height: 100%;
-  padding: 10px;
-  border: 1px solid var(--sjp-border-subtle);
-  border-radius: var(--sjp-radius-lg);
-  background: rgba(255, 255, 255, 0.62);
-  box-shadow: var(--sjp-elevation-base);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-}
-
-.shijing-settings-page--styled .shijing-settings-page__surface-nav-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.shijing-settings-page--styled .shijing-settings-page__surface-nav-item {
-  appearance: none;
-  display: flex;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 10px 12px;
-  border: 0;
-  border-radius: var(--sjp-radius-md);
-  background: transparent;
-  color: var(--sjp-fg-3);
-  font: inherit;
-  font-size: 13.5px;
-  font-weight: 600;
-  line-height: 1.35;
-  text-align: left;
-  text-decoration: none;
-  cursor: pointer;
-  transition: color 160ms, background 160ms, box-shadow 160ms;
-}
-
-.shijing-settings-page--styled .shijing-settings-page__surface-nav-item:hover,
-.shijing-settings-page--styled .shijing-settings-page__surface-nav-item:focus-visible {
-  color: var(--sjp-accent-hover);
-  background: rgba(78, 204, 163, 0.1);
-  outline: none;
-}
-
-.shijing-settings-page--styled .shijing-settings-page__surface-nav-item:focus-visible {
-  box-shadow: 0 0 0 3px var(--sjp-accent-soft);
-}
-
-.shijing-settings-page--styled .shijing-settings-page__surface-nav-item[aria-current='location'] {
-  width: calc(100% + 12px);
-  margin-left: -6px;
-  margin-right: -6px;
-  padding-left: 18px;
-  padding-right: 18px;
-  color: var(--sjp-accent-hover);
-  background: var(--sjp-accent-soft);
-  box-shadow: none;
-}
-
-.shijing-settings-page--styled .shijing-settings-page__surface-nav-item[aria-current='location']:focus-visible {
-  box-shadow: none;
-}
-
-.shijing-settings-page--styled .sjp-card[id^="settings-"] {
-  scroll-margin-top: 0;
-  outline: none;
-}
-
-.shijing-settings-page--styled .sjp-card[id^="settings-"]:focus-visible {
-  box-shadow: var(--sjp-elevation-raised), 0 0 0 3px var(--sjp-accent-soft);
-}
-
 /* the self/people page renders editors directly (no generic section chrome) */
 .shijing-settings-page--styled .shijing-settings {
   display: flex;
   flex-direction: column;
   gap: 28px;
-}
-
-.shijing-settings-page--styled .shijing-settings-page__content-scroll {
-  min-height: 0;
-  max-height: 100%;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding-right: 10px;
-  padding-bottom: max(360px, calc(100vh - 480px));
-  scroll-behavior: smooth;
-  scrollbar-gutter: stable;
 }
 
 /* page-foot privacy note — the single light line that closes the 档案 page */
