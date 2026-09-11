@@ -1,11 +1,11 @@
 
-/* The whole consultation surface is ONE glass console: the layout panel
- * carries the glass chrome and inner regions (rail / composer / context
- * footer) are separated only by hairline dividers, so the page reads as a
- * single calm surface instead of a stack of floating cards. */
+/* The consultation surface splits the shell main area in two, like a classic
+ * workbench: a flush full-height sidebar on the left carries the question
+ * history, separated from the calm main column by a single hairline. The
+ * aurora background shows through both sides. */
 .shijing-ask__layout {
   display: grid;
-  grid-template-columns: 272px 1fr;
+  grid-template-columns: 280px 1fr;
   /* A single minmax row lets both columns stretch to the layout's height,
    * so the rail and the main column fill the viewport instead of hugging
    * the top. */
@@ -14,21 +14,18 @@
   align-items: stretch;
   flex: 1;
   min-height: 0;
-  background: var(--shijing-ask-glass-bg);
-  backdrop-filter: var(--shijing-ask-glass-blur);
-  -webkit-backdrop-filter: var(--shijing-ask-glass-blur);
-  border: 1px solid var(--shijing-ask-glass-border);
-  border-radius: var(--shijing-radius-3xl);
-  box-shadow: var(--shijing-ask-glass-shadow);
 }
 
-/* ----- History rail (plain region + right hairline, full height) ----- */
+/* ----- History rail (flush sidebar + right hairline, full height) ----- */
 
 .shijing-ask__rail {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  padding: 20px 16px;
+  padding: 22px 18px;
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
   border-right: 1px solid rgba(15, 23, 42, 0.07);
 }
 
@@ -43,26 +40,26 @@
 .shijing-ask .shijing-ask__new-question {
   appearance: none;
   width: 100%;
-  min-height: 38px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 1px solid rgba(67, 198, 165, 0.24);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.68);
-  color: #1fae91;
-  font-size: 13px;
-  font-weight: 700;
+  border: 1px solid rgba(67, 198, 165, 0.28);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(215, 244, 234, 0.95), rgba(198, 239, 226, 0.95));
+  color: #2f8f73;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 10px 26px rgba(67, 198, 165, 0.1);
+  box-shadow: 0 10px 24px rgba(67, 198, 165, 0.14);
   transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
 }
 
 .shijing-ask .shijing-ask__new-question:hover,
 .shijing-ask .shijing-ask__new-question[aria-current="true"] {
-  border-color: rgba(67, 198, 165, 0.42);
-  background: rgba(216, 247, 238, 0.78);
+  border-color: rgba(67, 198, 165, 0.45);
+  background: linear-gradient(135deg, rgba(201, 240, 228, 0.98), rgba(184, 233, 218, 0.98));
   transform: translateY(-1px);
 }
 
@@ -99,11 +96,11 @@
 .shijing-ask .shijing-ask__search input[type="text"] {
   width: 100%;
   box-sizing: border-box;
-  padding: 8px 12px 8px 30px;
-  font-size: 12px;
+  padding: 9px 12px 9px 32px;
+  font-size: 13px;
   border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.88);
   color: #0f172a;
 }
 
@@ -129,7 +126,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.88);
   color: #94a3b8;
   cursor: pointer;
   transition: background 120ms ease, border-color 120ms ease, color 120ms ease;

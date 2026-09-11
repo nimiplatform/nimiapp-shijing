@@ -8,11 +8,6 @@ export const ZH_SHIJING_COPY: ProductCopy['shijing'] = {
     '这段关系现在最需要注意什么?',
     '最近反复焦虑，是阶段变化还是方向不清?',
   ].join('\n'),
-  suggestedQuestions: [
-    '接下来30天，我最需要注意什么?',
-    '现在这个决定，适合推进还是等待?',
-    '这段关系真正的卡点是什么?',
-  ],
   unrecordedQuestion: '(未记录问题)',
   sessionGroups: {
     today: '今天',
@@ -22,6 +17,7 @@ export const ZH_SHIJING_COPY: ProductCopy['shijing'] = {
   sessionDateLabel: (month, day) => `${month}月${day}日`,
   sourceMissing: '尚无可引用的解读',
   title: '问镜',
+  subtitle: '向时间提问，在变化中看见自己。',
   railAria: '提问记录',
   newQuestion: '新提问',
   newQuestionAria: '开始新的问镜提问',
@@ -45,7 +41,6 @@ export const ZH_SHIJING_COPY: ProductCopy['shijing'] = {
   sending: '发送中…',
   send: '发送',
   thinking: '正在思考…',
-  suggestLabel: '可以这样问',
   resultAria: '解读结果',
   archive: {
     aria: '提问归入关注',

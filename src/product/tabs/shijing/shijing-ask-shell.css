@@ -16,7 +16,9 @@
 }
 
 .shijing-shell__main:has(> .shijing-ask) {
-  padding-top: 12px;
+  /* The ask surface splits into a flush full-height sidebar and the main
+   * column, so the shell padding moves into the columns themselves. */
+  padding: 0;
 }
 
 .shijing-tab.shijing-ask {
@@ -24,11 +26,24 @@
   --shijing-ask-glass-border: var(--shijing-shared-glass-border);
   --shijing-ask-glass-blur: var(--shijing-shared-glass-blur);
   --shijing-ask-glass-shadow: var(--shijing-shared-glass-shadow);
+  /* Frosted-glass card: a translucent white wash over the aurora, so the
+   * composer picks up the page's mint/lavender tint instead of reading as a
+   * hard white slab. */
+  --shijing-ask-card-bg: linear-gradient(
+    158deg,
+    rgba(255, 255, 255, 0.68) 0%,
+    rgba(252, 254, 253, 0.52) 55%,
+    rgba(248, 252, 250, 0.44) 100%
+  );
+  --shijing-ask-card-border: rgba(255, 255, 255, 0.6);
+  --shijing-ask-card-blur: blur(24px) saturate(160%);
+  --shijing-ask-card-shadow:
+    0 32px 80px -36px rgba(15, 23, 42, 0.18),
+    0 4px 18px -10px rgba(15, 23, 42, 0.06);
 
-  max-width: 1200px;
-  gap: 18px;
-  padding-top: 0;
-  padding-bottom: 24px;
+  max-width: none;
+  gap: 0;
+  padding: 0;
   /* Fill the shell's main area vertically so a fullscreen window does not
    * leave the lower half of the page empty; border-box keeps the bottom
    * padding inside the 100% height. */

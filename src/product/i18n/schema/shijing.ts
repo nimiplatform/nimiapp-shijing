@@ -2,7 +2,6 @@
 
 export interface ShiJingConsultationCopy {
   readonly composerPlaceholder: string;
-  readonly suggestedQuestions: readonly string[];
   readonly unrecordedQuestion: string;
   readonly sessionGroups: {
     readonly today: string;
@@ -12,6 +11,7 @@ export interface ShiJingConsultationCopy {
   readonly sessionDateLabel: (month: number, day: number) => string;
   readonly sourceMissing: string;
   readonly title: string;
+  readonly subtitle: string;
   readonly railAria: string;
   readonly newQuestion: string;
   readonly newQuestionAria: string;
@@ -35,7 +35,6 @@ export interface ShiJingConsultationCopy {
   readonly sending: string;
   readonly send: string;
   readonly thinking: string;
-  readonly suggestLabel: string;
   readonly resultAria: string;
   readonly archive: {
     readonly aria: string;

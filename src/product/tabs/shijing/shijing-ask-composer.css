@@ -5,19 +5,23 @@
   gap: 18px;
   min-width: 0;
   min-height: 0;
+  /* The rail is flush against the window edge; the main column carries the
+   * page's horizontal breathing room instead. */
+  padding: 0 48px 36px;
 }
 
-/* Empty-state welcome group: the composer and its companions are centered
- * vertically in the main column, so a fullscreen window reads as a calm
- * centered consultation surface instead of a top-anchored strip. The
- * context-focus bar stays outside the group, pinned to the column bottom. */
+/* Empty-state welcome group: hero, composer card, and companions are
+ * centered vertically as one group, so a fullscreen window reads as a calm
+ * centered consultation surface floating on the aurora background. */
 .shijing-ask__welcome {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 18px;
+  justify-content: safe center;
+  gap: 26px;
+  overflow-y: auto;
 }
 
 /* The layout chain (tab → layout → main) already provides a definite
@@ -35,15 +39,20 @@
   overscroll-behavior: contain;
 }
 
+/* Chat mode pins the composer to the column bottom as its own glass card. */
 .shijing-ask__main[data-chat-active="true"] .shijing-ask__composer {
   position: relative;
-  bottom: auto;
   z-index: 2;
   flex: 0 0 auto;
   margin-top: auto;
   min-height: 0;
-  padding: 14px 24px 12px;
-  border-top: 1px solid rgba(15, 23, 42, 0.07);
+  padding: 14px 20px 12px;
+  background: var(--shijing-ask-card-bg);
+  backdrop-filter: var(--shijing-ask-card-blur);
+  -webkit-backdrop-filter: var(--shijing-ask-card-blur);
+  border: 1px solid var(--shijing-ask-card-border);
+  border-radius: var(--shijing-radius-3xl);
+  box-shadow: var(--shijing-ask-card-shadow);
 }
 
 .shijing-ask__main[data-chat-active="true"] .shijing-ask__composer-title {
@@ -55,12 +64,12 @@
   min-height: calc(2 * 1.8em);
   max-height: calc(2 * 1.8em);
   line-height: 1.8;
-  /* In chat mode the composer carries no card chrome, so the textarea itself
-   * becomes the visible input affordance. */
+  /* Chat mode hides the placeholder by design, so the textarea keeps its own
+   * quiet fill to stay readable as an input inside the glass composer card. */
   padding: 4px 14px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.03);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 14px;
 }
 
 .shijing-ask__main[data-chat-active="true"] .shijing-ask__textarea:focus {
@@ -68,56 +77,62 @@
   box-shadow: 0 0 0 3px rgba(67, 198, 165, 0.15);
 }
 
-.shijing-ask__main[data-chat-active="true"] .shijing-ask__toolbar {
-  margin-top: 8px;
-  padding-top: 0;
+/* ----- Composer card (welcome mode: centered frosted-glass card) ----- */
+
+.shijing-ask .shijing-ask__composer[data-chat-composer="false"] {
+  width: 100%;
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 30px 34px 18px;
+  background: var(--shijing-ask-card-bg);
+  backdrop-filter: var(--shijing-ask-card-blur);
+  -webkit-backdrop-filter: var(--shijing-ask-card-blur);
+  border: 1px solid var(--shijing-ask-card-border);
+  border-radius: 28px;
+  box-shadow: var(--shijing-ask-card-shadow);
+  animation: shijing-ask-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
-/* ----- Composer region ----- */
+/* Quiet mint halo while composing — the card is the page's single focus. */
+.shijing-ask .shijing-ask__composer[data-chat-composer="false"]:focus-within {
+  border-color: rgba(67, 198, 165, 0.42);
+  box-shadow:
+    0 0 0 4px rgba(67, 198, 165, 0.12),
+    0 36px 88px -34px rgba(15, 23, 42, 0.2),
+    0 4px 18px -10px rgba(15, 23, 42, 0.07);
+}
+
+@keyframes shijing-ask-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shijing-ask .shijing-ask__composer[data-chat-composer="false"],
+  .shijing-ask__hero {
+    animation: none;
+  }
+}
 
 .shijing-ask .shijing-ask__composer {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  margin: 0;
-  padding: 28px 30px;
-}
-
-/* Empty state: the composer is a single glass console card — the textarea,
- * suggestion chips, and the send button all live inside one bordered,
- * elevated surface so the input target reads at a glance. Focus lifts the
- * whole card with a mint ring instead of styling the bare textarea. */
-.shijing-ask .shijing-ask__composer[data-chat-composer="false"] {
-  padding: 22px 24px 14px;
-  background: var(--shijing-ask-glass-bg, rgba(255, 255, 255, 0.72));
-  backdrop-filter: var(--shijing-ask-glass-blur, blur(16px) saturate(140%));
-  -webkit-backdrop-filter: var(--shijing-ask-glass-blur, blur(16px) saturate(140%));
-  border: 1px solid rgba(15, 23, 42, 0.09);
-  border-radius: 24px;
-  box-shadow:
-    0 24px 56px -28px rgba(15, 23, 38, 0.22),
-    0 2px 10px -6px rgba(15, 23, 38, 0.08);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
-}
-
-.shijing-ask .shijing-ask__composer[data-chat-composer="false"]:focus-within {
-  border-color: rgba(67, 198, 165, 0.5);
-  box-shadow:
-    0 24px 56px -28px rgba(15, 23, 38, 0.22),
-    0 0 0 3px rgba(67, 198, 165, 0.14);
-}
-
-.shijing-ask .shijing-ask__composer[data-chat-composer="false"] .shijing-ask__toolbar {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .shijing-ask .shijing-ask__composer-title {
-  margin: 0 0 10px;
+  margin: 0 0 14px;
   font-size: 21px;
   font-weight: 700;
-  color: #0f172a;
+  letter-spacing: 0.01em;
+  color: #0b1220;
 }
 
 /* Seed-memory context card — shown when the user arrives via another
@@ -233,6 +248,7 @@
   overflow-y: auto;
   font-size: 16px;
   line-height: 1.8;
+  caret-color: #1fae91;
   color: #0f172a;
 }
 
@@ -246,29 +262,54 @@
   box-shadow: none;
 }
 
-/* ----- Composer bottom toolbar: suggestion chips on the left, submit on
- * the right, so the send button is anchored to the input row instead of
- * floating alone in the composer padding. ----- */
+/* Trays below the card align to the same centered measure as the composer. */
+.shijing-ask__welcome > .shijing-archive,
+.shijing-ask__welcome > .shijing-recall {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 840px;
+  margin: -8px auto 0;
+}
+
+/* ----- Composer bottom toolbar: context focus left, submit right ----- */
 
 .shijing-ask__toolbar {
-  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.shijing-ask__composer[data-chat-composer="true"] .shijing-ask__toolbar {
+  margin-top: 8px;
   padding-top: 0;
   border-top: 0;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+}
+
+.shijing-ask__toolbar > .shijing-ctx {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* The concern editor popover opens inline: let the context bar take a full
+ * row so the popover grows the card instead of squeezing the submit. */
+.shijing-ask__toolbar:has(.shijing-ctx-editor) {
   flex-wrap: wrap;
+}
+
+.shijing-ask__toolbar:has(.shijing-ctx-editor) > .shijing-ctx {
+  flex: 1 1 100%;
 }
 
 .shijing-ask__actions {
   display: flex;
-  margin-inline-start: auto;
   align-items: center;
   justify-content: flex-end;
   gap: 16px;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
+  margin-inline-start: auto;
 }
 
 .shijing-ask__submit-wrap {
@@ -284,8 +325,8 @@
 
 .shijing-ask .shijing-ask__submit {
   position: relative;
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -296,9 +337,11 @@
   font-weight: 600;
   color: #fff;
   cursor: pointer;
-  background: linear-gradient(135deg, #43c6a5 0%, #1fae91 100%);
-  box-shadow: 0 12px 28px rgba(67, 198, 165, 0.28);
-  transition: filter 120ms ease, transform 120ms ease;
+  background: linear-gradient(135deg, #4ccdaa 0%, #1fae91 100%);
+  box-shadow:
+    0 14px 30px -8px rgba(31, 174, 145, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: filter 120ms ease, transform 120ms ease, box-shadow 160ms ease;
 }
 
 .shijing-ask__submit-icon {
@@ -319,13 +362,17 @@
 }
 
 .shijing-ask .shijing-ask__submit:hover:not(:disabled) {
-  filter: brightness(1.05);
+  filter: brightness(1.06);
   transform: translateY(-1px);
+  box-shadow:
+    0 18px 36px -8px rgba(31, 174, 145, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
-/* Disabled is a softened mint (not dead grey); the reason text explains why. */
+/* Disabled is a quiet sage (matching the empty-question resting state);
+ * the reason text explains why. */
 .shijing-ask .shijing-ask__submit:disabled {
   cursor: not-allowed;
-  background: linear-gradient(135deg, rgba(67, 198, 165, 0.4), rgba(31, 174, 145, 0.4));
+  background: #b3c4bb;
   box-shadow: none;
 }

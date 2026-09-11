@@ -1,4 +1,4 @@
-import type { FormEventHandler, KeyboardEvent, RefObject } from 'react';
+import type { FormEventHandler, KeyboardEvent, ReactNode, RefObject } from 'react';
 import { Tooltip } from '@nimiplatform/kit/ui';
 import { useProductCopy } from '../../i18n/copy.ts';
 import { GeneratingButton } from '../shared/generating-button.tsx';
@@ -15,12 +15,11 @@ export interface ShiJingComposerProps {
   readonly submitTitle: string;
   readonly submitLabel: string;
   readonly submitting: boolean;
-  readonly suggestLabel: string;
-  readonly suggestedQuestions: readonly string[];
   readonly textareaRef: RefObject<HTMLTextAreaElement | null>;
   readonly onSubmit: FormEventHandler<HTMLFormElement>;
   readonly onQuestionChange: (question: string) => void;
   readonly onClearSeed: (item: SeedItem) => void;
+  readonly footerSlot?: ReactNode;
 }
 
 export function ShiJingComposer(props: ShiJingComposerProps) {
@@ -89,23 +88,7 @@ export function ShiJingComposer(props: ShiJingComposerProps) {
       />
 
       <div className="shijing-ask__toolbar">
-        {!props.chatActive && props.suggestedQuestions.length > 0 ? (
-          <div className="shijing-ask__suggest">
-            <span className="shijing-ask__suggest-label">{props.suggestLabel}</span>
-            <div className="shijing-ask__chips">
-              {props.suggestedQuestions.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className="shijing-ask__chip"
-                  onClick={() => props.onQuestionChange(s)}
-                >
-                  ✦ {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
+        {props.footerSlot}
         <div className="shijing-ask__actions">
           <div className="shijing-ask__submit-wrap">
             {!props.canAsk && props.askReason ? (

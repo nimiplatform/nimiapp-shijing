@@ -251,8 +251,9 @@ export function InlineConcernEditorPopover({
           placeholder={customPlaceholder}
           disabled={atLimit}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !atLimit && draftInput.trim().length > 0) {
-              e.preventDefault();
+            if (e.key !== 'Enter' || e.nativeEvent.isComposing) return;
+            e.preventDefault();
+            if (!atLimit && draftInput.trim().length > 0) {
               addCustom();
             }
           }}

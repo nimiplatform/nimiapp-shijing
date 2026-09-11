@@ -452,12 +452,6 @@ export function ShiJingTab(_props: ShiJingTabProps) {
       data-mirror-kind="shijing"
       aria-label={copy.mirrorKindLabels.shijing}
     >
-      <header className="shijing-ask__hero">
-        <h1 className="shijing-ask__title">
-          {copy.shijing.title}<span className="shijing-ask__title-dot" aria-hidden>°</span>
-        </h1>
-      </header>
-
       <div className="shijing-ask__layout">
         <ShiJingHistoryRail
           search={search}
@@ -502,8 +496,6 @@ export function ShiJingTab(_props: ShiJingTabProps) {
                 submitTitle={submitTitle}
                 submitLabel={submitLabel}
                 submitting={loading}
-                suggestLabel={copy.shijing.suggestLabel}
-                suggestedQuestions={copy.shijing.suggestedQuestions}
                 textareaRef={composerRef}
                 onSubmit={handleAsk}
                 onQuestionChange={setQuestion}
@@ -511,57 +503,60 @@ export function ShiJingTab(_props: ShiJingTabProps) {
               />
             </>
           ) : (
-            <>
-              <div className="shijing-ask__welcome">
-                <ShiJingComposer
-                  chatActive={chatActive}
-                  seedItems={seedItems}
-                  question={question}
-                  composerPlaceholder={composerPlaceholder}
-                  canAsk={canAsk}
-                  askReason={askReason}
-                  submitTitle={submitTitle}
-                  submitLabel={submitLabel}
-                  submitting={loading}
-                  suggestLabel={copy.shijing.suggestLabel}
-                  suggestedQuestions={copy.shijing.suggestedQuestions}
-                  textareaRef={composerRef}
-                  onSubmit={handleAsk}
-                  onQuestionChange={setQuestion}
-                  onClearSeed={clearSeedItem}
-                />
+            <div className="shijing-ask__welcome">
+              <header className="shijing-ask__hero">
+                <h1 className="shijing-ask__title">
+                  {copy.shijing.title}<span className="shijing-ask__title-dot" aria-hidden />
+                </h1>
+                <p className="shijing-ask__subtitle">{copy.shijing.subtitle}</p>
+                <span className="shijing-ask__hero-rule" aria-hidden />
+              </header>
 
-                <QuestionArchiveRecall
-                  conversations={archiveRecallConversations}
-                  concernTags={state.snapshot.concern_tags}
-                  onSelectConversation={selectConversation}
-                />
+              <ShiJingComposer
+                chatActive={chatActive}
+                seedItems={seedItems}
+                question={question}
+                composerPlaceholder={composerPlaceholder}
+                canAsk={canAsk}
+                askReason={askReason}
+                submitTitle={submitTitle}
+                submitLabel={submitLabel}
+                submitting={loading}
+                textareaRef={composerRef}
+                onSubmit={handleAsk}
+                onQuestionChange={setQuestion}
+                onClearSeed={clearSeedItem}
+                footerSlot={<ContextFocusBar tags={state.snapshot.concern_tags} />}
+              />
 
-                <ArchiveTray
-                  options={archiveTrayOptions}
-                  selectedIds={selectedArchiveConcernIds}
-                  onToggleOption={toggleArchiveOption}
-                  onRemoveOption={removeArchiveOption}
-                />
+              <QuestionArchiveRecall
+                conversations={archiveRecallConversations}
+                concernTags={state.snapshot.concern_tags}
+                onSelectConversation={selectConversation}
+              />
 
-                {failure ? <FailureBanner failure={failure} /> : null}
+              <ArchiveTray
+                options={archiveTrayOptions}
+                selectedIds={selectedArchiveConcernIds}
+                onToggleOption={toggleArchiveOption}
+                onRemoveOption={removeArchiveOption}
+              />
 
-                {resultConversation ? (
-                  <article className="shijing-ask__result" aria-label={copy.shijing.resultAria}>
-                    <ConversationThread
-                      conversation={resultConversation}
-                      pendingTurnIds={pendingTurnIds}
-                      thinkingLabel={copy.shijing.thinking}
-                    />
-                    {showLatestCitation ? (
-                      <CitationDrawer reading={latestConsultation} />
-                    ) : null}
-                  </article>
-                ) : null}
-              </div>
+              {failure ? <FailureBanner failure={failure} /> : null}
 
-              <ContextFocusBar tags={state.snapshot.concern_tags} />
-            </>
+              {resultConversation ? (
+                <article className="shijing-ask__result" aria-label={copy.shijing.resultAria}>
+                  <ConversationThread
+                    conversation={resultConversation}
+                    pendingTurnIds={pendingTurnIds}
+                    thinkingLabel={copy.shijing.thinking}
+                  />
+                  {showLatestCitation ? (
+                    <CitationDrawer reading={latestConsultation} />
+                  ) : null}
+                </article>
+              ) : null}
+            </div>
           )}
         </div>
       </div>

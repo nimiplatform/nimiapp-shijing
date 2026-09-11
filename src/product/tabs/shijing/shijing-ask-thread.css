@@ -24,14 +24,14 @@
   padding: 2px 8px !important;
 }
 
-/* ----- Result thread (transparent region inside the console) ----- */
+/* ----- Result thread (floats on the transparent main column) ----- */
 
 .shijing-ask .shijing-ask__result {
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin: 0;
-  padding: 22px 24px;
+  padding: 12px 8px;
 }
 
 .shijing-ask__thread {
@@ -252,9 +252,12 @@
     /* Back to content-sized implicit rows in single-column flow. */
     grid-template-rows: none;
   }
+  .shijing-ask__main {
+    padding: 0 20px 24px;
+  }
   .shijing-ask__rail {
     order: 2;
-    /* Stacked under the main column: the divider moves from the side to the top. */
+    /* Stacked under the main column: the hairline moves from side to top. */
     border-right: 0;
     border-top: 1px solid rgba(15, 23, 42, 0.07);
   }

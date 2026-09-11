@@ -1,4 +1,4 @@
-/* ----- Hero (170–200px, centered) ----- */
+/* ----- Hero (centered above the composer card, floats on the aurora) ----- */
 
 .shijing-ask__hero {
   position: relative;
@@ -7,26 +7,9 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 0;
-  min-height: 116px;
-  padding: 0;
-}
-
-/* Very faint mirror glow behind the hero — never competes with the card. */
-.shijing-ask__hero::before {
-  content: '';
-  display: none;
-  position: absolute;
-  inset: -40px 0 auto 0;
-  height: 220px;
-  background: radial-gradient(60% 120% at 70% 0%, rgba(67, 198, 165, 0.12) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.shijing-ask__hero > * {
-  position: relative;
-  z-index: 1;
+  gap: 14px;
+  padding: 4px 0 0;
+  animation: shijing-ask-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .shijing-ask .shijing-ask__title {
@@ -35,20 +18,31 @@
   font-size: 46px;
   font-weight: 600;
   letter-spacing: 0.12em;
+  line-height: 1.15;
   color: #0f172a;
 }
 
+/* Mint mirror-dot at the title baseline — the "。" of 问镜。 */
 .shijing-ask__title-dot {
-  color: #1fae91;
-  font-size: 0.42em;
-  vertical-align: super;
-  margin-left: 4px;
+  display: inline-block;
+  width: 0.24em;
+  height: 0.24em;
+  margin-left: 0.14em;
+  border-radius: 50%;
+  background: #43c6a5;
+  vertical-align: baseline;
 }
 
 .shijing-ask__subtitle {
   margin: 0;
   font-size: 14px;
+  letter-spacing: 0.14em;
   color: #64748b;
 }
 
-/* ----- Two-column layout ----- */
+.shijing-ask__hero-rule {
+  width: 56px;
+  height: 1px;
+  margin-top: 6px;
+  background: rgba(15, 23, 42, 0.14);
+}

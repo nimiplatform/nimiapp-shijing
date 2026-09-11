@@ -8,11 +8,6 @@ export const EN_SHIJING_COPY: ProductCopy['shijing'] = {
     'What should I pay attention to in this relationship right now?',
     'Is this repeated anxiety a phase shift or unclear direction?',
   ].join('\n'),
-  suggestedQuestions: [
-    'What should I watch most closely over the next 30 days?',
-    'Is this decision better to push forward or wait on?',
-    'What is the real sticking point in this relationship?',
-  ],
   unrecordedQuestion: '(Question not recorded)',
   sessionGroups: {
     today: 'Today',
@@ -22,6 +17,7 @@ export const EN_SHIJING_COPY: ProductCopy['shijing'] = {
   sessionDateLabel: (month, day) => `${month}/${day}`,
   sourceMissing: 'No cited reading is available yet',
   title: 'Consultation Mirror',
+  subtitle: 'Ask time, and see yourself in its changes.',
   railAria: 'Question history',
   newQuestion: 'New question',
   newQuestionAria: 'Start a new ShiJing question',
@@ -45,7 +41,6 @@ export const EN_SHIJING_COPY: ProductCopy['shijing'] = {
   sending: 'Sending...',
   send: 'Send',
   thinking: 'Thinking...',
-  suggestLabel: 'Try asking',
   resultAria: 'Reading result',
   archive: {
     aria: 'Question archive lens',

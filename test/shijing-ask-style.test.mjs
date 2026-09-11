@@ -68,48 +68,83 @@ test('Ask ShiJing topbar and main area match NianJing transparent chrome', () =>
   assert.match(askTopbar, /-webkit-backdrop-filter:\s*none/);
   assert.match(askTopbar, /border-bottom-color:\s*var\(--shijing-surface-topbar-border\)/);
   assert.match(askMain, /background:\s*transparent/);
-  assert.match(askLocalMain, /padding-top:\s*12px/);
+  assert.match(askLocalMain, /padding:\s*0/);
 });
 
-test('Ask ShiJing surface is one unified glass console, not stacked cards', () => {
+test('Ask ShiJing splits the page into a flush sidebar and a calm main column', () => {
   const root = cssBlock(shijingStyles, '.shijing-tab.shijing-ask');
+  const shellMain = cssBlock(shijingStyles, '.shijing-shell__main:has(> .shijing-ask)');
   const layout = cssBlock(shijingStyles, '.shijing-ask__layout');
   const rail = cssBlock(shijingStyles, '.shijing-ask__rail');
-  const composer = cssBlock(shijingStyles, '.shijing-ask .shijing-ask__composer');
+  const main = cssBlock(shijingStyles, '.shijing-ask__main');
+  const composer = cssBlock(shijingStyles, '.shijing-ask .shijing-ask__composer[data-chat-composer="false"]');
   const contextBar = cssBlock(shijingStyles, '.shijing-ctx');
-  const result = cssBlock(shijingStyles, '.shijing-ask .shijing-ask__result');
 
   assert.match(root, /--shijing-ask-glass-bg:\s*var\(--shijing-shared-glass-bg\)/);
-  assert.match(root, /--shijing-ask-glass-border:\s*var\(--shijing-shared-glass-border\)/);
-  assert.match(root, /--shijing-ask-glass-blur:\s*var\(--shijing-shared-glass-blur\)/);
-  assert.match(root, /--shijing-ask-glass-shadow:\s*var\(--shijing-shared-glass-shadow\)/);
+  assert.match(root, /--shijing-ask-card-bg:/);
+  assert.match(root, /--shijing-ask-card-border:/);
+  assert.match(root, /--shijing-ask-card-blur:/);
+  assert.match(root, /--shijing-ask-card-shadow:/);
 
-  // The layout panel is the only glass carrier on the page.
-  assert.match(layout, /background:\s*var\(--shijing-ask-glass-bg\)/);
-  assert.match(layout, /backdrop-filter:\s*var\(--shijing-ask-glass-blur\)/);
-  assert.match(layout, /-webkit-backdrop-filter:\s*var\(--shijing-ask-glass-blur\)/);
-  assert.match(layout, /border:\s*1px solid var\(--shijing-ask-glass-border\)/);
-  assert.match(layout, /box-shadow:\s*var\(--shijing-ask-glass-shadow\)/);
+  // The tab fills the whole shell main area — no centered max-width column.
+  assert.match(root, /max-width:\s*none/);
+  assert.match(shellMain, /padding:\s*0/);
 
-  // Inner regions carry no card chrome of their own.
-  for (const block of [rail, composer, contextBar, result]) {
-    assert.doesNotMatch(block, /background:\s*var\(--shijing-ask-glass-bg\)/);
-    assert.doesNotMatch(block, /box-shadow:\s*var\(--shijing-ask-glass-shadow\)/);
-    assert.doesNotMatch(block, /border:\s*1px solid var\(--shijing-ask-glass-border\)/);
-  }
+  // The layout grid is transparent; columns touch each other (no gap).
+  assert.doesNotMatch(layout, /background:\s*var\(--shijing-ask-glass-bg\)/);
+  assert.doesNotMatch(layout, /box-shadow:/);
+  assert.match(layout, /grid-template-columns:\s*280px 1fr/);
+  assert.match(layout, /gap:\s*0/);
 
-  // Regions are separated by hairline dividers instead of card borders.
+  // The rail is a flush full-height sidebar separated by ONE hairline — it
+  // carries no card chrome of its own.
+  assert.match(rail, /background:\s*rgba\(255, 255, 255, 0\.42\)/);
+  assert.match(rail, /backdrop-filter:\s*blur\(18px\) saturate\(140%\)/);
   assert.match(rail, /border-right:\s*1px solid rgba\(15, 23, 42, 0\.07\)/);
-  assert.match(contextBar, /border-top:\s*1px solid rgba\(15, 23, 42, 0\.07\)/);
+  assert.doesNotMatch(rail, /border-radius/);
+  assert.doesNotMatch(rail, /box-shadow/);
+  assert.doesNotMatch(rail, /border:\s*1px solid var\(--shijing-ask-glass-border\)/);
+
+  // The main column owns the page's horizontal padding.
+  assert.match(main, /padding:\s*0 48px 36px/);
+
+  // The welcome composer is the centered frosted-glass card.
+  assert.match(composer, /max-width:\s*840px/);
+  assert.match(composer, /margin:\s*0 auto/);
+  assert.match(composer, /background:\s*var\(--shijing-ask-card-bg\)/);
+  assert.match(composer, /border:\s*1px solid var\(--shijing-ask-card-border\)/);
+  assert.match(composer, /border-radius:\s*28px/);
+  assert.match(composer, /box-shadow:\s*var\(--shijing-ask-card-shadow\)/);
+
+  // The context focus bar is embedded in the composer card toolbar, not a
+  // hairline-separated footer strip.
+  assert.match(contextBar, /padding:\s*0/);
+  assert.doesNotMatch(contextBar, /border-top:/);
+  assert.doesNotMatch(contextBar, /min-height:/);
 });
 
-test('Ask ShiJing hero and content start higher as one composition', () => {
+test('Ask ShiJing hero centers the title, subtitle, and rule above the composer card', () => {
   const root = cssBlock(shijingStyles, '.shijing-tab.shijing-ask');
   const hero = cssBlock(shijingStyles, '.shijing-ask__hero');
+  const subtitle = cssBlock(shijingStyles, '.shijing-ask__subtitle');
+  const dot = cssBlock(shijingStyles, '.shijing-ask__title-dot');
+  const rule = cssBlock(shijingStyles, '.shijing-ask__hero-rule');
 
-  assert.match(root, /padding-top:\s*0/);
-  assert.match(hero, /min-height:\s*116px/);
-  assert.match(hero, /padding:\s*0/);
+  assert.match(root, /padding:\s*0/);
+  assert.match(hero, /flex-direction:\s*column/);
+  assert.match(hero, /align-items:\s*center/);
+  assert.match(hero, /text-align:\s*center/);
+  assert.match(subtitle, /letter-spacing:\s*0\.14em/);
+  assert.match(subtitle, /color:\s*#64748b/);
+  assert.match(dot, /border-radius:\s*50%/);
+  assert.match(dot, /background:\s*#43c6a5/);
+  assert.match(rule, /width:\s*56px/);
+  assert.match(rule, /height:\s*1px/);
+
+  // The hero lives inside the welcome group, directly above the composer card.
+  assert.match(shijingTabSource, /className="shijing-ask__welcome">[\s\S]*?className="shijing-ask__hero"/);
+  assert.match(shijingTabSource, /className="shijing-ask__subtitle">\{copy\.shijing\.subtitle\}/);
+  assert.match(shijingTabSource, /className="shijing-ask__hero-rule"/);
 });
 
 test('Ask ShiJing context focus keeps active concern chips in one row before edit action', () => {
@@ -147,6 +182,21 @@ test('Ask ShiJing inline concern editor expands in flow instead of covering resu
   assert.match(editor, /box-sizing:\s*border-box/);
   assert.match(editor, /min-width:\s*0/);
   assert.doesNotMatch(editor, /position:\s*absolute/);
+});
+
+test('Ask ShiJing composer card embeds the context focus row without prompt chips', () => {
+  assert.match(shijingTabSource, /footerSlot=\{<ContextFocusBar/);
+  assert.match(shijingTabSource, /\{props\.footerSlot\}/);
+  // The "可以这样问" prompt-chip row is removed from the consultation surface.
+  assert.doesNotMatch(shijingTabSource, /suggestSlot/);
+  assert.doesNotMatch(shijingTabSource, /suggestedQuestions/);
+  assert.doesNotMatch(shijingTabSource, /shijing-ask__suggest/);
+  assert.doesNotMatch(shijingTabSource, /shijing-ask__chip/);
+
+  const toolbarContext = cssBlock(shijingStyles, '.shijing-ask__toolbar > .shijing-ctx');
+
+  assert.match(toolbarContext, /flex:\s*1 1 auto/);
+  assert.match(toolbarContext, /min-width:\s*0/);
 });
 
 test('Ask ShiJing concern sync effect preserves identical array state', () => {
@@ -201,7 +251,6 @@ test('Ask ShiJing switches to a chat window once a conversation exists', () => {
   assert.match(composerChat, /margin-top:\s*auto/);
   assert.match(composerChat, /min-height:\s*0/);
   assert.match(composerChat, /position:\s*relative/);
-  assert.match(composerChat, /bottom:\s*auto/);
   assert.doesNotMatch(composerChat, /position:\s*sticky/);
 });
 
@@ -320,15 +369,24 @@ test('Ask ShiJing chat controls match the Codex-style compact composer chrome', 
   const railHead = cssBlock(shijingStyles, '.shijing-ask__rail-head');
   const newQuestion = cssBlock(shijingStyles, '.shijing-ask .shijing-ask__new-question');
   const toolbar = cssBlock(shijingStyles, '.shijing-ask__toolbar');
+  const chatToolbar = cssBlock(
+    shijingStyles,
+    '.shijing-ask__composer[data-chat-composer="true"] .shijing-ask__toolbar',
+  );
   const submit = cssBlock(shijingStyles, '.shijing-ask .shijing-ask__submit');
   const submitIcon = cssBlock(shijingStyles, '.shijing-ask__submit-icon');
 
   assert.match(railHead, /flex-direction:\s*column/);
   assert.match(newQuestion, /width:\s*100%/);
   assert.match(newQuestion, /justify-content:\s*center/);
-  assert.match(toolbar, /border-top:\s*0/);
-  assert.match(submit, /width:\s*38px/);
-  assert.match(submit, /height:\s*38px/);
+  // The welcome toolbar carries the hairline divider above the context-focus
+  // row; the chat toolbar drops it because the composer is its own card.
+  assert.match(toolbar, /display:\s*flex/);
+  assert.match(toolbar, /align-items:\s*center/);
+  assert.match(toolbar, /border-top:\s*1px solid rgba\(15, 23, 42, 0\.06\)/);
+  assert.match(chatToolbar, /border-top:\s*0/);
+  assert.match(submit, /width:\s*42px/);
+  assert.match(submit, /height:\s*42px/);
   assert.match(submit, /border-radius:\s*50%/);
   assert.doesNotMatch(submit, /width:\s*160px/);
   assert.match(submitIcon, /width:\s*18px/);
