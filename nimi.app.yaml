@@ -1,6 +1,6 @@
 app_id: nimi.shijing
 display_name: 时镜 ShiJing
-version: 0.1.7
+version: 0.1.8
 profile: standalone
 manifest_role: submitted-input
 app_access:
@@ -8,3 +8,16 @@ app_access:
 local_development:
   electron:
     renderer_origin: http://127.0.0.1:1430
+metadata:
+  summary: 结合四柱与节气等确定性排盘，提供个人节律观察与解读。
+  icon: src-tauri/icons/icon.png
+  readme: APP_GUIDE.md
+  release_notes: RELEASE_NOTES.md
+  author: Nimi Team
+  homepage_url: https://github.com/nimiplatform/nimiapp-shijing
+  support_url: https://github.com/nimiplatform/nimiapp-shijing/issues
+capability_contract_refs:
+  - text.generate
+required_standardized_feature_refs: []
+storage_policy:
+  kind: nimi-mediated-default
