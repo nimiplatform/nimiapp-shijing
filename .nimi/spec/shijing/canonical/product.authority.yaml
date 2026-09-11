@@ -25,7 +25,7 @@ units:
   - id: definition.shijing.product.person
     kind: definition
     title: Person
-    meaning: Person is a first-class other-person astrology object for natal inputs, validation, and consent posture, not a customer, contact, account, or owner of conversations, events, memories, plans, settings, relationships, notifications, or lifecycle.
+    meaning: Person is a first-class other-person astrology object for natal inputs and validation, not a customer, contact, account, or owner of conversations, events, memories, plans, settings, relationships, notifications, or lifecycle.
   - id: definition.shijing.product.hejing
     kind: definition
     title: HeJing
@@ -126,7 +126,7 @@ units:
     kind: rule
     title: Person ownership boundary
     modality: must
-    statement: Person remains first-class for natal inputs, validation, and consent posture, remains distinct from a customer, contact, or account, and owns no conversations, events, memories, plans, settings, relationships, notifications, or lifecycle.
+    statement: Person remains first-class for natal inputs and validation, remains distinct from a customer, contact, or account, and owns no conversations, events, memories, plans, settings, relationships, notifications, or lifecycle.
     condition: Always.
     failure: Reject a Person shape or workflow that introduces customer identity or prohibited ownership.
     relations:

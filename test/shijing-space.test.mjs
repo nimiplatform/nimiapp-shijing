@@ -79,6 +79,19 @@ test('settings with project_memory is rejected', () => {
   }
 });
 
+for (const field of ['ConsentState', 'consent_state', 'consent_withheld', 'relation_hint', 'subject_context']) {
+test(`person record carrying removed ${field} key is rejected`, () => {
+  const space = baseSpace({ persons: [{ ...validPerson('p_alice'), [field]: 'owner_recorded' }] });
+  const result = validateShiJingSpace(space);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.error.code, 'space_removed_field_present');
+    assert.equal(result.error.container, 'person');
+    assert.equal(result.error.field, field);
+  }
+});
+}
+
 test('admitted EventMemory / event_memories key is NOT rejected as removed', () => {
   const space = baseSpace({ event_memories: [validEventMemory('m1')] });
   const result = validateShiJingSpace(space);

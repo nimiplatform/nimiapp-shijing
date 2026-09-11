@@ -38,7 +38,6 @@ function relationshipSpace(personOverrides = {}) {
       validPerson('p_alice', {
         display_name: 'Alice',
         natal_inputs: natalAt('1992-11-03', '19:10', 'female'),
-        consent_state: 'owner_recorded',
         ...personOverrides,
       }),
     ],
@@ -128,13 +127,6 @@ test('relationship_natal evidence carries method-backed ten-god relation directi
   assert.equal(relation.label, 'controlling');
   assert.match(relation.driver_ref, /related_day_master\.[a-z]+:guansha->self_day_master\.[a-z]+/u);
   assert.doesNotMatch(relation.driver_ref, /self_day\.|related_day\./u);
-});
-
-test('relationship_natal fails closed when related person consent is withheld', () => {
-  const result = relationshipSnapshot({ personOverrides: { consent_state: 'withheld' } });
-  assert.equal(result.ok, false);
-  assert.equal(result.error.kind, 'stage_invalid_input');
-  assert.match(result.error.detail ?? '', /consent_withheld/u);
 });
 
 test('relationship_natal fails closed when related person ref does not match scope', () => {

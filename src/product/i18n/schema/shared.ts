@@ -4,7 +4,6 @@ export type {
   BirthPrecision,
   CalculationSex,
   CalendarSystem,
-  ConsentState,
 } from '../../../domain/person.ts';
 export type { MirrorKind } from '../../../domain/mirror-scope.ts';
 export type {

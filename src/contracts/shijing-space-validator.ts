@@ -18,14 +18,11 @@ import { validateReading } from './reading-validator.ts';
 import { isAdmittedSurfaceName, REMOVED_SURFACE_NAMES } from './removed-surfaces.ts';
 import { validateSettings } from './settings-validator.ts';
 
-const ALLOWED_CONSENT_STATES = new Set(['owner_recorded', 'subject_consented', 'withheld']);
-
 export type ShijingSpaceValidationError =
   | { code: 'space_shape_invalid'; field: string; expected: string }
   | { code: 'space_persons_duplicate_id'; id: string }
   | { code: 'space_person_id_empty' }
   | { code: 'space_person_kind_invalid'; received: unknown }
-  | { code: 'space_person_consent_state_invalid'; received: unknown }
   | { code: 'space_person_relation_invalid'; person_id: string }
   | { code: 'space_subject_ref_unresolvable'; ref: SubjectRef; via: string }
   | { code: 'space_concern_tags_invalid'; reason: string }
@@ -50,7 +47,7 @@ export type ShijingSpaceValidationError =
   | { code: 'space_self_subject_natal_inputs_invalid'; reason: string }
   | { code: 'space_person_natal_inputs_invalid'; person_id: string; reason: string }
   | { code: 'space_settings_invalid'; reason: string }
-  | { code: 'space_removed_field_present'; container: 'space' | 'settings'; field: string };
+  | { code: 'space_removed_field_present'; container: 'space' | 'settings' | 'person'; field: string };
 
 export type ShijingSpaceValidationResult =
   | { ok: true }
@@ -62,8 +59,9 @@ function subjectExistsInSpace(ref: SubjectRef, personIds: ReadonlySet<string>): 
   return false;
 }
 
-function findRemovedKey(record: Record<string, unknown>): string | null {
+function findRemovedKey(record: Record<string, unknown>, allowedKey?: string): string | null {
   for (const key of Object.keys(record)) {
+    if (key === allowedKey) continue;
     if (isAdmittedSurfaceName(key)) continue;
     if (REMOVED_SURFACE_NAMES.has(key)) return key;
   }
@@ -148,10 +146,14 @@ function validateShiJingSpaceUnchecked(input: unknown): ShijingSpaceValidationRe
     if (person.kind !== 'person') {
       return { ok: false, error: { code: 'space_person_kind_invalid', received: person.kind } };
     }
-    if (!ALLOWED_CONSENT_STATES.has(person.consent_state)) {
+    // @nimi-authority: rule.shijing.data-model.r003
+    // Person admits only the display label `relation` from the removed names.
+    const personRecord = asRecord(person);
+    const removedPersonKey = personRecord ? findRemovedKey(personRecord, 'relation') : null;
+    if (removedPersonKey) {
       return {
         ok: false,
-        error: { code: 'space_person_consent_state_invalid', received: person.consent_state },
+        error: { code: 'space_removed_field_present', container: 'person', field: removedPersonKey },
       };
     }
     // `relation` is an optional bounded display label (SJG-DATA-03): when

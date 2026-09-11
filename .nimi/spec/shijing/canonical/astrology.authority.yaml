@@ -242,7 +242,7 @@ units:
     kind: rule
     title: Uncertainty surface
     modality: must
-    statement: Every ready Reading carries confidence low, medium, or high, caveats, and data_gaps; the deterministic uncertainty decision sets maximum confidence; Runtime AI may lower but never raise confidence; and missing natal precision, incomplete related-person inputs, unresolved mentions, unavailable memory, and withheld consent are surfaced.
+    statement: Every ready Reading carries confidence low, medium, or high, caveats, and data_gaps; the deterministic uncertainty decision sets maximum confidence; Runtime AI may lower but never raise confidence; and missing natal precision, incomplete related-person inputs, unresolved mentions, and unavailable memory are surfaced.
     condition: Whenever a Reading reaches ready status.
     failure: Reject a ready Reading with absent, overstated, or incomplete uncertainty.
     relations:
@@ -252,7 +252,7 @@ units:
     kind: rule
     title: Inputs summary expiry
     modality: must
-    statement: "InputsSummary freshness derives from captured_at: RiJing expires after 24 hours; YueJing after 7 days or a rolling-scope change; NianJing after 30 days or an active-concern or natal-input change; MingJing after 180 days or a cited-event, natal-input, or response-preference change; Relationship HePan after 180 days or a related-Person natal-input, consent, anchor_year, scope-payload, self-plus-person deterministic-evidence, or response-preference change, with stale relationship evidence failing before Runtime-AI wording; and ShiJing consultation after 7 days for new AI turns; expired snapshots remain on historical Readings but are never reused for new wording."
+    statement: "InputsSummary freshness derives from captured_at: RiJing expires after 24 hours; YueJing after 7 days or a rolling-scope change; NianJing after 30 days or an active-concern or natal-input change; MingJing after 180 days or a cited-event, natal-input, or response-preference change; Relationship HePan after 180 days or a related-Person natal-input, anchor_year, scope-payload, self-plus-person deterministic-evidence, or response-preference change, with stale relationship evidence failing before Runtime-AI wording; and ShiJing consultation after 7 days for new AI turns; expired snapshots remain on historical Readings but are never reused for new wording."
     condition: Whenever an existing inputs summary is considered for new wording or generation.
     failure: Reject reuse with a typed stale-inputs failure while retaining the historical snapshot.
     relations:

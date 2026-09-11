@@ -50,11 +50,6 @@ calculationSexLabels: {
   male: '男',
   unspecified: '暂不确定',
 },
-consentStateLabels: {
-  owner_recorded: '我代为记录',
-  subject_consented: '本人提供',
-  withheld: '暂不确定',
-},
 responseToneLabels: {
   neutral: '中立',
   warm: '温和',
@@ -211,7 +206,6 @@ people: {
   displayNamePlaceholder: '例如：阿楠、老张',
   relation: '关系',
   relationPlaceholder: '例如：母亲、合伙人',
-  consentSource: '资料来源',
   notes: '备注',
   notesPlaceholder: '关于这个人的补充说明…',
   addPerson: '添加人物',
@@ -433,7 +427,6 @@ natalErrors: {
   natal_inputs_cultural_marker_invalid: '文化标记无效。',
   person_display_name_empty: '请填写人物的称呼。',
   person_id_empty: '人物标识缺失，请点「重置」后重试。',
-  person_consent_state_invalid: '同意状态无效，请重新选择。',
   person_duplicate_id: '该人物已存在，请点「重置」后重试。',
 },
 operationFailed: (code) => `操作未成功（${code}）`,

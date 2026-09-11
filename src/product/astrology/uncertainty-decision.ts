@@ -40,7 +40,6 @@ const CAVEAT_TEXT: Readonly<Record<UncertaintyInputCode, string>> = {
   timezone_missing: '出生时区缺失或不在支持列表内',
   ephemeris_missing: '历法表与方法档案不一致,需重新生成',
   calculation_sex_unspecified: '大运方向所需性别未指定',
-  consent_withheld: '相关人士未授权,解读以谨慎语气呈现',
   unresolved_mention: '关注中存在未解析的人员提及',
   related_person_incomplete: '相关人士的本命输入不完整',
   memory_unavailable: '记忆检索不可用',

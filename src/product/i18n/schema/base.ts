@@ -4,7 +4,6 @@ import type {
   BirthPrecision,
   CalculationSex,
   CalendarSystem,
-  ConsentState,
   ConversationRole,
   LabelMap,
   MirrorKind,
@@ -31,7 +30,6 @@ readonly nianjingInflectionKindLabels: LabelMap<NianJingInflectionKind>;
 readonly calendarSystemLabels: LabelMap<CalendarSystem>;
 readonly birthPrecisionLabels: LabelMap<BirthPrecision>;
 readonly calculationSexLabels: LabelMap<CalculationSex>;
-readonly consentStateLabels: LabelMap<ConsentState>;
 readonly responseToneLabels: LabelMap<ResponseTone>;
 readonly responseLengthLabels: LabelMap<ResponseLength>;
 readonly responseLanguageLabels: LabelMap<ResponseLanguage>;
@@ -164,7 +162,6 @@ readonly people: {
   readonly displayNamePlaceholder: string;
   readonly relation: string;
   readonly relationPlaceholder: string;
-  readonly consentSource: string;
   readonly notes: string;
   readonly notesPlaceholder: string;
   readonly addPerson: string;

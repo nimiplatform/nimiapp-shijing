@@ -462,7 +462,6 @@ export type UncertaintyInputCode =
   | 'timezone_missing'
   | 'ephemeris_missing'
   | 'calculation_sex_unspecified'
-  | 'consent_withheld'
   | 'unresolved_mention'
   | 'related_person_incomplete'
   | 'memory_unavailable'
@@ -479,7 +478,6 @@ export const UNCERTAINTY_INPUT_CODES: readonly UncertaintyInputCode[] = [
   'timezone_missing',
   'ephemeris_missing',
   'calculation_sex_unspecified',
-  'consent_withheld',
   'unresolved_mention',
   'related_person_incomplete',
   'memory_unavailable',

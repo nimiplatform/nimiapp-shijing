@@ -71,25 +71,17 @@ export interface SelfSubject {
   readonly notes?: string;
 }
 
-export type ConsentState = 'owner_recorded' | 'subject_consented' | 'withheld';
-
-export const CONSENT_STATES: readonly ConsentState[] = [
-  'owner_recorded',
-  'subject_consented',
-  'withheld',
-] as const;
-
 // Free-text display label describing how the subject relates to the user
 // (母亲 / 合伙人 / …). Presentation hint only — bounded, never parsed into a
 // relationship graph or fed to calculation. See SJG-DATA-03 invariants.
 export const PERSON_RELATION_MAX_LENGTH = 40 as const;
 
+// @nimi-authority: rule.shijing.data-model.r003
 export interface Person {
   readonly id: string;
   readonly display_name: string;
   readonly kind: 'person';
   readonly natal_inputs: NatalInputs;
-  readonly consent_state: ConsentState;
   readonly relation?: string;
   readonly notes?: string;
 }

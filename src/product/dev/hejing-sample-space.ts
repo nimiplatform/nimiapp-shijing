@@ -22,7 +22,6 @@ const SNOW_PERSON: Person = {
   display_name: 'Snow',
   kind: 'person',
   relation: '孩子',
-  consent_state: 'owner_recorded',
   natal_inputs: {
     raw_birth_input: { calendar_system: 'gregorian', local_date_text: '2014-09-20', local_time_text: '07:40' },
     birth_datetime_utc: '2014-09-19T23:40:00Z',

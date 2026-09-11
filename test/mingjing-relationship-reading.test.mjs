@@ -43,7 +43,6 @@ function relationshipSpace() {
       validPerson('p_alice', {
         display_name: 'Alice',
         natal_inputs: natalAt('1992-11-03', '19:10', 'female'),
-        consent_state: 'owner_recorded',
       }),
     ],
   });

@@ -8,9 +8,8 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button, ConfirmDialog, nimiToast } from '@nimiplatform/kit/ui';
 import type { Person } from '../../domain/person.ts';
-import { CONSENT_STATES, PERSON_RELATION_MAX_LENGTH } from '../../domain/person.ts';
-import { CONSENT_STATE_ORDER, useProductCopy } from '../i18n/copy.ts';
-import { SjpSelect } from '../components/sjp-select.tsx';
+import { PERSON_RELATION_MAX_LENGTH } from '../../domain/person.ts';
+import { useProductCopy } from '../i18n/copy.ts';
 import { newUlid } from '../ids/index.ts';
 import {
   LOCKED_PROFILE_SENSITIVE_ACCESS,
@@ -40,7 +39,6 @@ function emptyMeta(): PersonMetaDraft {
     id: newUlid(),
     display_name: '',
     relation: '',
-    consent_state: 'subject_consented',
     notes: '',
   };
 }
@@ -102,10 +100,6 @@ export function PersonEditor({
   const isDialogMode = mode === 'dialog';
   const drawerOpen = isDialogMode ? open : localDrawerOpen;
   const persons = state.snapshot.persons;
-  const consentOptions = CONSENT_STATE_ORDER.filter((c) => CONSENT_STATES.includes(c)).map((c) => ({
-    value: c,
-    label: copy.consentStateLabels[c],
-  }));
   const drawerTitle = editingPersonId ? copy.people.editDialog : dialogTitle ?? copy.people.addDialog;
   const drawerPrimaryLabel = editingPersonId ? copy.common.save : copy.people.addPerson;
   const drawerPrimaryIconPath = editingPersonId ? 'M20 6L9 17l-5-5' : 'M12 5v14M5 12h14';
@@ -188,8 +182,7 @@ export function PersonEditor({
 
   function personListMeta(person: Person): string {
     if (!profileSensitiveAccess.revealSensitive) return copy.self.maskedValue;
-    const relationText = person.relation ? `${person.relation} · ` : '';
-    return `${relationText}${copy.consentStateLabels[person.consent_state]}`;
+    return person.relation ?? '';
   }
 
   function closeDrawer() {
@@ -218,7 +211,6 @@ export function PersonEditor({
       display_name: meta.display_name.trim(),
       kind: 'person',
       natal_inputs: built.inputs,
-      consent_state: meta.consent_state,
       ...(relation.length > 0 ? { relation } : {}),
       ...(meta.notes.length > 0 ? { notes: meta.notes } : {}),
     };
@@ -427,18 +419,6 @@ export function PersonEditor({
                       maxLength={PERSON_RELATION_MAX_LENGTH}
                       value={meta.relation}
                       onChange={(e) => setMeta({ ...meta, relation: e.currentTarget.value })}
-                    />
-                  </div>
-
-                  <div className="sjp-field sjp-field--full">
-                    <label className="sjp-label" htmlFor="person-consent">{copy.people.consentSource}</label>
-                    <SjpSelect
-                      id="person-consent"
-                      value={meta.consent_state}
-                      onValueChange={(v) =>
-                        setMeta({ ...meta, consent_state: v as Person['consent_state'] })
-                      }
-                      options={consentOptions}
                     />
                   </div>
 

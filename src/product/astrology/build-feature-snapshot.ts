@@ -1,7 +1,7 @@
 // SJG-ALGO-02/08 — feature snapshot orchestrator. Thin: resolve subjects through
 // the shared NatalCanonicalization stage, select the MethodEngine from the
 // registry, run computeEvidence → deriveCommonDrivers, append orchestration-level
-// uncertainty (consent, concern tags), and assemble the envelope. No method math
+// uncertainty (concern tags), and assemble the envelope. No method math
 // lives here.
 
 import type { ConcernTag } from '../../domain/concern-tag.ts';
@@ -68,18 +68,6 @@ function resolveSubject(
   return { ok: true, value: { subject_ref, natal_inputs: natalInputs, canonicalization: canon.value } };
 }
 
-function consentUncertainty(refs: readonly SubjectRef[], space: ShiJingSpace): UncertaintyInput[] {
-  const out: UncertaintyInput[] = [];
-  for (const ref of refs) {
-    if (!isPersonRef(ref)) continue;
-    const person = space.persons.find((p) => p.id === ref.id);
-    if (person?.consent_state === 'withheld') {
-      out.push({ code: 'consent_withheld', severity: 'caveat', subject_ref: ref });
-    }
-  }
-  return out;
-}
-
 function resolveRelationshipPersonForScope(input: BuildFeatureSnapshotInput): StageResult<{
   readonly ref: Extract<SubjectRef, { kind: 'person' }>;
   readonly display_name_snapshot: string;
@@ -117,17 +105,6 @@ function resolveRelationshipPersonForScope(input: BuildFeatureSnapshotInput): St
         kind: 'stage_missing_input',
         subject_ref: ref,
         detail: `relationship_natal related person ${ref.id} does not resolve`,
-      },
-    };
-  }
-  if (person.consent_state === 'withheld') {
-    return {
-      ok: false,
-      error: {
-        stage: 'build_feature_snapshot',
-        kind: 'stage_invalid_input',
-        subject_ref: ref,
-        detail: `relationship_natal consent_withheld for ${ref.id}`,
       },
     };
   }
@@ -239,10 +216,8 @@ export function buildAstrologyFeatureSnapshot(
   if (!relationshipEvidenceResult.ok) return relationshipEvidenceResult;
 
   // Append orchestration-level uncertainty (engine owns astrology-intrinsic ones).
-  const uncertainty: UncertaintyInput[] = [
-    ...commonResult.value.uncertainty_inputs,
-    ...consentUncertainty(input.related_person_refs, input.space),
-  ];
+  // @nimi-authority: rule.shijing.algorithm.r010
+  const uncertainty: UncertaintyInput[] = [...commonResult.value.uncertainty_inputs];
   // 命镜 is a whole-life natal surface; it is self-anchored and does not require
   // concern tags (SJG-IA-08), like the consultation mirror.
   if (

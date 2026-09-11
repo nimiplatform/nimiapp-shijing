@@ -69,7 +69,7 @@ export interface MethodEngine<E = unknown> {
 
   // Stage 2: project the chart onto the agnostic common surface, including
   // engine-level uncertainty (per the SJG-ALGO-10 baseline tightened by
-  // `capabilities`). Orchestration-level uncertainty (concern tags, consent) is
+  // `capabilities`). Orchestration-level uncertainty (concern tags) is
   // appended by the orchestrator.
   deriveCommonDrivers(input: EngineDeriveInput<E>): StageResult<CommonDrivers>;
 

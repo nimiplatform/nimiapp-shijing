@@ -514,7 +514,6 @@ export function validPerson(id, overrides = {}) {
     display_name: id,
     kind: 'person',
     natal_inputs: validNatalInputs(),
-    consent_state: 'owner_recorded',
     ...overrides,
   };
 }

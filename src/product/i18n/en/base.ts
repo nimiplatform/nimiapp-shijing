@@ -50,11 +50,6 @@ calculationSexLabels: {
   male: 'Male',
   unspecified: 'Not sure',
 },
-consentStateLabels: {
-  owner_recorded: 'Recorded by me',
-  subject_consented: 'Provided by them',
-  withheld: 'Not sure',
-},
 responseToneLabels: {
   neutral: 'Neutral',
   warm: 'Warm',
@@ -211,7 +206,6 @@ people: {
   displayNamePlaceholder: 'For example: Anna, Lao Zhang',
   relation: 'Relation',
   relationPlaceholder: 'For example: mother, partner',
-  consentSource: 'Data source',
   notes: 'Notes',
   notesPlaceholder: 'Additional context about this person...',
   addPerson: 'Add person',
@@ -432,7 +426,6 @@ natalErrors: {
   natal_inputs_cultural_marker_invalid: 'Cultural marker is invalid.',
   person_display_name_empty: 'Enter a name for this person.',
   person_id_empty: 'Person id is missing. Reset and try again.',
-  person_consent_state_invalid: 'Consent/data-source state is invalid. Choose again.',
   person_duplicate_id: 'This person already exists. Reset and try again.',
 },
 operationFailed: (code) => `Operation did not complete (${code})`,

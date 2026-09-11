@@ -126,6 +126,10 @@ units:
     kind: definition
     title: Removed subject context
     meaning: The exact removed name is subject_context.
+  - id: definition.shijing.removed-surfaces.consent-state
+    kind: definition
+    title: Removed consent state
+    meaning: The exact removed-name group is ConsentState, consent_state, and consent_withheld.
   - id: definition.shijing.removed-surfaces.current-observation-target
     kind: definition
     title: Removed observation target
@@ -422,6 +426,8 @@ units:
         target: definition.shijing.removed-surfaces.client
       - type: applies_to
         target: definition.shijing.removed-surfaces.commerce
+      - type: applies_to
+        target: definition.shijing.removed-surfaces.consent-state
       - type: applies_to
         target: definition.shijing.removed-surfaces.consultant
       - type: applies_to

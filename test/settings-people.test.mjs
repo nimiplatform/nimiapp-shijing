@@ -29,15 +29,6 @@ test('upsertPerson rejects empty display_name', () => {
   if (!r.ok) assert.equal(r.error.code, 'person_display_name_empty');
 });
 
-test('upsertPerson rejects invalid consent_state', () => {
-  const r = upsertPerson(
-    validShiJingSpace(),
-    validPerson('p_bob', { consent_state: 'maybe' }),
-  );
-  assert.equal(r.ok, false);
-  if (!r.ok) assert.equal(r.error.code, 'person_consent_state_invalid');
-});
-
 test('upsertPerson updates an existing Person at the same id', () => {
   const space = validShiJingSpace({ persons: [validPerson('p_alice', { display_name: 'Alice v1' })] });
   const r = upsertPerson(space, validPerson('p_alice', { display_name: 'Alice v2' }));
@@ -49,14 +40,12 @@ test('personDraftFromPerson seeds the editor from an existing Person', () => {
   const draft = personDraftFromPerson(validPerson('p_alice', {
     display_name: 'Alice',
     relation: 'partner',
-    consent_state: 'subject_consented',
     notes: 'provided directly',
   }));
 
   assert.equal(draft.meta.id, 'p_alice');
   assert.equal(draft.meta.display_name, 'Alice');
   assert.equal(draft.meta.relation, 'partner');
-  assert.equal(draft.meta.consent_state, 'subject_consented');
   assert.equal(draft.meta.notes, 'provided directly');
   assert.equal(draft.natal.local_date_text, '1990-04-12');
   assert.equal(draft.natal.local_time_text, '08:30');

@@ -1,7 +1,6 @@
 // Public i18n facade for ShiJing product copy.
 
 import { useTranslation } from 'react-i18next';
-import type { ConsentState } from '../../domain/person.ts';
 import type { UiLanguage } from '../../domain/settings.ts';
 import { EN_COPY } from './copy.en.ts';
 import { ZH_COPY } from './copy.zh.ts';
@@ -27,13 +26,6 @@ export function useProductCopy(): ProductCopy {
   return getProductCopy(uiLanguageFromI18nLanguage(i18n.resolvedLanguage ?? i18n.language));
 }
 
-// Display order for the consent-source dropdown; subject-provided comes first.
-export const CONSENT_STATE_ORDER: readonly ConsentState[] = [
-  'subject_consented',
-  'owner_recorded',
-  'withheld',
-];
-
 // Static zh copy exports for non-hook code paths and explicitly tracked known-debt surfaces.
 export const BRAND_NAME = ZH_COPY.brandName;
 export const BRAND_SUB = ZH_COPY.brandSub;
@@ -44,7 +36,6 @@ export const NIANJING_INFLECTION_KIND_LABELS = ZH_COPY.nianjingInflectionKindLab
 export const CALENDAR_SYSTEM_LABELS = ZH_COPY.calendarSystemLabels;
 export const BIRTH_PRECISION_LABELS = ZH_COPY.birthPrecisionLabels;
 export const CALCULATION_SEX_LABELS = ZH_COPY.calculationSexLabels;
-export const CONSENT_STATE_LABELS = ZH_COPY.consentStateLabels;
 export const RESPONSE_TONE_LABELS = ZH_COPY.responseToneLabels;
 export const RESPONSE_LENGTH_LABELS = ZH_COPY.responseLengthLabels;
 export const RESPONSE_LANGUAGE_LABELS = ZH_COPY.responseLanguageLabels;

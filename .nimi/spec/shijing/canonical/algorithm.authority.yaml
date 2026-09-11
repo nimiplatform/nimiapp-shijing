@@ -189,7 +189,7 @@ units:
   - id: definition.shijing.algorithm.uncertainty-decision-table
     kind: definition
     title: Uncertainty decisions
-    meaning: The BaZi baseline maps exact complete inputs to maximum high; rough_day to maximum medium without hour pillar; rough_month to maximum low and failure for DaYun-required mirrors; rough_year to failure for RiJing, YueJing, NianJing, and Runtime consultation; unknown to data-entry repair only; missing location, timezone, or ephemeris for required exact pillars to failure; required DaYun with unspecified calculation sex to failure; withheld related-Person consent to maximum medium plus caveat; unresolved active-tag mention to omitted person chart plus caveat; incomplete related-Person natal data to omission or failure for relation-specific output; no active tags to mirror-generation failure; unavailable optional memory to disclosed continuation; and Runtime-AI parse or validation error to failure; later stages only lower confidence and engines may tighten but never loosen failure.
+    meaning: The BaZi baseline maps exact complete inputs to maximum high; rough_day to maximum medium without hour pillar; rough_month to maximum low and failure for DaYun-required mirrors; rough_year to failure for RiJing, YueJing, NianJing, and Runtime consultation; unknown to data-entry repair only; missing location, timezone, or ephemeris for required exact pillars to failure; required DaYun with unspecified calculation sex to failure; unresolved active-tag mention to omitted person chart plus caveat; incomplete related-Person natal data to omission or failure for relation-specific output; no active tags to mirror-generation failure; unavailable optional memory to disclosed continuation; and Runtime-AI parse or validation error to failure; later stages only lower confidence and engines may tighten but never loosen failure.
   - id: definition.shijing.algorithm.nianjing-phase-inflection
     kind: definition
     title: NianJing derivation
@@ -245,7 +245,7 @@ units:
   - id: definition.shijing.algorithm.relationship-hepan-evidence
     kind: definition
     title: Relationship HePan evidence
-    meaning: Relationship HePan evidence covers self and exactly one Person chart, available pairwise year, month, day, and hour branch interactions, method-specific relationship direction, anchor-year period-marker windows or an explicit namespaced fallback driver, and precision, location, consent, and related-person uncertainty inputs.
+    meaning: Relationship HePan evidence covers self and exactly one Person chart, available pairwise year, month, day, and hour branch interactions, method-specific relationship direction, anchor-year period-marker windows or an explicit namespaced fallback driver, and precision, location, and related-person uncertainty inputs.
   - id: definition.shijing.algorithm.feature-rijing-daily-reading
     kind: definition
     title: RiJing feature support
@@ -452,7 +452,7 @@ units:
     kind: rule
     title: Uncertainty decisions
     modality: must
-    statement: The BaZi uncertainty baseline sets exact complete inputs to maximum high; rough_day to maximum medium with hour pillar omitted; rough_month to maximum low and failure for DaYun-required mirrors; rough_year to failure for RiJing, YueJing, NianJing, and Runtime consultation; unknown to failure except data-entry repair; missing location, timezone, or ephemeris for exact required pillars to failure; required DaYun with unspecified calculation sex to failure; withheld related-Person consent to maximum medium plus caveat; an unresolved active-tag person mention to omitted person chart plus caveat; incomplete related-Person natal inputs to omitted chart or failure for relation-specific output; no active concern tags to mirror-generation failure; unavailable memory retrieval to continuation only when optional with disclosure; and Runtime-AI parse or validation failure to failure; confidence only decreases at later stages, an engine may tighten through capabilities such as required birth time, and no engine loosens a fail-closed condition.
+    statement: The BaZi uncertainty baseline sets exact complete inputs to maximum high; rough_day to maximum medium with hour pillar omitted; rough_month to maximum low and failure for DaYun-required mirrors; rough_year to failure for RiJing, YueJing, NianJing, and Runtime consultation; unknown to failure except data-entry repair; missing location, timezone, or ephemeris for exact required pillars to failure; required DaYun with unspecified calculation sex to failure; an unresolved active-tag person mention to omitted person chart plus caveat; incomplete related-Person natal inputs to omitted chart or failure for relation-specific output; no active concern tags to mirror-generation failure; unavailable memory retrieval to continuation only when optional with disclosure; and Runtime-AI parse or validation failure to failure; confidence only decreases at later stages, an engine may tighten through capabilities such as required birth time, and no engine loosens a fail-closed condition.
     condition: Whenever uncertainty or generation readiness is evaluated.
     failure: Fail generation or cap and annotate confidence exactly as the matched decision requires.
     relations:
@@ -546,7 +546,7 @@ units:
     kind: rule
     title: Relationship HePan evidence
     modality: must
-    statement: Relationship HePan evidence is computed from self and exactly one Person and includes both subject charts; available pairwise branch interactions across year, month, day, and hour; method-specific direction evidence consisting of BaZi day-master relation, ten-god direction, and useful-element complement or depletion, Ziwei 命宫, 身宫, 主星, and 五行局 direction, or QiZheng ascendant, day or night luminary, house, and mansion direction; anchor-year timing windows from both subjects period markers or an explicit method-namespaced fallback driver; and uncertainty inputs for precision, location, consent, and related-person data; Runtime AI computes or alters none of these fields.
+    statement: Relationship HePan evidence is computed from self and exactly one Person and includes both subject charts; available pairwise branch interactions across year, month, day, and hour; method-specific direction evidence consisting of BaZi day-master relation, ten-god direction, and useful-element complement or depletion, Ziwei 命宫, 身宫, 主星, and 五行局 direction, or QiZheng ascendant, day or night luminary, house, and mansion direction; anchor-year timing windows from both subjects period markers or an explicit method-namespaced fallback driver; and uncertainty inputs for precision, location, and related-person data; Runtime AI computes or alters none of these fields.
     condition: Whenever relationship evidence is computed or worded.
     failure: Fail relationship generation closed when evidence is incomplete, mismatched, or AI-derived.
     relations:

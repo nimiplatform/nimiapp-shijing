@@ -306,7 +306,7 @@ export function buildHeJingWorkspaceFromPerson(person: Person): HeJingWorkspace 
       body: '未来窗口需要双方命盘证据；资料不足时会提示补全，不会给出臆测结果。',
     },
     futureWindows: [],
-    weeklyAdvice: '添加人物后，先确认出生日期、时间、地点与授权来源，再生成合镜。',
+    weeklyAdvice: '添加人物后，先确认出生日期、时间与地点，再生成合镜。',
     // `records` and `astrologyBasis` carry over from the sample spread above so
     // the 共同记录 / 命理依据 sections stay populated once a reading exists.
     astrologyBasis: HEJING_DEFAULT_BASIS,

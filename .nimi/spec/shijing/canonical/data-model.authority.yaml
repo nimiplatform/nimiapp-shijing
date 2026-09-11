@@ -29,7 +29,7 @@ units:
   - id: definition.shijing.data-model.person
     kind: definition
     title: Person record
-    meaning: Person contains id, display_name, literal kind person, NatalInputs, consent_state from owner_recorded, subject_consented, or withheld, optional relation, and optional notes; relation is a presentation-only free-text label of at most 40 characters and is the sole admitted relationship-like Person field.
+    meaning: Person contains id, display_name, literal kind person, NatalInputs, optional relation, and optional notes; relation is a presentation-only free-text label of at most 40 characters and is the sole admitted relationship-like Person field.
   - id: definition.shijing.data-model.concern-tag
     kind: definition
     title: Concern tag record
@@ -166,7 +166,7 @@ units:
     kind: rule
     title: Natal subject records
     modality: must
-    statement: NatalInputs uses the complete admitted RawBirthInput, canonical UTC birth datetime, precision, calendar system, BirthLocation, calculation sex, optional cultural marker, and notes shape; SelfSubject contains NatalInputs and optional notes; Person contains id, display name, person kind, NatalInputs, consent state, optional relation, and notes and remains an other-person astrology object that owns no conversations, event memories, plan items, readings, settings, relations, notifications, or lifecycle; relation is an optional presentation-only free-text label of at most 40 characters that is never parsed into a relationship graph, never drives calculation, hashing, or retrieval, and never becomes a relational or CRM entity; relation_hint, subject_context, client, customer, and near-equivalent CRM fields remain forbidden; non-exact precision lowers confidence or fails closed under the uncertainty authority; and DaYun-dependent readings fail closed when calculation_sex is unspecified.
+    statement: NatalInputs uses the complete admitted RawBirthInput, canonical UTC birth datetime, precision, calendar system, BirthLocation, calculation sex, optional cultural marker, and notes shape; SelfSubject contains NatalInputs and optional notes; Person contains id, display name, person kind, NatalInputs, optional relation, and notes and remains an other-person astrology object that owns no conversations, event memories, plan items, readings, settings, relations, notifications, or lifecycle; relation is an optional presentation-only free-text label of at most 40 characters that is never parsed into a relationship graph, never drives calculation, hashing, or retrieval, and never becomes a relational or CRM entity; relation_hint, subject_context, client, customer, and near-equivalent CRM fields remain forbidden; non-exact precision lowers confidence or fails closed under the uncertainty authority; and DaYun-dependent readings fail closed when calculation_sex is unspecified.
     condition: Whenever self or other-person natal data is accepted or used.
     failure: Reject the invalid subject record or fail the dependent generation with the applicable typed blocker.
     relations:
