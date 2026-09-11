@@ -312,42 +312,8 @@
 }
 
 .shijing-rijing .shijing-rijing__frame-detail-body {
-  margin: 0 0 18px;
+  margin: 0;
   font-size: 13.5px;
   line-height: 1.85;
   color: var(--shijing-text-secondary);
-}
-
-.shijing-rijing__frame-actions-label {
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  color: var(--shijing-text-muted);
-  margin-bottom: 11px;
-}
-
-.shijing-rijing .shijing-rijing__frame-actions {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-
-.shijing-rijing__frame-action {
-  display: flex;
-  gap: 11px;
-  align-items: flex-start;
-  font-size: 13.5px;
-  line-height: 1.6;
-  color: var(--shijing-text-secondary);
-}
-
-.shijing-rijing__frame-action-dot {
-  margin-top: 7px;
-  width: 5px;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--rijing-accent);
-  flex: none;
 }

@@ -3,7 +3,8 @@
 // One row per active concern projection. Each row is collapsed by default to a
 // single line — icon, concern name, tendency pill, and a one-line takeaway — so
 // the surface reads as a scannable index rather than a stack of open cards.
-// Expanding a row reveals the full read plus its 今日动作 list. A lens filter
+// Expanding a row reveals the full read; the concern's recommendations live in
+// the 今日行动 section so the same actions never render twice. A lens filter
 // across the top scopes the list to a single concern.
 //
 // Tag labels and category icons resolve from the concern-tag snapshot; an
@@ -156,21 +157,6 @@ export function RiJingProjections(props: RiJingProjectionsProps) {
                 <div className="shijing-rijing__frame-detail">
                   <div className="shijing-rijing__frame-detail-divider" aria-hidden />
                   <p className="shijing-rijing__frame-detail-body">{row.detailSummary}</p>
-                  {row.recommendations.length > 0 ? (
-                    <>
-                      <div className="shijing-rijing__frame-actions-label">
-                        {copy.rijing.projections.actionsLabel}
-                      </div>
-                      <ul className="shijing-rijing__frame-actions">
-                        {row.recommendations.map((rec, i) => (
-                          <li key={i} className="shijing-rijing__frame-action">
-                            <span className="shijing-rijing__frame-action-dot" aria-hidden />
-                            <span>{rec}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </>
-                  ) : null}
                 </div>
               ) : null}
             </li>

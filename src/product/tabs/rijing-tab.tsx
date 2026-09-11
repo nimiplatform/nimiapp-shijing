@@ -11,7 +11,7 @@
 //   RiJingProjections  — 今日关注分镜: lens filter + collapsible concern rows
 //   RiJingEventInput   — 今日参照: today's reference events (inline edit /
 //                        delete) + composer → upsertEventMemory
-//   RiJingActions      — 今日行动: 做一件事 / 说一句话
+//   RiJingActions      — 今日行动: one action card per concern
 //   RiJingDataSection  — 推演依据与数据说明: evidence chips + an expandable data
 //                        panel that folds in the 资料完整度 readiness signal
 
@@ -318,7 +318,6 @@ export function RiJingTab(props: RiJingTabProps) {
       : emptyActionForState(emptyState, props.onRequestOpenSettings, handleGenerate, copy);
   const actions = deriveRiJingActions(
     currentReading,
-    copy,
     activeTags.map((t) => ({ id: t.id, label: t.label })),
   );
   const dataPanel = deriveRiJingDataPanel(currentReading, copy);
@@ -425,7 +424,8 @@ export function RiJingTab(props: RiJingTabProps) {
       <RiJingEventInput references={todayReferenceMemories} />
 
       <RiJingActions
-        items={actions}
+        groups={actions}
+        concernTags={state.snapshot.concern_tags}
       />
 
       <RiJingDataSection

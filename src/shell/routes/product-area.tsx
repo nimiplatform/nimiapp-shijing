@@ -22,6 +22,7 @@ const shijingPersistenceClient = new ShijingRuntimeStoragePersistenceClient(
  * a session-bound development process. Product data uses the same Runtime-owned
  * current-account-plus-Registered-App-Subject partition as installed Apps.
  */
+// @nimi-authority: rule.shijing.product.r002
 export function ProductArea() {
   const { t } = useTranslation();
   const aiConfigReady = useAppStore((state) => state.aiConfigReady);

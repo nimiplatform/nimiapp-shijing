@@ -199,12 +199,6 @@ export const EN_RIJING_COPY: ProductCopy['rijing'] = {
   actions: {
     ariaLabel: 'Today actions',
     title: 'Today actions',
-    slots: {
-      do: 'Do one thing today',
-      say: 'Say one thing today',
-      avoid: 'Avoid one thing today',
-    },
-    sourceLead: 'From',
   },
   projections: {
     ariaLabel: 'Today concern frames',
@@ -213,7 +207,6 @@ export const EN_RIJING_COPY: ProductCopy['rijing'] = {
     filterAria: 'Filter by reading lens',
     manage: 'Edit concerns',
     editorSubtitle: 'Active concerns shape Daily Mirror generation and today concern frames. Existing readings keep their captured snapshot until regenerated.',
-    actionsLabel: 'TODAY · MOVES',
     expandAria: (name) => `Expand the “${name}” frame`,
   },
   evidence: {

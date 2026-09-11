@@ -199,12 +199,6 @@ export const ZH_RIJING_COPY: ProductCopy['rijing'] = {
   actions: {
     ariaLabel: '今日行动',
     title: '今日行动',
-    slots: {
-      do: '今天做一件事',
-      say: '今天说一句话',
-      avoid: '今天避免一件事',
-    },
-    sourceLead: '来自',
   },
   projections: {
     ariaLabel: '今日关注分镜',
@@ -213,7 +207,6 @@ export const ZH_RIJING_COPY: ProductCopy['rijing'] = {
     filterAria: '按关注视角筛选',
     manage: '编辑关注',
     editorSubtitle: '激活的关注会进入日镜生成与今日关注分镜；已生成读数保留当时快照，下一次生成会使用新的关注。',
-    actionsLabel: '今 日 动 作',
     expandAria: (name) => `展开「${name}」分镜`,
   },
   evidence: {

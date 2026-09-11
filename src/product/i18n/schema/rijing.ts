@@ -94,8 +94,6 @@ export interface RiJingCopy {
   readonly actions: {
     readonly ariaLabel: string;
     readonly title: string;
-    readonly slots: Record<'do' | 'say' | 'avoid', string>;
-    readonly sourceLead: string;
   };
   readonly projections: {
     readonly ariaLabel: string;
@@ -104,7 +102,6 @@ export interface RiJingCopy {
     readonly filterAria: string;
     readonly manage: string;
     readonly editorSubtitle: string;
-    readonly actionsLabel: string;
     readonly expandAria: (name: string) => string;
   };
   readonly evidence: {

@@ -15,6 +15,8 @@ export interface ShiJingComposerProps {
   readonly submitTitle: string;
   readonly submitLabel: string;
   readonly submitting: boolean;
+  readonly suggestLabel: string;
+  readonly suggestedQuestions: readonly string[];
   readonly textareaRef: RefObject<HTMLTextAreaElement | null>;
   readonly onSubmit: FormEventHandler<HTMLFormElement>;
   readonly onQuestionChange: (question: string) => void;
@@ -87,6 +89,23 @@ export function ShiJingComposer(props: ShiJingComposerProps) {
       />
 
       <div className="shijing-ask__toolbar">
+        {!props.chatActive && props.suggestedQuestions.length > 0 ? (
+          <div className="shijing-ask__suggest">
+            <span className="shijing-ask__suggest-label">{props.suggestLabel}</span>
+            <div className="shijing-ask__chips">
+              {props.suggestedQuestions.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className="shijing-ask__chip"
+                  onClick={() => props.onQuestionChange(s)}
+                >
+                  ✦ {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
         <div className="shijing-ask__actions">
           <div className="shijing-ask__submit-wrap">
             {!props.canAsk && props.askReason ? (

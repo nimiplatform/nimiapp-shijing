@@ -152,6 +152,12 @@
   font-weight: 500;
 }
 
+/* Anonymous mount (no account name projected): the pill has no trailing
+   name text, so even out the padding to keep the avatar centered. */
+.shijing-topbar__avatar-button--anonymous {
+  padding: 3px;
+}
+
 .shijing-shell__error {
   grid-column: 1 / -1;
   margin: 12px 24px;

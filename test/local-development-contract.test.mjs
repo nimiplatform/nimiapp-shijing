@@ -75,6 +75,8 @@ test('renderer consumes the App self text candidate path without portable author
   );
   assert.match(productArea, /persistenceClient=\{shijingPersistenceClient\}/);
   assert.doesNotMatch(productArea, /IndexedDBPersistenceAdapter|InMemoryPersistenceAdapter/);
+  // The installed renderer shares this route and must not project account identity.
+  assert.doesNotMatch(productArea, /currentUser|ShijingShellAccount|<ShijingShell\s+account=/);
   assert.match(productArea, /createShijingRuntimeAiClient/);
   assert.match(productArea, /createShijingConversationChatBridge/);
   assert.match(runtimeAI, /client\.ai\.text\.generateCandidate/);

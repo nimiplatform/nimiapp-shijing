@@ -10,8 +10,8 @@
 /* =====================================================================
  * RiJing rich tab — progressive-disclosure layout: 今日总览 hero (energy
  * meter + collapsible 完整解读), 今日关注分镜 (lens filter + collapsible
- * frames), 今日参照 (reference list + composer), 今日行动 (do / say +
- * import), and the collapsible 推演依据 data panel.
+ * frames), 今日参照 (reference list + composer), 今日行动 (per-concern action
+ * cards), and the collapsible 推演依据 data panel.
  *
  * Tokens reference the Nimi primary action color directly so the tab
  * reads as an extension of the kit theme. No yellow warning blocks;

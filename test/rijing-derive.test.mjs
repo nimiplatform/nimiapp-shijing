@@ -14,7 +14,7 @@ test('deriveRiJingActions returns empty actions when no reading exists', () => {
   assert.deepEqual(deriveRiJingActions(undefined), []);
 });
 
-test('deriveRiJingActions yields do/say items tagged with their source concern', () => {
+test('deriveRiJingActions groups recommendations per concern in projection order', () => {
   const reading = validReading({
     output: validRijingOutput({
       concern_projections: [
@@ -24,25 +24,31 @@ test('deriveRiJingActions yields do/say items tagged with their source concern',
           summary: '事业稳中求进，先确认目标与边界再推进。',
           recommendations: ['先在纸上列出三个核心论点。', '把对方的回应复述一次再承诺。'],
         },
+        {
+          concern_tag_ref: 'tag_body',
+          tendency_class: 'steady',
+          summary: '身体视角适合减轻紧绷感，用短暂停顿让判断回到稳定状态。',
+          recommendations: ['  ', '会前留十分钟安静整理。'],
+        },
       ],
     }),
   });
 
-  const items = deriveRiJingActions(reading, getProductCopy('zh'), [
+  const groups = deriveRiJingActions(reading, [
     { id: 'tag_career', label: '#事业' },
+    { id: 'tag_body', label: '#身体' },
   ]);
 
-  assert.equal(items.length, 2);
-  assert.equal(items[0].slot, 'do');
-  assert.equal(items[0].body, '先在纸上列出三个核心论点。');
-  assert.equal(items[0].source_tag, '#事业');
-  assert.equal(items[1].slot, 'say');
-  assert.equal(items[1].body, '把对方的回应复述一次再承诺。');
-  // The product never synthesizes an 'avoid' card.
-  assert.equal(
-    items.some((item) => item.slot === 'avoid'),
-    false,
-  );
+  assert.equal(groups.length, 2);
+  assert.equal(groups[0].concern_tag_ref, 'tag_career');
+  assert.equal(groups[0].tag_label, '#事业');
+  assert.deepEqual(groups[0].recommendations, [
+    '先在纸上列出三个核心论点。',
+    '把对方的回应复述一次再承诺。',
+  ]);
+  assert.equal(groups[1].tag_label, '#身体');
+  // Blank recommendations are dropped, not rendered as empty bullets.
+  assert.deepEqual(groups[1].recommendations, ['会前留十分钟安静整理。']);
 });
 
 test('deriveRiJingDailyAlmanac builds a generic almanac from the civil date', () => {
@@ -240,17 +246,16 @@ test('deriveRiJingReferenceEventRefs selects the latest eligible RiJing event fo
 test('deriveRiJing helpers use English product copy when provided', () => {
   const copy = getProductCopy('en');
   const hero = deriveRiJingHero(undefined, { empty_state: 'missing_focus', copy });
-  const actions = deriveRiJingActions(
+  const groups = deriveRiJingActions(
     validReading(),
-    copy,
     [{ id: 'tag_love', label: '#love' }],
   );
   const date = rijingDateLabel('Asia/Shanghai', copy, new Date('2026-06-17T00:00:00Z'));
 
   assert.equal(hero.headline, 'Daily Mirror has not been generated');
   assert.match(hero.subtitle, /Add and activate one concern/);
-  assert.equal(actions[0]?.slot, 'do');
-  assert.equal(actions[0]?.eyebrow, 'Do one thing today');
+  assert.equal(groups[0]?.tag_label, '#love');
+  assert.deepEqual(groups[0]?.recommendations, ['Listen first.']);
   assert.equal(date.weekday, 'Wednesday');
   assert.equal(date.zone, 'Beijing time');
 });

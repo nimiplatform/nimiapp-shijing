@@ -256,52 +256,37 @@ export function deriveRiJingHero(
 
 // ----- action cards -----
 //
-// 今日行动 distils the day into one concrete move (做一件事) and one thing worth
-// saying (说一句话). Both are pulled verbatim from generated projection
-// recommendations and tagged with the concern they came from — the product
-// never synthesizes guidance copy. Empty recommendations → empty section.
+// 今日行动 groups the full recommendation lists: one card per concern, listing that
+// concern's recommendations verbatim from the generated projections — the
+// product never synthesizes guidance copy. Grouping by concern keeps the
+// expanded 关注分镜 row narrative-only, without repeating the full lists.
+// Empty recommendations → the concern is skipped; no groups →
+// no section.
 
-export type RiJingActionSlot = 'do' | 'say';
-
-export interface RiJingActionItem {
-  readonly slot: RiJingActionSlot;
-  readonly eyebrow: string;
-  readonly body: string;
-  readonly source_tag?: string;
-  readonly source_theme?: string;
+export interface RiJingActionGroup {
+  readonly concern_tag_ref: string;
+  readonly tag_label: string;
+  readonly recommendations: readonly string[];
 }
 
+// @nimi-authority: definition.shijing.astrology.output-rijing
 export function deriveRiJingActions(
   reading: Reading | undefined,
-  copy: ProductCopy = DEFAULT_COPY,
   focusTags: readonly RiJingHeroFocusTagRef[] = [],
-): readonly RiJingActionItem[] {
+): readonly RiJingActionGroup[] {
   if (!reading) return [];
   const output = reading.output as RiJingMirrorOutput;
-  const sourced = output.concern_projections.flatMap((projection) =>
-    projection.recommendations
-      .filter((rec) => rec.trim().length > 0)
-      .map((rec) => ({
-        rec,
-        tag: labelForFocusTag(projection.concern_tag_ref, focusTags),
-        theme: condense(projection.summary, 12),
-      })),
-  );
-  const slots: readonly RiJingActionSlot[] = ['do', 'say'];
-  const items: RiJingActionItem[] = [];
-  for (let i = 0; i < slots.length; i += 1) {
-    const entry = sourced[i];
-    const slot = slots[i];
-    if (!entry || !slot) break;
-    items.push({
-      slot,
-      eyebrow: copy.rijing.actions.slots[slot],
-      body: entry.rec,
-      source_tag: entry.tag,
-      ...(entry.theme ? { source_theme: entry.theme } : {}),
-    });
-  }
-  return items;
+  return output.concern_projections.flatMap((projection) => {
+    const recommendations = projection.recommendations.filter((rec) => rec.trim().length > 0);
+    if (recommendations.length === 0) return [];
+    return [
+      {
+        concern_tag_ref: projection.concern_tag_ref,
+        tag_label: labelForFocusTag(projection.concern_tag_ref, focusTags),
+        recommendations,
+      },
+    ];
+  });
 }
 
 // Friendly names for common IANA timezones; falls back to

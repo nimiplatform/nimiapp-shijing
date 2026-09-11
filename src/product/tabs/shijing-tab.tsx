@@ -502,6 +502,8 @@ export function ShiJingTab(_props: ShiJingTabProps) {
                 submitTitle={submitTitle}
                 submitLabel={submitLabel}
                 submitting={loading}
+                suggestLabel={copy.shijing.suggestLabel}
+                suggestedQuestions={copy.shijing.suggestedQuestions}
                 textareaRef={composerRef}
                 onSubmit={handleAsk}
                 onQuestionChange={setQuestion}
@@ -521,6 +523,8 @@ export function ShiJingTab(_props: ShiJingTabProps) {
                   submitTitle={submitTitle}
                   submitLabel={submitLabel}
                   submitting={loading}
+                  suggestLabel={copy.shijing.suggestLabel}
+                  suggestedQuestions={copy.shijing.suggestedQuestions}
                   textareaRef={composerRef}
                   onSubmit={handleAsk}
                   onQuestionChange={setQuestion}
@@ -541,22 +545,6 @@ export function ShiJingTab(_props: ShiJingTabProps) {
                 />
 
                 {failure ? <FailureBanner failure={failure} /> : null}
-
-                <div className="shijing-ask__suggest">
-                  <span className="shijing-ask__suggest-label">{copy.shijing.suggestLabel}</span>
-                  <div className="shijing-ask__chips">
-                    {copy.shijing.suggestedQuestions.map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        className="shijing-ask__chip"
-                        onClick={() => setQuestion(s)}
-                      >
-                        ✦ {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
 
                 {resultConversation ? (
                   <article className="shijing-ask__result" aria-label={copy.shijing.resultAria}>

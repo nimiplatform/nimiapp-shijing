@@ -153,7 +153,11 @@ export function ShijingShell(props: ShijingShellProps) {
         <div className="shijing-topbar__account" ref={accountRef}>
           <button
             type="button"
-            className="shijing-topbar__avatar-button"
+            className={
+              accountName
+                ? 'shijing-topbar__avatar-button'
+                : 'shijing-topbar__avatar-button shijing-topbar__avatar-button--anonymous'
+            }
             aria-expanded={menuOpen}
             aria-haspopup="menu"
             aria-label={
