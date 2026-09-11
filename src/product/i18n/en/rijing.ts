@@ -38,9 +38,9 @@ export const EN_RIJING_COPY: ProductCopy['rijing'] = {
       reminder: 'Concerns are the lens for Daily Mirror; without one, the system will not generate generic advice.',
     },
     runtime_ai_failed: {
-      description: 'Runtime AI wording did not complete, so no substitute reading is generated.',
+      description: 'The AI interpretation did not complete this time, so no substitute content is shown.',
       confidence_note: 'AI generation failed; Daily Mirror stopped by fail-close rules.',
-      reminder: 'Check the model binding and provider activation state, or switch to an available model before regenerating Daily Mirror.',
+      reminder: 'Check the current model in Settings → AI model configuration, or switch to an available model, then regenerate Daily Mirror.',
     },
     persistence_pending: {
       description: 'Loading local data. Daily Mirror can be generated after it is ready.',
@@ -269,5 +269,15 @@ export const EN_RIJING_COPY: ProductCopy['rijing'] = {
     hoursTitle: 'Hourly luck',
     unavailableTitle: 'Almanac unavailable',
     unavailableBody: 'The current date cannot be resolved by the calendar engine, so no substitute almanac is shown.',
+  },
+  intakeHero: {
+    ariaLabel: 'Daily Mirror intake guide',
+    eyebrow: 'DAILY MIRROR',
+    titleLead: 'Within time,',
+    titleEmphasis: 'see who you are today',
+    body: 'Daily Mirror starts from your birth chart and reads how today’s energy flows through your rhythm of life — helping you find your own direction amid changing days.',
+    action: 'Go to Destiny Mirror',
+    subnote: 'Complete your natal chart to begin your journey through time',
+    footer: 'Every today is a starting point toward a better self.',
   },
 };

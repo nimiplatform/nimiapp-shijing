@@ -340,3 +340,21 @@ test('HeJing reports route support from the active method profile', async () => 
     detail: null,
   });
 });
+
+test('HeJing shows a dedicated pending view before the first generation', () => {
+  const pendingSource = readFileSync(
+    new URL('../src/product/tabs/hejing/hejing-pending.tsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(hejingTabSource, /<HeJingPendingView/u);
+  assert.match(hejingTabSource, /hasGeneratedRelationship \?/u);
+  assert.match(pendingSource, /shijing-hejing__pending/u);
+  assert.match(pendingSource, /copy\.pendingPreviewCards/u);
+  assert.match(pendingSource, /canGenerate/u);
+  // The pending hero is honest about the not-yet-generated state: it never
+  // renders the placeholder relationship status or inherited sample keywords
+  // as if they were real generated content.
+  assert.doesNotMatch(pendingSource, /relationshipStatus/u);
+  assert.doesNotMatch(pendingSource, /workspace\.keywords/u);
+});

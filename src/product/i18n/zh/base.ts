@@ -3,7 +3,7 @@
 import type { ProductCopy } from '../copy-types.ts';
 import { zhSelfRevealSensitiveFailed } from '../copy-helpers.ts';
 
-export const ZH_BASE_COPY: Omit<ProductCopy, 'rijing' | 'shijing' | 'mingjing'> = {
+export const ZH_BASE_COPY: Omit<ProductCopy, 'rijing' | 'yuejing' | 'hejing' | 'shijing' | 'mingjing'> = {
 brandName: '时镜',
 brandSub: 'ShiJing',
 mirrorKindLabels: {

@@ -73,23 +73,39 @@ export function DrumColumn({
     scrollTimer.current = setTimeout(() => settleSelection(), 80);
   };
 
-  const handleWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+  // React attaches `wheel` as a passive root listener, so preventDefault in a
+  // JSX onWheel handler is silently ignored and the browser's native scroll
+  // runs on top of the manual stepping — one notch jumps several rows. Attach
+  // a non-passive listener so native scroll is suppressed and one notch moves
+  // exactly one row.
+  const handleWheel = useCallback(
+    (event: WheelEvent) => {
+      const el = colRef.current;
+      if (!el) return;
+      event.preventDefault();
+      const rawDelta =
+        Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      const normalizedDelta =
+        rawDelta * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? itemHeight * 2 : 1);
+      wheelCarry.current += normalizedDelta;
+      if (Math.abs(wheelCarry.current) < WHEEL_STEP_THRESHOLD_PX) return;
+      const direction = Math.sign(wheelCarry.current);
+      wheelCarry.current = 0;
+      const currentIdx = Math.round(el.scrollTop / itemHeight);
+      const nextIdx = Math.max(0, Math.min(items.length - 1, currentIdx + direction));
+      scrollToIndex(nextIdx, false);
+      if (scrollTimer.current) clearTimeout(scrollTimer.current);
+      scrollTimer.current = setTimeout(() => settleSelection(), 80);
+    },
+    [itemHeight, items.length, scrollToIndex, settleSelection],
+  );
+
+  useEffect(() => {
     const el = colRef.current;
     if (!el) return;
-    event.preventDefault();
-    const rawDelta =
-      Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-    const normalizedDelta =
-      rawDelta * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? itemHeight * 2 : 1);
-    wheelCarry.current += normalizedDelta;
-    if (Math.abs(wheelCarry.current) < WHEEL_STEP_THRESHOLD_PX) return;
-    const direction = Math.sign(wheelCarry.current);
-    wheelCarry.current = 0;
-    const currentIdx = Math.round(el.scrollTop / itemHeight);
-    const nextIdx = Math.max(0, Math.min(items.length - 1, currentIdx + direction));
-    scrollToIndex(nextIdx, false);
-    handleScroll();
-  };
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [handleWheel]);
 
   return (
     <div className="flex-1 relative" aria-label={label}>
@@ -105,7 +121,6 @@ export function DrumColumn({
         ref={colRef}
         className="nimi-date-picker-scroll overflow-y-auto"
         onScroll={handleScroll}
-        onWheel={handleWheel}
         style={{ height: panelHeight, scrollSnapType: 'y mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {Array.from({ length: padRows }).map((_, i) => (

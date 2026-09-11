@@ -38,9 +38,9 @@ export const ZH_RIJING_COPY: ProductCopy['rijing'] = {
       reminder: '关注是日镜的镜片；没有关注时，系统不会生成泛化建议。',
     },
     runtime_ai_failed: {
-      description: 'Runtime AI wording 未完成，当前不会生成替代解读。',
+      description: '这次 AI 解读没有生成成功。为避免误导，系统不会展示替代内容。',
       confidence_note: 'AI 生成失败，日镜按 fail-close 规则停止。',
-      reminder: '请检查模型绑定、云厂商开通状态，或切换到可用模型后重新生成今日日镜。',
+      reminder: '请到设置中的「AI 模型配置」检查当前模型是否可用，或切换到其他可用模型后，再重新生成今日日镜。',
     },
     persistence_pending: {
       description: '正在加载本地数据，完成后才能生成今日日镜。',
@@ -269,5 +269,15 @@ export const ZH_RIJING_COPY: ProductCopy['rijing'] = {
     hoursTitle: '时辰吉凶',
     unavailableTitle: '当日黄历不可用',
     unavailableBody: '当前日期无法被日历算法识别，因此不展示替代或伪造的黄历内容。',
+  },
+  intakeHero: {
+    ariaLabel: '日镜建档引导',
+    eyebrow: 'DAILY MIRROR',
+    titleLead: '在时光中，',
+    titleEmphasis: '看见今天的自己',
+    body: '日镜，从你的出生资料出发，解析今日的能量流转与生活节奏。在变化的日子里，找到属于自己的方向。',
+    action: '前往命镜建档',
+    subnote: '完成个人命盘，开启你的时光之旅',
+    footer: '每一个今天，都是通往更好自己的起点。',
   },
 };

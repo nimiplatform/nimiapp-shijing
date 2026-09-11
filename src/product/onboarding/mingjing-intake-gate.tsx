@@ -11,6 +11,7 @@ import type { ShijingTabId } from '../../contracts/ia-contract.ts';
 import { useProductCopy } from '../i18n/copy.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { mingJingReadiness } from '../tabs/mingjing/mingjing-readiness.ts';
+import { ImmersiveIntakeGate } from './immersive-intake-gate.tsx';
 
 export interface MingJingIntakeGateProps {
   readonly gatedTab: ShijingTabId;
@@ -41,6 +42,21 @@ export function MingJingIntakeGate(props: MingJingIntakeGateProps) {
   const concernReady = activeConcernCount > 0;
   const mirrorLabel = copy.tabLabels[props.gatedTab];
   const mirrorGlyph = Array.from(mirrorLabel)[0] ?? mirrorLabel;
+
+  // 日镜 / 月镜 / 合镜 render their own immersive full-bleed hero variant of
+  // the gate; the topbar retints via `.shijing-shell:has(.shijing-intake-hero)`.
+  if (props.gatedTab === 'rijing' || props.gatedTab === 'yuejing' || props.gatedTab === 'hejing') {
+    return (
+      <ImmersiveIntakeGate
+        mirror={props.gatedTab}
+        onGoToMingJing={props.onGoToMingJing}
+        pendingSteps={[
+          !selfReady ? gate.selfPending : null,
+          !concernReady ? gate.concernPending : null,
+        ].filter(Boolean).join(' · ')}
+      />
+    );
+  }
 
   return (
     <section

@@ -85,6 +85,7 @@ const featureCssFiles = [
   'src/product/tabs/mingjing/mingjing-responsive.css',
   'src/product/tabs/hejing/hejing-shell.css',
   'src/product/tabs/hejing/hejing-hero.css',
+  'src/product/tabs/hejing/hejing-pending.css',
   'src/product/tabs/hejing/hejing-index.css',
   'src/product/tabs/hejing/hejing-intersection.css',
   'src/product/tabs/hejing/hejing-future.css',

@@ -174,3 +174,14 @@ export function buildHeJingPreviewSpace(userId: string): ShiJingSpace {
     settings: { ...base.settings, method_profile_id: METHOD_PROFILE_ID },
   };
 }
+
+// `dev-hejing.html?pending` seeds the person without any relationship reading,
+// so the ready-to-generate pending state can be reviewed end to end.
+export function buildHeJingPendingPreviewSpace(userId: string): ShiJingSpace {
+  const base = buildEmptyShiJingSpace(userId);
+  return {
+    ...base,
+    persons: [SNOW_PERSON],
+    settings: { ...base.settings, method_profile_id: METHOD_PROFILE_ID },
+  };
+}

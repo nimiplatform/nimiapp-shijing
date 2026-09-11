@@ -13,7 +13,9 @@ import { latestMingJingRelationshipReading } from '../reading/reading-selectors.
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { relationshipNatalMirrorScopeForToday } from './mirror-scope-helpers.ts';
 import { FailureBanner } from './shared/failure-banner.tsx';
-import { HeJingEmptyState, HeJingRelationshipTypeEmpty } from './hejing/hejing-empty-state.tsx';
+import { HeJingRelationshipTypeEmpty } from './hejing/hejing-empty-state.tsx';
+import { HeJingImmersiveEmpty } from './hejing/hejing-immersive-empty.tsx';
+import { HeJingPendingView } from './hejing/hejing-pending.tsx';
 import {
   HeJingBasisSection,
   HeJingFocusSection,
@@ -240,35 +242,31 @@ export function HeJingTab() {
 
   const isFirstRun = state.snapshot.persons.length === 0;
 
-  const overviewActions = (
-    <div className="shijing-hejing__hero-actions">
-      {hasGeneratedRelationship && methodSupport.supported ? (
-        <>
-          <button type="button" className="is-primary" onClick={handleGenerateAdvice} disabled={loading}>
-            {ICONS.refresh}
-            {loading ? copy.generatingAdvice : copy.regenerate}
-          </button>
-          <button type="button" className="is-ghost" onClick={handleWriteRecord}>
-            {ICONS.pencil}
-            {copy.writeRecord}
-          </button>
-          <button type="button" className="is-ghost" onClick={handleChat}>
-            {ICONS.chat}
-            {copy.chat}
-          </button>
-        </>
-      ) : methodSupport.supported ? (
+  const overviewActions =
+    hasGeneratedRelationship && methodSupport.supported ? (
+      <div className="shijing-hejing__hero-actions">
         <button type="button" className="is-primary" onClick={handleGenerateAdvice} disabled={loading}>
-          {loading ? copy.generatingAdvice : copy.generateHejing}
+          {ICONS.refresh}
+          {loading ? copy.generatingAdvice : copy.regenerate}
         </button>
-      ) : null}
-    </div>
-  );
+        <button type="button" className="is-ghost" onClick={handleWriteRecord}>
+          {ICONS.pencil}
+          {copy.writeRecord}
+        </button>
+        <button type="button" className="is-ghost" onClick={handleChat}>
+          {ICONS.chat}
+          {copy.chat}
+        </button>
+      </div>
+    ) : null;
 
   return (
-    <section className="shijing-tab shijing-hejing" data-mirror-kind="hejing">
+    <section
+      className={isFirstRun ? 'shijing-hejing' : 'shijing-tab shijing-hejing'}
+      data-mirror-kind="hejing"
+    >
       {isFirstRun ? (
-        <HeJingEmptyState onCreate={handleCreateHejing} onSelectExisting={handleCreateHejing} />
+        <HeJingImmersiveEmpty onCreate={handleCreateHejing} />
       ) : (
         <>
           <div className="shijing-hejing__controls">
@@ -292,7 +290,16 @@ export function HeJingTab() {
 
           {displayWorkspace ? (
             <>
-              <HeJingOverview workspace={displayWorkspace} actions={overviewActions} />
+              {hasGeneratedRelationship ? (
+                <HeJingOverview workspace={displayWorkspace} actions={overviewActions} />
+              ) : (
+                <HeJingPendingView
+                  workspace={displayWorkspace}
+                  canGenerate={methodSupport.supported}
+                  loading={loading}
+                  onGenerate={handleGenerateAdvice}
+                />
+              )}
 
               {statusMessage ? (
                 <p className="shijing-hejing__status" role="status">

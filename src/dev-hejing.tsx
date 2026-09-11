@@ -7,14 +7,30 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { NimiThemeProvider, TooltipProvider } from '@nimiplatform/kit/ui';
-import { buildHeJingPreviewSpace } from './product/dev/hejing-sample-space.ts';
+import { buildHeJingPendingPreviewSpace, buildHeJingPreviewSpace } from './product/dev/hejing-sample-space.ts';
+import { buildEmptyShiJingSpace } from './product/dev/initial-space.ts';
 import { ShijingStoreProvider } from './product/state/shijing-store.tsx';
 import { HeJingTab } from './product/tabs/hejing-tab.tsx';
 import { i18n } from './shell/i18n/index.js';
 import './styles.css';
 
 function DevHeJing() {
-  const snapshot = React.useMemo(() => buildHeJingPreviewSpace('dev-hejing-user'), []);
+  // `dev-hejing.html?first-run` seeds an intake-complete-but-personless space
+  // so the first-run immersive empty state can be reviewed end to end.
+  // `dev-hejing.html?pending` seeds a person without any relationship reading
+  // so the ready-to-generate pending state can be reviewed end to end.
+  const params = new URLSearchParams(window.location.search);
+  const firstRun = params.has('first-run');
+  const pending = params.has('pending');
+  const snapshot = React.useMemo(
+    () =>
+      firstRun
+        ? buildEmptyShiJingSpace('dev-hejing-user')
+        : pending
+          ? buildHeJingPendingPreviewSpace('dev-hejing-user')
+          : buildHeJingPreviewSpace('dev-hejing-user'),
+    [firstRun, pending],
+  );
 
   React.useEffect(() => {
     void i18n.changeLanguage('zh');

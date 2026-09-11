@@ -11,6 +11,9 @@
     "head"
     "main";
   gap: 0;
+  /* Containing block for the immersive intake hero (rijing-intake-gate.css),
+   * which paints full-bleed behind the transparent topbar. */
+  position: relative;
   /* The shell is mounted inside `.shijing-app__body`, which is
    * `display: flex`. Without `flex: 1` + `width: 100%` the grid
    * container would size to its intrinsic content and leave the rest of

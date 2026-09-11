@@ -1,0 +1,282 @@
+/* HeJing 待生成视图 — the ready-to-generate hero (person added, no reading
+ * yet) and the "生成后会展开" preview grid. Scoped under `.shijing-hejing` to
+ * out-specify shared `.shijing-tab` baselines. */
+
+.shijing-hejing .shijing-hejing__pending {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: clamp(30px, 4vw, 42px) clamp(20px, 4vw, 40px) clamp(32px, 4vw, 38px);
+  border: 1px solid var(--hejing-card-border);
+  border-radius: 24px;
+  background:
+    radial-gradient(ellipse 52% 58% at 50% 0%, rgba(255, 255, 255, 0.95), transparent 66%),
+    radial-gradient(ellipse 38% 42% at 16% 92%, rgba(167, 215, 192, 0.24), transparent 62%),
+    radial-gradient(ellipse 38% 42% at 86% 92%, rgba(236, 224, 194, 0.32), transparent 62%),
+    linear-gradient(160deg, #fbfdfa 0%, #f2f7f2 100%);
+  box-shadow: var(--hejing-shadow);
+  text-align: center;
+}
+
+.shijing-hejing__pending-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+
+.shijing-hejing .shijing-hejing__pending-title {
+  margin: 2px 0 0;
+  color: var(--hejing-ink);
+  font-family: var(--hejing-font-serif);
+  font-size: clamp(26px, 3.4vw, 34px);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+
+.shijing-hejing .shijing-hejing__pending-sub {
+  margin: 0;
+  color: var(--hejing-acc-deep);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.shijing-hejing .shijing-hejing__pending-lead {
+  max-width: 520px;
+  margin: 4px 0 0;
+  color: var(--hejing-ink2);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* Two-chart stage — enlarged orbs with a horizontal mirror connector */
+
+.shijing-hejing__pending-stage {
+  --pending-orb: clamp(92px, 10vw, 112px);
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(8px, 2.5vw, 20px);
+  width: min(560px, 100%);
+  margin-top: 2px;
+}
+
+.shijing-hejing__pending-stage .shijing-hejing__person-orb {
+  width: var(--pending-orb);
+}
+
+.shijing-hejing__pending-stage .shijing-hejing__person-glyph {
+  font-size: clamp(30px, 3.4vw, 38px);
+}
+
+.shijing-hejing__pending-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: calc(var(--pending-orb) / 2);
+  transform: translateY(-50%);
+}
+
+.shijing-hejing__pending-link span {
+  width: clamp(20px, 4vw, 42px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(47, 138, 99, 0.5));
+}
+
+.shijing-hejing__pending-link span:last-child {
+  background: linear-gradient(90deg, rgba(47, 138, 99, 0.5), transparent);
+}
+
+.shijing-hejing__pending-link strong {
+  flex: 0 0 auto;
+  border: 1px solid rgba(47, 138, 99, 0.3);
+  border-radius: 999px;
+  padding: 5px 13px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--hejing-acc);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 6px 14px -10px rgba(21, 64, 50, 0.4);
+}
+
+/* Status chip */
+
+.shijing-hejing__pending-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(176, 138, 62, 0.3);
+  border-radius: 999px;
+  padding: 6px 15px;
+  background: rgba(176, 138, 62, 0.1);
+  color: var(--hejing-gold-deep);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.shijing-hejing__pending-chip i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--hejing-gold);
+  box-shadow: 0 0 0 3px rgba(176, 138, 62, 0.18);
+}
+
+/* Primary generate action */
+
+.shijing-hejing__pending-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 11px;
+}
+
+.shijing-hejing .shijing-hejing__pending-cta {
+  border: 0;
+  border-radius: 999px;
+  padding: 13px 42px;
+  background: linear-gradient(140deg, var(--hejing-acc-mid), var(--hejing-acc-deep));
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  box-shadow: 0 16px 30px -16px rgba(21, 64, 50, 0.6);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.shijing-hejing .shijing-hejing__pending-cta:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 34px -16px rgba(21, 64, 50, 0.68);
+}
+
+.shijing-hejing .shijing-hejing__pending-cta:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.shijing-hejing .shijing-hejing__pending-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--hejing-ink3);
+  font-size: 12.5px;
+}
+
+.shijing-hejing__pending-note span {
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  color: var(--hejing-acc);
+}
+
+.shijing-hejing__pending-note svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* "生成后会展开" preview grid */
+
+.shijing-hejing .shijing-hejing__pending-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.shijing-hejing .shijing-hejing__pending-preview-title {
+  margin: 0;
+  padding: 0 2px;
+  color: var(--hejing-ink);
+  font-family: var(--hejing-font-serif);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.shijing-hejing .shijing-hejing__pending-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shijing-hejing__pending-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  padding: 18px 18px 20px;
+  border: 1px dashed rgba(47, 138, 99, 0.28);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.shijing-hejing__pending-card-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: var(--hejing-green-soft);
+  color: var(--hejing-acc);
+}
+
+.shijing-hejing__pending-card-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.shijing-hejing__pending-card h3 {
+  margin: 0;
+  color: var(--hejing-ink);
+  font-family: var(--hejing-font-serif);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.shijing-hejing__pending-card p {
+  flex: 1;
+  margin: 0;
+  color: var(--hejing-ink2);
+  font-size: 12.8px;
+  line-height: 1.65;
+}
+
+.shijing-hejing__pending-skeleton {
+  display: block;
+  height: 7px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(61, 122, 90, 0.13), rgba(61, 122, 90, 0.05));
+}
+
+.shijing-hejing__pending-skeleton + .shijing-hejing__pending-skeleton {
+  width: 62%;
+  margin-top: 2px;
+}
+
+@media (max-width: 960px) {
+  .shijing-hejing .shijing-hejing__pending-preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .shijing-hejing .shijing-hejing__pending-preview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shijing-hejing__pending-link span {
+    width: 14px;
+  }
+}

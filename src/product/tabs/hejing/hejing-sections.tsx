@@ -266,7 +266,7 @@ export function HeJingSection({
 
 // --- 顶部关系总览 ----------------------------------------------------------
 
-function PersonCircle({ profile }: { readonly profile: HeJingPersonProfile }) {
+export function PersonCircle({ profile }: { readonly profile: HeJingPersonProfile }) {
   return (
     <div className="shijing-hejing__person" data-tone={profile.tone}>
       <div className="shijing-hejing__person-orb">

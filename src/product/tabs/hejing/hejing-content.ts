@@ -55,6 +55,18 @@ export const HEJING_PAGE_COPY = {
   generatingAdvice: '生成中…',
   pendingGenerationHint: '生成后会展开相处重点、关系雷达、时间窗口与相处方式。',
 
+  // Pending state (person added, no reading generated yet) -------------------
+  pendingStatusChip: '待生成',
+  pendingReadyNote: '生成时将校验双方出生资料',
+  pendingCtaNote: '先推演双方命盘，再由 AI 生成解读；资料不足时会提示补全。',
+  pendingPreviewTitle: '生成合镜后，这里会展开',
+  pendingPreviewCards: [
+    { id: 'focus', icon: 'better', title: '当前相处重点', body: '容易卡住的地方、更适合的方式与本周建议。' },
+    { id: 'radar', icon: 'growth', title: '关系雷达', body: '理解度、沟通、一致性等六个维度的关系画像。' },
+    { id: 'windows', icon: 'windows', title: '未来时间窗口', body: '全年四个阶段里，更适合靠近、沟通或放慢的时段。' },
+    { id: 'ways', icon: 'ways', title: '相处方式', body: '基于双方命盘证据的沟通方式、边界提醒与修复语言。' },
+  ],
+
   // Sections --------------------------------------------------------------
   focusTitle: '当前相处重点',
   focusStuckTitle: '容易卡住的地方',

@@ -105,8 +105,10 @@ test('deriveRiJingHero names missing focus blockers in the empty note', () => {
 test('deriveRiJingHero preserves runtime AI fail-close recovery copy', () => {
   const hero = deriveRiJingHero(undefined, { empty_state: 'runtime_ai_failed' });
 
-  assert.match(hero.subtitle, /Runtime AI wording 未完成/);
-  assert.match(hero.confidence_note, /云厂商开通状态/);
+  assert.match(hero.subtitle, /AI 解读没有生成成功/);
+  assert.match(hero.subtitle, /不会展示替代内容/);
+  assert.match(hero.confidence_note, /AI 模型配置/);
+  assert.doesNotMatch(hero.subtitle, /Runtime AI wording/);
 });
 
 test('deriveRiJingHero builds the overview from a reading and its cited reference event', () => {
