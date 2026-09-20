@@ -15,6 +15,7 @@ export type StageId =
   | 'nianjing_generate'
   | 'shijing_generate'
   | 'mingjing_projection'
+  | 'relationship_pattern_projection'
   | 'method_feature_support'
   | 'mingjing_route_support'
   | 'mirror_window';
@@ -29,6 +30,7 @@ export const STAGE_IDS: readonly StageId[] = [
   'nianjing_generate',
   'shijing_generate',
   'mingjing_projection',
+  'relationship_pattern_projection',
   'method_feature_support',
   'mingjing_route_support',
   'mirror_window',

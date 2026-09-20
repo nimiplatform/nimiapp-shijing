@@ -371,6 +371,7 @@ readingFailure: {
     stale_inputs: '生成失败:输入快照已过期,请重新生成。',
     hash_mismatch: '生成失败:哈希校验未通过,请重新生成。',
     algorithm_fail_closed: '生成失败:当前资料精度不足以生成该镜面解读(SJG-ALGO-10 已按规则收口)。',
+    patterns_unavailable: '暂无可支持的合镜解读:当前方法暂无准入的相处模式规则,或已有命盘证据不足。',
   },
   methodFeatureUnsupported: '生成失败:当前选择的推演方法暂不支持该镜面,请切换到支持此镜面的推演方法后再生成。',
   runtimeProviderProductNotActivated: '生成失败:已绑定模型,但云厂商返回产品或模型服务未开通。请在对应云厂商控制台开通该产品,或切换到已开通的 Runtime 模型后重新生成。',

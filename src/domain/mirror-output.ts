@@ -160,18 +160,78 @@ export interface MingJingRelationshipSubject {
   readonly basis_time_zone: string;
 }
 
-export interface RelationshipTimingWindow {
-  readonly start_date: string;
+// SJG-ALGO — admitted BaZi v1 relationship pattern rules (rule.shijing.algorithm.r019).
+// The closed registry lives in the deterministic projection layer; domain keeps
+// the id list so contracts can validate membership without importing product code.
+export const RELATIONSHIP_PATTERN_RULE_IDS = [
+  'bazi_ziping_v1.hepan.day_branch_harmony',
+  'bazi_ziping_v1.hepan.day_branch_friction',
+  'bazi_ziping_v1.hepan.month_branch_harmony',
+  'bazi_ziping_v1.hepan.month_branch_friction',
+  'bazi_ziping_v1.hepan.day_master_support',
+  'bazi_ziping_v1.hepan.day_master_controlling',
+  'bazi_ziping_v1.hepan.yong_shen_complement',
+  'bazi_ziping_v1.hepan.yong_shen_depletion',
+  'bazi_ziping_v1.hepan.hour_branch_harmony',
+  'bazi_ziping_v1.hepan.hour_branch_friction',
+  'bazi_ziping_v1.hepan.year_branch_harmony',
+  'bazi_ziping_v1.hepan.year_branch_friction',
+] as const;
+
+export type RelationshipPatternRuleId = (typeof RELATIONSHIP_PATTERN_RULE_IDS)[number];
+
+export interface MingJingRelationshipOverview {
+  readonly title: string; // AI-worded short title
+  readonly summary: string; // AI-worded overview of the admitted patterns only
+  readonly keywords: readonly string[]; // AI-worded, 0..3
+}
+
+export interface MingJingRelationshipPattern {
+  readonly pattern_id: string; // deterministic stable id; equals rule_ref (one pattern per rule)
+  readonly rule_ref: RelationshipPatternRuleId; // admitted pattern rule id
+  readonly rank: number; // deterministic 1-based order, strict permutation 1..n
+  readonly driver_refs: readonly string[]; // deterministic evidence refs, non-empty
+  readonly evidence_summary: string; // deterministic factual summary; AI must NOT word this
+  readonly name: string; // AI-worded
+  readonly self_tendency: string; // AI-worded
+  readonly related_tendency: string; // AI-worded
+  readonly scenario: string; // AI-worded concrete situation to watch
+  readonly aligned_expression: string; // AI-worded, when cooperation goes well
+  readonly friction_expression: string; // AI-worded, when disagreement happens
+  readonly signals: readonly string[]; // AI-worded, 1..3 recognizable behavior signals
+}
+
+export const RELATIONSHIP_RECENT_UNAVAILABLE_REASONS = [
+  'fallback_year_marker_only',
+  'no_anchor_year_window',
+] as const;
+
+export type RelationshipRecentUnavailableReason =
+  (typeof RELATIONSHIP_RECENT_UNAVAILABLE_REASONS)[number];
+
+export interface RelationshipRecentWindow {
+  readonly start_date: string; // anchor-year precision only: {year}-01-01 .. {year}-12-31
   readonly end_date: string;
   readonly nature: TendencyClass;
   readonly driver_refs: readonly string[];
-  readonly summary: string;
+  readonly summary: string; // AI-worded
 }
 
-export interface MingJingRelationshipPractice {
-  readonly communication: string;
-  readonly boundary: string;
-  readonly repair: string;
+export type MingJingRelationshipRecentStatus =
+  | { readonly availability: 'available'; readonly window: RelationshipRecentWindow }
+  | { readonly availability: 'unavailable'; readonly reason: RelationshipRecentUnavailableReason };
+
+export type MingJingRelationshipActionTarget =
+  | { readonly kind: 'pattern'; readonly pattern_id: string }
+  | { readonly kind: 'recent_window' };
+
+export interface MingJingRelationshipAction {
+  readonly target: MingJingRelationshipActionTarget; // deterministic
+  readonly situation: string; // AI-worded: when to use
+  readonly step: string; // AI-worded: what to do concretely
+  readonly example_phrase: string; // AI-worded: one directly usable phrasing
+  readonly rationale: string; // AI-worded: why worth trying, no improvement promises
+  readonly observation: string; // AI-worded: what response to watch for
 }
 
 export interface MingJingMirrorOutput {
@@ -189,16 +249,10 @@ export interface MingJingRelationshipMirrorOutput {
   readonly mirror_kind: 'mingjing';
   readonly output_kind: 'relationship_hepan';
   readonly relationship_subject: MingJingRelationshipSubject;
-  readonly summary: string;
-  readonly structure: {
-    readonly baseline_pattern: string;
-    readonly attraction_and_support: string;
-    readonly friction_and_misread: string;
-    readonly communication_rhythm: string;
-    readonly boundary_advice: string;
-  };
-  readonly timing_windows: readonly RelationshipTimingWindow[];
-  readonly practice: MingJingRelationshipPractice;
+  readonly overview: MingJingRelationshipOverview;
+  readonly patterns: readonly MingJingRelationshipPattern[]; // deterministically selected, 1..4
+  readonly recent_status: MingJingRelationshipRecentStatus;
+  readonly action: MingJingRelationshipAction;
   readonly cited_event_memory_refs: readonly string[];
   readonly cited_plan_item_refs: readonly string[];
   readonly citations: readonly MirrorCitation[];
@@ -297,4 +351,20 @@ export type MirrorOutput =
 
 export function mirrorOutputKind(output: MirrorOutput): MirrorKind {
   return output.mirror_kind;
+}
+
+export function isMingJingRelationshipMirrorOutput(
+  output: MirrorOutput,
+): output is MingJingRelationshipMirrorOutput {
+  return (
+    output.mirror_kind === 'mingjing' &&
+    (output as { readonly output_kind?: unknown }).output_kind === 'relationship_hepan'
+  );
+}
+
+// Relationship HePan output carries its headline under overview.summary instead
+// of a root summary; every other output kind keeps the root field.
+export function mirrorOutputSummary(output: MirrorOutput): string {
+  if (isMingJingRelationshipMirrorOutput(output)) return output.overview.summary;
+  return output.summary;
 }

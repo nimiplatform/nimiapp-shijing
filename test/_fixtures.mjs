@@ -368,6 +368,35 @@ export function validMingjingOutput(overrides = {}) {
   };
 }
 
+export function validMingjingRelationshipPattern(overrides = {}) {
+  return {
+    pattern_id: 'bazi_ziping_v1.hepan.day_branch_harmony',
+    rule_ref: 'bazi_ziping_v1.hepan.day_branch_harmony',
+    rank: 1,
+    driver_refs: ['bazi:relationship.branch.day-day.六合@chen-you'],
+    evidence_summary: 'day branch 辰 × 酉: 六合',
+    name: 'Everyday harmony current',
+    self_tendency: 'You may settle into shared daily rhythms quickly and assume the other side reads them the same way.',
+    related_tendency: 'The other person may cooperate smoothly on daily matters and prefer keeping the ease unspoken.',
+    scenario: 'Watch concrete one-on-one daily moments: meals, errands, small side-by-side decisions.',
+    aligned_expression: 'When cooperation goes well, daily plans click into place with little negotiation.',
+    friction_expression: 'When disagreement happens, small habit mismatches feel louder than the stated topic.',
+    signals: ['Daily plans align with little discussion', 'Small habit differences feel oddly loud'],
+    ...overrides,
+  };
+}
+
+export function validMingjingRelationshipRecentWindow(overrides = {}) {
+  return {
+    start_date: '2026-01-01',
+    end_date: '2026-12-31',
+    nature: 'steady',
+    driver_refs: ['bazi:relationship.period.self.annual_transition@2026-02-04T00:00:00Z'],
+    summary: 'A steady anchor-year window for clarifying shared expectations.',
+    ...overrides,
+  };
+}
+
 export function validMingjingRelationshipOutput(overrides = {}) {
   return {
     mirror_kind: 'mingjing',
@@ -378,33 +407,63 @@ export function validMingjingRelationshipOutput(overrides = {}) {
       anchor_year: 2026,
       basis_time_zone: 'Asia/Shanghai',
     },
-    summary: 'Relationship structure summary.',
-    structure: {
-      baseline_pattern: 'Both sides need a predictable rhythm.',
-      attraction_and_support: 'Support appears through steady follow-through.',
-      friction_and_misread: 'Misreads arise when timing is rushed.',
-      communication_rhythm: 'Short, explicit check-ins work best.',
-      boundary_advice: 'Keep personal recovery time visible.',
+    overview: {
+      title: 'Two patterns worth watching this year',
+      summary: 'The admitted patterns point to everyday harmony plus a one-way support current; treat them as observation hypotheses to check against real experience.',
+      keywords: ['harmony', 'support'],
     },
-    timing_windows: [
-      {
-        start_date: '2026-03-01',
-        end_date: '2026-04-15',
-        nature: 'steady',
-        driver_refs: ['bazi:relationship.window.2026-03'],
-        summary: 'A stable window for clarifying shared expectations.',
-      },
+    patterns: [
+      validMingjingRelationshipPattern(),
+      validMingjingRelationshipPattern({
+        pattern_id: 'bazi_ziping_v1.hepan.day_master_support',
+        rule_ref: 'bazi_ziping_v1.hepan.day_master_support',
+        rank: 2,
+        driver_refs: ['bazi:relationship.day_master.wood->fire'],
+        evidence_summary: 'day master relation related→self: supporting (bazi:relationship.day_master.wood->fire)',
+        name: 'One-way support current',
+        self_tendency: 'You may feel backed by the other person and lean on their push when deciding.',
+        related_tendency: 'The other person may instinctively offer resources, ideas, or momentum in your direction.',
+        scenario: 'Watch decision moments: who naturally steps in to move things forward.',
+        aligned_expression: 'When cooperation goes well, their push helps you act.',
+        friction_expression: 'When disagreement happens, their push can feel like pressure.',
+        signals: ['Help arrives before it is asked for', 'The receiving side goes quiet when pushed'],
+      }),
     ],
-    practice: {
-      communication: 'Name the practical need before the emotion escalates.',
-      boundary: 'Protect separate schedules and do not merge obligations by default.',
-      repair: 'Return to the exact missed expectation and reset it in writing.',
+    recent_status: {
+      availability: 'available',
+      window: validMingjingRelationshipRecentWindow(),
+    },
+    action: {
+      target: { kind: 'recent_window' },
+      situation: 'Use this during the evidenced 2026 window when a shared decision is on the table.',
+      step: 'Write down the decision, the owner, and the check-back date in one answerable message.',
+      example_phrase: '"Before we decide, can we each name our part and when we will check back?"',
+      rationale: 'The window evidence only marks a period tendency; a concrete confirmation habit helps in either direction.',
+      observation: 'Watch whether the other person answers the concrete question or deflects it.',
     },
     cited_event_memory_refs: [],
     cited_plan_item_refs: [],
     citations: [{ method: 'bazi_ziping_v1', reference: 'mingjing.relationship_hepan.v1' }],
     ...overrides,
   };
+}
+
+export function validMingjingRelationshipOutputUnavailableRecent(overrides = {}) {
+  return validMingjingRelationshipOutput({
+    recent_status: {
+      availability: 'unavailable',
+      reason: 'fallback_year_marker_only',
+    },
+    action: {
+      target: { kind: 'pattern', pattern_id: 'bazi_ziping_v1.hepan.day_branch_harmony' },
+      situation: 'Use this the next time the everyday harmony pattern shows up in a concrete moment.',
+      step: 'Name what you observed in one sentence and ask one open question about how the other person saw it.',
+      example_phrase: '"In that moment just now I noticed ... — how did you see it?"',
+      rationale: 'The pattern evidence only marks a tendency; a short observational check tests it against reality.',
+      observation: 'Watch whether the other person engages with the concrete moment or generalizes.',
+    },
+    ...overrides,
+  });
 }
 
 export function validShijingOutput(sourceReadingIds = ['r_source_01'], overrides = {}) {

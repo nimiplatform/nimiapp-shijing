@@ -10,9 +10,11 @@ import { RUNTIME_AI_WORDING_PATCH_KIND, RuntimeAiWordingPatchValidationError, ty
 export { applyRuntimeAiWordingPatch } from './runtime-ai-wording/apply-wording-patch.ts';
 export { RUNTIME_AI_WORDING_PATCH_KIND, RuntimeAiWordingPatchValidationError } from './runtime-ai-wording/types.ts';
 export type {
-  MingJingRelationshipPracticePatch,
-  MingJingRelationshipStructurePatch,
-  MingJingRelationshipTimingWindowPatch,
+  MingJingRelationshipActionPatch,
+  MingJingRelationshipOverviewPatch,
+  MingJingRelationshipPatternPatch,
+  MingJingRelationshipRecentStatusPatch,
+  MingJingRelationshipRecentWindowPatch,
   MingJingRelationshipWordingPatch,
   MingJingWordingCorePatch,
   MingJingWordingPatch,

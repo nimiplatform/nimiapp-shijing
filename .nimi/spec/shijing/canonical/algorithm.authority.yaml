@@ -245,7 +245,11 @@ units:
   - id: definition.shijing.algorithm.relationship-hepan-evidence
     kind: definition
     title: Relationship HePan evidence
-    meaning: Relationship HePan evidence covers self and exactly one Person chart, available pairwise year, month, day, and hour branch interactions, method-specific relationship direction, anchor-year period-marker windows or an explicit namespaced fallback driver, and precision, location, and related-person uncertainty inputs.
+    meaning: Relationship HePan evidence covers self and exactly one Person chart, available pairwise year, month, day, and hour branch interactions, method-specific relationship direction, anchor-year period-marker windows or an explicit method-namespaced fallback driver that by itself never supports a dated recent-changes window, and precision, location, and related-person uncertainty inputs.
+  - id: definition.shijing.algorithm.relationship-pattern-projection
+    kind: definition
+    title: Relationship pattern projection
+    meaning: Relationship pattern projection is the deterministic selection and ranking of admitted method-owned interaction-pattern rules over Relationship HePan evidence into one to four pattern targets with stable ids, rule refs, driver refs, and both-subject refs, plus the deterministic recent-changes availability decision; bazi_ziping_v1 admits a v1 pattern-rule set while Ziwei and QiZheng pattern mappings remain unadmitted and surface the typed patterns_unavailable generation state rather than renamed BaZi rules.
   - id: definition.shijing.algorithm.feature-rijing-daily-reading
     kind: definition
     title: RiJing feature support
@@ -265,15 +269,15 @@ units:
   - id: definition.shijing.algorithm.route-mingjing-bazi-ziping-v1
     kind: definition
     title: BaZi MingJing route
-    meaning: Route mingjing.route.bazi_ziping_v1 uses bazi_ziping_v1, is implemented, and supports natal_projection, natal_reading, and relationship_hepan.
+    meaning: Route mingjing.route.bazi_ziping_v1 uses bazi_ziping_v1, is implemented, and supports natal_projection, natal_reading, and relationship_hepan with the admitted v1 relationship pattern-rule set.
   - id: definition.shijing.algorithm.route-mingjing-ziwei-sanhe-v1
     kind: definition
     title: Ziwei MingJing route
-    meaning: Route mingjing.route.ziwei_sanhe_v1 uses ziwei_sanhe_v1, is implemented, and supports natal_projection, natal_reading, and relationship_hepan.
+    meaning: Route mingjing.route.ziwei_sanhe_v1 uses ziwei_sanhe_v1, is implemented, and supports natal_projection, natal_reading, and relationship_hepan evidence while its relationship pattern projection remains unadmitted and HePan Reading generation ends in the typed patterns_unavailable state.
   - id: definition.shijing.algorithm.route-mingjing-qizheng-siyu-guolao-v1
     kind: definition
     title: QiZheng MingJing route
-    meaning: Route mingjing.route.qizheng_siyu_guolao_v1 uses qizheng_siyu_guolao_v1, is implemented, and supports natal_projection, natal_reading, and relationship_hepan.
+    meaning: Route mingjing.route.qizheng_siyu_guolao_v1 uses qizheng_siyu_guolao_v1, is implemented, and supports natal_projection, natal_reading, and relationship_hepan evidence while its relationship pattern projection remains unadmitted and HePan Reading generation ends in the typed patterns_unavailable state.
   - id: rule.shijing.algorithm.r001
     kind: rule
     title: Closed method registry
@@ -546,7 +550,7 @@ units:
     kind: rule
     title: Relationship HePan evidence
     modality: must
-    statement: Relationship HePan evidence is computed from self and exactly one Person and includes both subject charts; available pairwise branch interactions across year, month, day, and hour; method-specific direction evidence consisting of BaZi day-master relation, ten-god direction, and useful-element complement or depletion, Ziwei 命宫, 身宫, 主星, and 五行局 direction, or QiZheng ascendant, day or night luminary, house, and mansion direction; anchor-year timing windows from both subjects period markers or an explicit method-namespaced fallback driver; and uncertainty inputs for precision, location, and related-person data; Runtime AI computes or alters none of these fields.
+    statement: Relationship HePan evidence is computed from self and exactly one Person and includes both subject charts; available pairwise branch interactions across year, month, day, and hour; method-specific direction evidence consisting of BaZi day-master relation, ten-god direction, and useful-element complement or depletion, Ziwei 命宫, 身宫, 主星, and 五行局 direction, or QiZheng ascendant, day or night luminary, house, and mansion direction; anchor-year timing windows from both subjects period markers or an explicit method-namespaced fallback driver that by itself never supports a dated recent-changes window; and uncertainty inputs for precision, location, and related-person data; Runtime AI computes or alters none of these fields.
     condition: Whenever relationship evidence is computed or worded.
     failure: Fail relationship generation closed when evidence is incomplete, mismatched, or AI-derived.
     relations:
@@ -556,7 +560,7 @@ units:
     kind: rule
     title: Feature and route support
     modality: must
-    statement: "RiJing daily, YueJing rolling-30-day, NianJing long-horizon, and ShiJing consultation are algorithm-neutral features, while MingJing resolves a method-specific route, and support declarations are immutable product authority: the three time mirrors support bazi_ziping_v1, ziwei_sanhe_v1, and qizheng_siyu_guolao_v1; consultation supports BaZi and Ziwei only; all three MingJing routes are implemented for natal_projection, natal_reading, and relationship_hepan; before neutral-feature evidence or wording, mirror kind plus scope resolves an active feature and selected method support is validated, with unsupported selection failing at method_feature_support using detail method_feature_not_supported plus feature and method and available alternatives, without switching methods, partial Reading, or AI compensation; before MingJing projection, Reading, or HePan, selected Settings method resolves a route, with unimplemented route failing at mingjing_route_support using mingjing_route_not_implemented plus route and method and unsupported route feature using mingjing_route_feature_not_supported plus route and feature, without alternate route, synthetic output, or AI compensation; absent method setting defaults to bazi_ziping_v1 and unadmitted persisted values fail Settings validation; AI model choice changes wording only and never support; historical Readings retain frozen profile and hashes while switching affects only new generation and live projection; Ziwei supports three time mirrors, cited-Reading consultation, and relationship HePan from self evidence plus exactly one related chart, may render twelve palaces, decadal ranges, and namespaced relationship refs, and limits Runtime AI to admitted natal-brief and HePan prose without calculating palaces, stars, 四化, 大限, or relationship evidence; QiZheng supports MingJing natal, RiJing, YueJing, NianJing, and relationship HePan, renders 七政四余 bodies, houses, mansions, and explicit virtual-model provenance with product labels for raw model ids and 宫势 for position_class, limits MingJing AI to admitted natal-brief wording, derives deterministic concern-domain body, house, and 宫势 drivers for RiJing scope date and YueJing start_date, derives scoreless NianJing bands and annual inflections, exposes only opaque namespaced common refs, derives relationship refs from both charts, and fails consultation until its deterministic mapping is admitted."
+    statement: "RiJing daily, YueJing rolling-30-day, NianJing long-horizon, and ShiJing consultation are algorithm-neutral features, while MingJing resolves a method-specific route, and support declarations are immutable product authority: the three time mirrors support bazi_ziping_v1, ziwei_sanhe_v1, and qizheng_siyu_guolao_v1; consultation supports BaZi and Ziwei only; all three MingJing routes are implemented for natal_projection, natal_reading, and relationship_hepan evidence, while the admitted relationship pattern projection currently covers bazi_ziping_v1 only and Ziwei or QiZheng HePan Reading generation ends in the typed patterns_unavailable state without borrowed BaZi rules; before neutral-feature evidence or wording, mirror kind plus scope resolves an active feature and selected method support is validated, with unsupported selection failing at method_feature_support using detail method_feature_not_supported plus feature and method and available alternatives, without switching methods, partial Reading, or AI compensation; before MingJing projection, Reading, or HePan, selected Settings method resolves a route, with unimplemented route failing at mingjing_route_support using mingjing_route_not_implemented plus route and method and unsupported route feature using mingjing_route_feature_not_supported plus route and feature, without alternate route, synthetic output, or AI compensation; absent method setting defaults to bazi_ziping_v1 and unadmitted persisted values fail Settings validation; AI model choice changes wording only and never support; historical Readings retain frozen profile and hashes while switching affects only new generation and live projection; Ziwei supports three time mirrors, cited-Reading consultation, and relationship HePan from self evidence plus exactly one related chart, may render twelve palaces, decadal ranges, and namespaced relationship refs, and limits Runtime AI to admitted natal-brief and HePan prose without calculating palaces, stars, 四化, 大限, or relationship evidence; QiZheng supports MingJing natal, RiJing, YueJing, NianJing, and relationship HePan, renders 七政四余 bodies, houses, mansions, and explicit virtual-model provenance with product labels for raw model ids and 宫势 for position_class, limits MingJing AI to admitted natal-brief wording, derives deterministic concern-domain body, house, and 宫势 drivers for RiJing scope date and YueJing start_date, derives scoreless NianJing bands and annual inflections, exposes only opaque namespaced common refs, derives relationship refs from both charts, and fails consultation until its deterministic mapping is admitted."
     condition: Whenever a feature or MingJing route is resolved, generated, switched, rendered, or worded.
     failure: Fail closed at method_feature_support or mingjing_route_support with the stable applicable detail and no fallback method, route, partial output, or AI compensation.
     relations:
@@ -574,3 +578,15 @@ units:
         target: definition.shijing.algorithm.route-mingjing-qizheng-siyu-guolao-v1
       - type: applies_to
         target: definition.shijing.algorithm.route-mingjing-ziwei-sanhe-v1
+  - id: rule.shijing.algorithm.r019
+    kind: rule
+    title: Relationship pattern projection
+    modality: must
+    statement: Relationship pattern projection selects and ranks one to four patterns only from the admitted method-owned pattern-rule registry evaluated over deterministic Relationship HePan evidence, assigns each pattern a stable id, admitted rule ref, deterministic driver refs, and both-subject refs, decides recent-changes availability only from real period-marker window evidence and never from a fallback anchor-year driver, a bare year label, or general relationship structure alone, keeps any available window at anchor-year precision without calendar month or quarter splitting, chooses the try-next action target deterministically from the admitted patterns or available window, and ends Ziwei or QiZheng HePan Reading generation in the typed patterns_unavailable state instead of renaming BaZi rules; Runtime AI selects no patterns, creates no pattern, rule, or driver refs, rewrites no computed facts, and decides no availability, dates, nature, or window count.
+    condition: Whenever relationship patterns, recent-changes availability, or a try-next action target are produced.
+    failure: Fail relationship generation closed with a typed patterns_unavailable or validation failure.
+    relations:
+      - type: applies_to
+        target: definition.shijing.algorithm.relationship-hepan-evidence
+      - type: applies_to
+        target: definition.shijing.algorithm.relationship-pattern-projection

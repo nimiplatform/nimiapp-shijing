@@ -5,9 +5,11 @@ import test from 'node:test';
 
 import { parseRuntimeAiOutput } from '../src/product/astrology/runtime-ai-parse.ts';
 import { applyRuntimeAiWordingText } from '../src/product/astrology/runtime-ai-wording-text.ts';
+import { validateMirrorOutput } from '../src/contracts/mirror-output-validator.ts';
 import {
   rolling30DayMirrorScope,
   validMingjingRelationshipOutput,
+  validMingjingRelationshipOutputUnavailableRecent,
   validRijingOutput,
   validYuejingOutput,
 } from './_fixtures.mjs';
@@ -63,30 +65,39 @@ function yuejingPromptRequest() {
   };
 }
 
+function mingjingRelationshipPatternPatch(pattern, overrides = {}) {
+  return {
+    pattern_id: pattern.pattern_id,
+    name: 'Runtime pattern name.',
+    self_tendency: 'Runtime self tendency.',
+    related_tendency: 'Runtime related tendency.',
+    scenario: 'Runtime scenario.',
+    aligned_expression: 'Runtime aligned expression.',
+    friction_expression: 'Runtime friction expression.',
+    signals: ['Runtime signal one.'],
+    ...overrides,
+  };
+}
+
 function mingjingRelationshipPatch(overrides = {}) {
+  const base = validMingjingRelationshipOutput();
   return {
     patch_kind: 'shijing.runtime_ai_wording_patch.v1',
     mirror_kind: 'mingjing',
     output_kind: 'relationship_hepan',
-    summary: 'Runtime refined relationship structure.',
-    structure: {
-      baseline_pattern: 'Runtime baseline wording.',
-      attraction_and_support: 'Runtime support wording.',
-      friction_and_misread: 'Runtime friction wording.',
-      communication_rhythm: 'Runtime rhythm wording.',
-      boundary_advice: 'Runtime boundary wording.',
+    overview: {
+      title: 'Runtime overview title.',
+      summary: 'Runtime overview summary.',
+      keywords: ['runtime', 'overview'],
     },
-    timing_windows: [
-      {
-        start_date: '2026-03-01',
-        end_date: '2026-04-15',
-        summary: 'Runtime timing wording.',
-      },
-    ],
-    practice: {
-      communication: 'Runtime communication practice.',
-      boundary: 'Runtime boundary practice.',
-      repair: 'Runtime repair practice.',
+    patterns: base.patterns.map((pattern) => mingjingRelationshipPatternPatch(pattern)),
+    recent_status: { window: { summary: 'Runtime recent window summary.' } },
+    action: {
+      situation: 'Runtime action situation.',
+      step: 'Runtime action step.',
+      example_phrase: 'Runtime example phrase.',
+      rationale: 'Runtime action rationale.',
+      observation: 'Runtime action observation.',
     },
     ...overrides,
   };
@@ -268,19 +279,26 @@ test('Runtime AI wording application applies MingJing relationship wording patch
 
   assert.equal(result.ok, true);
   if (!result.ok) return;
-  assert.equal(result.output.summary, 'Runtime refined relationship structure.');
-  assert.equal(result.output.structure.baseline_pattern, 'Runtime baseline wording.');
-  assert.equal(result.output.structure.attraction_and_support, 'Runtime support wording.');
-  assert.equal(result.output.structure.friction_and_misread, 'Runtime friction wording.');
-  assert.equal(result.output.structure.communication_rhythm, 'Runtime rhythm wording.');
-  assert.equal(result.output.structure.boundary_advice, 'Runtime boundary wording.');
-  assert.equal(result.output.timing_windows[0].summary, 'Runtime timing wording.');
-  assert.equal(result.output.practice.communication, 'Runtime communication practice.');
-  assert.equal(result.output.practice.boundary, 'Runtime boundary practice.');
-  assert.equal(result.output.practice.repair, 'Runtime repair practice.');
+  assert.equal(result.output.overview.title, 'Runtime overview title.');
+  assert.equal(result.output.overview.summary, 'Runtime overview summary.');
+  assert.deepEqual(result.output.overview.keywords, ['runtime', 'overview']);
+  assert.equal(result.output.patterns.length, base.patterns.length);
+  for (let i = 0; i < base.patterns.length; i += 1) {
+    const patched = result.output.patterns[i];
+    assert.equal(patched.name, 'Runtime pattern name.');
+    assert.equal(patched.pattern_id, base.patterns[i].pattern_id);
+    assert.equal(patched.rule_ref, base.patterns[i].rule_ref);
+    assert.equal(patched.rank, base.patterns[i].rank);
+    assert.deepEqual(patched.driver_refs, base.patterns[i].driver_refs);
+    assert.equal(patched.evidence_summary, base.patterns[i].evidence_summary);
+  }
+  assert.equal(result.output.recent_status.availability, 'available');
+  assert.equal(result.output.recent_status.window.summary, 'Runtime recent window summary.');
+  assert.equal(result.output.recent_status.window.nature, base.recent_status.window.nature);
+  assert.deepEqual(result.output.recent_status.window.driver_refs, base.recent_status.window.driver_refs);
+  assert.deepEqual(result.output.action.target, base.action.target);
+  assert.equal(result.output.action.step, 'Runtime action step.');
   assert.deepEqual(result.output.relationship_subject, base.relationship_subject);
-  assert.equal(result.output.timing_windows[0].nature, base.timing_windows[0].nature);
-  assert.deepEqual(result.output.timing_windows[0].driver_refs, base.timing_windows[0].driver_refs);
   assert.deepEqual(result.output.citations, base.citations);
   assert.deepEqual(result.output.cited_event_memory_refs, ['mem_relationship']);
   assert.deepEqual(result.output.cited_plan_item_refs, ['plan_relationship']);
@@ -308,18 +326,30 @@ test('Runtime AI wording application rejects MingJing relationship patches that 
       detail: 'mingjing_relationship_patch_forbidden_key:citations',
     },
     {
-      name: 'timing driver_refs',
+      name: 'pattern driver_refs',
       patch: mingjingRelationshipPatch({
-        timing_windows: [
-          {
-            start_date: '2026-03-01',
-            end_date: '2026-04-15',
-            driver_refs: ['runtime:forbidden'],
-            summary: 'Runtime timing wording.',
-          },
-        ],
+        patterns: validMingjingRelationshipOutput().patterns.map((pattern) =>
+          mingjingRelationshipPatternPatch(pattern, { driver_refs: ['runtime:forbidden'] })
+        ),
       }),
-      detail: 'mingjing_relationship_timing_window_forbidden_key:driver_refs',
+      detail: 'mingjing_relationship_pattern_forbidden_key:driver_refs',
+    },
+    {
+      name: 'action target',
+      patch: mingjingRelationshipPatch({
+        action: {
+          ...mingjingRelationshipPatch().action,
+          target: { kind: 'recent_window' },
+        },
+      }),
+      detail: 'mingjing_relationship_action_forbidden_key:target',
+    },
+    {
+      name: 'recent window nature',
+      patch: mingjingRelationshipPatch({
+        recent_status: { window: { summary: 'Runtime summary.', nature: 'steady' } },
+      }),
+      detail: 'mingjing_relationship_recent_window_forbidden_key:nature',
     },
   ];
 
@@ -331,20 +361,72 @@ test('Runtime AI wording application rejects MingJing relationship patches that 
     if (result.ok) continue;
     assert.equal(result.failure.kind, 'parse_failure');
     assert.equal(result.failure.failure.kind, 'validation_failed');
-    assert.equal(result.failure.failure.detail, item.detail);
+    assert.equal(result.failure.failure.detail, item.detail, item.name);
   }
 });
 
-test('Runtime AI wording application rejects MingJing relationship patch with unknown timing window target', async () => {
+test('Runtime AI wording application rejects MingJing relationship patch with unknown or missing pattern targets', async () => {
+  const cases = [
+    {
+      name: 'unknown pattern_id',
+      patch: mingjingRelationshipPatch({
+        patterns: [
+          ...mingjingRelationshipPatch().patterns,
+          mingjingRelationshipPatternPatch({ pattern_id: 'bazi_ziping_v1.hepan.invented_rule' }),
+        ],
+      }),
+      detail: 'mingjing_relationship_pattern_target_unknown',
+    },
+    {
+      name: 'missing pattern entry',
+      patch: mingjingRelationshipPatch({
+        patterns: mingjingRelationshipPatch().patterns.slice(1),
+      }),
+      detail: 'mingjing_relationship_pattern_target_missing',
+    },
+    {
+      name: 'duplicate pattern_id',
+      patch: mingjingRelationshipPatch({
+        patterns: [
+          ...mingjingRelationshipPatch().patterns,
+          mingjingRelationshipPatch().patterns[0],
+        ],
+      }),
+      detail: 'mingjing_relationship_pattern_target_duplicate',
+    },
+  ];
+
+  for (const item of cases) {
+    const client = clientReturningText(JSON.stringify(item.patch));
+    const result = await client.generate('mingjing', mingjingRelationshipPromptRequest());
+
+    assert.equal(result.ok, false, item.name);
+    if (result.ok) continue;
+    assert.equal(result.failure.kind, 'parse_failure');
+    assert.equal(result.failure.failure.kind, 'validation_failed');
+    assert.equal(result.failure.failure.detail, item.detail, item.name);
+  }
+});
+
+test('Runtime AI wording application rejects MingJing relationship recent window patch when deterministic status is unavailable', async () => {
+  const base = validMingjingRelationshipOutputUnavailableRecent();
   const patch = mingjingRelationshipPatch({
-    timing_windows: [
-      {
-        start_date: '2026-05-01',
-        end_date: '2026-05-31',
-        summary: 'Runtime timing wording for an unknown window.',
-      },
-    ],
+    recent_status: { window: { summary: 'Runtime summary for a window that does not exist.' } },
   });
+  const client = clientReturningText(JSON.stringify(patch));
+  const result = await client.generate('mingjing', mingjingRelationshipPromptRequest(base));
+
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.equal(result.failure.kind, 'parse_failure');
+    assert.equal(result.failure.failure.kind, 'validation_failed');
+    assert.equal(result.failure.failure.detail, 'mingjing_relationship_recent_window_patch_forbidden');
+  }
+});
+
+test('Runtime AI wording application requires the recent window summary when deterministic status is available', async () => {
+  const patch = mingjingRelationshipPatch();
+  delete patch.recent_status;
   const client = clientReturningText(JSON.stringify(patch));
   const result = await client.generate('mingjing', mingjingRelationshipPromptRequest());
 
@@ -352,40 +434,61 @@ test('Runtime AI wording application rejects MingJing relationship patch with un
   if (!result.ok) {
     assert.equal(result.failure.kind, 'parse_failure');
     assert.equal(result.failure.failure.kind, 'validation_failed');
-    assert.equal(result.failure.failure.detail, 'mingjing_relationship_timing_window_target_unknown');
+    assert.equal(result.failure.failure.detail, 'mingjing_relationship_recent_window_patch_missing');
   }
 });
 
 test('Runtime AI wording application rejects incomplete MingJing relationship wording patches', async () => {
   const cases = [
     {
-      name: 'summary only',
-      patch: {
-        patch_kind: 'shijing.runtime_ai_wording_patch.v1',
-        mirror_kind: 'mingjing',
-        output_kind: 'relationship_hepan',
-        summary: 'Only a summary is not a complete relationship reading.',
-      },
-      detail: 'mingjing_relationship_structure_required',
-    },
-    {
-      name: 'missing practice',
+      name: 'missing overview',
       patch: {
         ...mingjingRelationshipPatch(),
-        practice: {
-          communication: 'Runtime communication practice.',
-          boundary: 'Runtime boundary practice.',
+        overview: undefined,
+      },
+      detail: 'mingjing_relationship_overview_required',
+    },
+    {
+      name: 'missing patterns',
+      patch: {
+        ...mingjingRelationshipPatch(),
+        patterns: [],
+      },
+      detail: 'mingjing_relationship_patterns_required',
+    },
+    {
+      name: 'missing action',
+      patch: {
+        ...mingjingRelationshipPatch(),
+        action: undefined,
+      },
+      detail: 'mingjing_relationship_action_required',
+    },
+    {
+      name: 'pattern without signals',
+      patch: {
+        ...mingjingRelationshipPatch(),
+        patterns: [
+          mingjingRelationshipPatternPatch(
+            validMingjingRelationshipOutput().patterns[0],
+            { signals: undefined },
+          ),
+          ...mingjingRelationshipPatch().patterns.slice(1),
+        ],
+      },
+      detail: 'signals_required',
+    },
+    {
+      name: 'too many keywords',
+      patch: {
+        ...mingjingRelationshipPatch(),
+        overview: {
+          title: 'Runtime overview title.',
+          summary: 'Runtime overview summary.',
+          keywords: ['a', 'b', 'c', 'd'],
         },
       },
-      detail: 'repair_empty',
-    },
-    {
-      name: 'missing timing window',
-      patch: {
-        ...mingjingRelationshipPatch(),
-        timing_windows: [],
-      },
-      detail: 'mingjing_relationship_timing_windows_required',
+      detail: 'keywords_invalid',
     },
   ];
 
@@ -397,6 +500,39 @@ test('Runtime AI wording application rejects incomplete MingJing relationship wo
     if (result.ok) continue;
     assert.equal(result.failure.kind, 'parse_failure');
     assert.equal(result.failure.failure.kind, 'validation_failed');
-    assert.equal(result.failure.failure.detail, item.detail);
+    assert.equal(result.failure.failure.detail, item.detail, item.name);
+  }
+});
+
+test('MingJing relationship output validator rejects tampering with deterministic fields after patching', async () => {
+  const base = validMingjingRelationshipOutput();
+  const client = clientReturningText(JSON.stringify(mingjingRelationshipPatch()));
+  const result = await client.generate('mingjing', mingjingRelationshipPromptRequest(base));
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+
+  const rankTampered = {
+    ...result.output,
+    patterns: result.output.patterns.map((pattern, index) => ({
+      ...pattern,
+      rank: index === 0 ? 2 : 1,
+    })),
+  };
+  const rankCheck = validateMirrorOutput(rankTampered);
+  assert.equal(rankCheck.ok, false);
+  if (!rankCheck.ok) {
+    assert.equal(rankCheck.error.code, 'mirror_output_mingjing_relationship_patterns_invalid');
+  }
+
+  const ruleTampered = {
+    ...result.output,
+    patterns: result.output.patterns.map((pattern, index) =>
+      index === 0 ? { ...pattern, rule_ref: 'bazi_ziping_v1.hepan.invented_rule' } : pattern
+    ),
+  };
+  const ruleCheck = validateMirrorOutput(ruleTampered);
+  assert.equal(ruleCheck.ok, false);
+  if (!ruleCheck.ok) {
+    assert.equal(ruleCheck.error.code, 'mirror_output_mingjing_relationship_pattern_rule_unadmitted');
   }
 });

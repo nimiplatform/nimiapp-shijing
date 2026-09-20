@@ -1,43 +1,50 @@
+// HeJing (合镜) workbench — pattern-reading redesign.
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { nimiToast } from '@nimiplatform/kit/ui';
-import type { MingJingRelationshipMirrorOutput } from '../../domain/mirror-output.ts';
+import { ConfirmDialog, nimiToast } from '@nimiplatform/kit/ui';
+import { DEFAULT_METHOD_PROFILE_ID } from '../../domain/algorithm.ts';
+import type { EventMemory } from '../../domain/event-memory.ts';
+import { isMingJingRelationshipMirrorOutput } from '../../domain/mirror-output.ts';
 import type { Person } from '../../domain/person.ts';
 import type { ReadingGenerationFailure } from '../../domain/reading.ts';
-import type { SubjectRef } from '../../domain/subject-ref.ts';
+import { inputsSummaryExpired } from '../astrology/inputs-summary-expiry.ts';
 import { AddPersonDialog } from '../persons/person-editor.tsx';
 import { SjpSelect } from '../components/sjp-select.tsx';
 import { newReadingId } from '../ids/index.ts';
+import { deleteEventMemory } from '../memories/memory-editor-state.ts';
+import { METHOD_LABELS } from '../reading/reading-format.ts';
 import { generateReadingForStorage } from '../reading/generate-and-store.ts';
 import { latestMingJingRelationshipReading } from '../reading/reading-selectors.ts';
+import { persistenceWriteSucceeded } from '../state/persistence-bridge.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { relationshipNatalMirrorScopeForToday } from './mirror-scope-helpers.ts';
 import { FailureBanner } from './shared/failure-banner.tsx';
+import { ImportToShiJingButton } from './shared/import-to-shijing-button.tsx';
 import { HeJingRelationshipTypeEmpty } from './hejing/hejing-empty-state.tsx';
 import { HeJingImmersiveEmpty } from './hejing/hejing-immersive-empty.tsx';
 import { HeJingPendingView } from './hejing/hejing-pending.tsx';
+import { HeJingRecordDialog } from './hejing/hejing-record-dialog.tsx';
 import {
-  HeJingBasisSection,
-  HeJingFocusSection,
-  HeJingOverview,
-  HeJingRadarSection,
-  HeJingRecordsSection,
-  HeJingWaysSection,
-  HeJingWindowsSection,
+  HeJingActionSection,
+  HeJingOverviewSection,
+  HeJingPatternsSection,
+  HeJingRecentSection,
+  HeJingTrackView,
   ICONS,
 } from './hejing/hejing-sections.tsx';
 import {
   HEJING_PAGE_COPY,
   HEJING_RELATIONSHIP_TYPES,
-  HEJING_RELATIONSHIP_WORKSPACES,
-  buildGeneratedHeJingWorkspace,
   buildHeJingWorkspaceFromPerson,
   hejingMethodSupportState,
+  hejingPatternSupportState,
   hejingRelationshipTypeForPerson,
+  hejingTrackRecords,
   hejingWorkspaceIdForPerson,
   hejingWorkspacesForRelationshipType,
   initialHeJingWorkspaceIdFromReadings,
   type HeJingRelationshipType,
+  type HeJingTrackRecord,
 } from './hejing/hejing-model.ts';
 
 const copy = HEJING_PAGE_COPY;
@@ -46,30 +53,18 @@ function nowIso(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
-function personRefForWorkspace(
-  workspaceId: string,
-): Extract<SubjectRef, { kind: 'person' }> | null {
-  if (!workspaceId.startsWith('person:')) return null;
-  const id = workspaceId.slice('person:'.length);
-  return id ? { kind: 'person', id } : null;
-}
+type HeJingView = 'reading' | 'track';
 
-function isRelationshipOutput(output: unknown): output is MingJingRelationshipMirrorOutput {
-  return (
-    typeof output === 'object' &&
-    output !== null &&
-    (output as { mirror_kind?: unknown }).mirror_kind === 'mingjing' &&
-    (output as { output_kind?: unknown }).output_kind === 'relationship_hepan'
-  );
-}
-
+// @nimi-authority: rule.shijing.ia.r009
 export function HeJingTab() {
   const { state, replace_snapshot, runtime_ai_client } = useShijingStore();
-  const currentMethodProfileId = state.snapshot.settings.method_profile_id;
-  const workspaces = useMemo(() => {
-    const personWorkspaces = state.snapshot.persons.map(buildHeJingWorkspaceFromPerson);
-    return personWorkspaces.length > 0 ? personWorkspaces : HEJING_RELATIONSHIP_WORKSPACES;
-  }, [state.snapshot.persons]);
+  const currentMethodProfileId = state.snapshot.settings.method_profile_id ?? DEFAULT_METHOD_PROFILE_ID;
+  // Workspaces come from real Persons only — sample workspaces live exclusively
+  // in `src/product/dev/` fixtures.
+  const workspaces = useMemo(
+    () => state.snapshot.persons.map(buildHeJingWorkspaceFromPerson),
+    [state.snapshot.persons],
+  );
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(
     () =>
       initialHeJingWorkspaceIdFromReadings({
@@ -80,14 +75,11 @@ export function HeJingTab() {
   );
   const restoredGeneratedWorkspaceRef = useRef(false);
   const initialWorkspace = useMemo(
-    () =>
-      workspaces.find((item) => item.id === selectedWorkspaceId)
-      ?? workspaces[0]
-      ?? HEJING_RELATIONSHIP_WORKSPACES[0],
+    () => workspaces.find((item) => item.id === selectedWorkspaceId) ?? workspaces[0] ?? null,
     [selectedWorkspaceId, workspaces],
   );
   const [selectedType, setSelectedType] = useState<HeJingRelationshipType>(
-    initialWorkspace.selectedRelationshipType,
+    initialWorkspace?.selectedRelationshipType ?? 'partner',
   );
   const filteredWorkspaces = useMemo(
     () => hejingWorkspacesForRelationshipType(workspaces, selectedType),
@@ -107,16 +99,25 @@ export function HeJingTab() {
       ?? HEJING_RELATIONSHIP_TYPES[0].label,
     [selectedType],
   );
+  const [view, setView] = useState<HeJingView>('reading');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [failure, setFailure] = useState<ReadingGenerationFailure | null>(null);
   const [addPersonOpen, setAddPersonOpen] = useState(false);
-  const recordsSectionRef = useRef<HTMLElement | null>(null);
+  const [recordDialog, setRecordDialog] = useState<{ open: boolean; editing: EventMemory | null }>({
+    open: false,
+    editing: null,
+  });
+  const [confirmingDelete, setConfirmingDelete] = useState<HeJingTrackRecord | null>(null);
   const methodSupport = useMemo(
     () => hejingMethodSupportState(currentMethodProfileId),
     [currentMethodProfileId],
   );
-  const selectedPersonRef = workspace ? personRefForWorkspace(workspace.id) : null;
+  const patternSupport = useMemo(
+    () => hejingPatternSupportState(currentMethodProfileId),
+    [currentMethodProfileId],
+  );
+  const selectedPersonRef = workspace?.personRef ?? null;
   const relationshipReading = useMemo(
     () =>
       selectedPersonRef
@@ -128,10 +129,15 @@ export function HeJingTab() {
         : undefined,
     [state.snapshot.readings, selectedPersonRef, currentMethodProfileId],
   );
-  const relationshipOutput = isRelationshipOutput(relationshipReading?.output)
-    ? relationshipReading.output
-    : null;
+  const relationshipOutput =
+    relationshipReading && isMingJingRelationshipMirrorOutput(relationshipReading.output)
+      ? relationshipReading.output
+      : null;
   const hasGeneratedRelationship = Boolean(relationshipOutput);
+  const readingStale = useMemo(
+    () => (relationshipReading ? inputsSummaryExpired(relationshipReading, new Date()) : false),
+    [relationshipReading],
+  );
   const cachedWorkspaceId = useMemo(
     () =>
       initialHeJingWorkspaceIdFromReadings({
@@ -141,13 +147,19 @@ export function HeJingTab() {
       }),
     [workspaces, state.snapshot.readings, currentMethodProfileId],
   );
-  const displayWorkspace = useMemo(
-    () =>
-      workspace && relationshipReading
-        ? buildGeneratedHeJingWorkspace({ workspace, reading: relationshipReading })
-        : workspace,
-    [relationshipReading, workspace],
+  const trackRecords = useMemo(
+    () => (selectedPersonRef ? hejingTrackRecords(state.snapshot, selectedPersonRef) : []),
+    [state.snapshot, selectedPersonRef],
   );
+  const methodLabel = METHOD_LABELS[currentMethodProfileId];
+  const statusText = (() => {
+    if (!relationshipReading || !relationshipOutput) return copy.statusPending;
+    if (readingStale) return copy.statusStale;
+    return copy.statusGenerated(
+      relationshipOutput.relationship_subject.anchor_year,
+      relationshipReading.created_at.slice(0, 10),
+    );
+  })();
 
   useEffect(() => {
     setStatusMessage(null);
@@ -199,10 +211,7 @@ export function HeJingTab() {
   }
 
   async function handleGenerateAdvice() {
-    if (!selectedPersonRef) {
-      nimiToast.success(copy.createStatus);
-      return;
-    }
+    if (!selectedPersonRef) return;
     setLoading(true);
     setFailure(null);
     setStatusMessage(null);
@@ -222,43 +231,43 @@ export function HeJingTab() {
       return;
     }
     const persistenceStatus = await replace_snapshot(outcome.next_space);
-    if (persistenceStatus.kind === 'error') {
+    if (!persistenceWriteSucceeded(persistenceStatus)) {
       nimiToast.danger(copy.persistenceFailureStatus);
       return;
     }
-    setStatusMessage((outcome.reading.output as MingJingRelationshipMirrorOutput).summary);
+    setView('reading');
+    setStatusMessage(copy.generatedStatus);
   }
 
-  function handleWriteRecord() {
-    nimiToast.success(copy.recordStatus);
-    window.requestAnimationFrame(() => {
-      recordsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+  function openRecordDialog(editing: EventMemory | null = null) {
+    setRecordDialog({ open: true, editing });
   }
 
-  function handleChat() {
-    nimiToast.success(copy.chatStatus);
+  function handleEditTrackRecord(record: HeJingTrackRecord) {
+    const memory = state.snapshot.event_memories.find((item) => item.id === record.id);
+    if (memory) openRecordDialog(memory);
+  }
+
+  async function handleConfirmDelete() {
+    const record = confirmingDelete;
+    if (!record) return;
+    const outcome = deleteEventMemory(state.snapshot, record.id);
+    if (!outcome.ok) {
+      nimiToast.danger(copy.recordDeleteError);
+      setConfirmingDelete(null);
+      return;
+    }
+    const persistenceStatus = await replace_snapshot(outcome.next_space);
+    if (!persistenceWriteSucceeded(persistenceStatus)) {
+      nimiToast.danger(copy.recordDeleteError);
+      return;
+    }
+    nimiToast.success(copy.recordDeletedToast);
+    setConfirmingDelete(null);
   }
 
   const isFirstRun = state.snapshot.persons.length === 0;
-
-  const overviewActions =
-    hasGeneratedRelationship && methodSupport.supported ? (
-      <div className="shijing-hejing__hero-actions">
-        <button type="button" className="is-primary" onClick={handleGenerateAdvice} disabled={loading}>
-          {ICONS.refresh}
-          {loading ? copy.generatingAdvice : copy.regenerate}
-        </button>
-        <button type="button" className="is-ghost" onClick={handleWriteRecord}>
-          {ICONS.pencil}
-          {copy.writeRecord}
-        </button>
-        <button type="button" className="is-ghost" onClick={handleChat}>
-          {ICONS.chat}
-          {copy.chat}
-        </button>
-      </div>
-    ) : null;
+  const canGenerate = methodSupport.supported && patternSupport.supported;
 
   return (
     <section
@@ -288,44 +297,111 @@ export function HeJingTab() {
             ) : null}
           </div>
 
-          {displayWorkspace ? (
+          {workspace ? (
             <>
-              {hasGeneratedRelationship ? (
-                <HeJingOverview workspace={displayWorkspace} actions={overviewActions} />
+              <div className="shijing-hejing__toolbar">
+                <div className="shijing-hejing__toolbar-meta">
+                  <strong className="shijing-hejing__toolbar-name">{workspace.displayName}</strong>
+                  {workspace.relationLabel ? (
+                    <span className="shijing-hejing__toolbar-relation">{workspace.relationLabel}</span>
+                  ) : null}
+                  <span className="shijing-hejing__toolbar-method">
+                    {copy.methodLabel} · {methodLabel}
+                  </span>
+                  <span
+                    className="shijing-hejing__toolbar-status"
+                    data-state={relationshipOutput ? (readingStale ? 'stale' : 'generated') : 'pending'}
+                  >
+                    {statusText}
+                  </span>
+                </div>
+                <div className="shijing-hejing__toolbar-actions">
+                  {hasGeneratedRelationship && canGenerate ? (
+                    <button type="button" className="is-ghost" onClick={handleGenerateAdvice} disabled={loading}>
+                      {ICONS.refresh}
+                      {loading ? copy.generatingAdvice : copy.regenerate}
+                    </button>
+                  ) : null}
+                  <button type="button" className="is-ghost" onClick={() => openRecordDialog()}>
+                    {ICONS.pencil}
+                    {copy.recordEntry}
+                  </button>
+                  {relationshipReading && !readingStale ? (
+                    <ImportToShiJingButton readingId={relationshipReading.id} />
+                  ) : null}
+                  <div className="shijing-hejing__view-switch" role="group" aria-label={copy.viewSwitchAria}>
+                    <button
+                      type="button"
+                      data-active={view === 'reading' ? '' : undefined}
+                      onClick={() => setView('reading')}
+                    >
+                      {copy.viewReading}
+                    </button>
+                    <button
+                      type="button"
+                      data-active={view === 'track' ? '' : undefined}
+                      onClick={() => setView('track')}
+                    >
+                      {copy.viewTrack}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {view === 'reading' ? (
+                <>
+                  {statusMessage ? (
+                    <p className="shijing-hejing__status" role="status">
+                      {statusMessage}
+                    </p>
+                  ) : null}
+                  {failure ? <FailureBanner failure={failure} /> : null}
+                  {failure?.kind === 'patterns_unavailable' ? (
+                    <p className="shijing-hejing__failure-guidance">{copy.patternFailureGuidance}</p>
+                  ) : null}
+                  {!methodSupport.supported ? (
+                    <div className="shijing-hejing__unsupported" role="status">
+                      <strong>{copy.unsupportedMethodTitle}</strong>
+                      <p>{copy.unsupportedMethodBody}</p>
+                      {methodSupport.detail ? <code>{methodSupport.detail}</code> : null}
+                    </div>
+                  ) : null}
+
+                  {hasGeneratedRelationship && relationshipOutput ? (
+                    <>
+                      <HeJingOverviewSection
+                        output={relationshipOutput}
+                        recentAvailable={relationshipOutput.recent_status.availability === 'available'}
+                      />
+                      <HeJingPatternsSection
+                        patterns={relationshipOutput.patterns}
+                        relatedName={workspace.displayName}
+                        methodLabel={methodLabel}
+                        onRecord={() => openRecordDialog()}
+                      />
+                      {relationshipOutput.recent_status.availability === 'available' ? (
+                        <HeJingRecentSection window={relationshipOutput.recent_status.window} />
+                      ) : null}
+                      <HeJingActionSection action={relationshipOutput.action} />
+                    </>
+                  ) : (
+                    <HeJingPendingView
+                      workspace={workspace}
+                      canGenerate={canGenerate}
+                      patternSupported={patternSupport.supported}
+                      loading={loading}
+                      onGenerate={handleGenerateAdvice}
+                    />
+                  )}
+                </>
               ) : (
-                <HeJingPendingView
-                  workspace={displayWorkspace}
-                  canGenerate={methodSupport.supported}
-                  loading={loading}
-                  onGenerate={handleGenerateAdvice}
+                <HeJingTrackView
+                  records={trackRecords}
+                  onRecord={() => openRecordDialog()}
+                  onEdit={handleEditTrackRecord}
+                  onDelete={setConfirmingDelete}
                 />
               )}
-
-              {statusMessage ? (
-                <p className="shijing-hejing__status" role="status">
-                  {statusMessage}
-                </p>
-              ) : null}
-              {failure ? <FailureBanner failure={failure} /> : null}
-
-              {!methodSupport.supported ? (
-                <div className="shijing-hejing__unsupported" role="status">
-                  <strong>{copy.unsupportedMethodTitle}</strong>
-                  <p>{copy.unsupportedMethodBody}</p>
-                  {methodSupport.detail ? <code>{methodSupport.detail}</code> : null}
-                </div>
-              ) : null}
-
-              {hasGeneratedRelationship && methodSupport.supported && relationshipOutput ? (
-                <>
-                  <HeJingFocusSection cards={displayWorkspace.focusCards} />
-                  <HeJingRadarSection workspace={displayWorkspace} />
-                  <HeJingWindowsSection quarters={displayWorkspace.quarters} />
-                  <HeJingWaysSection insights={displayWorkspace.insights} />
-                  <HeJingRecordsSection records={displayWorkspace.records} onWrite={handleWriteRecord} rootRef={recordsSectionRef} />
-                  <HeJingBasisSection workspace={displayWorkspace} />
-                </>
-              ) : null}
             </>
           ) : (
             <HeJingRelationshipTypeEmpty
@@ -336,7 +412,7 @@ export function HeJingTab() {
           )}
 
           <footer className="shijing-hejing__footer">
-            <p>{displayWorkspace?.disclaimer ?? copy.emptyTypeDisclaimer}</p>
+            <p>{workspace?.disclaimer ?? copy.emptyTypeDisclaimer}</p>
           </footer>
         </>
       )}
@@ -346,6 +422,27 @@ export function HeJingTab() {
         title={copy.addPersonDialogTitle}
         onClose={() => setAddPersonOpen(false)}
         onSavedPerson={handleRelationshipPersonSaved}
+      />
+
+      {selectedPersonRef && workspace ? (
+        <HeJingRecordDialog
+          open={recordDialog.open}
+          personRef={selectedPersonRef}
+          personDisplayName={workspace.displayName}
+          editing={recordDialog.editing}
+          onClose={() => setRecordDialog({ open: false, editing: null })}
+        />
+      ) : null}
+
+      <ConfirmDialog
+        open={confirmingDelete !== null}
+        title={copy.trackDeleteConfirmTitle}
+        message={confirmingDelete ? copy.trackDeleteConfirmMessage(confirmingDelete.body) : ''}
+        confirmLabel={copy.trackDeleteConfirmLabel}
+        cancelLabel={copy.trackDeleteCancelLabel}
+        confirmTone="danger"
+        onConfirm={() => void handleConfirmDelete()}
+        onClose={() => setConfirmingDelete(null)}
       />
     </section>
   );

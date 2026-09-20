@@ -40,6 +40,13 @@ const COMMON_FORBIDDEN_OUTPUT_FIELDS: readonly string[] = [
   'relationship_graph',
   'contact_payload',
   'timing',
+  'radar',
+  'metrics',
+  'relationship_score',
+  'stability_rating',
+  'structure',
+  'practice',
+  'timing_windows',
 ];
 
 const LOCAL_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;

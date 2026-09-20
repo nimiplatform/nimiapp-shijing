@@ -1,0 +1,105 @@
+/* HeJing 记录对话框 — form fields inside the kit Dialog container (Radix
+ * overlay with its own focus trap). The dialog renders outside the
+ * `.shijing-hejing` scope, so these styles stand alone with literal tokens
+ * matching the HeJing green theme. */
+
+.shijing-hejing-record__person {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.shijing-hejing-record__person strong {
+  color: #1c2b24;
+  font-size: 15px;
+}
+
+.shijing-hejing-record__person p {
+  margin: 0;
+  color: #8b988f;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.shijing-hejing-record__label {
+  color: #8b988f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shijing-hejing-record__field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.shijing-hejing-record__field input[type='date'],
+.shijing-hejing-record__field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(28, 43, 36, 0.14);
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: #fff;
+  color: #1c2b24;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.shijing-hejing-record__field textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.shijing-hejing-record__field input[type='date']:focus,
+.shijing-hejing-record__field textarea:focus {
+  outline: 2px solid #3d7a5a;
+  outline-offset: 1px;
+  border-color: #3d7a5a;
+}
+
+.shijing-hejing-record__error {
+  margin: 0 0 12px;
+  color: #a3543c;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.shijing-hejing-record__error code {
+  margin-left: 6px;
+  font-size: 11px;
+}
+
+.shijing-hejing-record__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.shijing-hejing-record__cancel {
+  border: 1px solid rgba(28, 43, 36, 0.14);
+  border-radius: 999px;
+  padding: 9px 18px;
+  background: #fff;
+  color: #54655c;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shijing-hejing-record__save {
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 22px;
+  background: linear-gradient(140deg, #4f9070, #285c44);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shijing-hejing-record__save:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

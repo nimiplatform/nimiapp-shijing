@@ -64,7 +64,8 @@ export type ReadingGenerationFailureKind =
   | 'validation_failed'
   | 'stale_inputs'
   | 'hash_mismatch'
-  | 'algorithm_fail_closed';
+  | 'algorithm_fail_closed'
+  | 'patterns_unavailable';
 
 export const READING_GENERATION_FAILURE_KINDS: readonly ReadingGenerationFailureKind[] = [
   'runtime_ai_failed',
@@ -73,6 +74,7 @@ export const READING_GENERATION_FAILURE_KINDS: readonly ReadingGenerationFailure
   'stale_inputs',
   'hash_mismatch',
   'algorithm_fail_closed',
+  'patterns_unavailable',
 ] as const;
 
 export interface ReadingGenerationFailure {

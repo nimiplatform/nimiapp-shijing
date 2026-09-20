@@ -320,21 +320,6 @@ function SelectedYearPanel(props: {
           ))}
         </div>
       </section>
-
-      <section className="shijing-nianjing__year-basis" aria-label={NIANJING_COPY.yearOverview.basisTitle}>
-        <header>
-          <h3>{NIANJING_COPY.yearOverview.basisTitle}</h3>
-          <span>{NIANJING_COPY.yearOverview.basisSubtitle}</span>
-        </header>
-        <div className="shijing-nianjing__year-basis-grid">
-          {props.detail.basis_items.map((item) => (
-            <article className="shijing-nianjing__year-basis-item" key={item.kind}>
-              <strong>{NIANJING_COPY.yearOverview.basisLabels[item.kind]}</strong>
-              <p>{NIANJING_COPY.yearOverview.basisSummary(item.count, item.summaries[0] ?? item.dates[0] ?? '')}</p>
-            </article>
-          ))}
-        </div>
-      </section>
     </>
   );
 }

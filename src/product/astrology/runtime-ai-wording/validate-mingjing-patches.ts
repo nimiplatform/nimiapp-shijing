@@ -1,6 +1,7 @@
 import type {
-  MingJingRelationshipPracticePatch,
-  MingJingRelationshipStructurePatch,
+  MingJingRelationshipActionPatch,
+  MingJingRelationshipOverviewPatch,
+  MingJingRelationshipRecentStatusPatch,
   MingJingRelationshipWordingPatch,
   MingJingWordingCorePatch,
   MingJingWordingPatch,
@@ -10,7 +11,7 @@ import type {
   MingJingZiweiProfilePatch,
 } from './types.ts';
 import { RUNTIME_AI_WORDING_PATCH_KIND, RuntimeAiWordingPatchValidationError } from './types.ts';
-import { assertOnlyAllowedKeys, isRecord, optionalRecordArray, optionalText, requireText } from './validation-helpers.ts';
+import { assertOnlyAllowedKeys, isRecord, nonEmptyString, optionalRecordArray, optionalText, requireText } from './validation-helpers.ts';
 
 const MINGJING_CORE_PATCH_KEYS = [
   'personality',
@@ -24,30 +25,39 @@ const MINGJING_RELATIONSHIP_TOP_LEVEL_PATCH_KEYS = [
   'patch_kind',
   'mirror_kind',
   'output_kind',
+  'overview',
+  'patterns',
+  'recent_status',
+  'action',
+] as const;
+
+const MINGJING_RELATIONSHIP_OVERVIEW_PATCH_KEYS = [
+  'title',
   'summary',
-  'structure',
-  'timing_windows',
-  'practice',
+  'keywords',
 ] as const;
 
-const MINGJING_RELATIONSHIP_STRUCTURE_PATCH_KEYS = [
-  'baseline_pattern',
-  'attraction_and_support',
-  'friction_and_misread',
-  'communication_rhythm',
-  'boundary_advice',
+const MINGJING_RELATIONSHIP_PATTERN_PATCH_KEYS = [
+  'pattern_id',
+  'name',
+  'self_tendency',
+  'related_tendency',
+  'scenario',
+  'aligned_expression',
+  'friction_expression',
+  'signals',
 ] as const;
 
-const MINGJING_RELATIONSHIP_TIMING_WINDOW_PATCH_KEYS = [
-  'start_date',
-  'end_date',
-  'summary',
-] as const;
+const MINGJING_RELATIONSHIP_RECENT_STATUS_PATCH_KEYS = ['window'] as const;
 
-const MINGJING_RELATIONSHIP_PRACTICE_PATCH_KEYS = [
-  'communication',
-  'boundary',
-  'repair',
+const MINGJING_RELATIONSHIP_RECENT_WINDOW_PATCH_KEYS = ['summary'] as const;
+
+const MINGJING_RELATIONSHIP_ACTION_PATCH_KEYS = [
+  'situation',
+  'step',
+  'example_phrase',
+  'rationale',
+  'observation',
 ] as const;
 
 const MINGJING_ZIWEI_TOP_LEVEL_PATCH_KEYS = [
@@ -128,46 +138,102 @@ function validateMingjingNatalPatch(record: Record<string, unknown>): MingJingWo
   };
 }
 
-function validateMingjingRelationshipStructurePatch(
-  value: unknown,
-): MingJingRelationshipStructurePatch {
+function requireKeywords(value: unknown): readonly string[] {
   if (value === undefined) {
-    throw new RuntimeAiWordingPatchValidationError('mingjing_relationship_structure_required');
+    throw new RuntimeAiWordingPatchValidationError('keywords_required');
   }
-  if (!isRecord(value)) {
-    throw new RuntimeAiWordingPatchValidationError('structure_invalid');
+  if (
+    !Array.isArray(value) ||
+    value.length > 3 ||
+    value.some((item) => !nonEmptyString(item))
+  ) {
+    throw new RuntimeAiWordingPatchValidationError('keywords_invalid');
   }
-  assertOnlyAllowedKeys(
-    value,
-    MINGJING_RELATIONSHIP_STRUCTURE_PATCH_KEYS,
-    'mingjing_relationship_structure_forbidden_key',
-  );
-  const structure: Record<string, string> = {};
-  for (const key of MINGJING_RELATIONSHIP_STRUCTURE_PATCH_KEYS) {
-    structure[key] = requireText(value, key);
-  }
-  return structure;
+  return value;
 }
 
-function validateMingjingRelationshipPracticePatch(
-  value: unknown,
-): MingJingRelationshipPracticePatch {
+function requireSignals(value: unknown): readonly string[] {
   if (value === undefined) {
-    throw new RuntimeAiWordingPatchValidationError('mingjing_relationship_practice_required');
+    throw new RuntimeAiWordingPatchValidationError('signals_required');
+  }
+  if (
+    !Array.isArray(value) ||
+    value.length < 1 ||
+    value.length > 3 ||
+    value.some((item) => !nonEmptyString(item))
+  ) {
+    throw new RuntimeAiWordingPatchValidationError('signals_invalid');
+  }
+  return value;
+}
+
+function validateMingjingRelationshipOverviewPatch(
+  value: unknown,
+): MingJingRelationshipOverviewPatch {
+  if (value === undefined) {
+    throw new RuntimeAiWordingPatchValidationError('mingjing_relationship_overview_required');
   }
   if (!isRecord(value)) {
-    throw new RuntimeAiWordingPatchValidationError('practice_invalid');
+    throw new RuntimeAiWordingPatchValidationError('overview_invalid');
   }
   assertOnlyAllowedKeys(
     value,
-    MINGJING_RELATIONSHIP_PRACTICE_PATCH_KEYS,
-    'mingjing_relationship_practice_forbidden_key',
+    MINGJING_RELATIONSHIP_OVERVIEW_PATCH_KEYS,
+    'mingjing_relationship_overview_forbidden_key',
   );
-  const practice: Record<string, string> = {};
-  for (const key of MINGJING_RELATIONSHIP_PRACTICE_PATCH_KEYS) {
-    practice[key] = requireText(value, key);
+  return {
+    title: requireText(value, 'title'),
+    summary: requireText(value, 'summary'),
+    keywords: requireKeywords(value.keywords),
+  };
+}
+
+function validateMingjingRelationshipRecentStatusPatch(
+  value: unknown,
+): MingJingRelationshipRecentStatusPatch | undefined {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) {
+    throw new RuntimeAiWordingPatchValidationError('recent_status_invalid');
   }
-  return practice;
+  assertOnlyAllowedKeys(
+    value,
+    MINGJING_RELATIONSHIP_RECENT_STATUS_PATCH_KEYS,
+    'mingjing_relationship_recent_status_forbidden_key',
+  );
+  const window = value.window;
+  if (window === undefined) {
+    throw new RuntimeAiWordingPatchValidationError('mingjing_relationship_recent_window_required');
+  }
+  if (!isRecord(window)) {
+    throw new RuntimeAiWordingPatchValidationError('recent_window_invalid');
+  }
+  assertOnlyAllowedKeys(
+    window,
+    MINGJING_RELATIONSHIP_RECENT_WINDOW_PATCH_KEYS,
+    'mingjing_relationship_recent_window_forbidden_key',
+  );
+  return { window: { summary: requireText(window, 'summary') } };
+}
+
+function validateMingjingRelationshipActionPatch(
+  value: unknown,
+): MingJingRelationshipActionPatch {
+  if (value === undefined) {
+    throw new RuntimeAiWordingPatchValidationError('mingjing_relationship_action_required');
+  }
+  if (!isRecord(value)) {
+    throw new RuntimeAiWordingPatchValidationError('action_invalid');
+  }
+  assertOnlyAllowedKeys(
+    value,
+    MINGJING_RELATIONSHIP_ACTION_PATCH_KEYS,
+    'mingjing_relationship_action_forbidden_key',
+  );
+  const action: Record<string, string> = {};
+  for (const key of MINGJING_RELATIONSHIP_ACTION_PATCH_KEYS) {
+    action[key] = requireText(value, key);
+  }
+  return action as MingJingRelationshipActionPatch;
 }
 
 function validateMingjingRelationshipPatch(
@@ -178,32 +244,38 @@ function validateMingjingRelationshipPatch(
     MINGJING_RELATIONSHIP_TOP_LEVEL_PATCH_KEYS,
     'mingjing_relationship_patch_forbidden_key',
   );
-  const structure = validateMingjingRelationshipStructurePatch(record.structure);
-  const rawTimingWindows = optionalRecordArray(record, 'timing_windows');
-  if (!rawTimingWindows || rawTimingWindows.length === 0) {
-    throw new RuntimeAiWordingPatchValidationError('mingjing_relationship_timing_windows_required');
+  const overview = validateMingjingRelationshipOverviewPatch(record.overview);
+  const rawPatterns = optionalRecordArray(record, 'patterns');
+  if (!rawPatterns || rawPatterns.length === 0) {
+    throw new RuntimeAiWordingPatchValidationError('mingjing_relationship_patterns_required');
   }
-  const timingWindows = rawTimingWindows.map((item) => {
+  const patterns = rawPatterns.map((item) => {
     assertOnlyAllowedKeys(
       item,
-      MINGJING_RELATIONSHIP_TIMING_WINDOW_PATCH_KEYS,
-      'mingjing_relationship_timing_window_forbidden_key',
+      MINGJING_RELATIONSHIP_PATTERN_PATCH_KEYS,
+      'mingjing_relationship_pattern_forbidden_key',
     );
     return {
-      start_date: requireText(item, 'start_date'),
-      end_date: requireText(item, 'end_date'),
-      summary: requireText(item, 'summary'),
+      pattern_id: requireText(item, 'pattern_id'),
+      name: requireText(item, 'name'),
+      self_tendency: requireText(item, 'self_tendency'),
+      related_tendency: requireText(item, 'related_tendency'),
+      scenario: requireText(item, 'scenario'),
+      aligned_expression: requireText(item, 'aligned_expression'),
+      friction_expression: requireText(item, 'friction_expression'),
+      signals: requireSignals(item.signals),
     };
   });
-  const practice = validateMingjingRelationshipPracticePatch(record.practice);
+  const recentStatus = validateMingjingRelationshipRecentStatusPatch(record.recent_status);
+  const action = validateMingjingRelationshipActionPatch(record.action);
   return {
     patch_kind: RUNTIME_AI_WORDING_PATCH_KIND,
     mirror_kind: 'mingjing',
     output_kind: 'relationship_hepan',
-    summary: requireText(record, 'summary'),
-    structure,
-    timing_windows: timingWindows,
-    practice,
+    overview,
+    patterns,
+    ...(recentStatus ? { recent_status: recentStatus } : {}),
+    action,
   };
 }
 

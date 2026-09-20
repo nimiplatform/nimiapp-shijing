@@ -414,10 +414,14 @@ test('buildRuntimeAiPromptRequest admits MingJing relationship HePan wording tar
   assert.ok(request.user_prompt.includes('output_kind: relationship_hepan'));
   assert.ok(request.user_prompt.includes('relationship_subject'));
   assert.ok(request.user_prompt.includes('"related_person_ref": {'));
+  assert.ok(request.user_prompt.includes('"pattern_id": "bazi_ziping_v1.hepan.day_branch_harmony"'));
+  assert.ok(request.user_prompt.includes('"rule_ref": "bazi_ziping_v1.hepan.day_branch_harmony"'));
   assert.ok(request.user_prompt.includes('"driver_refs": ['));
-  assert.ok(request.user_prompt.includes('bazi:relationship.window.2026-03'));
+  assert.ok(request.user_prompt.includes('bazi:relationship.branch.day-day.六合@chen-you'));
+  assert.ok(request.user_prompt.includes('"evidence_summary"'));
+  assert.ok(request.user_prompt.includes('recent_status'));
   assert.ok(request.user_prompt.includes('relationship prose fields only'));
-  assert.ok(request.user_prompt.includes('Do NOT output relationship_subject, citations, cited_event_memory_refs, cited_plan_item_refs, nature, driver_refs'));
+  assert.ok(request.user_prompt.includes('Do NOT output relationship_subject, citations, cited_event_memory_refs, cited_plan_item_refs, rule_ref, rank, driver_refs, evidence_summary'));
 });
 
 test('buildRuntimeAiPromptRequest includes YueJing concern labels and deterministic classes', () => {

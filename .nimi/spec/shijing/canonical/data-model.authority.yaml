@@ -53,7 +53,7 @@ units:
   - id: definition.shijing.data-model.reading-generation-failure
     kind: definition
     title: Reading generation failure
-    meaning: ReadingGenerationFailure is a transient non-Reading result with kind runtime_ai_failed, pipeline_stage_failed, validation_failed, stale_inputs, or hash_mismatch, plus mirror_kind, mirror_scope, optional stage, and optional detail.
+    meaning: ReadingGenerationFailure is a transient non-Reading result with kind runtime_ai_failed, pipeline_stage_failed, validation_failed, stale_inputs, hash_mismatch, algorithm_fail_closed, or patterns_unavailable, plus mirror_kind, mirror_scope, optional stage, and optional detail.
   - id: definition.shijing.data-model.mirror-scope
     kind: definition
     title: Mirror scope

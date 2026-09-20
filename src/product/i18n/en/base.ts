@@ -371,6 +371,7 @@ readingFailure: {
     stale_inputs: 'Generation failed: input snapshot is stale. Regenerate the reading.',
     hash_mismatch: 'Generation failed: hash verification failed. Regenerate the reading.',
     algorithm_fail_closed: 'Generation failed: current data precision is insufficient for this mirror reading (closed by SJG-ALGO-10).',
+    patterns_unavailable: 'No supported relationship reading: the selected method has no admitted pattern rules yet, or the available chart evidence is insufficient.',
   },
   methodFeatureUnsupported: 'Generation failed: the selected method does not support this mirror yet. Switch to a supported calculation method and regenerate.',
   runtimeProviderProductNotActivated: 'Generation failed: the model is bound, but the cloud provider says the product or model service is not activated. Activate it in the provider console, or switch to an activated Runtime model and regenerate.',

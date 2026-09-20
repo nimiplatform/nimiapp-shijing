@@ -1,21 +1,11 @@
-// HeJing (合镜) page copy + sample relationship workspace.
+// HeJing (合镜) page copy — pattern-reading redesign.
 //
-// Split out of hejing-model.ts so the model file stays focused on types and
-// projection logic. The page is a relationship *understanding & management*
-// surface — not a divination report — so copy is organised as
-// 结论 (conclusion) -> 解释 (explanation) -> 行动 (action) and avoids
-// partner-only attraction/intimacy metrics. Astrology evidence lives in a
-// collapsed 命理依据 drawer at the very bottom.
+// zh-only constants, same convention as before. Tone follows the admitted
+// expression boundary: conditional observational language, no fate claims, no
+// scores or ratings, no improvement promises, and no invented shared history
+// without a real user record behind it.
 
-import type {
-  HeJingBasisChip,
-  HeJingFocusCard,
-  HeJingPersonProfile,
-  HeJingQuarterWindow,
-  HeJingRelationshipTypeOption,
-  HeJingTimelineRecord,
-  HeJingWorkspace,
-} from './hejing-model.ts';
+import type { HeJingRelationshipTypeOption } from './hejing-model.ts';
 
 export const HEJING_RELATIONSHIP_TYPES: readonly HeJingRelationshipTypeOption[] = [
   { id: 'partner', label: '伴侣' },
@@ -25,8 +15,7 @@ export const HEJING_RELATIONSHIP_TYPES: readonly HeJingRelationshipTypeOption[] 
   { id: 'collaboration', label: '合作' },
 ];
 
-// `亲子` → `亲子关系`, `伴侣` → `伴侣关系`, etc. Used for the relationship line
-// and the radar section title so they read naturally per relationship type.
+// `亲子` → `亲子关系`, `伴侣` → `伴侣关系`, etc. Presentation-only label.
 export function hejingRelationshipTypeLabel(typeId: string): string {
   const short = HEJING_RELATIONSHIP_TYPES.find((type) => type.id === typeId)?.label ?? '关系';
   return `${short}关系`;
@@ -34,296 +23,140 @@ export function hejingRelationshipTypeLabel(typeId: string): string {
 
 export const HEJING_PAGE_COPY = {
   eyebrow: 'TWO CHARTS · ONE MIRROR',
-  introTitleLine1: '看见你与 TA',
-  introTitleLine2: '之间的相处之道',
-  introLead: '合镜不是一份命理报告，而是一处关系理解与经营的空间：关系状态、今年主线、容易摩擦的地方、更适合的相处方式与值得留意的时间窗口，一眼看清。',
-  newHejing: '新建合镜 +',
+  mirrorBadge: '合镜',
   relationshipType: '关系类型',
   selectorTitle: '合镜对象',
   selectAria: '切换合镜对象',
-  mirrorBadge: '合镜',
+  addPersonDialogTitle: '添加关系人物',
 
-  // Top overview ----------------------------------------------------------
-  statusLabel: '关系状态',
-  keywordsLabel: '年度关键词',
-  reminderLabel: '最重要提醒',
-  todayLabel: '今天可以怎么做',
+  // 页面工具区 ------------------------------------------------------------
+  methodLabel: '命理方法',
+  statusLabel: '资料与生成状态',
+  statusPending: '未生成',
+  statusStale: '输入已过期 · 请重新生成',
+  statusGenerated: (anchorYear: number, generatedDate: string) =>
+    `已生成 · ${anchorYear} 年锚点 · ${generatedDate}`,
+  viewReading: '解读',
+  viewTrack: '轨迹',
+  viewSwitchAria: '切换解读与轨迹视图',
   regenerate: '重新生成',
-  writeRecord: '记录一次事件',
-  chat: '聊聊TA',
-  generateHejing: '生成合镜',
+  recordEntry: '记录一次经历',
   generatingAdvice: '生成中…',
-  pendingGenerationHint: '生成后会展开相处重点、关系雷达、时间窗口与相处方式。',
+  generatedStatus: '合镜解读已生成。',
+  persistenceFailureStatus: '合镜已生成,但本地保存失败;重新打开前不会恢复这次内容,请稍后重试。',
 
-  // Pending state (person added, no reading generated yet) -------------------
+  // 区域一 关系概览 --------------------------------------------------------
+  overviewTitle: '关系概览',
+  keywordsAria: '本次解读关键词',
+  recentUnavailableNote: '本次暂无近期变化解读',
+
+  // 区域二 主要相处模式 ----------------------------------------------------
+  patternsTitle: '主要相处模式',
+  patternRankLabel: (rank: number) => `模式 ${rank}`,
+  selfTendencyLabel: '你',
+  scenarioLabel: '值得观察的具体场景',
+  alignedLabel: '配合顺利时',
+  frictionLabel: '发生分歧时',
+  signalsLabel: '可识别的行为信号',
+  basisDrawerLabel: '解读依据',
+  basisMethodLabel: '计算方法',
+  basisEvidenceLabel: '命盘证据',
+  basisRuleLabel: '解释规则',
+  basisLimitation: '现实中的行为需以你的记录为准;依据存在并不自动证明解释成立。',
+  recordPatternEntry: '记录一次实际经历',
+
+  // 区域三 近期变化 --------------------------------------------------------
+  recentTitle: '近期变化',
+  recentWindowLabel: '依据窗口',
+  recentNatureLabel: '窗口性质',
+  recentPrecisionNote: '该窗口为年度精度,不拆分季度或月份。',
+
+  // 区域四 下一次,可以试这一件事 ------------------------------------------
+  actionTitle: '下一次,可以试这一件事',
+  actionSituationLabel: '适用情境',
+  actionStepLabel: '具体做法',
+  actionPhraseLabel: '可以直接说',
+  actionRationaleLabel: '为什么值得试',
+  actionObservationLabel: '可以观察的回应',
+
+  // 轨迹(二级视图) ---------------------------------------------------------
+  trackTitle: '轨迹',
+  trackNote: '这些记录来自你的记录,不代表对方参与、确认或收到通知。',
+  trackEmptyTitle: '还没有与 TA 相关的记录',
+  trackEmptyBody:
+    '记录一次真实的相处经历——符合或不符合解读都可以。只有记录下来的经历,才能成为核对解读的依据。',
+  trackEmptyCta: '记录第一次经历',
+  trackEventBadge: '事件',
+  trackPlanBadge: '计划',
+  trackEditLabel: '编辑这条记录',
+  trackDeleteLabel: '删除这条记录',
+  trackDeleteConfirmTitle: '删除这条记录?',
+  trackDeleteConfirmMessage: (body: string) =>
+    `「${body}」将被永久删除,解读与问镜不再引用。此操作不可撤销。`,
+  trackDeleteConfirmLabel: '删除',
+  trackDeleteCancelLabel: '取消',
+  recordDeletedToast: '记录已删除。',
+  recordDeleteError: '没能删除,请稍后重试。',
+
+  // 记录对话框 -------------------------------------------------------------
+  recordDialogTitle: '记录一次经历',
+  recordDialogEditTitle: '编辑这条经历',
+  recordDialogPersonLabel: '相关人物',
+  recordDialogPersonFixedHint: '记录将与当前合镜人物关联,保存前请核对。',
+  recordDialogDateLabel: '发生日期',
+  recordDialogBodyLabel: '发生了什么',
+  recordDialogBodyPlaceholder: '例如:因为游戏时间超出约定起了争执,事后一起重新约定了规则。',
+  recordDialogSave: '保存记录',
+  recordDialogCancel: '取消',
+  recordSavedToast: '已保存为真实记录,可在轨迹中查看。',
+  recordUpdatedToast: '记录已更新。',
+  recordSaveError: '没能保存,请检查内容后再试一次。',
+
+  // 待生成视图 -------------------------------------------------------------
+  generateHejing: '生成合镜',
   pendingStatusChip: '待生成',
   pendingReadyNote: '生成时将校验双方出生资料',
-  pendingCtaNote: '先推演双方命盘，再由 AI 生成解读；资料不足时会提示补全。',
-  pendingPreviewTitle: '生成合镜后，这里会展开',
+  pendingCtaNote: '先推演双方命盘与准入的相处模式规则,再由 AI 措辞;资料不足时会提示补全。',
+  pendingPreviewTitle: '生成合镜后,这里会展开',
   pendingPreviewCards: [
-    { id: 'focus', icon: 'better', title: '当前相处重点', body: '容易卡住的地方、更适合的方式与本周建议。' },
-    { id: 'radar', icon: 'growth', title: '关系雷达', body: '理解度、沟通、一致性等六个维度的关系画像。' },
-    { id: 'windows', icon: 'windows', title: '未来时间窗口', body: '全年四个阶段里，更适合靠近、沟通或放慢的时段。' },
-    { id: 'ways', icon: 'ways', title: '相处方式', body: '基于双方命盘证据的沟通方式、边界提醒与修复语言。' },
+    { id: 'overview', icon: 'overview', title: '关系概览', body: '一个短标题与一段概述,只总结本次入选的相处模式,不给关系打分。' },
+    { id: 'patterns', icon: 'patterns', title: '主要相处模式', body: '一至四个有依据的相处模式:双方倾向、观察场景、行为信号与解读依据。' },
+    { id: 'recent', icon: 'recent', title: '近期变化', body: '仅当有确定性依据时,展示当前年度的变化窗口;没有依据则不显示。' },
+    { id: 'action', icon: 'action', title: '下一次,可以试这一件事', body: '一个与模式对应的具体行动:适用情境、做法、可以直接说的话与可观察的回应。' },
   ],
 
-  // Sections --------------------------------------------------------------
-  focusTitle: '当前相处重点',
-  focusStuckTitle: '容易卡住的地方',
-  focusBetterTitle: '更适合的方式',
-  focusWeeklyTitle: '本周建议',
-  radarTitleSuffix: '雷达',
-  radarReferenceLabel: '参考均值',
-  metricScaleSuffix: '/100',
-  windowsTitle: '未来时间窗口',
-  windowsStateLabel: '状态',
-  windowsWatchLabel: '注意点',
-  windowsActionLabel: '建议行动',
-  waysTitle: '相处方式',
-  recordsTitle: '共同记录',
-  recordsLead: '记录关系中的重要时刻，帮助你们看见成长的轨迹。',
-  recordsAuthor: '我记录的',
-  recordsMenuAria: '记录操作',
-  recordsEmpty: '还没有共同记录。记录一次争执、合作、旅行或一次好的谈话，慢慢看见关系的变化。',
-  basisTitle: '命理依据',
-  basisHint: '默认折叠 · 仅作参考',
-  basisConvergenceTitle: '共鸣 · 滋养',
-  basisFrictionTitle: '潜在 · 摩擦',
-
-  // Flow / status ---------------------------------------------------------
-  generate: '生成合镜',
-  addPersonDialogTitle: '添加关系人物',
-  createStatus: '新的合镜草稿已打开：请选择对象资料与关系类型，再进入正式分析。',
-  recordStatus: '记录入口已打开：后续会保存为真实关系事件，并进入长期复盘。',
-  chatStatus: '对话入口已打开：后续会以这面合镜为上下文，和 TA 的关系展开对话。',
-  persistenceFailureStatus: '合镜已生成，但本地保存失败；重新打开前不会恢复这次内容，请稍后重试。',
+  // 方法准入 ---------------------------------------------------------------
+  patternUnsupportedTitle: '该方法暂无准入的合镜模式规则',
+  patternUnsupportedBody:
+    '合镜的相处模式解读目前仅准入八字子平法;当前方法可以生成命镜解读,但还没有获准的合镜模式规则,不能借用其他方法的规则代替。',
+  patternUnsupportedHint: '可在「设置」中将推演方法切换为八字子平法后,再回到合镜生成。',
   unsupportedMethodTitle: '当前测算引擎暂不支持合镜',
-  unsupportedMethodBody: '合镜关系合盘需要当前引擎声明 relationship_hepan 支持；请先切换到已支持合镜的测算引擎后再生成。',
+  unsupportedMethodBody:
+    '合镜关系合盘需要当前引擎声明 relationship_hepan 支持;请先切换到已支持合镜的测算引擎后再生成。',
+  patternFailureGuidance:
+    '本次未能选出有依据的相处模式:请核对双方出生日期、时间与地点后重试;若资料无误,说明现有证据不足以支持模式解读。',
 
-  // Empty states ----------------------------------------------------------
+  // 空状态 -----------------------------------------------------------------
   emptyTypeTitle: (relationshipType: string) => `还没有${relationshipType}合镜`,
   emptyTypeBody: (relationshipType: string) =>
-    `添加一位${relationshipType}关系人物后，合镜会以“我 + TA”的出生资料建立分析对象。`,
+    `添加一位${relationshipType}关系人物后,合镜会以"我 + TA"的出生资料建立分析对象。`,
   emptyTypeAction: (relationshipType: string) => `新建${relationshipType}合镜 +`,
-  emptyTypeDisclaimer: '合镜只使用本人和一个关系人物的出生资料，不创建关系图、客户档案或项目式关系管理。',
+  emptyTypeDisclaimer: '合镜只使用本人和一个关系人物的出生资料,不创建关系图、客户档案或项目式关系管理。',
   empty: {
     title: '看见你与 TA 之间的相处节奏',
-    lead: '合镜基于两个人的出生信息，帮你理解彼此的相处状态、容易卡住的地方与阶段性的相处节奏。',
+    lead: '合镜基于两个人的出生信息,提出待核对的相处观察假设,帮你理解容易卡住的地方与下一次可以尝试的行动。',
     startCta: '创建第一面合镜',
     existingCta: '从已有档案选择',
     steps: ['选择关系类型', '填写出生信息', '生成合镜解读'],
     valueAria: '合镜创建后能看到什么',
     valueCards: [
-      { id: 'baseline', index: '01', title: '关系状态', body: '一眼看清今年的关系主线、状态与最重要的提醒。' },
-      { id: 'complement', index: '02', title: '相处方式', body: '理解容易摩擦的地方，找到更适合彼此的沟通与边界。' },
-      { id: 'window', index: '03', title: '时间窗口', body: '查看未来各阶段更适合沟通、靠近、放慢或修复的时段。' },
+      { id: 'overview', index: '01', title: '关系概览', body: '一段只总结入选模式的概述,不打分、不评级、不承诺确定的关系结果。' },
+      { id: 'patterns', index: '02', title: '相处模式', body: '双方可能的倾向、值得观察的场景与可识别的行为信号,依据就近展开。' },
+      { id: 'action', index: '03', title: '一件可试的事', body: '一个具体的下一次行动:情境、做法、可以直接说的话与可观察的回应。' },
     ],
     visualSelf: '我',
     visualMirror: '合',
     visualOther: 'TA',
-    privacy: '资料仅用于当前合镜分析，本地保存，可随时修改或删除。',
+    privacy: '资料仅用于当前合镜分析,本地保存,可随时修改或删除。',
   },
 } as const;
-
-// Astrology evidence chips for the collapsed 命理依据 drawer. Generic across
-// relationship types; the drawer body pairs these with the chart-intersection
-// 共鸣 / 摩擦 lists derived from the generated reading.
-export const HEJING_DEFAULT_BASIS: readonly HeJingBasisChip[] = [
-  { id: 'wuxing', label: '五行' },
-  { id: 'shishen', label: '十神' },
-  { id: 'chonghe', label: '冲合' },
-  { id: 'liunian', label: '流年' },
-  { id: 'dayun', label: '大运' },
-];
-
-// Sample parent-child workspace ("我 + Snow"). It is the spread base for
-// person-derived workspaces, so its records / basis carry over while the
-// hero, metrics and windows are replaced per person and per generated reading.
-const SNOW_SELF: HeJingPersonProfile = {
-  label: '我',
-  name: '我',
-  roleLabel: '家长',
-  initials: '我',
-  tone: 'self',
-  elementTag: '紫微斗数 · 命身主轴',
-  traits: [
-    '紫微斗数以命宫、身宫看你的关系表达底色',
-    '主星组合偏向主动照顾与快速回应',
-    '四化落点提示：先稳住自己的节奏，再靠近对方',
-  ],
-};
-
-const SNOW_OTHER: HeJingPersonProfile = {
-  label: 'TA',
-  name: 'Snow',
-  roleLabel: '孩子',
-  initials: 'S',
-  tone: 'other',
-  elementTag: '紫微斗数 · 互动宫位',
-  traits: [
-    'TA 的命宫、身宫用来观察安全感与表达方式',
-    '关系视角：亲子，重点看亲子宫位的牵引',
-    '主星与四化落点会影响 TA 如何接收关心',
-  ],
-};
-
-const SNOW_RECORDS: readonly HeJingTimelineRecord[] = [
-  {
-    id: 'conflict-game-time',
-    date: '2026-04-18',
-    title: '关于玩游戏时间的争执',
-    tag: '冲突',
-    description: '因为游戏时间超出约定，发生了争执。事后一起复盘，重新约定了规则。',
-  },
-  {
-    id: 'science-project',
-    date: '2026-06-02',
-    title: '一起完成科学小项目',
-    tag: '合作',
-    description: '你们一起完成了火山喷发模型，分工合作，非常开心。',
-  },
-];
-
-const SNOW_FOCUS: readonly HeJingFocusCard[] = [
-  {
-    id: 'stuck',
-    kind: 'stuck',
-    title: HEJING_PAGE_COPY.focusStuckTitle,
-    points: ['权威感与自主需求的拉扯，容易引发对抗或沉默。', '情绪上来时，沟通容易偏离主题。'],
-  },
-  {
-    id: 'better',
-    kind: 'better',
-    title: HEJING_PAGE_COPY.focusBetterTitle,
-    points: ['先共情，后引导；给选择，不直接下命令。', '用稳定的一致性，代替临时的高压。'],
-  },
-  {
-    id: 'weekly',
-    kind: 'weekly',
-    title: HEJING_PAGE_COPY.focusWeeklyTitle,
-    points: ['完成一次“无屏幕”共处活动。', '保持规则的一致与温和。', '每天一句具体的肯定。'],
-  },
-];
-
-const SNOW_QUARTERS: readonly HeJingQuarterWindow[] = [
-  {
-    id: 'q1',
-    label: 'Q1',
-    range: '1-3 月',
-    season: 'spring',
-    state: '适应与调整',
-    watch: '情绪波动较多',
-    action: '建立稳定的日常节奏',
-    tone: 'green',
-  },
-  {
-    id: 'q2',
-    label: 'Q2',
-    range: '4-6 月',
-    season: 'summer',
-    state: '能量增长期',
-    watch: '学习与专注挑战',
-    action: '设定小目标，陪伴复盘',
-    tone: 'gold',
-  },
-  {
-    id: 'q3',
-    label: 'Q3',
-    range: '7-9 月',
-    season: 'autumn',
-    state: '深化与突破',
-    watch: '自我意识增强',
-    action: '给选择，少说教',
-    tone: 'red',
-  },
-  {
-    id: 'q4',
-    label: 'Q4',
-    range: '10-12 月',
-    season: 'winter',
-    state: '收获与稳固',
-    watch: '期末压力与节奏',
-    action: '复盘成长，正向收尾',
-    tone: 'blue',
-  },
-];
-
-export const HEJING_RELATIONSHIP_WORKSPACES: readonly HeJingWorkspace[] = [
-  {
-    id: 'sample-snow-parent-child',
-    selectorLabel: '我 + Snow',
-    selectedRelationshipType: 'parent_child',
-    year: 2026,
-    relationshipTypeLabel: hejingRelationshipTypeLabel('parent_child'),
-    self: SNOW_SELF,
-    other: SNOW_OTHER,
-    keywords: ['陪伴', '边界', '沟通', '节奏'],
-    headline: '我与 Snow 的合镜',
-    relationshipStatus: '稳定中有磨合',
-    mainline: '这一年，关系的关键词是陪伴与边界，在理解与支持中一起成长。',
-    summary: '这一年，关系的关键词是陪伴与边界，在理解与支持中一起成长。',
-    topReminder: '孩子在建立独立与自信的过程中，需要被看见和尊重；同时也需要清晰、稳定的边界与规则，帮助他安心成长。',
-    todayActions: [
-      '抽出 15 分钟，专注倾听他的想法与情绪。',
-      '明确一个可执行的规则，与他一起制定并坚持。',
-      '给予具体的肯定，看到他的努力与进步。',
-    ],
-    basis: '亲子之间，陪伴与边界并行',
-    phase: '稳定中有磨合',
-    futureHint: '保持规则的一致与温和，关系可稳中向好',
-    focusCards: SNOW_FOCUS,
-    metrics: [
-      { id: 'understanding', label: '理解度', value: 85, tone: 'green', explanation: '能站在对方角度看问题。' },
-      { id: 'communication', label: '沟通顺畅度', value: 72, tone: 'green', explanation: '整体顺畅，偶有情绪打断。' },
-      { id: 'consistency', label: '规则一致性', value: 78, tone: 'green', explanation: '规则清晰，执行需更稳定。' },
-      { id: 'safety', label: '情绪安全感', value: 82, tone: 'green', explanation: '孩子感到被接纳与支持。' },
-      { id: 'growth', label: '成长支持度', value: 88, tone: 'gold', explanation: '持续鼓励，支持孩子探索。' },
-      { id: 'repair', label: '修复能力', value: 74, tone: 'red', explanation: '冲突后能修复，时长可缩短。' },
-    ],
-    structure: {
-      convergence: [
-        '日主与用神方向相互滋养，关系底色温和。',
-        '彼此愿意为对方调整节奏，信任正在累积。',
-        '共同经历会成为关系的重要加分点。',
-      ],
-      friction: [
-        '权威与自主的节奏差，容易在催促时放大。',
-        '情绪反应速度不同，需要预留缓冲。',
-      ],
-    },
-    quarters: SNOW_QUARTERS,
-    insights: [
-      {
-        id: 'communication',
-        iconLabel: '言',
-        title: '沟通方式',
-        tone: 'green',
-        body: '多用开放式提问，先听后说。表达感受时用“我感到……”句式，减少指责，更能被理解。',
-      },
-      {
-        id: 'boundary',
-        iconLabel: '界',
-        title: '边界提醒',
-        tone: 'green',
-        body: '规则清晰、后果一致，给予选择而非命令。尊重他的空间，也保护彼此的底线。',
-      },
-      {
-        id: 'repair',
-        iconLabel: '修',
-        title: '修复语言',
-        tone: 'red',
-        body: '冲突后及时修复，真诚道歉并表达理解。可以说：“我刚才语气不好，抱歉。我们一起想办法。”',
-      },
-    ],
-    repairWindow: {
-      title: '关系修复窗口',
-      range: '2026 下半年',
-      body: '冲突后回到具体事件、不给关系贴标签，能显著缩短修复时间。',
-    },
-    futureWindows: [],
-    weeklyAdvice: '本周先共情、再引导：给孩子一个可选择的方案，少一点命令，多一点稳定的陪伴。',
-    records: SNOW_RECORDS,
-    astrologyBasis: HEJING_DEFAULT_BASIS,
-    disclaimer: '合镜以当前测算引擎的命盘证据为基础，结合相处情境与选择，结果仅供参考——关系的未来，由你们共同创造。',
-  },
-];

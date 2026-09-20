@@ -243,17 +243,47 @@ function applyMingjingRelationshipPatch(
   base: MingJingRelationshipMirrorOutput,
   patch: MingJingRelationshipWordingPatch,
 ): MingJingRelationshipMirrorOutput {
-  const timingPatches = patch.timing_windows ?? [];
+  const patternPatches = patch.patterns;
+  const recentStatus =
+    base.recent_status.availability === 'available' && patch.recent_status
+      ? {
+          availability: 'available' as const,
+          window: {
+            ...base.recent_status.window,
+            summary: patch.recent_status.window.summary,
+          },
+        }
+      : base.recent_status;
   return {
-    ...withSummary(base, patch),
-    ...(patch.structure ? { structure: { ...base.structure, ...patch.structure } } : {}),
-    timing_windows: base.timing_windows.map((window) => {
-      const item = timingPatches.find((candidate) =>
-        candidate.start_date === window.start_date && candidate.end_date === window.end_date
-      );
-      return item?.summary ? { ...window, summary: item.summary } : window;
+    ...base,
+    overview: {
+      title: patch.overview.title,
+      summary: patch.overview.summary,
+      keywords: [...patch.overview.keywords],
+    },
+    patterns: base.patterns.map((pattern) => {
+      const item = patternPatches.find((candidate) => candidate.pattern_id === pattern.pattern_id);
+      if (!item) return pattern;
+      return {
+        ...pattern,
+        name: item.name,
+        self_tendency: item.self_tendency,
+        related_tendency: item.related_tendency,
+        scenario: item.scenario,
+        aligned_expression: item.aligned_expression,
+        friction_expression: item.friction_expression,
+        signals: [...item.signals],
+      };
     }),
-    ...(patch.practice ? { practice: { ...base.practice, ...patch.practice } } : {}),
+    recent_status: recentStatus,
+    action: {
+      target: base.action.target,
+      situation: patch.action.situation,
+      step: patch.action.step,
+      example_phrase: patch.action.example_phrase,
+      rationale: patch.action.rationale,
+      observation: patch.action.observation,
+    },
   };
 }
 
@@ -262,30 +292,38 @@ function assertAllMingjingRelationshipPatchTargetsResolve(
   patch: MingJingRelationshipWordingPatch,
 ): void {
   const seenTargets = new Set<string>();
-  for (const item of patch.timing_windows) {
-    const key = `${item.start_date}\u0000${item.end_date}`;
-    if (seenTargets.has(key)) {
+  for (const item of patch.patterns) {
+    if (seenTargets.has(item.pattern_id)) {
       throw new RuntimeAiWordingPatchValidationError(
-        'mingjing_relationship_timing_window_target_duplicate',
+        'mingjing_relationship_pattern_target_duplicate',
       );
     }
-    seenTargets.add(key);
-    if (!base.timing_windows.some((window) =>
-      window.start_date === item.start_date && window.end_date === item.end_date
-    )) {
+    seenTargets.add(item.pattern_id);
+    if (!base.patterns.some((pattern) => pattern.pattern_id === item.pattern_id)) {
       throw new RuntimeAiWordingPatchValidationError(
-        'mingjing_relationship_timing_window_target_unknown',
+        'mingjing_relationship_pattern_target_unknown',
       );
     }
   }
-  for (const window of base.timing_windows) {
-    if (!seenTargets.has(`${window.start_date}\u0000${window.end_date}`)) {
+  for (const pattern of base.patterns) {
+    if (!seenTargets.has(pattern.pattern_id)) {
       throw new RuntimeAiWordingPatchValidationError(
-        'mingjing_relationship_timing_window_target_missing',
+        'mingjing_relationship_pattern_target_missing',
       );
     }
+  }
+  if (patch.recent_status && base.recent_status.availability !== 'available') {
+    throw new RuntimeAiWordingPatchValidationError(
+      'mingjing_relationship_recent_window_patch_forbidden',
+    );
+  }
+  if (base.recent_status.availability === 'available' && !patch.recent_status) {
+    throw new RuntimeAiWordingPatchValidationError(
+      'mingjing_relationship_recent_window_patch_missing',
+    );
   }
 }
+
 
 function applyMingjingZiweiNatalPatch(
   base: MingJingZiweiNatalMirrorOutput,

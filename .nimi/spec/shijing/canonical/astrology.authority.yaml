@@ -53,7 +53,7 @@ units:
   - id: definition.shijing.astrology.mirror-output-common
     kind: definition
     title: Common mirror output
-    meaning: Every MirrorOutput is structured JSON requiring mirror_kind, summary, and citations; score, luck_score, trend_chart, k_line, report, task_status, and progress fields are forbidden; each citation requires method and reference, with method limited to bazi_ziping_v1, ziwei_sanhe_v1, or qizheng_siyu_guolao_v1.
+    meaning: Every MirrorOutput is structured JSON requiring mirror_kind and citations, with summary at the root except relationship_hepan, whose summary lives only under overview.summary as defined by definition.shijing.astrology.output-mingjing-relationship-hepan; score, luck_score, trend_chart, k_line, report, task_status, and progress fields are forbidden; each citation requires method and reference, with method limited to bazi_ziping_v1, ziwei_sanhe_v1, or qizheng_siyu_guolao_v1.
   - id: definition.shijing.astrology.output-rijing
     kind: definition
     title: RiJing output
@@ -85,7 +85,7 @@ units:
   - id: definition.shijing.astrology.output-mingjing-relationship-hepan
     kind: definition
     title: Relationship HePan output
-    meaning: Relationship HePan output requires mirror_kind, output_kind relationship_hepan, relationship_subject, summary, structure, timing_windows, practice, cited_event_memory_refs, cited_plan_item_refs, and citations; subject requires primary self, exactly one Person related_person_ref, anchor_year, and basis_time_zone; structure requires baseline_pattern, attraction_and_support, friction_and_misread, communication_rhythm, and boundary_advice; at least one timing window requires start_date, end_date, nature, deterministic driver_refs, and summary; AI-worded practice requires communication, boundary, and repair grounded in deterministic evidence; match scores and Runtime-AI calculation are forbidden.
+    meaning: Relationship HePan output requires mirror_kind, output_kind relationship_hepan, relationship_subject, overview, patterns, recent_status, action, cited_event_memory_refs, cited_plan_item_refs, and citations; subject requires primary self, exactly one Person related_person_ref, anchor_year, and basis_time_zone; overview requires an AI-worded short title, summary, and at most three keywords over the admitted pattern set only; patterns is a deterministically selected and ranked list of one to four admitted patterns, each requiring a stable pattern_id, an admitted rule_ref, deterministic driver_refs, and AI-worded name, self and related tendencies, scenario, aligned and friction expressions, and recognizable signals; recent_status is a deterministic availability decision carrying either one anchor-year window with start_date, end_date, nature, driver_refs, and AI-worded summary or an explicit unavailable reason; action requires a deterministic target ref plus AI-worded situation, step, example phrase, rationale, and observation hint; match scores, radar or diagnostic indices, fixed quarter or month forecasts, and Runtime-AI calculation are forbidden.
   - id: definition.shijing.astrology.uncertainty-annotation
     kind: definition
     title: Uncertainty annotation
@@ -290,9 +290,9 @@ units:
     kind: rule
     title: Relationship HePan output
     modality: must
-    statement: Relationship HePan uses relationship_natal scope, is grounded in deterministic self-plus-one-Person relationship evidence, contains stable relationship structure and anchor-year timing windows, and uses HeJing as its primary product UX; it outputs no compatibility score, match percentage, fate claim, trend curve, relation graph, contact-management payload, or Runtime-AI-only Reading, and Runtime AI words admitted prose fields only after deterministic evidence exists.
+    statement: Relationship HePan uses relationship_natal scope, is grounded in deterministic self-plus-one-Person relationship evidence, outputs a deterministically selected and ranked set of one to four admitted interaction patterns, exactly one deterministic recent-changes availability decision, and exactly one deterministic-target try-next action, and uses HeJing as its primary product UX; it outputs no compatibility score, match percentage, radar or diagnostic index, fixed quarter or month forecast, fate claim, trend curve, relation graph, contact-management payload, or Runtime-AI-only Reading, and Runtime AI words admitted prose fields only for deterministically pre-selected pattern, window, and action targets after deterministic evidence exists.
     condition: Whenever relationship analysis output is generated.
-    failure: Reject the relationship output and surface a typed evidence or validation failure.
+    failure: Reject the relationship output and surface a typed evidence, patterns-unavailable, or validation failure.
     relations:
       - type: applies_to
         target: definition.shijing.astrology.mirror-hejing

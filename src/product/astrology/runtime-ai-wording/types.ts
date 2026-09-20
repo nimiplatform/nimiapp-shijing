@@ -75,33 +75,46 @@ export type MingJingWordingPatch = WordingPatchBase & {
   readonly life_stage_strategies?: readonly MingJingWordingStrategyPatch[];
 };
 
-export type MingJingRelationshipStructurePatch = {
-  readonly baseline_pattern?: string;
-  readonly attraction_and_support?: string;
-  readonly friction_and_misread?: string;
-  readonly communication_rhythm?: string;
-  readonly boundary_advice?: string;
+export type MingJingRelationshipOverviewPatch = {
+  readonly title: string;
+  readonly summary: string;
+  readonly keywords: readonly string[];
 };
 
-export type MingJingRelationshipTimingWindowPatch = {
-  readonly start_date: string;
-  readonly end_date: string;
-  readonly summary?: string;
+export type MingJingRelationshipPatternPatch = {
+  readonly pattern_id: string;
+  readonly name: string;
+  readonly self_tendency: string;
+  readonly related_tendency: string;
+  readonly scenario: string;
+  readonly aligned_expression: string;
+  readonly friction_expression: string;
+  readonly signals: readonly string[];
 };
 
-export type MingJingRelationshipPracticePatch = {
-  readonly communication?: string;
-  readonly boundary?: string;
-  readonly repair?: string;
+export type MingJingRelationshipRecentWindowPatch = {
+  readonly summary: string;
+};
+
+export type MingJingRelationshipRecentStatusPatch = {
+  readonly window: MingJingRelationshipRecentWindowPatch;
+};
+
+export type MingJingRelationshipActionPatch = {
+  readonly situation: string;
+  readonly step: string;
+  readonly example_phrase: string;
+  readonly rationale: string;
+  readonly observation: string;
 };
 
 export type MingJingRelationshipWordingPatch = WordingPatchBase & {
   readonly mirror_kind: 'mingjing';
   readonly output_kind: 'relationship_hepan';
-  readonly summary: string;
-  readonly structure: MingJingRelationshipStructurePatch;
-  readonly timing_windows: readonly MingJingRelationshipTimingWindowPatch[];
-  readonly practice: MingJingRelationshipPracticePatch;
+  readonly overview: MingJingRelationshipOverviewPatch;
+  readonly patterns: readonly MingJingRelationshipPatternPatch[];
+  readonly recent_status?: MingJingRelationshipRecentStatusPatch;
+  readonly action: MingJingRelationshipActionPatch;
 };
 
 export type MingJingZiweiProfilePatch = {

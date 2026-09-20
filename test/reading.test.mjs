@@ -25,6 +25,7 @@ import {
   validInputsSummary,
   validMingjingOutput,
   validMingjingRelationshipOutput,
+  validMingjingRelationshipOutputUnavailableRecent,
   validNianjingOutput,
   validReading,
   validRijingOutput,
@@ -231,7 +232,8 @@ test('relationship_natal reading output subject must match mirror_scope', () => 
       validReading({
         mirror_kind: 'mingjing',
         mirror_scope: scope,
-        output: validMingjingRelationshipOutput(override),
+        // Keep the output valid on its own so this tests scope/subject matching.
+        output: validMingjingRelationshipOutputUnavailableRecent(override),
       }),
     );
     assert.equal(result.ok, false);

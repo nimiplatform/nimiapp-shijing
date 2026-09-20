@@ -1,133 +1,230 @@
-/* HeJing 顶部关系总览 — the first-screen overview: relationship line, status,
- * year keywords, most-important reminder and today's actions. Scoped under
- * `.shijing-hejing` to out-specify shared `.shijing-tab` baselines. */
+/* HeJing 页面工具区 + 区域一 关系概览 — pattern-reading redesign.
+ *
+ * The toolbar carries the current person, relation label, selected method,
+ * generation status and one subtle action group (重新生成 / 记录一次经历 /
+ * 继续追问 / 解读·轨迹 switch). The overview section renders only the admitted
+ * overview wording: short heading, summary, up to three keyword chips. Scoped
+ * under `.shijing-hejing` to out-specify shared `.shijing-tab` baselines. */
 
-.shijing-hejing__overview {
+/* 页面工具区 --------------------------------------------------------------- */
+
+.shijing-hejing__toolbar {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px 20px;
+  padding: 14px clamp(16px, 2.4vw, 22px);
+  border: 1px solid var(--hejing-card-border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: var(--hejing-shadow);
 }
 
-.shijing-hejing__overview-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 18px 24px;
-  padding: 0 2px;
-}
-
-.shijing-hejing__overview-copy {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.shijing-hejing .shijing-hejing__overview-title {
-  margin: 2px 0 0;
-  color: var(--hejing-ink);
-  font-family: var(--hejing-font-serif);
-  font-size: clamp(28px, 3.6vw, 38px);
-  font-weight: 700;
-  line-height: 1.18;
-  letter-spacing: 0.01em;
-}
-
-.shijing-hejing .shijing-hejing__overview-sub {
-  color: var(--hejing-acc-deep);
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.shijing-hejing .shijing-hejing__overview-mainline {
-  max-width: 560px;
-  margin-top: 2px;
-  color: var(--hejing-ink2);
-  font-size: 14.5px;
-  line-height: 1.7;
-}
-
-/* Header action buttons */
-
-.shijing-hejing__hero-actions {
+.shijing-hejing__toolbar-meta {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
-  justify-self: end;
+  gap: 8px 12px;
+  min-width: 0;
 }
 
-.shijing-hejing__hero-actions button {
+.shijing-hejing .shijing-hejing__toolbar-name {
+  color: var(--hejing-ink);
+  font-family: var(--hejing-font-serif);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.shijing-hejing__toolbar-relation {
+  border: 1px solid rgba(176, 138, 62, 0.26);
+  border-radius: 999px;
+  padding: 2px 10px;
+  background: rgba(176, 138, 62, 0.1);
+  color: var(--hejing-gold-deep);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.shijing-hejing__toolbar-method {
+  color: var(--hejing-ink2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.shijing-hejing__toolbar-status {
+  border-radius: 999px;
+  padding: 3px 11px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shijing-hejing__toolbar-status[data-state='generated'] {
+  background: var(--hejing-green-soft);
+  color: var(--hejing-acc-deep);
+}
+
+.shijing-hejing__toolbar-status[data-state='pending'] {
+  background: var(--hejing-gold-soft);
+  color: var(--hejing-gold-deep);
+}
+
+.shijing-hejing__toolbar-status[data-state='stale'] {
+  background: var(--hejing-red-soft);
+  color: var(--hejing-red-deep);
+}
+
+.shijing-hejing__toolbar-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shijing-hejing__toolbar-actions button {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   border-radius: 999px;
-  padding: 10px 18px;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease,
-    border-color 0.15s ease, opacity 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
 }
 
-.shijing-hejing__hero-actions button svg {
-  width: 16px;
-  height: 16px;
+.shijing-hejing__toolbar-actions button svg {
+  width: 15px;
+  height: 15px;
 }
 
-.shijing-hejing__hero-actions button:disabled {
+.shijing-hejing__toolbar-actions button:disabled {
   opacity: 0.6;
   cursor: progress;
 }
 
-.shijing-hejing__hero-actions .is-primary {
-  border: 0;
-  background: linear-gradient(140deg, var(--hejing-acc-mid), var(--hejing-acc-deep));
-  color: #fff;
-  box-shadow: 0 14px 28px -18px rgba(21, 64, 50, 0.64);
-}
-
-.shijing-hejing__hero-actions .is-primary:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 18px 32px -18px rgba(21, 64, 50, 0.68);
-}
-
-.shijing-hejing__hero-actions .is-ghost {
+.shijing-hejing__toolbar-actions .is-ghost {
   border: 1px solid var(--hejing-card-border);
+  padding: 8px 14px;
   background: rgba(255, 255, 255, 0.84);
   color: var(--hejing-acc-deep);
 }
 
-.shijing-hejing__hero-actions .is-ghost:hover {
+.shijing-hejing__toolbar-actions .is-ghost:hover:not(:disabled) {
   border-color: rgba(61, 122, 90, 0.4);
   background: #fff;
 }
 
-/* Overview card */
+.shijing-hejing__toolbar-actions .is-ghost:focus-visible,
+.shijing-hejing__view-switch button:focus-visible,
+.shijing-hejing__type-tabs button:focus-visible {
+  outline: 2px solid var(--hejing-acc);
+  outline-offset: 2px;
+}
 
-.shijing-hejing__overview-card {
-  display: grid;
-  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
-  gap: 28px;
-  align-items: center;
-  padding: 24px clamp(20px, 3vw, 30px);
+/* The shared 继续追问 button joins the same subtle action group. */
+.shijing-hejing .shijing-hejing__toolbar-actions .shijing-import-to-consultation {
   border: 1px solid var(--hejing-card-border);
-  border-radius: 20px;
-  background:
-    radial-gradient(ellipse 48% 60% at 16% 22%, rgba(255, 255, 255, 0.9), transparent 60%),
-    radial-gradient(ellipse 44% 54% at 88% 80%, rgba(236, 224, 194, 0.26), transparent 64%),
-    linear-gradient(150deg, #fbfdfa 0%, #f3f8f3 100%);
-  box-shadow: var(--hejing-shadow);
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.84);
+  color: var(--hejing-acc-deep);
+  box-shadow: none;
 }
 
-/* Two-chart pairing */
-
-.shijing-hejing__pair {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: start;
-  gap: 8px;
+.shijing-hejing .shijing-hejing__toolbar-actions .shijing-import-to-consultation:hover:not(:disabled) {
+  border-color: rgba(61, 122, 90, 0.4);
+  background: #fff;
 }
+
+.shijing-hejing__view-switch {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 4px;
+  padding: 3px;
+  border: 1px solid rgba(47, 138, 99, 0.18);
+  border-radius: 999px;
+  background: rgba(61, 122, 90, 0.06);
+}
+
+.shijing-hejing__view-switch button {
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 14px;
+  background: transparent;
+  color: var(--hejing-acc);
+}
+
+.shijing-hejing__view-switch button:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.shijing-hejing__view-switch button[data-active] {
+  background: var(--hejing-acc);
+  color: #fff;
+}
+
+/* 区域一 关系概览 ------------------------------------------------------------ */
+
+.shijing-hejing .shijing-hejing__overview-heading {
+  margin: 0;
+  max-width: 30em;
+  color: var(--hejing-ink);
+  font-family: var(--hejing-font-serif);
+  font-size: clamp(19px, 2.4vw, 23px);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.shijing-hejing .shijing-hejing__overview-summary {
+  margin: 10px 0 0;
+  max-width: 68ch;
+  color: var(--hejing-ink2);
+  font-size: 14.5px;
+  line-height: 1.8;
+}
+
+.shijing-hejing__keyword-chips {
+  display: flex;
+  flex-flow: row wrap;
+  gap: 7px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shijing-hejing__keyword-chips li {
+  border: 1px solid rgba(47, 138, 99, 0.22);
+  border-radius: 999px;
+  padding: 4px 12px;
+  background: rgba(47, 138, 99, 0.08);
+  color: var(--hejing-acc);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.shijing-hejing .shijing-hejing__recent-note {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--hejing-line);
+  color: var(--hejing-ink3);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* 生成失败补充指引 ----------------------------------------------------------- */
+
+.shijing-hejing .shijing-hejing__failure-guidance {
+  margin: 0;
+  padding: 12px 16px;
+  border: 1px solid rgba(184, 105, 79, 0.2);
+  border-radius: 14px;
+  background: rgba(184, 105, 79, 0.06);
+  color: var(--hejing-ink2);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+
+/* 待生成 hero 双人头像(供 pending 视图复用) ----------------------------------- */
 
 .shijing-hejing__person {
   display: flex;
@@ -149,7 +246,7 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 14px 30px -22px rgba(36, 61, 53, 0.4);
 }
 
-.shijing-hejing__person[data-tone="other"] .shijing-hejing__person-orb {
+.shijing-hejing__person[data-tone='other'] .shijing-hejing__person-orb {
   background:
     radial-gradient(circle at 35% 30%, #ffffff, rgba(245, 238, 220, 0.74) 58%, rgba(238, 228, 200, 0.6) 100%);
 }
@@ -162,7 +259,7 @@
   line-height: 1;
 }
 
-.shijing-hejing__person[data-tone="other"] .shijing-hejing__person-glyph {
+.shijing-hejing__person[data-tone='other'] .shijing-hejing__person-glyph {
   color: var(--hejing-gold-deep);
 }
 
@@ -184,152 +281,8 @@
   font-weight: 600;
 }
 
-.shijing-hejing__person[data-tone="other"] .shijing-hejing__person-role {
+.shijing-hejing__person[data-tone='other'] .shijing-hejing__person-role {
   border-color: rgba(176, 138, 62, 0.26);
   background: rgba(176, 138, 62, 0.1);
   color: var(--hejing-gold-deep);
-}
-
-.shijing-hejing__pair-link {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  margin-top: 28px;
-}
-
-.shijing-hejing__pair-link span {
-  width: 1px;
-  height: 14px;
-  background: rgba(47, 138, 99, 0.4);
-}
-
-.shijing-hejing__pair-link strong {
-  border: 1px solid rgba(47, 138, 99, 0.3);
-  border-radius: 999px;
-  padding: 4px 11px;
-  background: rgba(255, 255, 255, 0.86);
-  color: var(--hejing-acc);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-/* Detail column */
-
-.shijing-hejing__overview-detail {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.shijing-hejing__detail-label {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--hejing-ink3);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.shijing-hejing__status-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 16px 28px;
-  align-items: start;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--hejing-line);
-}
-
-.shijing-hejing__status-block strong {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--hejing-ink);
-  font-family: var(--hejing-font-serif);
-  font-size: 22px;
-  font-weight: 700;
-}
-
-.shijing-hejing__status-badge {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--hejing-green-soft);
-  color: var(--hejing-acc);
-}
-
-.shijing-hejing__status-badge svg {
-  width: 17px;
-  height: 17px;
-}
-
-.shijing-hejing__keywords ul {
-  display: flex;
-  flex-flow: row wrap;
-  gap: 7px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.shijing-hejing__keywords li {
-  border: 1px solid rgba(47, 138, 99, 0.22);
-  border-radius: 999px;
-  padding: 4px 12px;
-  background: rgba(47, 138, 99, 0.08);
-  color: var(--hejing-acc);
-  font-size: 12.5px;
-  font-weight: 600;
-}
-
-.shijing-hejing__reminder p {
-  margin: 0;
-  color: var(--hejing-ink2);
-  font-size: 14px;
-  line-height: 1.72;
-}
-
-.shijing-hejing__today ul {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.shijing-hejing__today li {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  color: var(--hejing-ink2);
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-.shijing-hejing__today-icon {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 18px;
-  height: 18px;
-  margin-top: 1px;
-  color: var(--hejing-acc);
-}
-
-.shijing-hejing__today-icon svg {
-  width: 18px;
-  height: 18px;
-}
-
-.shijing-hejing__overview-hint {
-  margin: 0;
-  color: var(--hejing-ink3);
-  font-size: 13.5px;
-  line-height: 1.65;
 }

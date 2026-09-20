@@ -40,10 +40,14 @@ export type MirrorOutputValidationError =
   | { code: 'mirror_output_mingjing_event_validations_invalid' }
   | { code: 'mirror_output_mingjing_event_validation_invalid'; index: number; reason: string }
   | { code: 'mirror_output_mingjing_relationship_subject_invalid'; reason: string }
-  | { code: 'mirror_output_mingjing_relationship_structure_invalid'; field: string }
-  | { code: 'mirror_output_mingjing_relationship_timing_invalid' }
-  | { code: 'mirror_output_mingjing_relationship_timing_window_invalid'; index?: number; reason?: string }
-  | { code: 'mirror_output_mingjing_relationship_practice_invalid'; field: string }
+  | { code: 'mirror_output_mingjing_relationship_overview_invalid'; reason: string }
+  | { code: 'mirror_output_mingjing_relationship_patterns_invalid'; reason: string }
+  | { code: 'mirror_output_mingjing_relationship_pattern_invalid'; index: number; reason: string }
+  | { code: 'mirror_output_mingjing_relationship_pattern_rule_unadmitted'; index: number; received: unknown }
+  | { code: 'mirror_output_mingjing_relationship_recent_status_invalid'; reason: string }
+  | { code: 'mirror_output_mingjing_relationship_recent_window_invalid'; reason: string }
+  | { code: 'mirror_output_mingjing_relationship_action_invalid'; reason: string }
+  | { code: 'mirror_output_mingjing_relationship_action_target_mismatch'; reason: string }
   | { code: 'mirror_output_mingjing_ziwei_chart_basis_invalid'; field: string }
   | { code: 'mirror_output_mingjing_ziwei_profile_invalid'; field: string }
   | { code: 'mirror_output_mingjing_ziwei_decade_guidance_invalid' }
@@ -58,8 +62,17 @@ export type MirrorOutputValidationResult =
   | { ok: false; error: MirrorOutputValidationError };
 
 export function validateMirrorOutput(output: MirrorOutput): MirrorOutputValidationResult {
-  if (typeof output.summary !== 'string' || output.summary.length === 0) {
-    return { ok: false, error: { code: 'mirror_output_summary_empty' } };
+  // Relationship HePan output has no root summary by contract; its headline
+  // lives under overview.summary and is enforced by the relationship validator
+  // together with the exact root key set.
+  const isRelationshipHePan =
+    output.mirror_kind === 'mingjing' &&
+    (output as { readonly output_kind?: unknown }).output_kind === 'relationship_hepan';
+  if (!isRelationshipHePan) {
+    const summary = (output as { readonly summary?: unknown }).summary;
+    if (typeof summary !== 'string' || summary.length === 0) {
+      return { ok: false, error: { code: 'mirror_output_summary_empty' } };
+    }
   }
   const record = output as unknown as Record<string, unknown>;
   const forbidden = ensureNoForbiddenFields(record);

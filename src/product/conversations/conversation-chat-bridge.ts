@@ -6,6 +6,7 @@
 
 import type { Reading } from '../../domain/reading.ts';
 import type { ConversationTurn } from '../../domain/conversation.ts';
+import { mirrorOutputSummary } from '../../domain/mirror-output.ts';
 import { buildShiJingAnswerBrief } from './shijing-answer-brief.ts';
 
 export type ConversationChatFailureKind =
@@ -73,7 +74,7 @@ export function createConversationChatBridge(
           id: r.id,
           mirror_kind: r.mirror_kind,
           mirror_scope: r.mirror_scope,
-          output_summary: r.output.summary,
+          output_summary: mirrorOutputSummary(r.output),
           uncertainty: r.uncertainty,
         })),
         conversation_history: request.conversation_turns.map((turn) => ({

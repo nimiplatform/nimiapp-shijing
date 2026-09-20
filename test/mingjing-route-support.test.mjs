@@ -103,45 +103,51 @@ test('MingJing readiness accepts QiZheng route without calculation sex', () => {
   assert.equal(result.ok, true, JSON.stringify(result));
 });
 
-test('generateReading reaches Runtime AI for relationship HePan on every implemented MingJing route', async () => {
+test('generateReading routes relationship HePan by admitted pattern projection per MingJing route', async () => {
   let runtimeCalled = false;
-  for (const method_profile_id of [
-    'bazi_ziping_v1',
-    'ziwei_sanhe_v1',
-    'qizheng_siyu_guolao_v1',
-  ]) {
-    const result = await generateReading(
-      {
-        id: `rdg_mj_${method_profile_id}_hepan`,
-        created_at: '2026-06-22T00:00:00Z',
-        mirror_kind: 'mingjing',
-        mirror_scope: relationshipNatalMirrorScope({ anchor_year: 2026, basis_time_zone: TZ }),
-        related_person_refs: [{ kind: 'person', id: 'p_alice' }],
-        concern_tag_refs: [],
-        cited_reading_ids: [],
-        cited_event_memory_refs: [],
-        cited_plan_item_refs: [],
-        space: spaceWithMethod(method_profile_id),
-      },
-      {
-        now: new Date('2026-06-22T01:00:00Z'),
-        runtime_ai_client: {
-          async generate() {
-            runtimeCalled = true;
-            return {
-              ok: false,
-              failure: {
-                kind: 'runtime_unavailable',
-                detail: 'runtime intentionally unavailable after deterministic relationship evidence',
-              },
-            };
-          },
+  const runtimeClient = {
+    async generate() {
+      runtimeCalled = true;
+      return {
+        ok: false,
+        failure: {
+          kind: 'runtime_unavailable',
+          detail: 'runtime intentionally unavailable after deterministic relationship evidence',
         },
-      },
-    );
+      };
+    },
+  };
+  const inputFor = (method_profile_id) => ({
+    id: `rdg_mj_${method_profile_id}_hepan`,
+    created_at: '2026-06-22T00:00:00Z',
+    mirror_kind: 'mingjing',
+    mirror_scope: relationshipNatalMirrorScope({ anchor_year: 2026, basis_time_zone: TZ }),
+    related_person_refs: [{ kind: 'person', id: 'p_alice' }],
+    concern_tag_refs: [],
+    cited_reading_ids: [],
+    cited_event_memory_refs: [],
+    cited_plan_item_refs: [],
+    space: spaceWithMethod(method_profile_id),
+  });
+  const deps = { now: new Date('2026-06-22T01:00:00Z'), runtime_ai_client: runtimeClient };
 
-    assert.equal(result.ok, false);
-    assert.equal(result.failure.kind, 'runtime_ai_failed', JSON.stringify(result));
-  }
+  // BaZi admits the v1 pattern-rule set: deterministic evidence plus pattern
+  // projection succeed, so generation reaches Runtime AI.
+  const baziResult = await generateReading(inputFor('bazi_ziping_v1'), deps);
+  assert.equal(baziResult.ok, false);
+  assert.equal(baziResult.failure.kind, 'runtime_ai_failed', JSON.stringify(baziResult));
   assert.equal(runtimeCalled, true);
+
+  // Ziwei and QiZheng build relationship evidence but their pattern mappings
+  // are unadmitted: generation ends in the typed patterns_unavailable state
+  // before Runtime AI, without borrowing BaZi rules.
+  for (const method_profile_id of ['ziwei_sanhe_v1', 'qizheng_siyu_guolao_v1']) {
+    runtimeCalled = false;
+    const result = await generateReading(inputFor(method_profile_id), deps);
+    assert.equal(result.ok, false, method_profile_id);
+    assert.equal(result.failure.kind, 'patterns_unavailable', JSON.stringify(result));
+    assert.equal(result.failure.stage, 'relationship_pattern_projection', method_profile_id);
+    assert.equal(result.failure.detail, `method_pattern_mapping_pending:${method_profile_id}`);
+    assert.equal(runtimeCalled, false, method_profile_id);
+  }
 });

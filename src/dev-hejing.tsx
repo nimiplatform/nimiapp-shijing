@@ -7,7 +7,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { NimiThemeProvider, TooltipProvider } from '@nimiplatform/kit/ui';
-import { buildHeJingPendingPreviewSpace, buildHeJingPreviewSpace } from './product/dev/hejing-sample-space.ts';
+import { buildHeJingPatternUnavailablePreviewSpace, buildHeJingPendingPreviewSpace, buildHeJingPreviewSpace } from './product/dev/hejing-sample-space.ts';
 import { buildEmptyShiJingSpace } from './product/dev/initial-space.ts';
 import { ShijingStoreProvider } from './product/state/shijing-store.tsx';
 import { HeJingTab } from './product/tabs/hejing-tab.tsx';
@@ -19,17 +19,22 @@ function DevHeJing() {
   // so the first-run immersive empty state can be reviewed end to end.
   // `dev-hejing.html?pending` seeds a person without any relationship reading
   // so the ready-to-generate pending state can be reviewed end to end.
+  // `dev-hejing.html?patterns-unavailable` seeds the person under the Ziwei
+  // method so the typed pattern-unsupported gate can be reviewed end to end.
   const params = new URLSearchParams(window.location.search);
   const firstRun = params.has('first-run');
   const pending = params.has('pending');
+  const patternsUnavailable = params.has('patterns-unavailable');
   const snapshot = React.useMemo(
     () =>
       firstRun
         ? buildEmptyShiJingSpace('dev-hejing-user')
-        : pending
-          ? buildHeJingPendingPreviewSpace('dev-hejing-user')
-          : buildHeJingPreviewSpace('dev-hejing-user'),
-    [firstRun, pending],
+        : patternsUnavailable
+          ? buildHeJingPatternUnavailablePreviewSpace('dev-hejing-user')
+          : pending
+            ? buildHeJingPendingPreviewSpace('dev-hejing-user')
+            : buildHeJingPreviewSpace('dev-hejing-user'),
+    [firstRun, pending, patternsUnavailable],
   );
 
   React.useEffect(() => {

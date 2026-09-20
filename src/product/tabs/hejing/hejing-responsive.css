@@ -1,27 +1,18 @@
-/* HeJing responsive layout. */
+/* HeJing responsive layout — pattern-reading redesign. */
 
 @media (max-width: 960px) {
-  .shijing-hejing__overview-card,
-  .shijing-hejing__index-body {
+  .shijing-hejing__toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .shijing-hejing__toolbar-actions {
+    width: 100%;
+  }
+
+  .shijing-hejing__expression-grid,
+  .shijing-hejing__tendencies {
     grid-template-columns: 1fr;
-    gap: 22px;
-  }
-
-  .shijing-hejing__pair {
-    max-width: 360px;
-    margin: 0 auto;
-  }
-
-  .shijing-hejing__radar {
-    max-width: 300px;
-  }
-
-  .shijing-hejing__timeline {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .shijing-hejing__timeline::before {
-    display: none;
   }
 
   .shijing-hejing .shijing-hejing__empty-values {
@@ -46,18 +37,8 @@
     padding: 8px 14px 32px;
   }
 
-  .shijing-hejing .shijing-hejing__card,
-  .shijing-hejing__overview-card {
+  .shijing-hejing .shijing-hejing__card {
     padding: 18px;
-  }
-
-  .shijing-hejing__overview-head {
-    grid-template-columns: 1fr;
-    align-items: start;
-  }
-
-  .shijing-hejing__hero-actions {
-    justify-self: start;
   }
 
   .shijing-hejing__controls {
@@ -70,33 +51,32 @@
     width: 100%;
   }
 
-  .shijing-hejing__status-row {
-    grid-template-columns: 1fr;
+  .shijing-hejing__toolbar-actions {
+    gap: 6px;
   }
 
-  .shijing-hejing__focus-grid {
-    grid-template-columns: 1fr;
+  .shijing-hejing__toolbar-actions .is-ghost,
+  .shijing-hejing .shijing-hejing__toolbar-actions .shijing-import-to-consultation {
+    padding: 7px 11px;
+    font-size: 12.5px;
   }
 
-  .shijing-hejing__metric-readouts {
-    grid-template-columns: 1fr;
-  }
-
-  .shijing-hejing__basis-body {
-    grid-template-columns: 1fr;
-  }
-
-  .shijing-hejing__basis-chips {
+  .shijing-hejing__view-switch {
     margin-left: 0;
   }
 
-  .shijing-hejing__record {
-    grid-template-columns: 1fr;
-    gap: 4px;
+  .shijing-hejing__track-item {
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
-  .shijing-hejing__record-author {
-    justify-self: start;
+  .shijing-hejing__track-item time,
+  .shijing-hejing__track-item p,
+  .shijing-hejing__track-actions {
+    grid-column: 2;
+  }
+
+  .shijing-hejing__track-badge {
+    grid-row: 1;
   }
 
   .shijing-hejing__empty-visual .shijing-hejing__empty-venn {
@@ -105,11 +85,12 @@
 }
 
 @media (max-width: 460px) {
-  .shijing-hejing__timeline {
-    grid-template-columns: 1fr;
-  }
-
   .shijing-hejing__type-tabs > span {
     width: 100%;
+  }
+
+  .shijing-hejing__toolbar-meta {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

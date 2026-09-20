@@ -1,0 +1,358 @@
+/* HeJing 区域二 主要相处模式 / 区域三 近期变化 / 区域四 下一次,可以试这一件事 —
+ * pattern-reading redesign. Vertical reading sections with short paragraphs,
+ * per-pattern 解读依据 <details> drawer, and the record dialog form fields.
+ * Scoped under `.shijing-hejing` to out-specify shared baselines. */
+
+/* 区域二 主要相处模式 --------------------------------------------------------- */
+
+.shijing-hejing__pattern-list {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: hejing-pattern;
+}
+
+.shijing-hejing__pattern {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.shijing-hejing__pattern + .shijing-hejing__pattern {
+  padding-top: 22px;
+  border-top: 1px solid var(--hejing-line);
+}
+
+.shijing-hejing__pattern-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.shijing-hejing__pattern-rank {
+  flex: 0 0 auto;
+  color: var(--hejing-ink3);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.shijing-hejing .shijing-hejing__pattern-name {
+  margin: 0;
+  color: var(--hejing-ink);
+  font-family: var(--hejing-font-serif);
+  font-size: 17.5px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.shijing-hejing__tendencies {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+  margin: 0;
+}
+
+.shijing-hejing__tendency {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(61, 122, 90, 0.05);
+}
+
+.shijing-hejing__tendency[data-side='related'] {
+  background: rgba(176, 138, 62, 0.07);
+}
+
+.shijing-hejing__tendency dt {
+  margin-bottom: 5px;
+  color: var(--hejing-acc-deep);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.shijing-hejing__tendency[data-side='related'] dt {
+  color: var(--hejing-gold-deep);
+}
+
+.shijing-hejing__tendency dd {
+  margin: 0;
+  color: var(--hejing-ink2);
+  font-size: 13.8px;
+  line-height: 1.75;
+}
+
+.shijing-hejing__pattern-block h4 {
+  margin: 0 0 5px;
+  color: var(--hejing-ink);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.shijing-hejing__pattern-block p {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--hejing-ink2);
+  font-size: 13.8px;
+  line-height: 1.75;
+}
+
+.shijing-hejing__expression-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+}
+
+.shijing-hejing__expression-grid .shijing-hejing__pattern-block {
+  padding-left: 12px;
+  border-left: 2px solid rgba(61, 122, 90, 0.3);
+}
+
+.shijing-hejing__expression-grid .shijing-hejing__pattern-block[data-kind='friction'] {
+  border-left-color: rgba(184, 105, 79, 0.36);
+}
+
+.shijing-hejing__signals {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shijing-hejing__signals li {
+  position: relative;
+  padding-left: 16px;
+  color: var(--hejing-ink2);
+  font-size: 13.8px;
+  line-height: 1.65;
+}
+
+.shijing-hejing__signals li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hejing-acc-mid);
+}
+
+.shijing-hejing__pattern-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.shijing-hejing .shijing-hejing__pattern-record {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--hejing-acc-deep);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: rgba(61, 122, 90, 0.35);
+  text-underline-offset: 3px;
+}
+
+.shijing-hejing .shijing-hejing__pattern-record:hover {
+  color: var(--hejing-acc);
+  text-decoration-color: var(--hejing-acc);
+}
+
+.shijing-hejing .shijing-hejing__pattern-record svg {
+  width: 14px;
+  height: 14px;
+}
+
+.shijing-hejing .shijing-hejing__pattern-record:focus-visible,
+.shijing-hejing .shijing-hejing__basis summary:focus-visible {
+  outline: 2px solid var(--hejing-acc);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* 解读依据 drawer — default collapsed, keyboard accessible via native details */
+
+.shijing-hejing__basis {
+  width: 100%;
+}
+
+.shijing-hejing__basis summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  color: var(--hejing-ink3);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.shijing-hejing__basis summary::-webkit-details-marker {
+  display: none;
+}
+
+.shijing-hejing__basis summary:hover {
+  color: var(--hejing-acc-deep);
+}
+
+.shijing-hejing__basis-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.shijing-hejing__basis-summary svg {
+  width: 15px;
+  height: 15px;
+}
+
+.shijing-hejing__basis-caret {
+  display: inline-flex;
+  transition: transform 0.15s ease;
+}
+
+.shijing-hejing__basis-caret svg {
+  width: 14px;
+  height: 14px;
+}
+
+.shijing-hejing__basis[open] .shijing-hejing__basis-caret {
+  transform: rotate(90deg);
+}
+
+.shijing-hejing__basis-body {
+  margin-top: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--hejing-line);
+  border-radius: 14px;
+  background: rgba(28, 43, 36, 0.025);
+}
+
+.shijing-hejing__basis-body dl {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+}
+
+.shijing-hejing__basis-body dt {
+  margin-bottom: 3px;
+  color: var(--hejing-ink3);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shijing-hejing__basis-body dd {
+  margin: 0;
+  color: var(--hejing-ink2);
+  font-size: 13.2px;
+  line-height: 1.7;
+}
+
+.shijing-hejing__basis-body dd strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--hejing-ink);
+  font-size: 13.2px;
+}
+
+.shijing-hejing__basis-body dd p {
+  margin: 0;
+}
+
+.shijing-hejing .shijing-hejing__basis-limitation {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px dashed var(--hejing-line);
+  color: var(--hejing-ink3);
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+
+/* 区域三 近期变化 ------------------------------------------------------------- */
+
+.shijing-hejing__recent-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  margin: 0;
+}
+
+.shijing-hejing__recent-meta dt {
+  margin-bottom: 3px;
+  color: var(--hejing-ink3);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shijing-hejing__recent-meta dd {
+  margin: 0;
+  color: var(--hejing-ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.shijing-hejing .shijing-hejing__recent-summary {
+  margin: 12px 0 0;
+  max-width: 68ch;
+  color: var(--hejing-ink2);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.shijing-hejing .shijing-hejing__recent-precision {
+  margin: 10px 0 0;
+  color: var(--hejing-ink3);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+/* 区域四 下一次,可以试这一件事 -------------------------------------------------- */
+
+.shijing-hejing__action-block + .shijing-hejing__action-block {
+  margin-top: 14px;
+}
+
+.shijing-hejing__action-block h3 {
+  margin: 0 0 5px;
+  color: var(--hejing-ink);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.shijing-hejing__action-block p {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--hejing-ink2);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.shijing-hejing .shijing-hejing__action-phrase {
+  margin: 0;
+  max-width: 60ch;
+  padding: 12px 16px;
+  border-left: 3px solid var(--hejing-acc-mid);
+  border-radius: 0 12px 12px 0;
+  background: rgba(61, 122, 90, 0.07);
+  color: var(--hejing-acc-deep);
+  font-family: var(--hejing-font-serif);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.7;
+}

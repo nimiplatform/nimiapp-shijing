@@ -48,7 +48,11 @@ function stageFailure(
     ok: false,
     stage_failure: error,
     failure: {
-      kind: 'pipeline_stage_failed',
+      // The admitted relationship pattern projection owns its own typed
+      // generation state; every other stage keeps pipeline_stage_failed.
+      kind: error.stage === 'relationship_pattern_projection'
+        ? 'patterns_unavailable'
+        : 'pipeline_stage_failed',
       mirror_kind: input.mirror_kind,
       mirror_scope: input.mirror_scope,
       stage: error.stage,

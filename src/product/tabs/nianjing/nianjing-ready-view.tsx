@@ -133,22 +133,7 @@ export function NianJingReadyView(props: NianJingReadyViewProps) {
         percentOf={percentOf}
         onSelectDetail={props.onSelectDetail}
       />
-
-      <details className="shijing-nianjing__footer">
-        <summary>{NIANJING_COPY.readyView.footerSummary}</summary>
-        <p className="shijing-nianjing__footer-summary">{props.output.summary}</p>
-        {props.reading ? (
-          <CitationDrawer reading={props.reading} />
-        ) : props.output.citations.length > 0 ? (
-          <ul>
-            {props.output.citations.map((citation, i) => (
-              <li key={i}>
-                <strong>{citation.method}</strong> · {citation.reference}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </details>
+      {props.reading ? <CitationDrawer reading={props.reading} /> : null}
     </>
   );
 }

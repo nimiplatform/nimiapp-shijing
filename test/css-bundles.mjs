@@ -50,11 +50,9 @@ export const hejingCssFiles = [
   '../src/product/tabs/hejing/hejing-shell.css',
   '../src/product/tabs/hejing/hejing-hero.css',
   '../src/product/tabs/hejing/hejing-pending.css',
-  '../src/product/tabs/hejing/hejing-index.css',
-  '../src/product/tabs/hejing/hejing-intersection.css',
-  '../src/product/tabs/hejing/hejing-future.css',
-  '../src/product/tabs/hejing/hejing-history.css',
-  '../src/product/tabs/hejing/hejing-basis.css',
+  '../src/product/tabs/hejing/hejing-patterns.css',
+  '../src/product/tabs/hejing/hejing-track.css',
+  '../src/product/tabs/hejing/hejing-record.css',
   '../src/product/tabs/hejing/hejing-responsive.css',
 ];
 

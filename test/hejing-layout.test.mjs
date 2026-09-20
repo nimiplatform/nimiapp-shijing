@@ -27,25 +27,75 @@ function cssBlock(selector) {
   return block;
 }
 
-test('HeJing first screen pairs the two charts above status and reminder', () => {
-  assert.match(hejingSource, /<HeJingOverview/);
+test('HeJing toolbar pairs person context with one subtle action group', () => {
+  assert.match(hejingSource, /shijing-hejing__toolbar-meta/u);
+  assert.match(hejingSource, /shijing-hejing__toolbar-actions/u);
+  assert.match(hejingSource, /shijing-hejing__view-switch/u);
 
-  const overviewCard = cssBlock('.shijing-hejing__overview-card');
-  const pair = cssBlock('.shijing-hejing__pair');
-  const statusRow = cssBlock('.shijing-hejing__status-row');
+  const toolbar = cssBlock('.shijing-hejing__toolbar');
+  assert.match(toolbar, /display:\s*flex/);
+  assert.match(toolbar, /justify-content:\s*space-between/);
 
-  assert.match(overviewCard, /display:\s*grid/);
-  assert.match(pair, /grid-template-columns:\s*1fr auto 1fr/);
-  assert.match(statusRow, /border-bottom:\s*1px solid/);
+  const statusGenerated = cssBlock(".shijing-hejing__toolbar-status[data-state='generated']");
+  assert.match(statusGenerated, /var\(--hejing-green-soft\)/);
+  const statusStale = cssBlock(".shijing-hejing__toolbar-status[data-state='stale']");
+  assert.match(statusStale, /var\(--hejing-red-soft\)/);
 });
 
-test('HeJing focus cards and metric readouts use multi-column, bounded layouts', () => {
-  const focusGrid = cssBlock('.shijing-hejing__focus-grid');
-  const metricReadouts = cssBlock('.shijing-hejing__metric-readouts');
-  const metricBody = cssBlock('.shijing-hejing__metric-body p');
+test('HeJing reading sections keep a comfortable measure and clear structure', () => {
+  const overviewSummary = cssBlock('.shijing-hejing .shijing-hejing__overview-summary');
+  assert.match(overviewSummary, /max-width:\s*68ch/);
+  assert.match(overviewSummary, /line-height:\s*1\.8/);
 
-  assert.match(focusGrid, /grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
-  assert.match(metricReadouts, /grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
-  // The metric explanation line is present and styled.
-  assert.notEqual(metricBody, '');
+  const tendencies = cssBlock('.shijing-hejing__tendencies');
+  assert.match(tendencies, /grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+
+  const expressionGrid = cssBlock('.shijing-hejing__expression-grid');
+  assert.match(expressionGrid, /grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+
+  const basisBody = cssBlock('.shijing-hejing__basis-body');
+  assert.notEqual(basisBody, '');
+
+  const phrase = cssBlock('.shijing-hejing .shijing-hejing__action-phrase');
+  assert.match(phrase, /border-left:\s*3px solid var\(--hejing-acc-mid\)/);
+});
+
+test('HeJing track view uses a bounded grid with type badges', () => {
+  const item = cssBlock('.shijing-hejing__track-item');
+  assert.match(item, /display:\s*grid/);
+  assert.match(item, /grid-template-columns:\s*auto auto minmax\(0,\s*1fr\) auto/);
+
+  const eventBadge = cssBlock(".shijing-hejing__track-badge[data-kind='event']");
+  assert.match(eventBadge, /var\(--hejing-green-soft\)/);
+  const planBadge = cssBlock(".shijing-hejing__track-badge[data-kind='plan']");
+  assert.match(planBadge, /var\(--hejing-blue-soft\)/);
+});
+
+test('HeJing responsive rules collapse the multi-column structures on small screens', () => {
+  assert.match(hejingStyles, /@media\s*\(max-width:\s*960px\)/);
+  assert.match(hejingStyles, /@media\s*\(max-width:\s*760px\)/);
+  assert.match(hejingStyles, /@media\s*\(max-width:\s*460px\)/);
+
+  const at960 = hejingStyles.slice(hejingStyles.indexOf('@media (max-width: 960px)'));
+  assert.match(at960, /\.shijing-hejing__expression-grid,\s*\n\s*\.shijing-hejing__tendencies\s*\{\s*grid-template-columns:\s*1fr/);
+
+  const at760 = hejingStyles.slice(hejingStyles.indexOf('@media (max-width: 760px)'));
+  assert.match(at760, /\.shijing-hejing__track-item\s*\{\s*grid-template-columns:\s*auto minmax\(0,\s*1fr\)/);
+});
+
+test('HeJing keyboard focus is visible on interactive controls', () => {
+  assert.match(hejingStyles, /\.shijing-hejing__view-switch button:focus-visible/u);
+  assert.match(hejingStyles, /\.shijing-hejing__basis summary:focus-visible/u);
+  assert.match(hejingStyles, /\.shijing-hejing__track-actions button:focus-visible/u);
+  assert.match(hejingStyles, /outline:\s*2px solid var\(--hejing-acc\)/u);
+});
+
+test('HeJing bundle carries no radar, metric or quarter selectors', () => {
+  assert.doesNotMatch(hejingStyles, /radar/u);
+  assert.doesNotMatch(hejingStyles, /metric/u);
+  assert.doesNotMatch(hejingStyles, /quarter/u);
+  assert.doesNotMatch(hejingStyles, /__timeline/u);
+  assert.doesNotMatch(hejingStyles, /__focus/u);
+  assert.doesNotMatch(hejingStyles, /__ways/u);
+  assert.doesNotMatch(hejingStyles, /__index/u);
 });

@@ -6,28 +6,14 @@ export const MINGJING_CORE_FIELDS: readonly string[] = [
   'career_inclination',
 ];
 
-export const MINGJING_RELATIONSHIP_STRUCTURE_FIELDS: readonly string[] = [
-  'baseline_pattern',
-  'attraction_and_support',
-  'friction_and_misread',
-  'communication_rhythm',
-  'boundary_advice',
-];
-
-export const MINGJING_RELATIONSHIP_PRACTICE_FIELDS: readonly string[] = [
-  'communication',
-  'boundary',
-  'repair',
-];
-
 export const MINGJING_RELATIONSHIP_ROOT_KEYS = new Set<string>([
   'mirror_kind',
   'output_kind',
   'relationship_subject',
-  'summary',
-  'structure',
-  'timing_windows',
-  'practice',
+  'overview',
+  'patterns',
+  'recent_status',
+  'action',
   'cited_event_memory_refs',
   'cited_plan_item_refs',
   'citations',
@@ -42,11 +28,42 @@ export const MINGJING_RELATIONSHIP_SUBJECT_KEYS = new Set<string>([
 
 export const MINGJING_RELATIONSHIP_PERSON_REF_KEYS = new Set<string>(['kind', 'id']);
 
-export const MINGJING_RELATIONSHIP_STRUCTURE_KEYS = new Set<string>(
-  MINGJING_RELATIONSHIP_STRUCTURE_FIELDS,
-);
+export const MINGJING_RELATIONSHIP_OVERVIEW_KEYS = new Set<string>([
+  'title',
+  'summary',
+  'keywords',
+]);
 
-export const MINGJING_RELATIONSHIP_TIMING_WINDOW_KEYS = new Set<string>([
+export const MINGJING_RELATIONSHIP_PATTERN_PROSE_FIELDS: readonly string[] = [
+  'name',
+  'self_tendency',
+  'related_tendency',
+  'scenario',
+  'aligned_expression',
+  'friction_expression',
+];
+
+export const MINGJING_RELATIONSHIP_PATTERN_KEYS = new Set<string>([
+  'pattern_id',
+  'rule_ref',
+  'rank',
+  'driver_refs',
+  'evidence_summary',
+  ...MINGJING_RELATIONSHIP_PATTERN_PROSE_FIELDS,
+  'signals',
+]);
+
+export const MINGJING_RELATIONSHIP_RECENT_STATUS_AVAILABLE_KEYS = new Set<string>([
+  'availability',
+  'window',
+]);
+
+export const MINGJING_RELATIONSHIP_RECENT_STATUS_UNAVAILABLE_KEYS = new Set<string>([
+  'availability',
+  'reason',
+]);
+
+export const MINGJING_RELATIONSHIP_RECENT_WINDOW_KEYS = new Set<string>([
   'start_date',
   'end_date',
   'nature',
@@ -54,9 +71,25 @@ export const MINGJING_RELATIONSHIP_TIMING_WINDOW_KEYS = new Set<string>([
   'summary',
 ]);
 
-export const MINGJING_RELATIONSHIP_PRACTICE_KEYS = new Set<string>(
-  MINGJING_RELATIONSHIP_PRACTICE_FIELDS,
-);
+export const MINGJING_RELATIONSHIP_ACTION_PROSE_FIELDS: readonly string[] = [
+  'situation',
+  'step',
+  'example_phrase',
+  'rationale',
+  'observation',
+];
+
+export const MINGJING_RELATIONSHIP_ACTION_KEYS = new Set<string>([
+  'target',
+  ...MINGJING_RELATIONSHIP_ACTION_PROSE_FIELDS,
+]);
+
+export const MINGJING_RELATIONSHIP_ACTION_TARGET_PATTERN_KEYS = new Set<string>([
+  'kind',
+  'pattern_id',
+]);
+
+export const MINGJING_RELATIONSHIP_ACTION_TARGET_RECENT_WINDOW_KEYS = new Set<string>(['kind']);
 
 export const MINGJING_ZIWEI_ROOT_KEYS = new Set<string>([
   'mirror_kind',

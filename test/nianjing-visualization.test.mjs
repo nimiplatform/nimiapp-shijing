@@ -125,7 +125,8 @@ test('NianJing tab renders annual modules as a derived overview before the detai
   assert.match(source, /className="shijing-nianjing__year-selected"/);
   assert.match(source, /className="shijing-nianjing__year-concern-card"/);
   assert.match(source, /className="shijing-nianjing__year-months"/);
-  assert.match(source, /className="shijing-nianjing__year-basis"/);
+  assert.doesNotMatch(source, /className="shijing-nianjing__year-basis"/);
+  assert.doesNotMatch(source, /className="shijing-nianjing__footer"/);
   assert.doesNotMatch(
     source,
     /className="shijing-nianjing__year-grid"/,

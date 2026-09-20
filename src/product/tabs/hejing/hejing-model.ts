@@ -1,34 +1,33 @@
-import type {
-  MethodProfileId,
-  RelationshipElementDirection,
-  RelationshipHePanEvidence,
-} from '../../../domain/algorithm.ts';
+// HeJing (合镜) workbench model — pattern-reading redesign.
+//
+// The page consumes the admitted `MingJingRelationshipMirrorOutput` projection
+// (overview / patterns / recent_status / action) directly; this module only
+// owns the person workspace selection, the method pattern-support gate, the
+// secondary 轨迹 record projection, and the record-draft builder. No scores,
+// no quarters, no synthesized fallback workspaces: sample data lives only in
+// `src/product/dev/`.
+
+import type { MethodProfileId } from '../../../domain/algorithm.ts';
+import type { EventMemory } from '../../../domain/event-memory.ts';
 import type {
   MingJingRelationshipMirrorOutput,
-  RelationshipTimingWindow,
-  TendencyClass,
+  RelationshipRecentWindow,
 } from '../../../domain/mirror-output.ts';
 import type { Person } from '../../../domain/person.ts';
 import type { Reading } from '../../../domain/reading.ts';
+import type { ShiJingSpace } from '../../../domain/shijing-space.ts';
+import type { SubjectRef } from '../../../domain/subject-ref.ts';
 import {
   mingJingRouteFailCloseDetail,
   validateMingJingRouteSupport,
 } from '../../astrology/mingjing-route-support.ts';
 import {
-  HEJING_DEFAULT_BASIS,
   HEJING_PAGE_COPY,
   HEJING_RELATIONSHIP_TYPES,
-  HEJING_RELATIONSHIP_WORKSPACES,
   hejingRelationshipTypeLabel,
 } from './hejing-content.ts';
 
-export {
-  HEJING_DEFAULT_BASIS,
-  HEJING_PAGE_COPY,
-  HEJING_RELATIONSHIP_TYPES,
-  HEJING_RELATIONSHIP_WORKSPACES,
-  hejingRelationshipTypeLabel,
-};
+export { HEJING_PAGE_COPY, HEJING_RELATIONSHIP_TYPES, hejingRelationshipTypeLabel };
 
 export type HeJingRelationshipType = 'partner' | 'collaboration' | 'family' | 'friend' | 'parent_child';
 
@@ -37,120 +36,30 @@ export interface HeJingRelationshipTypeOption {
   readonly label: string;
 }
 
-export type HeJingTone = 'green' | 'gold' | 'blue' | 'red';
+export type HeJingPersonRef = Extract<SubjectRef, { kind: 'person' }>;
 
-export interface HeJingMetric {
-  readonly id: string;
-  readonly label: string;
-  readonly value: number;
-  readonly tone: HeJingTone;
-  // One-line "结论" shown beneath every score, per the redesign brief.
-  readonly explanation: string;
-}
-
+// Minimal two-person profile used by the pending hero's two-orb stage.
 export interface HeJingPersonProfile {
   readonly label: string;
   readonly name: string;
-  // Relationship role pill shown under the hero avatar, e.g. '家长' / '孩子'.
   readonly roleLabel: string;
-  readonly structureName?: string;
   readonly initials: string;
-  // Short spaced element badge under the hero circle, e.g. '木 火 偏旺'.
-  readonly elementTag: string;
-  // Longer descriptive lines for the chart-intersection column.
-  readonly traits: readonly string[];
   readonly tone: 'self' | 'other';
-}
-
-export interface HeJingStructure {
-  readonly convergence: readonly string[];
-  readonly friction: readonly string[];
-}
-
-export interface HeJingInsight {
-  readonly id: string;
-  readonly iconLabel: string;
-  readonly title: string;
-  readonly body: string;
-  readonly tone: 'green' | 'gold' | 'red';
-}
-
-// 当前相处重点 — three "结论 + 行动" cards (容易卡住的地方 / 更适合的方式 / 本周建议).
-export interface HeJingFocusCard {
-  readonly id: string;
-  readonly kind: 'stuck' | 'better' | 'weekly';
-  readonly title: string;
-  readonly points: readonly string[];
-}
-
-// 未来时间窗口 — one card per quarter on the horizontal timeline.
-export interface HeJingQuarterWindow {
-  readonly id: string;
-  readonly label: string; // Q1
-  readonly range: string; // 1-3 月
-  readonly season: 'spring' | 'summer' | 'autumn' | 'winter';
-  readonly state: string; // 状态
-  readonly watch: string; // 注意点
-  readonly action: string; // 建议行动
-  readonly tone: 'green' | 'gold' | 'blue' | 'red';
-}
-
-export interface HeJingBasisChip {
-  readonly id: string;
-  readonly label: string;
-}
-
-export interface HeJingRepairWindow {
-  readonly title: string;
-  readonly range: string;
-  readonly body: string;
-}
-
-export interface HeJingFutureWindow {
-  readonly id: string;
-  readonly title: string;
-  readonly status: string;
-  readonly body: string;
-  readonly tone: 'green' | 'gold' | 'blue';
-}
-
-export interface HeJingTimelineRecord {
-  readonly id: string;
-  readonly date: string;
-  readonly title: string;
-  readonly tag: string;
-  readonly description: string;
 }
 
 export interface HeJingWorkspace {
   readonly id: string;
   readonly selectorLabel: string;
   readonly selectedRelationshipType: HeJingRelationshipType;
-  readonly year: number;
   readonly relationshipTypeLabel: string;
+  readonly personRef: HeJingPersonRef;
+  readonly displayName: string;
+  // person.relation — presentation-only context label; never drives the
+  // astrology input or any trait inference.
+  readonly relationLabel: string;
+  readonly headline: string;
   readonly self: HeJingPersonProfile;
   readonly other: HeJingPersonProfile;
-  readonly keywords: readonly string[];
-  readonly headline: string;
-  // Top overview "结论" fields.
-  readonly relationshipStatus: string;
-  readonly mainline: string;
-  readonly summary: string;
-  readonly topReminder: string;
-  readonly todayActions: readonly string[];
-  readonly basis: string;
-  readonly phase: string;
-  readonly futureHint: string;
-  readonly focusCards: readonly HeJingFocusCard[];
-  readonly metrics: readonly HeJingMetric[];
-  readonly structure: HeJingStructure;
-  readonly quarters: readonly HeJingQuarterWindow[];
-  readonly insights: readonly HeJingInsight[];
-  readonly repairWindow: HeJingRepairWindow;
-  readonly futureWindows: readonly HeJingFutureWindow[];
-  readonly weeklyAdvice: string;
-  readonly records: readonly HeJingTimelineRecord[];
-  readonly astrologyBasis: readonly HeJingBasisChip[];
   readonly disclaimer: string;
 }
 
@@ -170,15 +79,29 @@ export function hejingMethodSupportState(
   return { supported: false, detail: mingJingRouteFailCloseDetail(support.error) };
 }
 
+// Pattern projection is admitted for bazi_ziping_v1 only (rule.shijing.algorithm.r019).
+// Ziwei/QiZheng evidence routes stay open, but generation would end in the typed
+// patterns_unavailable state — so the page shows the gate instead of the CTA and
+// never auto-switches method.
+export type HeJingPatternSupportState =
+  | { readonly supported: true }
+  | { readonly supported: false; readonly method_profile_id: MethodProfileId };
+
+export function hejingPatternSupportState(
+  methodProfileId: MethodProfileId,
+): HeJingPatternSupportState {
+  if (methodProfileId === 'bazi_ziping_v1') return { supported: true };
+  return { supported: false, method_profile_id: methodProfileId };
+}
+
 export function hejingWorkspaceIdForPerson(personId: string): string {
   return `person:${personId}`;
 }
 
-export function hejingPersonProfileHeading(profile: HeJingPersonProfile): string {
-  const label = profile.label.trim();
-  const name = profile.name.trim();
-  if (!name || name === label) return label;
-  return `${label} · ${name}`;
+export function hejingPersonRefForWorkspaceId(workspaceId: string): HeJingPersonRef | null {
+  if (!workspaceId.startsWith('person:')) return null;
+  const id = workspaceId.slice('person:'.length);
+  return id ? { kind: 'person', id } : null;
 }
 
 export function initialHeJingWorkspaceIdFromReadings(input: {
@@ -242,23 +165,20 @@ export function buildHeJingWorkspaceFromPerson(person: Person): HeJingWorkspace 
   const relation = (person.relation ?? '').trim();
   const relationshipType = hejingRelationshipTypeForPerson(person);
   return {
-    ...HEJING_RELATIONSHIP_WORKSPACES[0],
     id: hejingWorkspaceIdForPerson(person.id),
     selectorLabel: `我 + ${name}`,
     selectedRelationshipType: relationshipType,
     relationshipTypeLabel: hejingRelationshipTypeLabel(relationshipType),
+    personRef: { kind: 'person', id: person.id },
+    displayName: name,
+    relationLabel: relation,
+    headline: `我与 ${name} 的合镜`,
     self: {
       label: '我',
       name: '我',
       roleLabel: '本人',
       initials: '我',
       tone: 'self',
-      elementTag: '紫微斗数 · 命身主轴',
-      traits: [
-        '紫微斗数以命宫、身宫看你的关系表达底色',
-        '主星组合偏向主动照顾与快速回应',
-        '四化落点提示：先稳住自己的节奏，再靠近对方',
-      ],
     },
     other: {
       label: 'TA',
@@ -266,407 +186,98 @@ export function buildHeJingWorkspaceFromPerson(person: Person): HeJingWorkspace 
       roleLabel: relation || 'TA',
       initials: Array.from(name)[0] ?? 'T',
       tone: 'other',
-      elementTag: '紫微斗数 · 互动宫位',
-      traits: [
-        'TA 的命宫、身宫用来观察安全感与表达方式',
-        relation ? `关系视角：${relation}，重点看亲子宫位的牵引` : '关系视角会影响宫位互动的解读重点',
-        '主星与四化落点会影响 TA 如何接收关心',
-      ],
     },
-    // Annual relationship keywords stay curated (陪伴/边界/沟通/节奏 inherited
-    // from the sample) rather than echoing the raw relation label.
-    headline: `我与 ${name} 的合镜`,
-    relationshipStatus: '待生成关系状态',
-    mainline: '关系人物已加入。生成合镜后，这里会呈现今年的关系主线。',
-    summary: '关系人物已加入。当前合镜对象已切换为“我 + TA”，后续生成会以本人和这位人物的出生资料作为关系分析输入。',
-    topReminder: '生成合镜后，会基于双方命盘证据给出最重要的关系提醒，而不会只凭关系标签推断。',
-    todayActions: [],
-    basis: '待生成关系基调',
-    phase: '资料已建立',
-    futureHint: '生成合镜后呈现未来时间窗口',
-    focusCards: [],
-    metrics: [],
-    structure: {
-      convergence: ['等待生成双方命盘的关系证据', '不会只凭关系标签推断命理结论', '生成后会展示滋养、互补与相处节奏'],
-      friction: ['若对方出生资料不完整，会提示补全后再生成', '关系建议会保留不确定性，不把命理当作定论'],
-    },
-    quarters: [],
-    insights: [
-      {
-        id: 'pending-evidence',
-        iconLabel: '证',
-        title: '先确认资料，再生成解读',
-        tone: 'green',
-        body: '合镜对象已经建立为“我 + TA”；具体相处语言会在生成关系分析后出现。',
-      },
-    ],
-    repairWindow: {
-      title: '关系窗口待生成',
-      range: '未生成',
-      body: '未来窗口需要双方命盘证据；资料不足时会提示补全，不会给出臆测结果。',
-    },
-    futureWindows: [],
-    weeklyAdvice: '添加人物后，先确认出生日期、时间与地点，再生成合镜。',
-    // `records` and `astrologyBasis` carry over from the sample spread above so
-    // the 共同记录 / 命理依据 sections stay populated once a reading exists.
-    astrologyBasis: HEJING_DEFAULT_BASIS,
-    disclaimer: '合镜只使用本人和一个关系人物的出生资料，不创建关系图、客户档案或项目式关系管理。',
+    disclaimer:
+      '合镜只使用本人和一个关系人物的出生资料,提出待核对的相处观察假设;现实关系以你的真实记录为准。',
   };
 }
 
-function isRelationshipHePanOutput(output: Reading['output']): output is MingJingRelationshipMirrorOutput {
-  return output.mirror_kind === 'mingjing' && (output as { output_kind?: unknown }).output_kind === 'relationship_hepan';
+function isRelationshipHePanOutput(
+  output: Reading['output'],
+): output is MingJingRelationshipMirrorOutput {
+  return (
+    output.mirror_kind === 'mingjing' &&
+    (output as { output_kind?: unknown }).output_kind === 'relationship_hepan'
+  );
 }
 
-function clampMetric(value: number): number {
-  return Math.max(1, Math.min(99, Math.round(value)));
-}
+// --- 轨迹 (secondary track view) --------------------------------------------
 
-function directionWeight(direction: RelationshipElementDirection['label'] | undefined): number {
-  switch (direction) {
-    case 'supporting':
-      return 16;
-    case 'same':
-      return 10;
-    case 'draining':
-      return 4;
-    case 'controlling':
-      return -8;
-    case 'unknown':
-    case undefined:
-      return 0;
-  }
-}
-
-function natureWeight(nature: TendencyClass): number {
-  switch (nature) {
-    case 'supportive':
-      return 14;
-    case 'steady':
-      return 8;
-    case 'turning':
-      return 5;
-    case 'watch':
-      return -2;
-    case 'blocked':
-      return -8;
-  }
-}
-
-function natureLabel(nature: TendencyClass): string {
-  switch (nature) {
-    case 'supportive':
-      return '适合推进';
-    case 'steady':
-      return '稳中沟通';
-    case 'turning':
-      return '关系转折';
-    case 'watch':
-      return '放慢确认';
-    case 'blocked':
-      return '优先修复';
-  }
-}
-
-function natureWatch(nature: TendencyClass): string {
-  switch (nature) {
-    case 'supportive':
-      return '把握节奏，避免用力过猛';
-    case 'steady':
-      return '情绪波动时先暂停再沟通';
-    case 'turning':
-      return '变化较多，保持沟通频率';
-    case 'watch':
-      return '放慢确认，减少误读';
-    case 'blocked':
-      return '先处理情绪，再谈规则';
-  }
-}
-
-function futureWindowTone(nature: TendencyClass): HeJingFutureWindow['tone'] {
-  switch (nature) {
-    case 'supportive':
-      return 'green';
-    case 'steady':
-    case 'watch':
-      return 'gold';
-    case 'blocked':
-    case 'turning':
-      return 'blue';
-  }
-}
-
-function quarterToneFor(nature: TendencyClass): HeJingQuarterWindow['tone'] {
-  switch (nature) {
-    case 'supportive':
-      return 'green';
-    case 'steady':
-      return 'gold';
-    case 'watch':
-    case 'turning':
-      return 'red';
-    case 'blocked':
-      return 'blue';
-  }
-}
-
-const QUARTER_META = [
-  // `outlook` is the general year-arc 建议行动 shown for a quarter that has no
-  // evidenced timing window of its own — forward-looking relationship guidance,
-  // not an invented event.
-  {
-    label: 'Q1',
-    range: '1-3 月',
-    season: 'spring' as const,
-    fallbackState: '年初定调',
-    fallbackWatch: '先建立共同节奏，不急着给关系定性',
-    fallbackTone: 'green' as const,
-    outlook: '为这一年定下相处的节奏与基本约定。',
-  },
-  {
-    label: 'Q2',
-    range: '4-6 月',
-    season: 'summer' as const,
-    fallbackState: '日常沉淀',
-    fallbackWatch: '观察约定是否真的进入日常执行',
-    fallbackTone: 'gold' as const,
-    outlook: '在日常里累积信任，把好的相处方式固定下来。',
-  },
-  {
-    label: 'Q3',
-    range: '7-9 月',
-    season: 'autumn' as const,
-    fallbackState: '中段校准',
-    fallbackWatch: '留意需求变化，及时重谈边界',
-    fallbackTone: 'blue' as const,
-    outlook: '留意需求的变化，及时调整规则与边界。',
-  },
-  {
-    label: 'Q4',
-    range: '10-12 月',
-    season: 'winter' as const,
-    fallbackState: '年末复盘',
-    fallbackWatch: '把有效方式沉淀下来，避免旧问题循环',
-    fallbackTone: 'gold' as const,
-    outlook: '回顾这一年的相处，把有效的方式延续到明年。',
-  },
-];
-
-function quarterIndexFromDate(date: string): number {
-  const month = Number.parseInt(date.slice(5, 7), 10);
-  if (!Number.isFinite(month) || month < 1) return 0;
-  return Math.min(3, Math.floor((month - 1) / 3));
-}
-
-// 结论 splitter: turns a sentence-rich string into up to `max` clean points.
-function splitSentences(text: string, max: number): readonly string[] {
-  const parts = text
-    .split(/(?<=[。！？!?])/u)
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0);
-  const points = parts.length > 0 ? parts : [text.trim()];
-  return points.slice(0, max);
-}
-
-function relationshipStatusFor(metrics: readonly HeJingMetric[]): string {
-  if (metrics.length === 0) return '稳定中有磨合';
-  const average = metrics.reduce((sum, metric) => sum + metric.value, 0) / metrics.length;
-  if (average >= 82) return '稳定且彼此滋养';
-  if (average >= 70) return '稳定中有磨合';
-  if (average >= 58) return '磨合中，逐步建立';
-  return '需要更多耐心修复';
-}
-
-const METRIC_BLUEPRINT: readonly {
+export interface HeJingTrackRecord {
+  readonly kind: 'event' | 'plan';
   readonly id: string;
-  readonly label: string;
-  readonly tone: HeJingTone;
-  readonly explanation: string;
-}[] = [
-  { id: 'understanding', label: '理解度', tone: 'green', explanation: '能站在对方角度看问题。' },
-  { id: 'communication', label: '沟通顺畅度', tone: 'green', explanation: '整体顺畅，偶有情绪打断。' },
-  { id: 'consistency', label: '规则一致性', tone: 'green', explanation: '约定清晰，执行需更稳定。' },
-  { id: 'safety', label: '情绪安全感', tone: 'green', explanation: '彼此感到被接纳与支持。' },
-  { id: 'growth', label: '成长支持度', tone: 'gold', explanation: '持续鼓励，支持彼此探索。' },
-  { id: 'repair', label: '修复能力', tone: 'red', explanation: '冲突后能修复，时长可缩短。' },
-];
-
-function buildGeneratedMetrics(
-  evidence: RelationshipHePanEvidence | undefined,
-  output: MingJingRelationshipMirrorOutput,
-): readonly HeJingMetric[] {
-  const branchCount = evidence?.branch_interactions.length ?? 0;
-  const branchLift = Math.min(branchCount, 6) * 4;
-  const timingLift = output.timing_windows.reduce((sum, window) => sum + natureWeight(window.nature), 0);
-  const timingAverage = output.timing_windows.length > 0 ? timingLift / output.timing_windows.length : 0;
-  const dayMaster = directionWeight(evidence?.day_master_relation.label);
-  const tenGod = directionWeight(evidence?.ten_god_relation.label);
-  const yongShen = directionWeight(evidence?.yong_shen_relation.label);
-
-  const values: Record<string, number> = {
-    understanding: 56 + dayMaster + branchLift / 2,
-    communication: 58 + timingAverage - Math.max(0, branchCount - 2) * 3,
-    consistency: 54 + tenGod + branchLift / 2,
-    safety: 56 + yongShen + timingAverage / 2,
-    growth: 60 + Math.max(dayMaster, yongShen) / 2 + timingAverage,
-    repair: 52 + timingAverage + Math.max(tenGod, yongShen) / 2,
-  };
-
-  return METRIC_BLUEPRINT.map((metric) => ({
-    id: metric.id,
-    label: metric.label,
-    tone: metric.tone,
-    explanation: metric.explanation,
-    value: clampMetric(values[metric.id] ?? 50),
-  }));
+  readonly date: string; // ISO YYYY-MM-DD
+  readonly body: string;
 }
 
-// The future-window timeline always presents a full Q1–Q4 year view. Each
-// evidenced timing window is placed into its quarter (state/watch/action from
-// the real window); quarters without their own window fall back to quarter-level
-// year-arc copy — no invented deterministic events and no first-window carryover.
-function buildGeneratedQuarters(
-  output: MingJingRelationshipMirrorOutput,
-): readonly HeJingQuarterWindow[] {
-  const byQuarter = new Map<number, RelationshipTimingWindow>();
-  for (const window of output.timing_windows) {
-    const quarterIndex = quarterIndexFromDate(window.start_date);
-    if (!byQuarter.has(quarterIndex)) byQuarter.set(quarterIndex, window);
-  }
-
-  return QUARTER_META.map((meta, index) => {
-    const window = byQuarter.get(index);
-    if (!window) {
-      return {
-        id: `q${index + 1}`,
-        label: meta.label,
-        range: meta.range,
-        season: meta.season,
-        state: meta.fallbackState,
-        watch: meta.fallbackWatch,
-        action: meta.outlook,
-        tone: meta.fallbackTone,
-      };
-    }
-    const nature = window.nature;
-    return {
-      id: `q${index + 1}`,
-      label: meta.label,
-      range: meta.range,
-      season: meta.season,
-      state: natureLabel(nature),
-      watch: natureWatch(nature),
-      action: window?.summary ?? meta.outlook,
-      tone: quarterToneFor(nature),
-    };
-  });
+function personRefsInclude(
+  refs: readonly SubjectRef[],
+  personRef: HeJingPersonRef,
+): boolean {
+  return refs.some(
+    (ref) => typeof ref === 'object' && ref !== null && ref.kind === 'person' && ref.id === personRef.id,
+  );
 }
 
-const PENDING_KEYWORDS = new Set(['合镜待生成', '关系人物', '待生成']);
-
-function compactKeywords(workspace: HeJingWorkspace): readonly string[] {
-  const filtered = workspace.keywords.filter((keyword) => !PENDING_KEYWORDS.has(keyword));
-  return filtered.length > 0 ? filtered : workspace.keywords;
+// The current space's real EventMemory + PlanItem records linked to the
+// current person through an explicit SubjectRef, newest first. Person owns
+// nothing — these are the user's own records that reference the person.
+export function hejingTrackRecords(
+  snapshot: ShiJingSpace,
+  personRef: HeJingPersonRef,
+): readonly HeJingTrackRecord[] {
+  const events: HeJingTrackRecord[] = snapshot.event_memories
+    .filter((memory) => personRefsInclude(memory.person_refs, personRef))
+    .map((memory) => ({
+      kind: 'event',
+      id: memory.id,
+      date: memory.occurred_at.slice(0, 10),
+      body: memory.body,
+    }));
+  const plans: HeJingTrackRecord[] = snapshot.plan_items
+    .filter((plan) => personRefsInclude(plan.person_refs, personRef))
+    .map((plan) => ({
+      kind: 'plan',
+      id: plan.id,
+      date: plan.planned_for.slice(0, 10),
+      body: plan.body,
+    }));
+  return [...events, ...plans].sort((a, b) => b.date.localeCompare(a.date));
 }
 
-export function buildGeneratedHeJingWorkspace(input: {
-  readonly workspace: HeJingWorkspace;
-  readonly reading: Reading;
-}): HeJingWorkspace {
-  if (!isRelationshipHePanOutput(input.reading.output)) return input.workspace;
-  const output = input.reading.output;
-  const evidence = input.reading.inputs_summary.feature_snapshot.common.relationship_hepan;
-  const firstWindow = output.timing_windows[0];
-  const repairWindow = output.timing_windows.find((window) =>
-    window.nature === 'blocked' || window.nature === 'watch' || window.nature === 'turning',
-  ) ?? firstWindow;
-  const metrics = buildGeneratedMetrics(evidence, output);
+// --- 记录 (record entry) ------------------------------------------------------
 
+// Builds the EventMemory the HeJing record dialog saves: linked to the current
+// person only, no concern tags, retrieval-eligible so 问镜 may cite it under
+// the existing memory-use policy. ULID id + ISO-8601 UTC timestamps follow the
+// existing creator conventions.
+export function buildHeJingEventMemoryDraft(input: {
+  readonly id: string;
+  readonly personRef: HeJingPersonRef;
+  readonly body: string;
+  readonly occurredDate: string; // ISO YYYY-MM-DD
+  readonly nowIso: string;
+}): EventMemory {
   return {
-    ...input.workspace,
-    relationshipTypeLabel: hejingRelationshipTypeLabel(input.workspace.selectedRelationshipType),
-    keywords: compactKeywords(input.workspace),
-    headline: input.workspace.headline,
-    relationshipStatus: relationshipStatusFor(metrics),
-    mainline: output.summary,
-    summary: output.summary,
-    topReminder: output.structure.baseline_pattern,
-    todayActions: [
-      output.structure.communication_rhythm,
-      output.structure.boundary_advice,
-      output.structure.attraction_and_support,
-    ],
-    basis: output.structure.baseline_pattern,
-    phase: firstWindow ? `已生成 · ${natureLabel(firstWindow.nature)}` : '已生成',
-    futureHint: firstWindow?.summary ?? output.practice.repair,
-    focusCards: [
-      {
-        id: 'stuck',
-        kind: 'stuck',
-        title: HEJING_PAGE_COPY.focusStuckTitle,
-        points: splitSentences(output.structure.friction_and_misread, 2),
-      },
-      {
-        id: 'better',
-        kind: 'better',
-        title: HEJING_PAGE_COPY.focusBetterTitle,
-        points: splitSentences(output.structure.communication_rhythm, 2),
-      },
-      {
-        id: 'weekly',
-        kind: 'weekly',
-        title: HEJING_PAGE_COPY.focusWeeklyTitle,
-        points: splitSentences(output.practice.communication, 2),
-      },
-    ],
-    metrics,
-    structure: {
-      convergence: [
-        output.structure.baseline_pattern,
-        output.structure.attraction_and_support,
-        output.structure.communication_rhythm,
-      ],
-      friction: [
-        output.structure.friction_and_misread,
-        output.structure.boundary_advice,
-      ],
-    },
-    quarters: buildGeneratedQuarters(output),
-    insights: [
-      {
-        id: 'generated-communication',
-        iconLabel: '言',
-        title: '沟通方式',
-        tone: 'green',
-        body: output.practice.communication,
-      },
-      {
-        id: 'generated-boundary',
-        iconLabel: '界',
-        title: '边界提醒',
-        tone: 'green',
-        body: output.practice.boundary,
-      },
-      {
-        id: 'generated-repair',
-        iconLabel: '修',
-        title: '修复语言',
-        tone: 'red',
-        body: output.practice.repair,
-      },
-    ],
-    repairWindow: {
-      title: repairWindow ? natureLabel(repairWindow.nature) : '关系修复窗口',
-      range: repairWindow ? `${repairWindow.start_date} ～ ${repairWindow.end_date}` : '已生成',
-      body: output.practice.repair,
-    },
-    futureWindows: output.timing_windows.map((window) => ({
-      id: `${window.start_date}:${window.end_date}:${window.nature}`,
-      title: `${window.start_date} ～ ${window.end_date}`,
-      status: natureLabel(window.nature),
-      tone: futureWindowTone(window.nature),
-      body: window.summary,
-    })),
-    weeklyAdvice: output.practice.communication,
+    id: input.id,
+    occurred_at: `${input.occurredDate}T00:00:00Z`,
+    body: input.body,
+    person_refs: [input.personRef],
+    concern_tag_refs: [],
+    source: 'manual',
+    admissible_use: 'eligible_for_retrieval',
+    created_at: input.nowIso,
+    updated_at: input.nowIso,
   };
+}
+
+// --- 近期变化 (recent window) --------------------------------------------------
+
+// Annual precision only: the deterministic layer admits {year}-01-01 .. {year}-12-31
+// windows, so the label presents the year range and never months or quarters.
+export function hejingRecentWindowLabel(
+  window: Pick<RelationshipRecentWindow, 'start_date' | 'end_date'>,
+): string {
+  const year = window.start_date.slice(0, 4);
+  return `${year} 年度(${window.start_date} 至 ${window.end_date})`;
 }

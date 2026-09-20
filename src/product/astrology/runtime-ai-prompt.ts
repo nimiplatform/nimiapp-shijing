@@ -13,6 +13,7 @@ import type {
   MingJingZiweiNatalMirrorOutput,
   MirrorOutput,
 } from '../../domain/mirror-output.ts';
+import { mirrorOutputSummary } from '../../domain/mirror-output.ts';
 import type { ResponsePreferences } from '../../domain/settings.ts';
 import { buildShiJingAnswerBrief } from '../conversations/shijing-answer-brief.ts';
 import {
@@ -164,12 +165,13 @@ function schemaShapeForKind(kind: MirrorKind, output?: MirrorOutput): string {
       if (output && isMingjingRelationshipOutput(output)) {
         return [
           'output_kind: relationship_hepan',
-          'patch_fields: patch_kind, mirror_kind, output_kind, summary?, structure?, timing_windows?, practice?',
-          'AI may patch relationship prose fields only.',
-          'structure object fields: baseline_pattern, attraction_and_support, friction_and_misread, communication_rhythm, boundary_advice',
-          'timing_windows items: start_date, end_date, summary? only. start_date + end_date MUST exactly match one provided timing window.',
-          'practice object fields: communication, boundary, repair',
-          'Do NOT output relationship_subject, citations, cited_event_memory_refs, cited_plan_item_refs, nature, driver_refs, deterministic ids/refs, compatibility scores, trends, or graphs.',
+          'patch_fields: patch_kind, mirror_kind, output_kind, overview, patterns, recent_status?, action',
+          'AI may patch relationship prose fields only; every deterministic field is read-only.',
+          'overview object fields: title, summary, keywords. Fill ALL. keywords is 0..3 short non-empty strings.',
+          'patterns items: pattern_id, name, self_tendency, related_tendency, scenario, aligned_expression, friction_expression, signals. Fill ALL prose fields; signals is 1..3 non-empty strings. pattern_id MUST exactly match a provided pattern target, and every provided target must be included exactly once — no new, missing, reordered, or renamed patterns.',
+          'recent_status object: window.summary only. It is REQUIRED only when the deterministic recent_status.availability is available, and FORBIDDEN otherwise.',
+          'action object fields: situation, step, example_phrase, rationale, observation. Fill ALL.',
+          'Do NOT output relationship_subject, citations, cited_event_memory_refs, cited_plan_item_refs, rule_ref, rank, driver_refs, evidence_summary, action target, window nature or dates, compatibility scores, percentages, certainty claims, trends, or graphs.',
         ].join('\n');
       }
       if (output && isMingjingZiweiNatalOutput(output)) {
@@ -348,16 +350,44 @@ function wordingTargetFor(
           mirror_kind: output.mirror_kind,
           output_kind: output.output_kind,
           relationship_subject: output.relationship_subject,
-          summary: output.summary,
-          structure: output.structure,
-          timing_windows: output.timing_windows.map((window) => ({
-            start_date: window.start_date,
-            end_date: window.end_date,
-            nature: window.nature,
-            driver_refs: window.driver_refs,
-            summary: window.summary,
+          overview: output.overview,
+          patterns: output.patterns.map((pattern) => ({
+            // Read-only deterministic grounding: the AI must keep these facts
+            // verbatim and must not echo them back as patch fields.
+            pattern_id: pattern.pattern_id,
+            rule_ref: pattern.rule_ref,
+            rank: pattern.rank,
+            driver_refs: pattern.driver_refs,
+            evidence_summary: pattern.evidence_summary,
+            // Seed prose the AI rewrites.
+            name: pattern.name,
+            self_tendency: pattern.self_tendency,
+            related_tendency: pattern.related_tendency,
+            scenario: pattern.scenario,
+            aligned_expression: pattern.aligned_expression,
+            friction_expression: pattern.friction_expression,
+            signals: pattern.signals,
           })),
-          practice: output.practice,
+          recent_status: output.recent_status.availability === 'available'
+            ? {
+                availability: output.recent_status.availability,
+                window: {
+                  start_date: output.recent_status.window.start_date,
+                  end_date: output.recent_status.window.end_date,
+                  nature: output.recent_status.window.nature,
+                  driver_refs: output.recent_status.window.driver_refs,
+                  summary: output.recent_status.window.summary,
+                },
+              }
+            : output.recent_status,
+          action: {
+            target: output.action.target,
+            situation: output.action.situation,
+            step: output.action.step,
+            example_phrase: output.action.example_phrase,
+            rationale: output.action.rationale,
+            observation: output.action.observation,
+          },
           // Read-only deterministic refs and citations: useful grounding context,
           // but explicitly forbidden as returned patch fields.
           cited_event_memory_refs: output.cited_event_memory_refs,
@@ -522,13 +552,16 @@ export function buildRuntimeAiPromptRequest(args: {
   if (args.mirror_kind === 'mingjing' && isMingjingRelationshipOutput(args.deterministic_output)) {
     userPromptLines.push([
       'MingJing Relationship HePan writing requirements:',
-      'Role: word the admitted relationship prose over deterministic self-plus-person HePan evidence.',
-      'AI may word relationship prose fields only: summary; structure.baseline_pattern, attraction_and_support, friction_and_misread, communication_rhythm, boundary_advice; timing_windows[].summary targeted by exact start_date + end_date; practice.communication, practice.boundary, practice.repair.',
+      'Role: word the admitted relationship prose over deterministic self-plus-person HePan evidence and the pre-selected pattern targets.',
       'Return output_kind: relationship_hepan in the patch so the SDK applies the relationship patch path.',
-      'Treat relationship_subject, timing_windows[].nature, timing_windows[].driver_refs, citations, cited_event_memory_refs, and cited_plan_item_refs as read-only grounding context.',
-      'Do NOT output relationship_subject, citations, cited_event_memory_refs, cited_plan_item_refs, nature, driver_refs, deterministic ids/refs, compatibility scores, trends, or graphs.',
+      'AI may word only: overview.title/summary/keywords; exactly one patterns entry per provided pattern_id with name/self_tendency/related_tendency/scenario/aligned_expression/friction_expression/signals; recent_status.window.summary when and only when the deterministic recent_status.availability is available; action.situation/step/example_phrase/rationale/observation.',
+      'Treat relationship_subject, pattern_id, rule_ref, rank, driver_refs, evidence_summary, action.target, window dates/nature, citations, and cited refs as read-only grounding context; never return them as patch fields.',
+      'Use conditional, observational wording (可以观察 / 可以留意 style): describe tendencies to watch, never assert that astrology caused real behavior, and never claim either person always or never does something.',
+      'scenario must be a concrete, recognizable situation; signals must be behaviors the user can actually notice in daily life.',
+      'action fields must be directly usable: a generic communication technique is allowed only when tied to the selected pattern or window; 多沟通 / 保持耐心 alone is not acceptable; do not fabricate private details or shared experiences (no 你们曾经… unless a cited record summary is provided in context).',
+      'overview only summarizes the selected patterns: a short title, about 100-180字 of summary, and at most 3 keywords; add no new judgments, scores, ratings, percentages, or stability claims.',
+      'Make no improvement promises, and never predict months or quarters beyond the given annual window.',
       'Do not compute compatibility, fate certainty, match percentages, relation graphs, or contact-management advice.',
-      'Write relationship guidance as concrete communication, boundary, and repair language, never as fixed destiny.',
     ].join('\n'));
   } else if (args.mirror_kind === 'mingjing' && isMingjingZiweiNatalOutput(args.deterministic_output)) {
     userPromptLines.push([
@@ -604,7 +637,7 @@ export function buildRuntimeAiPromptRequest(args: {
           `- id=${reading.id}`,
           `mirror_kind=${reading.mirror_kind}`,
           `mirror_scope=${JSON.stringify(reading.mirror_scope)}`,
-          `summary=${conciseHumanSummary(reading.output.summary, 220)}`,
+          `summary=${conciseHumanSummary(mirrorOutputSummary(reading.output), 220)}`,
         ].join('; ')),
       ].join('\n'),
     );
