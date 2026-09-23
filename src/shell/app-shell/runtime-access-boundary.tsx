@@ -11,11 +11,30 @@ import type { ShijingRuntimeAccessState } from './runtime-access-state.js';
 import { runShijingBootstrap } from '../infra/shijing-bootstrap.js';
 import { ProductArea } from '../routes/product-area.js';
 
+type ShijingHostEvents = {
+  readonly onSessionInvalidated: (listener: () => void) => () => void;
+};
+
+declare global {
+  interface Window {
+    /** ShiJing's preload forwards the Kit Host's session invalidation. */
+    readonly shijingHost?: ShijingHostEvents;
+  }
+}
+
 export function RuntimeAccessBoundary() {
   const { t, i18n } = useTranslation();
   const ready = useAppStore((state) => state.bootstrapReady);
   const failure = useAppStore((state) => state.bootstrapFailure);
+  const sessionInvalidated = useAppStore((state) => state.sessionInvalidated);
   const [retrying, setRetrying] = useState(false);
+
+  // The ended session's product work stops by unmounting the product area;
+  // reopening binds ShiJing to the current session again.
+  useEffect(
+    () => window.shijingHost?.onSessionInvalidated(() => useAppStore.getState().setSessionInvalidated()),
+    [],
+  );
 
   useEffect(() => {
     void runShijingBootstrap();
@@ -34,6 +53,33 @@ export function RuntimeAccessBoundary() {
     setRetrying(true);
     void runShijingBootstrap({ force: true }).finally(() => setRetrying(false));
   }, []);
+
+  if (sessionInvalidated) {
+    return (
+      <AmbientBackground variant="mesh" className="shijing-protected-gate">
+        <Surface
+          tone="panel"
+          elevation="raised"
+          padding="lg"
+          className="shijing-protected-gate__panel"
+          data-testid="shijing-session-invalidated"
+        >
+          <StatusBadge tone="info" shape="dot">
+            {t('Shell.sessionChanged.badge')}
+          </StatusBadge>
+          <div className="shijing-protected-gate__copy">
+            <h1>{t('Shell.sessionChanged.title')}</h1>
+            <p>{t('Shell.sessionChanged.detail')}</p>
+          </div>
+          <div className="shijing-protected-gate__actions">
+            <Button type="button" tone="primary" onClick={() => window.location.reload()}>
+              {t('Shell.sessionChanged.reopen')}
+            </Button>
+          </div>
+        </Surface>
+      </AmbientBackground>
+    );
+  }
 
   if (ready) return <ProductArea />;
 

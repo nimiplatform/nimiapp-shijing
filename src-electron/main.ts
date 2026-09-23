@@ -10,6 +10,7 @@ import {
 } from '@nimiplatform/kit/shell/electron/main';
 
 const SHIJING_APP_ID = 'nimi.shijing';
+const SESSION_INVALIDATED_CHANNEL = 'shijing:session-invalidated';
 declare const __NIMI_ELECTRON_PRODUCTION__: boolean;
 const IS_PRODUCTION_BUNDLE = typeof __NIMI_ELECTRON_PRODUCTION__ !== 'undefined'
   && __NIMI_ELECTRON_PRODUCTION__;
@@ -35,6 +36,12 @@ async function bootstrapElectron(): Promise<void> {
     allowedRendererUrls: [activeRendererUrl()],
     assetMediaPlatform: { protocol, webRequest: session.defaultSession.webRequest, webContents },
     ipcMain,
+    // The renderer stops the ended session's work and asks to reopen.
+    onSessionInvalidated: () => {
+      for (const window of BrowserWindow.getAllWindows()) {
+        if (!window.isDestroyed()) window.webContents.send(SESSION_INVALIDATED_CHANNEL);
+      }
+    },
   });
 
   await createMainWindow();

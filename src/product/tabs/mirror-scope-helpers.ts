@@ -11,7 +11,8 @@ import type {
 } from '../../domain/mirror-scope.ts';
 import type { SubjectRef } from '../../domain/subject-ref.ts';
 
-const DEFAULT_BASIS_TIME_ZONE = 'Asia/Shanghai';
+// The RiJing date and the daily RiJing run time are read in this zone.
+export const DEFAULT_BASIS_TIME_ZONE = 'Asia/Shanghai';
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 // @nimi-authority: rule.shijing.algorithm.r003

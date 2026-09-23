@@ -10,6 +10,7 @@ import { isAdmittedMethodProfileId } from '../domain/algorithm.ts';
 import {
   RESPONSE_LENGTHS,
   RESPONSE_TONES,
+  isDailyRiJingTime,
   isUiLanguage,
   isResponseLanguage,
   type Settings,
@@ -22,7 +23,8 @@ export type SettingsValidationError =
   | { code: 'settings_response_length_invalid'; received: unknown }
   | { code: 'settings_response_language_invalid'; received: unknown }
   | { code: 'settings_extra_instructions_invalid' }
-  | { code: 'settings_method_profile_id_not_admitted'; received: unknown };
+  | { code: 'settings_method_profile_id_not_admitted'; received: unknown }
+  | { code: 'settings_daily_rijing_invalid'; field: 'daily_rijing' | 'enabled' | 'time' };
 
 export type SettingsValidationResult =
   | { ok: true }
@@ -55,6 +57,25 @@ export function validateSettings(settings: Settings): SettingsValidationResult {
       ok: false,
       error: { code: 'settings_method_profile_id_not_admitted', received: settings.method_profile_id },
     };
+  }
+  // daily_rijing is optional (absent ⇒ off); when present it holds exactly the
+  // enabled flag and a 24-hour HH:MM time (rule.shijing.data-model.r011).
+  if (settings.daily_rijing !== undefined) {
+    const daily = settings.daily_rijing as unknown;
+    if (typeof daily !== 'object' || daily === null || Array.isArray(daily)) {
+      return { ok: false, error: { code: 'settings_daily_rijing_invalid', field: 'daily_rijing' } };
+    }
+    const keys = Object.keys(daily);
+    if (keys.length !== 2 || !keys.includes('enabled') || !keys.includes('time')) {
+      return { ok: false, error: { code: 'settings_daily_rijing_invalid', field: 'daily_rijing' } };
+    }
+    const { enabled, time } = daily as { enabled: unknown; time: unknown };
+    if (typeof enabled !== 'boolean') {
+      return { ok: false, error: { code: 'settings_daily_rijing_invalid', field: 'enabled' } };
+    }
+    if (!isDailyRiJingTime(time)) {
+      return { ok: false, error: { code: 'settings_daily_rijing_invalid', field: 'time' } };
+    }
   }
   return { ok: true };
 }

@@ -81,7 +81,7 @@ units:
   - id: definition.shijing.data-model.settings
     kind: definition
     title: Settings record
-    meaning: Settings contains ui_language zh or en, response_preferences, and optional method_profile_id; UI language affects renderer copy only, method profile selects admitted deterministic calculation for new generation with bazi_ziping_v1 as the absence default, and no global instructions, project memory, catalog, workflow, task, report, trend-chart, or luck-score fields are admitted.
+    meaning: Settings contains ui_language zh or en, response_preferences, optional method_profile_id, and optional daily_rijing; UI language affects renderer copy only, method profile selects admitted deterministic calculation for new generation with bazi_ziping_v1 as the absence default, daily_rijing holds exactly an enabled flag and a 24-hour HH:MM time in the RiJing basis time zone for the in-app daily RiJing run and is off when absent, and no global instructions, project memory, catalog, workflow, task, report, trend-chart, or luck-score fields are admitted.
   - id: definition.shijing.data-model.response-preferences
     kind: definition
     title: Response preferences
@@ -306,7 +306,7 @@ units:
     kind: rule
     title: Settings invariants
     modality: must
-    statement: Settings contains ui_language, response_preferences, and optional method_profile_id only; ui_language controls renderer copy and enters neither deterministic calculation, Runtime-AI prompt construction, canonical hashing, nor Reading provenance; method_profile_id selects an admitted profile for new generation, defaults to bazi_ziping_v1 when absent, is included in input hashing and frozen provenance, and fails validation when unadmitted; Settings has no global_instructions, project_memory, catalog snapshot, workflow, task, report, trend-chart, or luck-score fields; and Self, People, Concern Tags, Memory and Plans, Response Preferences, Privacy or Local Data, and Diagnostics remain secondary UI surfaces rather than additional root entities.
+    statement: Settings contains ui_language, response_preferences, optional method_profile_id, and optional daily_rijing only; ui_language controls renderer copy and enters neither deterministic calculation, Runtime-AI prompt construction, canonical hashing, nor Reading provenance; daily_rijing contains exactly boolean enabled and a 24-hour HH:MM time interpreted in the RiJing basis time zone, is off when absent, controls only when the in-app daily RiJing run starts, and enters neither deterministic calculation, Runtime-AI prompt construction, canonical hashing, nor Reading provenance; method_profile_id selects an admitted profile for new generation, defaults to bazi_ziping_v1 when absent, is included in input hashing and frozen provenance, and fails validation when unadmitted; Settings has no global_instructions, project_memory, catalog snapshot, workflow, task, report, trend-chart, or luck-score fields; and Self, People, Concern Tags, Memory and Plans, Response Preferences, Privacy or Local Data, and Diagnostics remain secondary UI surfaces rather than additional root entities.
     condition: Whenever Settings is validated, persisted, or used for generation.
     failure: Reject unadmitted settings before generation or persistence.
     relations:

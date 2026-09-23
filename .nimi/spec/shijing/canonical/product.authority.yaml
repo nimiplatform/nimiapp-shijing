@@ -66,6 +66,10 @@ units:
     kind: definition
     title: Protected session failure
     meaning: Before positive protected admission, the production renderer has one typed fail-close surface with recovery classes login-required, runtime-unavailable, permission-denied, repair-required, and capability-unavailable.
+  - id: definition.shijing.product.daily-rijing-run
+    kind: definition
+    title: Daily RiJing run
+    meaning: The daily RiJing run is the optional Settings-controlled in-app generation of the self RiJing Reading for the current RiJing date at a chosen time while ShiJing is running; it shares one generation entry with RiJing page generation and manual generation, and every saved RiJing Reading is then projected as one summary-only App activity for its date and method profile.
   - id: rule.shijing.product.r001
     kind: rule
     title: Single product authority
@@ -218,7 +222,7 @@ units:
     kind: rule
     title: Standard shell boundary
     modality: must
-    statement: Desktop shells use the Kit-owned protected Local App host and expose only the public purpose-specific SDK client, including session status, ShiJing self AIConfig, and runtime.consume text candidate generation; Runtime endpoint, ordinary gRPC construction, account or login control, launch metadata, caller-selected AIConfig owner or route, provider or model selector, local assets, capability classification, and generic command extension are not ShiJing host inputs; app-local shell commands exist only for genuinely ShiJing-owned product primitives and do not redefine standard storage roots, storage read, write, or remove operations, shell UI primitives, or host-owned platform paths; Electron keeps direct Runtime commands unavailable and does not mount the product route before their protected session and declared operation coverage are admitted; each independently unadmitted platform remains explicitly fail-closed, and compilation alone does not establish platform parity.
+    statement: Desktop shells use the Kit-owned protected Local App host and expose only the public purpose-specific SDK client, including session status, ShiJing self AIConfig, runtime.consume text candidate generation, and App activity publication under app.activity; Runtime endpoint, ordinary gRPC construction, account or login control, launch metadata, caller-selected AIConfig owner or route, provider or model selector, local assets, capability classification, and generic command extension are not ShiJing host inputs; app-local shell commands exist only for genuinely ShiJing-owned product primitives and do not redefine standard storage roots, storage read, write, or remove operations, shell UI primitives, or host-owned platform paths; Electron keeps direct Runtime commands unavailable and does not mount the product route before their protected session and declared operation coverage are admitted; each independently unadmitted platform remains explicitly fail-closed, and compilation alone does not establish platform parity.
     condition: Whenever a desktop shell registers, mounts, or invokes ShiJing product behavior.
     failure: Keep the affected platform fail-closed, reject the unowned host input or command, and do not claim product mount or parity.
     relations:
@@ -236,3 +240,13 @@ units:
     relations:
       - type: applies_to
         target: definition.shijing.product.protected-session-failure
+  - id: rule.shijing.product.r017
+    kind: rule
+    title: Daily RiJing run and activity
+    modality: must
+    statement: Settings.daily_rijing, when enabled, starts one RiJing run for the current RiJing date at its time in the RiJing basis time zone only while ShiJing is running with the product mounted, including while another tab or Settings page is shown; it never launches or wakes ShiJing and never catches up a time that passed while ShiJing was closed, before the setting was enabled or changed, or more than ten minutes before a suspended ShiJing resumed; the daily run, RiJing page generation, failure retry, and explicit manual generation share one in-app entry so at most one RiJing generation runs at a time; automatic runs skip when a current RiJing Reading for the date and inputs exists and are not repeated after a failure for the same inputs, while explicit manual generation stays available; while daily RiJing is enabled, today's first RiJing Reading comes only from the daily run at its time or from explicit manual generation, and RiJing page generation only refreshes an existing Reading of today whose inputs changed, so opening ShiJing or RiJing after a missed time never produces it; each RiJing Reading is first saved in the complete ShiJingSpace and only then projected as one ordinary App activity without open target, keyed by RiJing date and method profile with the Reading created_at second as revision, whose title, summary, and data carry only the date, day pillar, and method label and never Runtime-AI wording, concern text, memories, plans, natal data, or Person data; a run that cannot start, failed generation, failed save, and failed publication are shown explicitly while saved data is kept and manual retry recovers; and after the Host reports the Nimi session invalidated, ShiJing starts no further daily run, generation save, or publication of that session and asks the user to reopen.
+    condition: Whenever daily RiJing is configured, a RiJing Reading is generated, saved, or published, or the Nimi session is invalidated.
+    failure: Skip the run, save, or publication, keep the saved ShiJingSpace, and display the typed failure with its manual recovery instead of a silent retry, catch-up run, or AI-derived activity text.
+    relations:
+      - type: applies_to
+        target: definition.shijing.product.daily-rijing-run

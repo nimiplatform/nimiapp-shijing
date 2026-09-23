@@ -28,6 +28,8 @@ import { describePersistenceError } from '../persistence/persistence-error-detai
 import { initialMingJingStartupGuideDismissed } from '../tabs/mingjing/mingjing-startup-guide.ts';
 import { shouldGatePrimaryTabForIntake } from '../onboarding/startup-intake.ts';
 import { MingJingIntakeGate } from '../onboarding/mingjing-intake-gate.tsx';
+import { RiJingGenerationProvider } from '../daily-rijing/rijing-generation-provider.tsx';
+import type { RiJingActivityPort } from '../daily-rijing/rijing-activity.ts';
 
 const RiJingTab = lazy(() =>
   import('../tabs/rijing-tab.tsx').then((module) => ({ default: module.RiJingTab })),
@@ -74,6 +76,9 @@ export interface ShijingShellProps {
   // carrier uses it to place the session / AI-config status inside settings
   // instead of above the product shell.
   readonly settingsExtras?: SettingsPageExtraModule | null;
+  // The Nimi App activity port saved RiJing Readings are published to;
+  // absent in previews and tests.
+  readonly activity?: RiJingActivityPort | null;
 }
 
 interface ActiveSettingsPageState {
@@ -131,109 +136,116 @@ export function ShijingShell(props: ShijingShellProps) {
     void replace_snapshot(commitMethodProfile(state.snapshot, methodProfileId));
   }
 
+  function openRiJing() {
+    setActivePage(null);
+    dispatch({ type: 'tab/activate', tab: 'rijing' });
+  }
+
   return (
-    <div className="shijing-shell" data-active-tab={state.active_tab}>
-      <header className="shijing-topbar">
-        <div className="shijing-topbar__brand">
-          <span className="shijing-topbar__wordmark">{copy.brandName}</span>
-          <span className="shijing-topbar__tagline" aria-hidden>
-            SHIJING · OS
-          </span>
-        </div>
-        <PrimaryTabBar />
-        <div className="shijing-topbar__method">
-          <MethodProfileSelect
-            id="shijing-global-method-profile"
-            value={state.snapshot.settings.method_profile_id}
-            onChange={handleMethodProfileChange}
-            className="shijing-topbar__method-select"
-            aria-label={copy.methodProfile.algorithm}
-          />
-        </div>
-        <div className="shijing-topbar__account" ref={accountRef}>
-          <button
-            type="button"
-            className={
-              accountName
-                ? 'shijing-topbar__avatar-button'
-                : 'shijing-topbar__avatar-button shijing-topbar__avatar-button--anonymous'
-            }
-            aria-expanded={menuOpen}
-            aria-haspopup="menu"
-            aria-label={
-              accountName ? `${copy.shell.accountMenu} - ${accountName}` : copy.shell.accountMenu
-            }
-            onClick={() => setMenuOpen((v) => !v)}
-          >
-            <span className="shijing-topbar__avatar" aria-hidden>
-              {props.account?.avatarUrl ? (
-                <img src={props.account.avatarUrl} alt="" />
-              ) : (
-                avatarInitial(accountName)
-              )}
+    <RiJingGenerationProvider activity={props.activity ?? null} onOpenRiJing={openRiJing}>
+      <div className="shijing-shell" data-active-tab={state.active_tab}>
+        <header className="shijing-topbar">
+          <div className="shijing-topbar__brand">
+            <span className="shijing-topbar__wordmark">{copy.brandName}</span>
+            <span className="shijing-topbar__tagline" aria-hidden>
+              SHIJING · OS
             </span>
-            {accountName ? (
-              <span className="shijing-topbar__account-name">{accountName}</span>
-            ) : null}
-          </button>
-          {menuOpen ? (
-            <div className="shijing-account-menu">
-              <ActionMenu ariaLabel={copy.shell.settingsMenu} items={menuItems} />
-            </div>
-          ) : null}
-        </div>
-      </header>
-      <main className="shijing-shell__main" role="main">
-        {state.snapshot_status.kind === 'invalid' ? (
-          <p className="shijing-shell__error" role="alert">
-            {copy.shell.snapshotInvalid(state.snapshot_status.error.code)}
-          </p>
-        ) : null}
-        {persistence_status.kind === 'error' ? (
-          <p className="shijing-shell__error" role="alert">
-            {copy.shell.persistenceFailed(describePersistenceError(persistence_status.error))}
-          </p>
-        ) : null}
-        <Suspense
-          fallback={
-            <p className="shijing-shell__loading" role="status">
-              {copy.shell.loadingMirror}
-            </p>
-          }
-        >
-          {shouldGatePrimaryTabForIntake(state.snapshot, state.active_tab) ? (
-            <MingJingIntakeGate
-              gatedTab={state.active_tab}
-              onGoToMingJing={() => dispatch({ type: 'tab/activate', tab: 'mingjing' })}
+          </div>
+          <PrimaryTabBar />
+          <div className="shijing-topbar__method">
+            <MethodProfileSelect
+              id="shijing-global-method-profile"
+              value={state.snapshot.settings.method_profile_id}
+              onChange={handleMethodProfileChange}
+              className="shijing-topbar__method-select"
+              aria-label={copy.methodProfile.algorithm}
             />
-          ) : (
-            renderActiveTab(
-              state.active_tab,
-              (page, focusTarget) => openPage(page ?? 'profile', focusTarget),
-              startupGuideDismissed,
-              () => setStartupGuideDismissed(true),
-            )
-          )}
-        </Suspense>
-      </main>
-      {activePage ? (
-        <Suspense
-          fallback={
-            <div className="shijing-settings-page shijing-settings-page--loading" role="status">
-              {copy.shell.loadingSettings}
-            </div>
-          }
-        >
-          <SettingsPageView
-            pageId={activePage.pageId}
-            focusTarget={activePage.focusTarget}
-            onBack={() => setActivePage(null)}
-            onNavigate={(pageId) => setActivePage({ pageId, focusTarget: null })}
-            settingsExtras={props.settingsExtras ?? null}
-          />
-        </Suspense>
-      ) : null}
-    </div>
+          </div>
+          <div className="shijing-topbar__account" ref={accountRef}>
+            <button
+              type="button"
+              className={
+                accountName
+                  ? 'shijing-topbar__avatar-button'
+                  : 'shijing-topbar__avatar-button shijing-topbar__avatar-button--anonymous'
+              }
+              aria-expanded={menuOpen}
+              aria-haspopup="menu"
+              aria-label={
+                accountName ? `${copy.shell.accountMenu} - ${accountName}` : copy.shell.accountMenu
+              }
+              onClick={() => setMenuOpen((v) => !v)}
+            >
+              <span className="shijing-topbar__avatar" aria-hidden>
+                {props.account?.avatarUrl ? (
+                  <img src={props.account.avatarUrl} alt="" />
+                ) : (
+                  avatarInitial(accountName)
+                )}
+              </span>
+              {accountName ? (
+                <span className="shijing-topbar__account-name">{accountName}</span>
+              ) : null}
+            </button>
+            {menuOpen ? (
+              <div className="shijing-account-menu">
+                <ActionMenu ariaLabel={copy.shell.settingsMenu} items={menuItems} />
+              </div>
+            ) : null}
+          </div>
+        </header>
+        <main className="shijing-shell__main" role="main">
+          {state.snapshot_status.kind === 'invalid' ? (
+            <p className="shijing-shell__error" role="alert">
+              {copy.shell.snapshotInvalid(state.snapshot_status.error.code)}
+            </p>
+          ) : null}
+          {persistence_status.kind === 'error' ? (
+            <p className="shijing-shell__error" role="alert">
+              {copy.shell.persistenceFailed(describePersistenceError(persistence_status.error))}
+            </p>
+          ) : null}
+          <Suspense
+            fallback={
+              <p className="shijing-shell__loading" role="status">
+                {copy.shell.loadingMirror}
+              </p>
+            }
+          >
+            {shouldGatePrimaryTabForIntake(state.snapshot, state.active_tab) ? (
+              <MingJingIntakeGate
+                gatedTab={state.active_tab}
+                onGoToMingJing={() => dispatch({ type: 'tab/activate', tab: 'mingjing' })}
+              />
+            ) : (
+              renderActiveTab(
+                state.active_tab,
+                (page, focusTarget) => openPage(page ?? 'profile', focusTarget),
+                startupGuideDismissed,
+                () => setStartupGuideDismissed(true),
+              )
+            )}
+          </Suspense>
+        </main>
+        {activePage ? (
+          <Suspense
+            fallback={
+              <div className="shijing-settings-page shijing-settings-page--loading" role="status">
+                {copy.shell.loadingSettings}
+              </div>
+            }
+          >
+            <SettingsPageView
+              pageId={activePage.pageId}
+              focusTarget={activePage.focusTarget}
+              onBack={() => setActivePage(null)}
+              onNavigate={(pageId) => setActivePage({ pageId, focusTarget: null })}
+              settingsExtras={props.settingsExtras ?? null}
+            />
+          </Suspense>
+        ) : null}
+      </div>
+    </RiJingGenerationProvider>
   );
 }
 

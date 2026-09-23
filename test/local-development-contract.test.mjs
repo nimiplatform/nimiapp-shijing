@@ -98,7 +98,9 @@ test('local development status renders inside the settings page, not above the p
 
   // The status panel is injected into the 设置 sub-page as an extra module.
   assert.match(productArea, /targetId: 'settings-local-development'/);
-  assert.match(productArea, /<ShijingShell settingsExtras=\{settingsExtras\} \/>/);
+  assert.match(productArea, /<ShijingShell settingsExtras=\{settingsExtras\}[^>]*\/>/);
+  // Saved RiJing Readings are published through the SDK App activity client.
+  assert.match(productArea, /activity=\{shijingLocalAppRuntimePlatform\.activity\}/);
   assert.doesNotMatch(productArea, /^\s*<ShijingLocalDevelopmentStatus \/>$/m);
   assert.match(shell, /settingsExtras=\{props\.settingsExtras \?\? null\}/);
   assert.match(settingsPage, /extras\.targetId/);

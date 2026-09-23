@@ -1,10 +1,11 @@
 app_id: nimi.shijing
 display_name: 时镜 ShiJing
-version: 0.1.9
+version: 0.1.10
 profile: standalone
 manifest_role: submitted-input
 app_access:
   - runtime.consume
+  - app.activity
 local_development:
   electron:
     renderer_origin: http://127.0.0.1:1430

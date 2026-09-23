@@ -2,6 +2,7 @@
 
 import type { ProductCopy } from './copy-types.ts';
 import { EN_BASE_COPY } from './en/base.ts';
+import { EN_DAILY_RIJING_COPY } from './en/daily-rijing.ts';
 import { EN_HEJING_COPY } from './en/hejing.ts';
 import { EN_MINGJING_COPY } from './en/mingjing.ts';
 import { EN_RIJING_COPY } from './en/rijing.ts';
@@ -11,6 +12,7 @@ import { EN_YUEJING_COPY } from './en/yuejing.ts';
 export const EN_COPY: ProductCopy = {
   ...EN_BASE_COPY,
   rijing: EN_RIJING_COPY,
+  dailyRiJing: EN_DAILY_RIJING_COPY,
   yuejing: EN_YUEJING_COPY,
   hejing: EN_HEJING_COPY,
   shijing: EN_SHIJING_COPY,

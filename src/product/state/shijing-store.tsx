@@ -65,6 +65,14 @@ interface ShijingStoreValue {
 
 const ShijingStoreContext = createContext<ShijingStoreValue | null>(null);
 
+function productUnmountedStatus(client: PersistenceClient): PersistenceLifecycleStatus {
+  return {
+    kind: 'error',
+    adapter: client.adapter_kind,
+    error: { kind: 'save_write_failed', adapter: client.adapter_kind, cause: 'shijing_product_unmounted' },
+  };
+}
+
 interface ShijingStoreProviderProps {
   readonly snapshot: ShiJingSpace;
   readonly persistenceClient?: PersistenceClient | null;
@@ -90,6 +98,15 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
     useState<InitialPersistenceLoadState>(props.persistenceClient ? 'pending' : 'ready');
   const saverRef = useRef<DebouncedSaver | null>(null);
   const lastSavedRef = useRef<ShiJingSpace | null>(null);
+  // Once the product unmounts (including after the Nimi session was
+  // invalidated), work that is still running must not write this space.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!props.persistenceClient) {
@@ -138,6 +155,9 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
       rawDispatch({ type: 'snapshot/replace', snapshot });
       return { kind: 'idle' };
     }
+    if (!mountedRef.current) {
+      return productUnmountedStatus(client);
+    }
     if (initialPersistenceLoadState !== 'ready') {
       return persistenceStatus.kind === 'error'
         ? persistenceStatus
@@ -145,6 +165,9 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
     }
     if (saver) {
       await saver.flush();
+    }
+    if (!mountedRef.current) {
+      return productUnmountedStatus(client);
     }
     const status = await saveSnapshotNow(client, snapshot, setPersistenceStatus);
     if (status.kind !== 'saved') return status;

@@ -15,25 +15,22 @@
 //   RiJingDataSection  — 推演依据与数据说明: evidence chips + an expandable data
 //                        panel that folds in the 资料完整度 readiness signal
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import type { ReadingGenerationFailure } from '../../domain/reading.ts';
 import type { RiJingMirrorOutput } from '../../domain/mirror-output.ts';
 import type { EventMemory } from '../../domain/event-memory.ts';
-import { generateReadingForStorage } from '../reading/generate-and-store.ts';
-import { computeCanonicalHash } from '../astrology/canonical-hash.ts';
-import { inputsSummaryStaleForSpace } from '../astrology/inputs-summary-expiry.ts';
-import { newReadingId } from '../ids/index.ts';
-import { latestReadingByMirrorKind } from '../reading/reading-selectors.ts';
+import { useRiJingGeneration } from '../daily-rijing/rijing-generation-provider.tsx';
+import { planRiJing } from '../reading/rijing-plan.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { useProductCopy, type ProductCopy } from '../i18n/copy.ts';
 import { classifyMirrorTabState } from './mirror-state.ts';
-import { persistenceReadyForAutoGeneration } from './auto-generation-readiness.ts';
-import { dailyMirrorScopeForToday } from './mirror-scope-helpers.ts';
 import {
-  subjectMirrorReadiness,
-  type NatalReadiness,
-} from '../subjects/natal-readiness.ts';
+  persistenceReadyForAutoGeneration,
+  persistenceReadyForManualGeneration,
+} from './auto-generation-readiness.ts';
+import { dailyMirrorScopeForToday } from './mirror-scope-helpers.ts';
+import type { NatalReadiness } from '../subjects/natal-readiness.ts';
 import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
 import type { ShijingSettingsFocusTarget } from '../settings/settings-page-view.tsx';
 import type { PersistenceLifecycleStatus } from '../state/persistence-bridge.ts';
@@ -58,10 +55,6 @@ import { RiJingEventInput } from './rijing/rijing-event-input.tsx';
 import { RiJingActions } from './rijing/rijing-actions.tsx';
 import { RiJingProjections } from './rijing/rijing-projections.tsx';
 import { RiJingDataSection } from './rijing/rijing-evidence.tsx';
-
-function nowIso(): string {
-  return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
-}
 
 function deriveRiJingEmptyState(input: {
   readonly hasReading: boolean;
@@ -148,47 +141,31 @@ export interface RiJingTabProps {
 
 export function RiJingTab(props: RiJingTabProps) {
   const copy = useProductCopy();
-  const {
-    state,
-    replace_snapshot,
-    persistence_status,
-    persistence_client,
-    runtime_ai_client,
-  } = useShijingStore();
-  const [loading, setLoading] = useState(false);
-  const [failure, setFailure] = useState<ReadingGenerationFailure | null>(null);
+  const { state, persistence_status, persistence_client } = useShijingStore();
+  const generation = useRiJingGeneration();
 
   const activeTags = useMemo(
     () => state.snapshot.concern_tags.filter((t) => t.status === 'active'),
     [state.snapshot.concern_tags],
   );
-  const activeTagIds = useMemo(() => activeTags.map((t) => t.id), [activeTags]);
   const today = dailyMirrorScopeForToday().date;
-  const dailyScope = useMemo(() => dailyMirrorScopeForToday(), [today]);
-  const referenceEventRefs = useMemo(
-    () =>
-      deriveRiJingReferenceEventRefs({
-        memories: state.snapshot.event_memories,
-        scope: dailyScope,
-      }),
-    [state.snapshot.event_memories, dailyScope],
-  );
-  const reading = latestReadingByMirrorKind({
-    readings: state.snapshot.readings,
-    mirror_kind: 'rijing',
-    method_profile_id: state.snapshot.settings.method_profile_id,
-  });
-  const stale = reading
-    ? inputsSummaryStaleForSpace({
-        reading,
-        space: state.snapshot,
-        now: new Date(),
-        expected_mirror_scope: dailyScope,
-        expected_concern_tag_refs: activeTagIds,
-        expected_cited_event_memory_refs: referenceEventRefs,
-      })
-    : false;
-  const currentReading = reading && !stale ? reading : undefined;
+  // The same plan the in-app RiJing generation entry uses, so the page and
+  // the daily run agree on whether today's Reading is current.
+  const plan = useMemo(() => planRiJing(state.snapshot, new Date()), [state.snapshot, today]);
+  const dailyScope = plan.scope;
+  const activeTagIds = plan.active_tag_ids;
+  const referenceEventRefs = plan.reference_event_refs;
+  const readiness = plan.readiness;
+  const currentReading = plan.current_reading;
+  const loading = generation.status.kind === 'generating';
+  const dailyRiJing = state.snapshot.settings.daily_rijing;
+  const dailyNote = dailyRiJing?.enabled && !plan.has_reading_today && !loading
+    ? copy.dailyRiJing.pageNote(dailyRiJing.time)
+    : null;
+  const failure: ReadingGenerationFailure | null =
+    generation.status.kind === 'failed' && generation.status.signature === plan.signature
+      ? generation.status.failure
+      : null;
   const tabState = useMemo(
     () =>
       classifyMirrorTabState({
@@ -200,84 +177,30 @@ export function RiJingTab(props: RiJingTabProps) {
     [currentReading, failure, loading],
   );
 
-  const readiness = useMemo(
-    () =>
-      subjectMirrorReadiness({
-        subject: 'self',
-        space: state.snapshot,
-        mirror_kind: 'rijing',
-        mirror_scope: dailyScope,
-      }),
-    [state.snapshot, dailyScope],
-  );
-
-  const autoGenSignature = useMemo(
-    () =>
-      computeCanonicalHash({
-        mirror_scope: dailyScope,
-        // Switching the 命理 method must invalidate the auto-gen attempt so the
-        // mirror regenerates under the new engine (else stale BaZi data persists).
-        method_profile_id: state.snapshot.settings.method_profile_id ?? null,
-        self_natal_inputs: state.snapshot.self_subject.natal_inputs,
-        active_concern_tags: activeTags.map((tag) => ({
-          id: tag.id,
-          label: tag.label,
-          status: tag.status,
-          sort_order: tag.sort_order,
-          parsed_topics: tag.parsed_topics,
-          mention_refs: tag.mention_refs,
-          prompt_text: tag.prompt_text,
-        })),
-        response_preferences: state.snapshot.settings.response_preferences,
-        cited_event_memory_refs: referenceEventRefs,
-      }),
-    [
-      dailyScope,
-      state.snapshot.settings.method_profile_id,
-      state.snapshot.self_subject.natal_inputs,
-      activeTags,
-      state.snapshot.settings.response_preferences,
-      referenceEventRefs,
-    ],
-  );
-  const autoGenAttemptRef = useRef<string | null>(null);
   const persistenceReady = persistenceReadyForAutoGeneration({
     persistence_status,
     has_persistence_client: persistence_client !== null,
   });
+  const manualPersistenceReady = persistenceReadyForManualGeneration({
+    persistence_status,
+    has_persistence_client: persistence_client !== null,
+  });
+  const saveFailed = generation.status.kind === 'save_failed' && generation.status.signature === plan.signature;
+  const manualGenerationReady = manualPersistenceReady && readiness.ok && activeTagIds.length > 0;
 
+  // Opening RiJing generates or refreshes today's Reading once per set of
+  // inputs; the generation entry skips it when a current Reading exists, when
+  // daily RiJing is on and today has no Reading yet, when these inputs were
+  // already attempted, or while another generation runs.
+  const requestGeneration = generation.request;
   useEffect(() => {
-    if (loading) return;
-    if (!persistenceReady) return;
-    if (!readiness.ok) return;
-    if (activeTagIds.length === 0) return;
-    if (currentReading) return;
-    if (autoGenAttemptRef.current === autoGenSignature) return;
-    autoGenAttemptRef.current = autoGenSignature;
-    void handleGenerate();
-  }, [loading, persistenceReady, readiness, activeTagIds, currentReading, autoGenSignature]);
+    if (!persistenceReady || !readiness.ok || activeTagIds.length === 0 || currentReading) return;
+    void requestGeneration('page');
+  }, [requestGeneration, persistenceReady, readiness.ok, activeTagIds.length, currentReading, plan.signature]);
 
-  async function handleGenerate() {
-    if (loading || !persistenceReady || !readiness.ok || activeTagIds.length === 0) return;
-    setLoading(true);
-    setFailure(null);
-    const outcome = await generateReadingForStorage({
-      id: newReadingId(),
-      created_at: nowIso(),
-      mirror_kind: 'rijing',
-      mirror_scope: dailyMirrorScopeForToday(),
-      related_person_refs: [],
-      concern_tag_refs: activeTagIds,
-      cited_event_memory_refs: referenceEventRefs,
-      space: state.snapshot,
-      deps: { runtime_ai_client },
-    });
-    setLoading(false);
-    if (outcome.ok) {
-      void replace_snapshot(outcome.next_space);
-    } else {
-      setFailure(outcome.failure);
-    }
+  function handleGenerate() {
+    if (loading || !manualGenerationReady) return;
+    void requestGeneration('manual');
   }
 
   const emptyState = deriveRiJingEmptyState({
@@ -315,7 +238,9 @@ export function RiJingTab(props: RiJingTabProps) {
   const heroEmptyAction =
     currentReading || loading
       ? undefined
-      : emptyActionForState(emptyState, props.onRequestOpenSettings, handleGenerate, copy);
+      : saveFailed && manualGenerationReady
+        ? { label: copy.rijing.refreshAria.regenerate, onClick: handleGenerate }
+        : emptyActionForState(emptyState, props.onRequestOpenSettings, handleGenerate, copy);
   const actions = deriveRiJingActions(
     currentReading,
     activeTags.map((t) => ({ id: t.id, label: t.label })),
@@ -327,10 +252,10 @@ export function RiJingTab(props: RiJingTabProps) {
       ? failureActionFor(tabState.failure, props.onRequestOpenSettings, copy)
       : undefined;
 
-  const refreshDisabled = loading || !persistenceReady || activeTagIds.length === 0 || !readiness.ok;
+  const refreshDisabled = loading || !manualGenerationReady;
   const refreshAriaLabel = loading
     ? copy.rijing.refreshAria.loading
-    : !persistenceReady
+    : !manualPersistenceReady
       ? persistence_status.kind === 'error'
         ? copy.rijing.refreshAria.persistenceFailed
         : copy.rijing.refreshAria.persistencePending
@@ -338,12 +263,12 @@ export function RiJingTab(props: RiJingTabProps) {
         ? copy.rijing.refreshAria.profileIncomplete
         : activeTagIds.length === 0
           ? copy.rijing.refreshAria.missingFocus
-          : tabState.kind === 'failure'
+          : tabState.kind === 'failure' || saveFailed
             ? copy.rijing.refreshAria.regenerate
             : copy.rijing.refreshAria.refresh;
   const refreshButtonLabel = loading
     ? copy.rijing.refreshAria.loading
-    : tabState.kind === 'failure'
+    : tabState.kind === 'failure' || saveFailed
       ? copy.rijing.refreshAria.regenerate
       : currentReading
         ? copy.rijing.refreshAria.refresh
@@ -410,6 +335,7 @@ export function RiJingTab(props: RiJingTabProps) {
       {tabState.kind === 'loading' ? (
         <p role="status">{copy.rijing.loadingStatus}</p>
       ) : null}
+      {dailyNote ? <p role="status">{dailyNote}</p> : null}
       {tabState.kind === 'failure' ? (
         <FailureBanner failure={tabState.failure} action={failureAction} />
       ) : null}

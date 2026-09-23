@@ -118,6 +118,12 @@
       "capability-unavailable": "Retry here. If this state persists, relaunch ShiJing from Nimi Desktop."
     },
     "technicalDetails": "Technical details",
-    "retry": "Retry"
+    "retry": "Retry",
+    "sessionChanged": {
+      "badge": "Session changed",
+      "title": "Your Nimi session changed",
+      "detail": "ShiJing stopped saving, the scheduled Daily Mirror, and activity sync for the ended session. Saved content is unaffected; reopen to continue with the current Nimi account.",
+      "reopen": "Reopen"
+    }
   }
 }

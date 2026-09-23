@@ -58,7 +58,7 @@ export function ProductArea() {
           conversationChatBridge={conversationChatBridge}
           aiConfigReady={aiConfigReady}
         >
-          <ShijingShell settingsExtras={settingsExtras} />
+          <ShijingShell settingsExtras={settingsExtras} activity={shijingLocalAppRuntimePlatform.activity} />
         </ShijingStoreProvider>
       </ShellLayout>
     </div>

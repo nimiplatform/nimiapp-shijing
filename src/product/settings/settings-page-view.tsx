@@ -29,6 +29,7 @@ import {
   isPresenceVerificationForSelfProfile,
   selfProfilePresenceVerificationFailureReason,
 } from '../self/self-profile-privacy.ts';
+import { DailyRiJingEditor } from '../daily-rijing/daily-rijing-editor.tsx';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { LocalDataDiagnosticsSection } from './local-data-diagnostics-section.tsx';
 import { MethodProfileEditor } from './method-profile-editor.tsx';
@@ -221,6 +222,7 @@ export function SettingsPageView({
                 <Fragment key={surface}>
                   <UiLanguageSwitch />
                   <MethodProfileEditor />
+                  <DailyRiJingEditor />
                   <ResponsePreferencesEditor />
                 </Fragment>
               );

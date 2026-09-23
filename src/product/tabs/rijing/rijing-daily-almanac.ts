@@ -52,6 +52,17 @@ function hourLuck(hour: SixtyCycleHour): RiJingDailyAlmanacHour {
   };
 }
 
+/** The day pillar (日柱干支) of a civil date, e.g. 丙午. */
+export function rijingDayPillar(date: string): string | null {
+  const parsed = parseIsoDate(date);
+  if (!parsed) return null;
+  try {
+    return SolarDay.fromYmd(parsed.year, parsed.month, parsed.day).getLunarDay().getSixtyCycle().getName();
+  } catch {
+    return null;
+  }
+}
+
 export function deriveRiJingDailyAlmanac(date: string): RiJingDailyAlmanac | null {
   const parsed = parseIsoDate(date);
   if (!parsed) return null;

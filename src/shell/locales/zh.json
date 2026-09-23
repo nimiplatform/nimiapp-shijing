@@ -118,6 +118,12 @@
       "capability-unavailable": "请在此重试。若状态持续，请从 Nimi Desktop 重新启动时镜。"
     },
     "technicalDetails": "技术详情",
-    "retry": "重试"
+    "retry": "重试",
+    "sessionChanged": {
+      "badge": "会话已变化",
+      "title": "与 Nimi 的会话已变化",
+      "detail": "时镜已停止这次会话中的保存、每日日镜和活动同步。已保存的内容不受影响，重新打开后按当前 Nimi 账号继续。",
+      "reopen": "重新打开"
+    }
   }
 }

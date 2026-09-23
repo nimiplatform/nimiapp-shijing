@@ -37,10 +37,27 @@ export interface ResponsePreferences {
   readonly extra_instructions?: string;
 }
 
+// rule.shijing.product.r017 — when the in-app daily RiJing run starts. The
+// time is a 24-hour HH:MM wall-clock time in the RiJing basis time zone.
+export interface DailyRiJingSettings {
+  readonly enabled: boolean;
+  readonly time: string;
+}
+
+export const DAILY_RIJING_TIME_PATTERN = /^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/u;
+
+export const DEFAULT_DAILY_RIJING_TIME = '08:00';
+
+export function isDailyRiJingTime(value: unknown): value is string {
+  return typeof value === 'string' && DAILY_RIJING_TIME_PATTERN.test(value);
+}
+
 export interface Settings {
   readonly ui_language: UiLanguage;
   readonly response_preferences: ResponsePreferences;
   // Active 命理 method profile for generation (SJG-ALGO-01/02). Absent ⇒ the
   // default profile (bazi_ziping_v1). Not a wording preference.
   readonly method_profile_id?: MethodProfileId;
+  // Absent ⇒ no daily run. Never enters calculation, hashing, or provenance.
+  readonly daily_rijing?: DailyRiJingSettings;
 }
