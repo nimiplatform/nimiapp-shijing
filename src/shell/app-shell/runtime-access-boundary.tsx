@@ -86,6 +86,12 @@ export function RuntimeAccessBoundary() {
   const state: ShijingRuntimeAccessState = failure?.state ?? 'runtime-unavailable';
   const reasonCode = failure?.reasonCode ?? 'shijing-runtime-access-unavailable';
   const actionHint = failure?.actionHint ?? 'retry_same_host';
+  const ownerRecovery = failure?.code ?? reasonCode;
+  const recoveryKey = ownerRecovery === 'runtime-permission-denied'
+    ? 'permission-denied'
+    : ownerRecovery === 'runtime-service-repair-required'
+      ? 'repair-required'
+      : state;
 
   return (
     <AmbientBackground variant="mesh" className="shijing-protected-gate">
@@ -123,7 +129,7 @@ export function RuntimeAccessBoundary() {
           <p>{t('Shell.accessDetail')}</p>
         </div>
         <div className="shijing-protected-gate__action-hint">
-          <span>{t(`Shell.accessAction.${state}`)}</span>
+          <span>{t(`Shell.accessAction.${recoveryKey}`)}</span>
         </div>
         <details className="shijing-protected-gate__technical">
           <summary>{t('Shell.technicalDetails')}</summary>

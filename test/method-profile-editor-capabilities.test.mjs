@@ -11,7 +11,7 @@ const personalDataStyles = readCssBundle(settingsCssFiles).replace(/\/\*[\s\S]*?
 
 test('method profile editor renders the feature capability declaration next to the switcher', () => {
   assert.match(editorSource, /deriveMethodProfileCapabilityRows/u);
-  assert.match(editorSource, /const capabilityRows = deriveMethodProfileCapabilityRows\(\)/u);
+  assert.match(editorSource, /const capabilityRows = deriveMethodProfileCapabilityRows\(copy\)/u);
   assert.match(editorSource, /copy\.methodProfile\.capabilities\.title/u);
   assert.match(editorSource, /data-method-profile-id=\{row\.method_profile_id\}/u);
   assert.match(editorSource, /data-mingjing-route-status=\{row\.mingjing_route\.status\}/u);

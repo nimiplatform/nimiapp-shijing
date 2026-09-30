@@ -4,6 +4,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Tooltip } from '@nimiplatform/kit/ui';
+import { useProductCopy } from '../i18n/copy.ts';
 import {
   CONCERN_TAG_ACTIVE_LIMIT,
   type ConcernTag,
@@ -48,12 +49,19 @@ export function InlineConcernEditorPopover({
   classNamePrefix = 'shijing-inline-concern-editor',
   ariaLabel,
   title,
-  activeHeading = '已激活',
-  addableHeading = '可添加',
-  removeLabel = '移除',
-  addLabel = '添加',
-  customPlaceholder = '自定义关注, 如「学业」「创业」',
+  activeHeading,
+  addableHeading,
+  removeLabel,
+  addLabel,
+  customPlaceholder,
 }: InlineConcernEditorPopoverProps) {
+  const copy = useProductCopy();
+  const c = copy.yuejingSurface.concernEditor;
+  activeHeading ??= c.activeHeading;
+  addableHeading ??= c.addableHeading;
+  removeLabel ??= c.remove;
+  addLabel ??= c.add;
+  customPlaceholder ??= c.customPlaceholder;
   const { state, replace_snapshot } = useShijingStore();
   const [draftInput, setDraftInput] = useState('');
   const popoverRef = useRef<HTMLDivElement | null>(null);
@@ -213,7 +221,7 @@ export function InlineConcernEditorPopover({
               const label = s.kind === 'archived' ? s.label : s.preset.label;
               const suggestionSubtitle = s.kind === 'archived' ? s.subtitle : s.preset.subtitle;
               const key = s.kind === 'archived' ? `arc-${s.id}` : `pre-${s.preset.label}`;
-              const addTitle = atLimit ? `已达激活上限 ${CONCERN_TAG_ACTIVE_LIMIT}` : '加入关注';
+              const addTitle = atLimit ? copy.concerns.addLimitTitle(CONCERN_TAG_ACTIVE_LIMIT) : copy.concerns.addTitle;
               return (
                 <li key={key}>
                   <div className={cx('row-text')}>

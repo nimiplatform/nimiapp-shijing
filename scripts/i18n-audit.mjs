@@ -4,6 +4,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, extname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { extractI18nLiterals } from './i18n-literals.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -22,7 +23,10 @@ function loadConfig() {
   return {
     scopeDirs: Array.isArray(audit.scopeDirs) ? audit.scopeDirs : [],
     extensions: Array.isArray(audit.extensions) ? audit.extensions : ['.ts', '.tsx'],
-    excludePathPatterns: Array.isArray(audit.excludePathPatterns) ? audit.excludePathPatterns : [],
+    excludePathPatterns: [
+      ...(Array.isArray(audit.excludePathPatterns) ? audit.excludePathPatterns : []),
+      ...Object.keys(audit.nonUiSources ?? {}),
+    ],
     knownDebtPathPatterns: Array.isArray(audit.knownDebtPathPatterns) ? audit.knownDebtPathPatterns : [],
     allowTextPatterns: Array.isArray(audit.allowTextPatterns) ? audit.allowTextPatterns : [],
   };
@@ -50,22 +54,6 @@ function collectFiles(input) {
     files.push(current);
   }
   return files;
-}
-
-function extractCandidatesFromLine(line, isTsxFile) {
-  const candidates = [];
-  const jsxTextRegex = />\s*([^<>{]+?)\s*</g;
-  const attrRegex = /\b(?:aria-label|placeholder|title|label|description|alt)\s*=\s*["'`]([^"'`]+)["'`]/g;
-  const regexes = isTsxFile ? [jsxTextRegex, attrRegex] : [attrRegex];
-
-  for (const regex of regexes) {
-    let match;
-    while ((match = regex.exec(line))) {
-      const text = String(match[1] || '').trim();
-      if (text) candidates.push(text);
-    }
-  }
-  return candidates;
 }
 
 function isLikelyTranslationKey(text) {
@@ -106,23 +94,23 @@ function isLikelyCodeFragment(text, line) {
 function auditFile({ filePath, relPath, allowRegexes }) {
   const source = readFileSync(filePath, 'utf8');
   const lines = source.split('\n');
-  const isTsxFile = extname(filePath) === '.tsx';
   const violations = [];
-
-  lines.forEach((line, index) => {
+  const seen = new Set();
+  for (const { line: lineNumber, text: candidate } of extractI18nLiterals(source, filePath)) {
+    const index = lineNumber - 1;
+    const line = lines[index];
     const trimmed = line.trim();
-    if (!trimmed) return;
-    if (trimmed.startsWith('//')) return;
-    if (line.includes('useProductCopy(') || line.includes('getProductCopy(')) return;
-    if (line.includes('t(\'') || line.includes('t("') || line.includes('i18n.t(')) return;
-
-    for (const candidate of extractCandidatesFromLine(line, isTsxFile)) {
+    if (!trimmed) continue;
+    if (line.includes('useProductCopy(') || line.includes('getProductCopy(')) continue;
+    if (line.includes('t(\'') || line.includes('t("') || line.includes('i18n.t(')) continue;
       if (!isUserVisibleLiteral(candidate)) continue;
       if (isLikelyCodeFragment(candidate, line)) continue;
       if (allowRegexes.some((regex) => regex.test(candidate))) continue;
+      const key = `${lineNumber}:${candidate}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
       violations.push({ file: relPath, line: index + 1, text: candidate });
-    }
-  });
+  }
 
   return violations;
 }

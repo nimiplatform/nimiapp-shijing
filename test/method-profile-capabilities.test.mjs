@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import test from 'node:test';
+import { getProductCopy } from '../src/product/i18n/copy.ts';
 
 const capabilitiesUrl = new URL(
   '../src/product/settings/method-profile-capabilities.ts',
@@ -14,7 +15,7 @@ test('method profile capabilities disclose generic mirrors and MingJing route su
     deriveMethodProfileCapabilityRows,
   } = await import(capabilitiesUrl.href);
 
-  const rows = deriveMethodProfileCapabilityRows();
+  const rows = deriveMethodProfileCapabilityRows(getProductCopy('zh'));
   assert.deepEqual(
     rows.map((row) => row.method_profile_id),
     ['bazi_ziping_v1', 'ziwei_sanhe_v1', 'qizheng_siyu_guolao_v1'],

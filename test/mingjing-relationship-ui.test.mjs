@@ -29,7 +29,7 @@ const hejingSectionsSource = readFileSync(
 );
 
 const hejingContentSource = readFileSync(
-  new URL('../src/product/tabs/hejing/hejing-content.ts', import.meta.url),
+  new URL('../src/product/i18n/zh/hejing-surface.ts', import.meta.url),
   'utf8',
 );
 
@@ -98,7 +98,7 @@ test('HeJing hard-cuts radar, metrics, quarters and the removed sections everywh
   }
   // The workbench never falls back to sample workspaces in the real path.
   assert.doesNotMatch(hejingTabSource, /HEJING_RELATIONSHIP_WORKSPACES/u);
-  assert.match(hejingTabSource, /state\.snapshot\.persons\.map\(buildHeJingWorkspaceFromPerson\)/u);
+  assert.match(hejingTabSource, /state\.snapshot\.persons\.map\(\(person\) => buildHeJingWorkspaceFromPerson\(person, copy\)\)/u);
 });
 
 test('HeJing overview section renders admitted overview wording only', () => {
@@ -201,7 +201,7 @@ test('HeJing pattern gate replaces the generate CTA for methods without admitted
 });
 
 test('HeJing patterns_unavailable failure keeps the typed banner plus evidence guidance', () => {
-  assert.match(hejingTabSource, /<FailureBanner failure=\{failure\} \/>/u);
+  assert.match(hejingTabSource, /<FailureBanner failure=\{failure\} onRetry=\{handleGenerateAdvice\} \/>/u);
   assert.match(hejingTabSource, /failure\?\.kind === 'patterns_unavailable'/u);
   assert.match(hejingTabSource, /copy\.patternFailureGuidance/u);
 });

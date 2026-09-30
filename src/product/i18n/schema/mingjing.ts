@@ -8,6 +8,7 @@ import type {
 } from './shared.ts';
 
 export interface MingJingCopy {
+  readonly ageSuffix: string;
   readonly title: string;
   readonly eyebrow: string;
   readonly subtitle: string;

@@ -1,18 +1,7 @@
-import type { TendencyClass } from '../../../domain/mirror-output.ts';
+import type { YueJingMonthLanguageCopy } from '../schema/yuejing-language.ts';
 
-export interface TendencyLanguage {
-  readonly tagline: string;
-  readonly body: string;
-  readonly mainline: string;
-  readonly best_for: readonly string[];
-  readonly avoid_tags: readonly string[];
-  readonly suitable: string;
-  readonly unsuitable: string;
-  readonly review: string;
-  readonly avoid: readonly string[];
-}
-
-export const TENDENCY_LANGUAGE: Record<TendencyClass, TendencyLanguage> = {
+export const ZH_YUEJING_LANGUAGE_COPY: YueJingMonthLanguageCopy = {
+  tendency: {
   supportive: {
     tagline: '稳步推进，不急换向',
     body: '接下来30天适合稳步推进已确认的事情，不要急着换方向。',
@@ -68,21 +57,8 @@ export const TENDENCY_LANGUAGE: Record<TendencyClass, TendencyLanguage> = {
     review: '哪些阻力来自外部条件，哪些来自自己本来就可以提前收束的消耗？',
     avoid: ['硬碰硬、逼问或强行推进', '在阻力最重处一次性投入过多', '忽略身体与情绪的透支信号'],
   },
-};
-
-// ④ 关注行动 — the 30-day window split into four functional phases. The arc
-// is position-based (a stable monthly cadence), independent of the tendency
-// mix: each phase still derives its own dominant tendency for the accent color
-// and dot, but its role, theme and 适合/不适合 come from this table so the
-// timeline reads as a coherent "where are we in the month" narrative.
-export interface PhaseArcRole {
-  readonly name: string;
-  readonly theme: string;
-  readonly suitable: string;
-  readonly unsuitable: string;
-}
-
-export const PHASE_ARC: readonly PhaseArcRole[] = [
+},
+  phases: [
   {
     name: '记录变化',
     theme: '观察与记录，摸清节奏与变化',
@@ -107,33 +83,20 @@ export const PHASE_ARC: readonly PhaseArcRole[] = [
     suitable: '复盘总结、优化流程、收尾收束',
     unsuitable: '新开大项目、重大变动',
   },
-];
-
-// Short briefs for the ② 三个关键窗口 cards. One concise line each, distinct
-// from the longer TENDENCY_LANGUAGE.suitable used elsewhere.
-export const KEY_WINDOW_BRIEF = {
+],
+  brief: {
   push: '适合沟通、提交、落实已确认事项。',
   slow: '不急着下结论，先观察反馈。',
   turn: '适合复盘与调整策略。',
-} as const;
-
-export interface ConcernLanguage {
-  readonly supportive: string;
-  readonly steady: string;
-  readonly watch: string;
-  readonly turning: string;
-  readonly blocked: string;
-}
-
-export const GENERIC_CONCERN_LANGUAGE: ConcernLanguage = {
+} as const,
+  genericConcern: {
   supportive: '把已经明确的事往前推，让行动落到可确认的节点上。',
   steady: '维持已有节奏，把基础动作做稳定，不必额外制造变化。',
   watch: '多观察反馈与细节，先校准节奏，再决定是否加速。',
   turning: '识别方向变化，把新信号记录下来，避免用旧节奏处理新局面。',
   blocked: '收束、复盘并保留余地，不要在阻力最重的位置硬推。',
-};
-
-export const CONCERN_LANGUAGE_BY_LABEL: Record<string, ConcernLanguage> = {
+},
+  concernByLabel: {
   姻缘: {
     supportive: '增加真实接触，把话说清楚，推进见面、确认边界或修复沟通。',
     steady: '维持稳定互动，让关系在低压节奏里自然显形。',
@@ -176,31 +139,8 @@ export const CONCERN_LANGUAGE_BY_LABEL: Record<string, ConcernLanguage> = {
     turning: '留意家庭分工、照料责任或相处方式的变化，及时重排期待。',
     blocked: '避免硬劝、翻旧账或替别人做过多决定，先保留缓冲。',
   },
-};
-
-// ④ 关注行动 — per-concern 主轴 keyword + one-line summary + a concrete
-// 本期行动清单. Keyed by the trimmed concern label, with a generic fallback
-// for custom concerns. The checklist items reference 助力日 / 观察日 the same
-// way the windows do, so the advice stays grounded in the rhythm above.
-export interface ConcernAction {
-  readonly axis: string;
-  readonly summary: string;
-  readonly actions: readonly {
-    readonly source:
-      | 'primary'
-      | 'supportive'
-      | 'caution'
-      | 'turning'
-      | 'after_opening'
-      | 'first_supportive'
-      | 'middle_watch'
-      | 'middle_turning';
-    readonly label: string;
-  }[];
-  readonly reminders: readonly string[];
-}
-
-export const GENERIC_CONCERN_ACTION: ConcernAction = {
+},
+  genericAction: {
   axis: '节奏',
   summary: '以稳定节奏为主，把这个关注的关键动作安排在合适的窗口。',
   actions: [
@@ -213,9 +153,8 @@ export const GENERIC_CONCERN_ACTION: ConcernAction = {
     '减少切换',
     '观察反馈',
   ],
-};
-
-export const CONCERN_ACTION_BY_LABEL: Record<string, ConcernAction> = {
+},
+  actionByLabel: {
   姻缘: {
     axis: '沟通',
     summary: '以真实沟通为主，让关系在合适的节奏里自然推进。',
@@ -299,5 +238,14 @@ export const CONCERN_ACTION_BY_LABEL: Record<string, ConcernAction> = {
       '减少硬劝',
       '重排期待',
     ],
+  },
+},
+  date: (month, day) => `${month}月${day}日`,
+  labels: { phase: '时间阶段', phaseNumber: (n) => `第${n}阶段`, currentWindow: '当前窗口', mainline: '30 日主线',
+    push: '适合推进', watch: '先观察', turn: '可能转向', pushWindow: '主动推进窗口', watchWindow: '放慢判断窗口', turnWindow: '转向信号窗口',
+    pushCaution: '不适合只凭单日助力连续加码，推进后要留下确认点。', watchCaution: '不适合急着定性或逼出结果，先等连续信号出现。', turnCaution: '不适合用旧节奏处理新反馈，保留调整空间。', missingConcern: '适合先补齐这个关注在当前窗口的生成结果，再纳入整月判断。',
+    blockedRange: (text, range) => `${text} 阻力集中在 ${range}，这些日期不要硬推。`,
+    rangeList: (ranges, hasMore) => `${ranges.join('、')}${hasMore ? ' 等' : ''}`,
+    basis: (range, days, tags, cells) => [`${range} 内已生成 ${days}/30 日，覆盖 ${tags} 个激活关注。`,`主线来自 ${cells} 条逐日关注结果的聚合，不使用分数、排名或趋势曲线。`,'已有事件记忆和未来计划只在被对应 Reading 引用或日期落入窗口时参与解读，不会被补写成未发生的事实。','底层命理依据保留在生成链路与单日依据中，本页只展示可执行节奏。'],
   },
 };

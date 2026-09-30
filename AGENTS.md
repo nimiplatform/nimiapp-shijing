@@ -79,15 +79,20 @@ no data to migrate. Therefore:
 ### Fail-Close
 
 - `validateShiJingSpace` rejects any removed-surface field reappearance.
-- `validateReading` rejects any output that violates the canonical astrology
-  invariants (summary length, subject-ref membership, `mirror_kind` /
-  `mirror_scope` pairing, expired `inputs_summary`, forbidden phrases, or
-  missing/extra fields).
+- `validateReading` checks the persisted Reading shape, subject and citation
+  membership, `mirror_kind` / `mirror_scope` pairing, output contracts,
+  uncertainty fields and feature-snapshot hash. Generation and reuse gates
+  check `inputs_summary` freshness; expired historical records may remain in
+  storage. Summary-length and forbidden-phrase filtering are not implemented
+  by this validator.
 - Runtime AI wording failure → typed `runtime_ai_failed` status surfaced
   verbatim; never a synthesized substitute Reading.
 - Pipeline stage failure → typed `pipeline_stage_failed` with stage + kind +
   optional detail; never a silent retry.
 - Canonical-hash mismatch on persisted artifacts → fail-close.
+- Protected access has four SDK-derived postures; owner `reasonCode` and
+  `actionHint` form a separate recovery layer. Do not infer login from every
+  required action or permission denial from every revoked session.
 
 ## Hard Boundaries
 
@@ -115,6 +120,11 @@ no data to migrate. Therefore:
 - No History tab. No customer management. No batch import/export. No project
   management vocabulary. See `rule.shijing.ia.r002` and
   `.nimi/spec/shijing/canonical/removed-surfaces.authority.yaml`.
+- RiJing's generic civil-date almanac is admitted as auxiliary calendar-folklore
+  reference under `rule.shijing.ia.r010`; it never becomes a personal Reading
+  or affects deterministic tendencies, Reading hashes or Runtime-AI requests.
+- Settings contains a read-only archive of all saved plans across dates;
+  plan creation and editing remain on YueJing dates (`rule.shijing.ia.r004`).
 
 ### Subjects Boundary
 
@@ -131,9 +141,12 @@ no data to migrate. Therefore:
 - Production and local-development shells persist through the admitted
   Runtime-owned App-private asset partition. IndexedDB and in-memory adapters
   remain explicit test/preview-only components, not installed account truth.
-  No cloud upload or third-party SDK data collection.
-- Runtime AI sends only the deterministic feature snapshot + the frozen
-  `inputs_summary` over the runtime bridge; no raw user diary entries leak.
+  No App-owned cloud upload or third-party SDK data collection.
+- Runtime AI consumes deterministic evidence and frozen mirror context plus
+  the explicitly supplied wording context: concern text, concise summaries
+  of cited memories/plans, and consultation questions/history. It does not
+  send the complete diary. A configured Runtime cloud model may receive that
+  request through Nimi; the App does not select a separate provider connection.
 
 ## Development Workflow
 

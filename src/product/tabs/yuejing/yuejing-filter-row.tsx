@@ -1,20 +1,22 @@
+import { useProductCopy } from '../../i18n/copy.ts';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Tooltip } from '@nimiplatform/kit/ui';
 import type { TendencyClass } from '../../../domain/mirror-output.ts';
 import { CONCERN_TAG_ACTIVE_LIMIT, type ConcernTag } from '../../../domain/concern-tag.ts';
-import { TENDENCY_CLASS_LABELS } from '../../i18n/copy.ts';
+
 import { newConcernTagId } from '../../ids/index.ts';
 import { useShijingStore } from '../../state/shijing-store.tsx';
 import { deriveConcernTagLabelForDisplay, parseConcernTagInput } from '../../concern-tags/concern-tag-parser.ts';
 import { CONCERN_PRESETS, type ConcernPreset, concernSubtitleFor, trimmedConcernLabel as yuejingTagLabel } from '../../concern-tags/concern-presets.ts';
 import { nowIso } from './yuejing-model.ts';
-import { YUEJING_COPY } from './yuejing-copy.ts';
 
 export function YueJingFilterRow(props: {
   readonly activeTags: readonly ConcernTag[];
   readonly filterTagId: string | null;
   readonly onFilterChange: (id: string | null) => void;
 }) {
+  const TENDENCY_CLASS_LABELS = useProductCopy().tendencyClassLabels;
+  const YUEJING_COPY = useProductCopy().yuejingSurface;
   const [editorOpen, setEditorOpen] = useState(false);
   return (
     <div className="shijing-yuejing__filter-row" role="toolbar" aria-label={YUEJING_COPY.filter.toolbarAriaLabel}>
@@ -88,6 +90,7 @@ function FilterPill(props: {
 // editing) still live in Settings → 关注.
 
 function YueJingConcernEditorPopover(props: { readonly onClose: () => void }) {
+  const YUEJING_COPY = useProductCopy().yuejingSurface;
   const { state, replace_snapshot } = useShijingStore();
   const [draftInput, setDraftInput] = useState('');
   const popoverRef = useRef<HTMLDivElement | null>(null);

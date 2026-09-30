@@ -4,6 +4,7 @@ import type { ProductCopy } from '../copy-types.ts';
 import { enTwelveStageLabel } from '../copy-helpers.ts';
 
 export const EN_MINGJING_COPY: ProductCopy['mingjing'] = {
+  ageSuffix: ' years',
   title: 'Destiny Mirror',
   eyebrow: 'Natal chart · whole-life reading',
   subtitle:

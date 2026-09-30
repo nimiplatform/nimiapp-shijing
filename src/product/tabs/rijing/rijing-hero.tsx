@@ -22,6 +22,7 @@ export interface RiJingHeroProps {
   };
 }
 
+// @nimi-authority: rule.shijing.ia.r010
 export function RiJingHero(props: RiJingHeroProps) {
   const copy = useProductCopy();
   const overview = copy.rijing.overview;
@@ -189,6 +190,7 @@ export function RiJingHero(props: RiJingHeroProps) {
             <>
               <h3 className="shijing-rijing__rite-title">{almanac.lunar_title}</h3>
               <p className="shijing-rijing__rite-summary">{almanac.ganzhi_line}</p>
+              <p className="shijing-rijing__rite-summary">{copy.rijing.dayRite.description}</p>
 
               <div className="shijing-rijing__almanac-recommends">
                 <div className="shijing-rijing__almanac-line" data-kind="recommend">
@@ -203,8 +205,8 @@ export function RiJingHero(props: RiJingHeroProps) {
 
               <div className="shijing-rijing__almanac-grid">
                 {[...almanac.direction_rows, ...almanac.foundation_rows].map((row) => (
-                  <div key={`${row.label}-${row.value}`} className="shijing-rijing__almanac-cell">
-                    <span>{row.label}</span>
+                  <div key={`${row.kind}-${row.value}`} className="shijing-rijing__almanac-cell">
+                    <span>{copy.rijing.dayRite.rowLabels[row.kind]}</span>
                     <strong>{row.value}</strong>
                   </div>
                 ))}

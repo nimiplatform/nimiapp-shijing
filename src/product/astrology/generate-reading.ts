@@ -25,6 +25,7 @@ import {
 import { validateReading } from '../../contracts/reading-validator.ts';
 import { buildAstrologyFeatureSnapshot } from './build-feature-snapshot.ts';
 import { computeCanonicalHash } from './canonical-hash.ts';
+import { readingInputHash } from './reading-input-hash.ts';
 import { inputsSummaryExpired } from './inputs-summary-expiry.ts';
 import { deriveUncertainty, evaluateFailClose } from './uncertainty-decision.ts';
 import {
@@ -171,16 +172,29 @@ export async function generateReading(
   });
   if (!runtimeResult.ok) return { ok: false, failure: runtimeResult.failure };
 
-  const inputHash = computeCanonicalHash({
-    method_profile: featureSnapshot.method_profile,
+  const inputHash = readingInputHash({
+    space: input.space,
+    feature_snapshot: featureSnapshot,
     mirror_scope: input.mirror_scope,
-    canonical_window: featureSnapshot.canonical_window,
     concern_tag_snapshots: concernTagSnapshots,
     related_person_refs: input.related_person_refs,
     cited_event_memory_refs: input.cited_event_memory_refs,
     cited_plan_item_refs: input.cited_plan_item_refs,
     response_preferences_hash: responsePreferencesHash,
   });
+  if (!inputHash.ok) {
+    return {
+      ok: false,
+      stage_failure: inputHash.error,
+      failure: {
+        kind: 'pipeline_stage_failed',
+        mirror_kind: input.mirror_kind,
+        mirror_scope: input.mirror_scope,
+        stage: inputHash.error.stage,
+        detail: inputHash.error.detail,
+      },
+    };
+  }
   const featureSnapshotHash = computeCanonicalHash(featureSnapshot);
 
   const uncertainty: UncertaintyAnnotation = deriveUncertainty({
@@ -194,7 +208,7 @@ export async function generateReading(
     algorithm_contract_version: SJG_ALGO_CONTRACT_VERSION,
     method_profile: featureSnapshot.method_profile,
     mirror_context_snapshot: mirrorContext,
-    input_hash: inputHash,
+    input_hash: inputHash.value,
     feature_snapshot_hash: featureSnapshotHash,
     feature_snapshot: featureSnapshot,
   };

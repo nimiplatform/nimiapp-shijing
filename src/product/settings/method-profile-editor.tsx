@@ -11,7 +11,6 @@ import {
 } from '../../domain/algorithm.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { useProductCopy } from '../i18n/copy.ts';
-import { METHOD_LABELS } from '../reading/reading-format.ts';
 import { deriveMethodProfileCapabilityRows } from './method-profile-capabilities.ts';
 import { MethodProfileSelect } from './method-profile-select.tsx';
 import { SettingsRow } from './settings-row.tsx';
@@ -22,7 +21,7 @@ export function MethodProfileEditor() {
   const { state, replace_snapshot } = useShijingStore();
   const copy = useProductCopy();
   const current = state.snapshot.settings.method_profile_id ?? DEFAULT_METHOD_PROFILE_ID;
-  const capabilityRows = deriveMethodProfileCapabilityRows();
+  const capabilityRows = deriveMethodProfileCapabilityRows(copy);
   const currentRow =
     capabilityRows.find((row) => row.method_profile_id === current) ?? capabilityRows[0] ?? null;
   const [capabilitiesOpen, setCapabilitiesOpen] = useState(false);
@@ -36,7 +35,7 @@ export function MethodProfileEditor() {
       ));
       return;
     }
-    nimiToast.success(copy.methodProfile.switched(METHOD_LABELS[value]));
+    nimiToast.success(copy.methodProfile.switched(copy.citationDrawer.methodLabels[value]!));
   }
 
   return (

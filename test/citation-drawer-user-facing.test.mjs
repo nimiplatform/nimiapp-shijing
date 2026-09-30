@@ -7,6 +7,7 @@ import {
   formatCitationReference,
 } from '../src/product/tabs/shared/citation-basis.ts';
 import { validReading } from './_fixtures.mjs';
+import { getProductCopy } from '../src/product/i18n/copy.ts';
 
 test('citation drawer basis rows use user-facing labels instead of internal provenance fields', () => {
   const reading = validReading({
@@ -38,6 +39,6 @@ test('citation drawer basis rows use user-facing labels instead of internal prov
 });
 
 test('citation references translate method ids and reference ids into readable provenance', () => {
-  assert.equal(formatCitationMethod('bazi_ziping_v1'), '八字子平法');
-  assert.equal(formatCitationReference('shijing.consultation_grounding'), '问镜引用解读与问题上下文');
+  assert.equal(formatCitationMethod('bazi_ziping_v1', getProductCopy('zh').citationDrawer), '八字子平法');
+  assert.equal(formatCitationReference('shijing.consultation_grounding', getProductCopy('zh').citationDrawer), '问镜引用解读与问题上下文');
 });

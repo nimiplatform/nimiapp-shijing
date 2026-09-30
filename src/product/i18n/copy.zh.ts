@@ -9,6 +9,13 @@ import { ZH_RIJING_COPY } from './zh/rijing.ts';
 import { ZH_SHIJING_COPY } from './zh/shijing.ts';
 import { ZH_YUEJING_COPY } from './zh/yuejing.ts';
 
+import { ZH_YUEJING_SURFACE_COPY } from './zh/yuejing-surface.ts';
+import { ZH_NIANJING_SURFACE_COPY } from './zh/nianjing-surface.ts';
+import { ZH_HEJING_SURFACE_COPY } from './zh/hejing-surface.ts';
+import { ZH_ZIWEI_SURFACE_COPY } from './zh/ziwei-surface.ts';
+
+import { ZH_YUEJING_LANGUAGE_COPY } from './zh/yuejing-language.ts';
+
 export const ZH_COPY: ProductCopy = {
   ...ZH_BASE_COPY,
   rijing: ZH_RIJING_COPY,
@@ -16,5 +23,10 @@ export const ZH_COPY: ProductCopy = {
   yuejing: ZH_YUEJING_COPY,
   hejing: ZH_HEJING_COPY,
   shijing: ZH_SHIJING_COPY,
+  yuejingLanguage: ZH_YUEJING_LANGUAGE_COPY,
+  yuejingSurface: ZH_YUEJING_SURFACE_COPY,
+  nianjingSurface: ZH_NIANJING_SURFACE_COPY,
+  hejingSurface: ZH_HEJING_SURFACE_COPY,
+  ziweiSurface: ZH_ZIWEI_SURFACE_COPY,
   mingjing: ZH_MINGJING_COPY,
 };

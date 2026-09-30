@@ -254,6 +254,8 @@ export const ZH_RIJING_COPY: ProductCopy['rijing'] = {
     confidencePrefix: '可信度',
   },
   dayRite: {
+    rowLabels: { wealth: '财神', joy: '喜神', mascot: '福神', yang: '阳贵', fiveElements: '五行', duty: '建除', opposite: '冲煞', star: '值神' },
+    description: '通用历法民俗参考，与个人命盘解读独立，不参与今日倾向与阶段判断。',
     flipToRiteLabel: '看今日黄历',
     flipToOverviewLabel: '返回日镜',
     flipToRiteAria: '翻看今日通用黄历',

@@ -132,6 +132,8 @@ export interface RiJingCopy {
     readonly confidencePrefix: string;
   };
   readonly dayRite: {
+    readonly rowLabels: Record<'wealth' | 'joy' | 'mascot' | 'yang' | 'fiveElements' | 'duty' | 'opposite' | 'star', string>;
+    readonly description: string;
     readonly flipToRiteLabel: string;
     readonly flipToOverviewLabel: string;
     readonly flipToRiteAria: string;

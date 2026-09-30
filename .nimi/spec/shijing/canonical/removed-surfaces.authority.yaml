@@ -262,10 +262,12 @@ units:
     kind: rule
     title: Removed product surfaces
     modality: must_not
-    statement: Active product surfaces include Huangli mode, daily card, or calendar; Profile entity or Person and Profile duality; Venture, VentureNode, venture board, long-line state, or long-line templates; History tab or global Reading history; monthly report, yearly report, report builder, or report export; luck score, curve, rank, score trend, or percentile fortune; trend chart, luck trend, subject-comparison chart, or K-line authority; customer management, client list or segmentation, or CRM workflow; batch person import or report export; third-party consultant directory, booking flow, or commerce CTA; task, deadline, overdue, dependency, board, milestone, Gantt, progress, priority, or assignee project semantics; View, Focus, View workspace, ViewTemplate, roster, context item, instruction, view memory, or View time-window builder; Relation entity or UI; CurrentObservationTarget switcher; or user-space catalog snapshot.
+    statement: Active product surfaces include a standalone Huangli mode, primary Huangli calendar, or independent Huangli Reading, while the bounded RiJing auxiliary civil-date almanac remains admitted; Profile entity or Person and Profile duality; Venture, VentureNode, venture board, long-line state, or long-line templates; History tab or global Reading history; monthly report, yearly report, report builder, or report export; luck score, curve, rank, score trend, or percentile fortune; trend chart, luck trend, subject-comparison chart, or K-line authority; customer management, client list or segmentation, or CRM workflow; batch person import or report export; third-party consultant directory, booking flow, or commerce CTA; task, deadline, overdue, dependency, board, milestone, Gantt, progress, priority, or assignee project semantics; View, Focus, View workspace, ViewTemplate, roster, context item, instruction, view memory, or View time-window builder; Relation entity or UI; CurrentObservationTarget switcher; or user-space catalog snapshot.
     condition: Always.
     failure: Reject the active product surface and fail the authority cut closed.
     relations:
+      - type: applies_to
+        target: definition.shijing.ia.rijing-almanac
       - type: applies_to
         target: definition.shijing.removed-surfaces.assignee
       - type: applies_to

@@ -1,12 +1,8 @@
-import type { ReadingGenerationFailure } from '../../../domain/reading.ts';
+import type { ReadingGenerationFailure, RuntimeAiFailureRecoveryKind } from '../../../domain/reading.ts';
 import type { ProductCopy } from '../../i18n/copy-types.ts';
 
 const METHOD_FEATURE_UNSUPPORTED_PREFIX = 'method_feature_not_supported:';
 const RUNTIME_PROVIDER_PRODUCT_NOT_ACTIVATED_PREFIX = 'provider_product_not_activated:';
-
-export type RuntimeAiFailureRecoveryKind =
-  | 'model_configuration'
-  | 'provider_product_activation';
 
 export function isMethodFeatureUnsupportedFailure(
   failure: ReadingGenerationFailure,
@@ -35,7 +31,10 @@ export function runtimeAiFailureRecoveryKind(
   if (isRuntimeProviderProductNotActivatedFailure(failure)) {
     return 'provider_product_activation';
   }
-  return 'model_configuration';
+  const reason = failure.reason_code ?? failure.runtime_code ?? failure.detail?.split(':')[0] ?? '';
+  if (reason.startsWith('AI_CONFIG_')) return 'model_configuration';
+  if (failure.detail?.startsWith('parse_failure:') || failure.detail?.startsWith('runtime_output_')) return 'retry';
+  return 'runtime_access';
 }
 
 export function readingFailureHeadline(

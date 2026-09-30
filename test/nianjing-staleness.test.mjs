@@ -1,3 +1,4 @@
+import { getProductCopy } from '../src/product/i18n/copy.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -7,7 +8,7 @@ test('NianJing stale feature snapshots fail closed instead of rendering old outp
   const view = nianjingFreshnessView({
     stale: true,
     reason: 'feature_snapshot_hash_changed',
-  });
+  }, getProductCopy('zh').nianjingSurface.staleMessages);
 
   assert.equal(view.kind, 'stale');
   assert.equal(view.render_output, false);
@@ -16,7 +17,7 @@ test('NianJing stale feature snapshots fail closed instead of rendering old outp
 });
 
 test('NianJing fresh readings may render and be imported', () => {
-  const view = nianjingFreshnessView({ stale: false });
+  const view = nianjingFreshnessView({ stale: false }, getProductCopy('zh').nianjingSurface.staleMessages);
 
   assert.deepEqual(view, {
     kind: 'fresh',

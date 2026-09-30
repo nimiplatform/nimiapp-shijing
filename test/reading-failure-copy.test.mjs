@@ -31,6 +31,15 @@ function providerProductNotActivatedFailure() {
   };
 }
 
+test('AI recovery routes distinguish configuration, output validation and Runtime access', () => {
+  const base = providerProductNotActivatedFailure();
+  assert.equal(runtimeAiFailureRecoveryKind({ ...base, detail: 'model missing', reason_code: 'AI_CONFIG_NOT_FOUND' }), 'model_configuration');
+  assert.equal(runtimeAiFailureRecoveryKind({ ...base, detail: 'parse_failure:invalid_json:unexpected token' }), 'retry');
+  assert.equal(runtimeAiFailureRecoveryKind({ ...base, detail: 'transport failed', runtime_code: 'runtime-service-unavailable' }), 'runtime_access');
+  assert.equal(runtimeAiFailureRecoveryKind({ ...base, detail: 'unknown failure' }), 'runtime_access');
+  assert.equal(runtimeAiFailureRecoveryKind(unsupportedConsultationMethodFailure()), null);
+});
+
 test('method feature support failures are not presented as data precision gaps', () => {
   const failure = unsupportedConsultationMethodFailure();
 

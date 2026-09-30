@@ -189,6 +189,45 @@ readonly memory: {
   readonly deleteMessage: (body: string, extra: string) => string;
   readonly deleteTitle: string;
 };
+readonly planArchive: {
+  readonly title: string;
+  readonly description: string;
+  readonly empty: string;
+  readonly source: string;
+  readonly count: (count: number) => string;
+};
+readonly lunarDatePicker: {
+  readonly title: string;
+  readonly placeholder: string;
+  readonly year: string;
+  readonly month: string;
+  readonly day: string;
+  readonly yearAria: string;
+  readonly monthAria: string;
+  readonly dayAria: string;
+  readonly gregorian: string;
+  readonly conversionFailed: string;
+  readonly futureDate: string;
+  readonly clear: string;
+  readonly confirm: string;
+  readonly yearLabel: (year: number, cycle: string) => string;
+  readonly monthLabel: (label: string, month: number, isLeap: boolean) => string;
+  readonly dayLabel: (label: string, day: number) => string;
+};
+readonly birthTimePicker: {
+  readonly placeholder: string;
+  readonly hours: string;
+  readonly minutes: string;
+  readonly now: string;
+  readonly clear: string;
+  readonly close: string;
+};
+readonly relativeTime: {
+  readonly justNow: string;
+  readonly minutes: (count: number) => string;
+  readonly hours: (count: number) => string;
+  readonly days: (count: number) => string;
+};
 readonly natal: {
   readonly calendar: string;
   readonly sex: string;
@@ -322,8 +361,16 @@ readonly readingFailure: {
   readonly headlines: LabelMap<ReadingGenerationFailure['kind']>;
   readonly methodFeatureUnsupported: string;
   readonly runtimeProviderProductNotActivated: string;
+  readonly recovery: {
+    readonly labels: LabelMap<'model_configuration' | 'provider_product_activation' | 'runtime_access' | 'retry'>;
+    readonly guidance: LabelMap<'model_configuration' | 'provider_product_activation' | 'runtime_access' | 'retry'>;
+    readonly opened: string;
+    readonly openFailed: string;
+  };
 };
 readonly citationDrawer: {
+  readonly methodLabels: Record<string, string>;
+  readonly referenceLabels: Record<string, string>;
   readonly ariaLabel: string;
   readonly summary: string;
   readonly method: string;

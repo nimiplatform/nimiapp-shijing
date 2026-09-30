@@ -20,11 +20,6 @@ const PROFILE_NUMERAL: Record<(typeof PROFILE_ORDER)[number], string> = {
   career_inclination: '伍',
 };
 
-const ZIWEI_READING_COPY = {
-  briefEyebrow: 'NATAL BRIEF',
-  briefTitle: '命格综述',
-} as const;
-
 export function MingJingZiweiReadingView({
   output,
   stale,
@@ -46,8 +41,8 @@ export function MingJingZiweiReadingView({
     <section className="shijing-mingjing-panel shijing-mingjing-reading shijing-ziwei-brief" aria-label={z.aria}>
       <header className="shijing-mingjing-panel__head shijing-mj-reading__head">
         <div>
-          <p className="shijing-mingjing__eyebrow">{ZIWEI_READING_COPY.briefEyebrow}</p>
-          <h2 className="shijing-mingjing-panel__title">{ZIWEI_READING_COPY.briefTitle}</h2>
+          <p className="shijing-mingjing__eyebrow">{copy.mingjing.ziweiReading.eyebrow}</p>
+          <h2 className="shijing-mingjing-panel__title">{copy.mingjing.ziweiReading.title}</h2>
         </div>
         <GeneratingButton
           className="shijing-mj-reading__generate"
@@ -60,7 +55,7 @@ export function MingJingZiweiReadingView({
         </GeneratingButton>
       </header>
 
-      {failure ? <FailureBanner failure={failure} /> : null}
+      {failure ? <FailureBanner failure={failure} onRetry={onGenerate} /> : null}
 
       {!output && !loading && !failure ? (
         <p className="shijing-mj-reading__empty">{r.empty}</p>

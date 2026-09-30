@@ -4,7 +4,7 @@ import {
   type MethodProfileId,
 } from '../../domain/algorithm.ts';
 import { SjpSelect } from '../components/sjp-select.tsx';
-import { METHOD_LABELS } from '../reading/reading-format.ts';
+import { useProductCopy } from '../i18n/copy.ts';
 
 export interface MethodProfileSelectProps {
   readonly value?: MethodProfileId;
@@ -21,6 +21,7 @@ export function MethodProfileSelect({
   className,
   'aria-label': ariaLabel,
 }: MethodProfileSelectProps) {
+  const copy = useProductCopy();
   return (
     <SjpSelect
       id={id}
@@ -28,7 +29,7 @@ export function MethodProfileSelect({
       onValueChange={(nextValue) => onChange(nextValue as MethodProfileId)}
       options={ADMITTED_METHOD_PROFILE_IDS.map((methodProfileId) => ({
         value: methodProfileId,
-        label: METHOD_LABELS[methodProfileId],
+        label: copy.citationDrawer.methodLabels[methodProfileId]!,
       }))}
       className={className}
       aria-label={ariaLabel}

@@ -1,25 +1,22 @@
+import { useProductCopy, type ProductCopy } from '../../i18n/copy.ts';
 import { useEffect } from 'react';
 import type { NianJingInflectionPoint, NianJingPhaseBand } from '../../../domain/mirror-output.ts';
 import type { ConcernTag } from '../../../domain/concern-tag.ts';
-import { TENDENCY_CLASS_LABELS } from '../../i18n/copy.ts';
+
 import { trimmedConcernLabel } from '../../concern-tags/concern-presets.ts';
 import { buildNianJingPhaseDetailCopy } from '../../astrology/nianjing-driver-copy.ts';
 import { NianJingEventRecorder } from './nianjing-event-recorder.tsx';
-import {
-  INFLECTION_KIND_DESCRIPTIONS,
-  INFLECTION_KIND_LABELS,
-  bandDurationLabel,
-  bandYearRangeLabel,
-  formatDateDots,
-  type SelectedDetail,
-} from './nianjing-view-model.ts';
-import { NIANJING_COPY } from './nianjing-copy.ts';
+import { bandDurationLabel, bandYearRangeLabel, formatDateDots, type SelectedDetail } from './nianjing-view-model.ts';
 
 export function DetailDrawer(props: {
   readonly detail: SelectedDetail;
   readonly onClose: () => void;
   readonly onOpenArchive: () => void;
 }) {
+  const copy = useProductCopy();
+  const TENDENCY_CLASS_LABELS = copy.tendencyClassLabels;
+  const INFLECTION_KIND_LABELS = useProductCopy().nianjingInflectionKindLabels;
+  const NIANJING_COPY = useProductCopy().nianjingSurface;
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') props.onClose();
@@ -66,12 +63,14 @@ export function DetailDrawer(props: {
               props.detail.tag,
               props.onClose,
               props.onOpenArchive,
+              copy,
             )
           : renderInflectionContent(
               props.detail.inflection,
               props.detail.tag,
               props.onClose,
               props.onOpenArchive,
+              copy,
             )}
       </aside>
     </>
@@ -83,10 +82,12 @@ function renderBandContent(
   tag: ConcernTag,
   onClose: () => void,
   onOpenArchive: () => void,
+  copy: ProductCopy,
 ) {
-  const natureLabel = TENDENCY_CLASS_LABELS[band.nature];
+  const NIANJING_COPY = copy.nianjingSurface;
+  const natureLabel = copy.tendencyClassLabels[band.nature];
   const concernLabel = trimmedConcernLabel(tag);
-  const durationLabel = bandDurationLabel(band);
+  const durationLabel = bandDurationLabel(band, NIANJING_COPY);
   const detailCopy = buildNianJingPhaseDetailCopy({
     concern_label: concernLabel,
     nature: band.nature,
@@ -100,7 +101,7 @@ function renderBandContent(
     <>
       <header className="shijing-nianjing__band-detail-head">
         <strong className="shijing-nianjing__band-detail-title">
-          {bandYearRangeLabel(band)}
+          {bandYearRangeLabel(band, NIANJING_COPY)}
         </strong>
         <div className="shijing-nianjing__band-detail-pills">
           <span className="shijing-nianjing__band-detail-pill">{concernLabel}</span>
@@ -194,9 +195,11 @@ function renderInflectionContent(
   tag: ConcernTag,
   onClose: () => void,
   onOpenArchive: () => void,
+  copy: ProductCopy,
 ) {
-  const kindLabel = INFLECTION_KIND_LABELS[inflection.kind];
-  const description = INFLECTION_KIND_DESCRIPTIONS[inflection.kind];
+  const NIANJING_COPY = copy.nianjingSurface;
+  const kindLabel = copy.nianjingInflectionKindLabels[inflection.kind];
+  const description = copy.nianjingSurface.inflectionDescriptions[inflection.kind];
   return (
     <>
       <header className="shijing-nianjing__inflection-head">

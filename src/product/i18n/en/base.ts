@@ -1,9 +1,9 @@
 // EN cross-surface product copy.
 
-import type { ProductCopy } from '../copy-types.ts';
+import type { BaseProductCopy } from '../copy-types.ts';
 import { enSelfRevealSensitiveFailed } from '../copy-helpers.ts';
 
-export const EN_BASE_COPY: Omit<ProductCopy, 'rijing' | 'dailyRiJing' | 'yuejing' | 'hejing' | 'shijing' | 'mingjing'> = {
+export const EN_BASE_COPY: BaseProductCopy = {
 brandName: 'ShiJing',
 brandSub: 'ShiJing',
 mirrorKindLabels: {
@@ -96,7 +96,7 @@ settingsSurfaceLabels: {
 settingsPageLabels: {
   profile: 'Profile',
   concerns: 'Concerns',
-  memory: 'Life events',
+  memory: 'Life records',
   settings: 'Settings',
 },
 readinessBlockerLabels: {
@@ -233,6 +233,23 @@ memory: {
   deleteMessage: (body, extra) => `"${body}" will be permanently deleted and no longer cited by readings. ${extra}This cannot be undone.`,
   deleteTitle: 'Delete this record?',
 },
+planArchive: {
+  title: 'Plan archive',
+  description: 'All saved plans across dates. Create and edit plans on Monthly Mirror dates; a plan does not confirm that an event happened.',
+  empty: 'No saved plans yet. Record an intention on a future date in Monthly Mirror.',
+  source: 'Recorded from',
+  count: (count) => `${count} saved plan${count === 1 ? '' : 's'}`,
+},
+lunarDatePicker: {
+  title: 'Lunar birth date', placeholder: 'Choose a lunar date', year: 'Year', month: 'Month', day: 'Day',
+  yearAria: 'Lunar year', monthAria: 'Lunar month', dayAria: 'Lunar day', gregorian: 'Gregorian date: ',
+  conversionFailed: 'Conversion unavailable', futureDate: 'Cannot be after today', clear: 'Clear', confirm: 'Confirm',
+  yearLabel: (year, cycle) => `${year}${cycle ? ` ${cycle}` : ''}`,
+  monthLabel: (_label, month, isLeap) => `${isLeap ? 'Leap ' : ''}month ${month}`,
+  dayLabel: (_label, day) => String(day),
+},
+birthTimePicker: { placeholder: 'Choose a time', hours: 'Hours', minutes: 'Minutes', now: 'Now', clear: 'Clear', close: 'Close' },
+relativeTime: { justNow: 'Just now', minutes: (count) => `${count}m ago`, hours: (count) => `${count}h ago`, days: (count) => `${count}d ago` },
 natal: {
   calendar: 'Birth calendar',
   sex: 'Sex',
@@ -364,6 +381,17 @@ aiConfig: {
   modelConfigured: 'Model configured',
 },
 readingFailure: {
+  recovery: {
+    labels: { model_configuration: 'Check AI model', provider_product_activation: 'Check activation or switch model', runtime_access: 'Check Nimi access', retry: 'Generate again' },
+    guidance: {
+      model_configuration: 'Configure an available text model for ShiJing in Nimi Desktop, then return and generate again.',
+      provider_product_activation: 'Activate the provider service, or select an activated model for ShiJing in Nimi Desktop, then generate again.',
+      runtime_access: 'Check Runtime, ShiJing permissions, or installation repair instructions in Nimi Desktop, then return and generate again.',
+      retry: 'The AI output did not pass validation and was not saved as a reading. Generate again; if this persists, check ShiJing’s model in Nimi Desktop.',
+    },
+    opened: 'The ShiJing entry was opened in Nimi Desktop. If several sources appear, choose the one currently running. After checking it, return and generate again.',
+    openFailed: 'Could not open Nimi Desktop. Open it manually and complete the checks before retrying.',
+  },
   headlines: {
     runtime_ai_failed: 'Generation failed: Runtime AI is unavailable or could not be parsed.',
     pipeline_stage_failed: 'Generation failed: calculation stage error.',
@@ -377,6 +405,13 @@ readingFailure: {
   runtimeProviderProductNotActivated: 'Generation failed: the model is bound, but the cloud provider says the product or model service is not activated. Activate it in the provider console, or switch to an activated Runtime model and regenerate.',
 },
 citationDrawer: {
+  methodLabels: { bazi_ziping_v1: 'BaZi (Ziping)', ziwei_sanhe_v1: 'Ziwei (Sanhe)', qizheng_siyu_guolao_v1: 'QiZheng SiYu / GuoLao' },
+  referenceLabels: {
+    'rijing.daily_tendency_classification': 'Daily Mirror tendency classification', 'yuejing.daily_tendency_drivers': 'Monthly Mirror daily tendency evidence',
+    'nianjing.phase_inflection_derivation': 'Yearly Mirror phases and inflections', 'shijing.consultation_grounding': 'Consultation readings and question context',
+    'mingjing.natal_projection': 'Natal chart projection', 'mingjing.ziwei_natal_brief.v1': 'Ziwei natal reading',
+    'mingjing.qizheng_siyu_natal_brief.v1': 'QiZheng SiYu natal reading', 'mingjing.relationship_hepan.v1': 'Relationship chart evidence',
+  },
   ariaLabel: 'Generation evidence',
   summary: 'Generation evidence / citations',
   method: 'Calculation method',

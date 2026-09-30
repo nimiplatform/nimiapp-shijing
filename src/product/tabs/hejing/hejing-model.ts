@@ -1,3 +1,4 @@
+import type { ProductCopy } from '../../i18n/copy.ts';
 // HeJing (合镜) workbench model — pattern-reading redesign.
 //
 // The page consumes the admitted `MingJingRelationshipMirrorOutput` projection
@@ -21,13 +22,8 @@ import {
   mingJingRouteFailCloseDetail,
   validateMingJingRouteSupport,
 } from '../../astrology/mingjing-route-support.ts';
-import {
-  HEJING_PAGE_COPY,
-  HEJING_RELATIONSHIP_TYPES,
-  hejingRelationshipTypeLabel,
-} from './hejing-content.ts';
 
-export { HEJING_PAGE_COPY, HEJING_RELATIONSHIP_TYPES, hejingRelationshipTypeLabel };
+
 
 export type HeJingRelationshipType = 'partner' | 'collaboration' | 'family' | 'friend' | 'parent_child';
 
@@ -144,6 +140,11 @@ export function initialHeJingWorkspaceIdFromReadings(input: {
   return input.workspaces[0]?.id ?? '';
 }
 
+export function hejingRelationshipTypeLabel(typeId: string, copy: ProductCopy['hejingSurface']): string {
+  const short = copy.relationshipTypes.find((type) => type.id === typeId)?.label ?? copy.relationshipDefaultLabel;
+  return copy.relationshipTypeLabel(short);
+}
+
 export function hejingRelationshipTypeForPerson(person: Person): HeJingRelationshipType {
   const relation = (person.relation ?? '').trim();
   if (/子|女|儿|父|母|亲子|孩子|child|parent/i.test(relation)) return 'parent_child';
@@ -160,35 +161,34 @@ export function hejingWorkspacesForRelationshipType(
   return workspaces.filter((workspace) => workspace.selectedRelationshipType === relationshipType);
 }
 
-export function buildHeJingWorkspaceFromPerson(person: Person): HeJingWorkspace {
-  const name = person.display_name.trim() || 'TA';
+export function buildHeJingWorkspaceFromPerson(person: Person, copy: ProductCopy['hejingSurface']): HeJingWorkspace {
+  const name = person.display_name.trim() || copy.workspace.other;
   const relation = (person.relation ?? '').trim();
   const relationshipType = hejingRelationshipTypeForPerson(person);
   return {
     id: hejingWorkspaceIdForPerson(person.id),
-    selectorLabel: `我 + ${name}`,
+    selectorLabel: copy.workspace.selector(name),
     selectedRelationshipType: relationshipType,
-    relationshipTypeLabel: hejingRelationshipTypeLabel(relationshipType),
+    relationshipTypeLabel: hejingRelationshipTypeLabel(relationshipType, copy),
     personRef: { kind: 'person', id: person.id },
     displayName: name,
     relationLabel: relation,
-    headline: `我与 ${name} 的合镜`,
+    headline: copy.workspace.headline(name),
     self: {
-      label: '我',
-      name: '我',
-      roleLabel: '本人',
-      initials: '我',
+      label: copy.workspace.self,
+      name: copy.workspace.self,
+      roleLabel: copy.workspace.selfRole,
+      initials: copy.workspace.self,
       tone: 'self',
     },
     other: {
-      label: 'TA',
+      label: copy.workspace.other,
       name,
-      roleLabel: relation || 'TA',
+      roleLabel: relation || copy.workspace.other,
       initials: Array.from(name)[0] ?? 'T',
       tone: 'other',
     },
-    disclaimer:
-      '合镜只使用本人和一个关系人物的出生资料,提出待核对的相处观察假设;现实关系以你的真实记录为准。',
+    disclaimer: copy.workspace.disclaimer,
   };
 }
 

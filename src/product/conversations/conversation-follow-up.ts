@@ -2,7 +2,7 @@
 // existing ShiJing consultation conversation without creating another Reading.
 
 import type { ConversationTurn } from '../../domain/conversation.ts';
-import type { Reading } from '../../domain/reading.ts';
+import type { Reading, RuntimeFailureEvidence } from '../../domain/reading.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts';
 import { newConversationTurnId } from '../ids/index.ts';
@@ -15,7 +15,7 @@ export type ConversationFollowUpFailureKind =
   | 'chat_bridge_failed'
   | 'validation_failed';
 
-export interface ConversationFollowUpFailure {
+export interface ConversationFollowUpFailure extends RuntimeFailureEvidence {
   readonly kind: ConversationFollowUpFailureKind;
   readonly detail: string;
 }
@@ -92,7 +92,7 @@ export async function sendConversationFollowUp(
   if (!bridgeResult.ok) {
     return {
       ok: false,
-      failure: { kind: 'chat_bridge_failed', detail: bridgeResult.error.detail },
+      failure: { ...bridgeResult.error, kind: 'chat_bridge_failed' },
     };
   }
 

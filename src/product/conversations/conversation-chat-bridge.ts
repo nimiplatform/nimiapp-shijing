@@ -5,6 +5,8 @@
 // synthesized turn on runtime failure.
 
 import type { Reading } from '../../domain/reading.ts';
+import type { RuntimeFailureEvidence } from '../../domain/reading.ts';
+import { runtimeFailureEvidence } from '../astrology/runtime-ai-client.ts';
 import type { ConversationTurn } from '../../domain/conversation.ts';
 import { mirrorOutputSummary } from '../../domain/mirror-output.ts';
 import { buildShiJingAnswerBrief } from './shijing-answer-brief.ts';
@@ -14,7 +16,7 @@ export type ConversationChatFailureKind =
   | 'generator_call_failed'
   | 'generator_response_empty';
 
-export interface ConversationChatFailure {
+export interface ConversationChatFailure extends RuntimeFailureEvidence {
   readonly kind: ConversationChatFailureKind;
   readonly detail: string;
 }
@@ -98,6 +100,7 @@ export function createConversationChatBridge(
           error: {
             kind: 'generator_call_failed',
             detail: cause instanceof Error ? cause.message : 'runtime generator threw',
+            ...runtimeFailureEvidence(cause),
           },
         };
       }

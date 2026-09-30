@@ -252,8 +252,9 @@ test('Ziwei palace detail explains the selected palace instead of generic terms'
   assert.doesNotMatch(route, /PALACE_DETAIL_TERMS/u);
   assert.doesNotMatch(route, /glossaryTitle/u);
   assert.doesNotMatch(route, /名词通俗解释/u);
-  assert.match(route, /PALACE_DOMAIN_COPY/u);
+  assert.match(route, /copy\.palaceDomains/u);
+  const translatedDomains = readFileSync(new URL('../src/product/i18n/zh/ziwei-surface.ts', import.meta.url), 'utf8');
   assert.match(route, /palaceInterpretationSections/u);
-  assert.match(route, /子女、晚辈、学生/u);
-  assert.match(route, /不是生育数量/u);
+  assert.match(translatedDomains, /子女、晚辈、学生/u);
+  assert.match(translatedDomains, /不是生育数量/u);
 });

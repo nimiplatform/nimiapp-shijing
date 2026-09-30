@@ -14,7 +14,7 @@ import {
   type MingJingRouteId,
   type MingJingRouteStatus,
 } from '../astrology/mingjing-route-support.ts';
-import { METHOD_LABELS } from '../reading/reading-format.ts';
+import type { ProductCopy } from '../i18n/copy.ts';
 
 export interface MethodProfileFeatureCapability {
   readonly id: ShijingMethodFeatureId;
@@ -36,7 +36,7 @@ export interface MethodProfileCapabilityRow {
   readonly mingjing_route: MethodProfileMingJingRouteCapability;
 }
 
-export function deriveMethodProfileCapabilityRows(): readonly MethodProfileCapabilityRow[] {
+export function deriveMethodProfileCapabilityRows(copy: ProductCopy): readonly MethodProfileCapabilityRow[] {
   return ADMITTED_METHOD_PROFILE_IDS.map((methodProfileId) => {
     const route = resolveMingJingRouteForMethod(methodProfileId);
     const routeSupport = validateMingJingRouteSupport({
@@ -46,7 +46,7 @@ export function deriveMethodProfileCapabilityRows(): readonly MethodProfileCapab
 
     return {
       method_profile_id: methodProfileId,
-      method_label: METHOD_LABELS[methodProfileId],
+      method_label: copy.citationDrawer.methodLabels[methodProfileId]!,
       algorithm_neutral_features: SHIJING_METHOD_FEATURE_DECLARATIONS.map((feature) => ({
         id: feature.id,
         supported: feature.supported_method_profile_ids.includes(methodProfileId),

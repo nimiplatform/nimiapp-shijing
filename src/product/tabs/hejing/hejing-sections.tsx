@@ -1,3 +1,4 @@
+import { useProductCopy } from '../../i18n/copy.ts';
 // HeJing (合镜) ready-state sections — pattern-reading redesign.
 //
 // Render tree order (proposal §3): 关系概览 → 主要相处模式 → 近期变化(仅有依据时)
@@ -14,15 +15,11 @@ import type {
   RelationshipRecentWindow,
 } from '../../../domain/mirror-output.ts';
 import { relationshipPatternRuleBasis } from '../../astrology/relationship-pattern-rules.ts';
-import { formatTendencyClass } from '../../reading/reading-format.ts';
 import {
-  HEJING_PAGE_COPY,
   hejingRecentWindowLabel,
   type HeJingPersonProfile,
   type HeJingTrackRecord,
 } from './hejing-model.ts';
-
-const copy = HEJING_PAGE_COPY;
 
 // --- Inline icon set -------------------------------------------------------
 // Small, stroke-only glyphs so the page reads as a calm light app rather than
@@ -162,6 +159,7 @@ export function HeJingOverviewSection({
   readonly output: MingJingRelationshipMirrorOutput;
   readonly recentAvailable: boolean;
 }) {
+  const copy = useProductCopy().hejingSurface;
   const keywords = output.overview.keywords.slice(0, 3);
   return (
     <HeJingSection
@@ -200,6 +198,7 @@ function HeJingPatternItem({
   readonly methodLabel: string;
   readonly onRecord: () => void;
 }) {
+  const copy = useProductCopy().hejingSurface;
   const basis = relationshipPatternRuleBasis(pattern.rule_ref);
   return (
     <li className="shijing-hejing__pattern" data-pattern-id={pattern.pattern_id}>
@@ -300,6 +299,7 @@ export function HeJingPatternsSection({
   readonly methodLabel: string;
   readonly onRecord: () => void;
 }) {
+  const copy = useProductCopy().hejingSurface;
   return (
     <HeJingSection
       className="shijing-hejing__patterns-section"
@@ -328,6 +328,8 @@ export function HeJingRecentSection({
 }: {
   readonly window: RelationshipRecentWindow;
 }) {
+  const productCopy = useProductCopy();
+  const copy = productCopy.hejingSurface;
   return (
     <HeJingSection
       className="shijing-hejing__recent-section"
@@ -341,7 +343,7 @@ export function HeJingRecentSection({
         </div>
         <div>
           <dt>{copy.recentNatureLabel}</dt>
-          <dd>{formatTendencyClass(window.nature)}</dd>
+          <dd>{productCopy.tendencyClassLabels[window.nature]}</dd>
         </div>
       </dl>
       <p className="shijing-hejing__recent-summary">{window.summary}</p>
@@ -357,6 +359,7 @@ export function HeJingActionSection({
 }: {
   readonly action: MingJingRelationshipAction;
 }) {
+  const copy = useProductCopy().hejingSurface;
   return (
     <HeJingSection
       className="shijing-hejing__action-section"
@@ -402,6 +405,7 @@ export function HeJingTrackView({
   readonly onDelete: (record: HeJingTrackRecord) => void;
   readonly sectionRef?: Ref<HTMLElement>;
 }) {
+  const copy = useProductCopy().hejingSurface;
   return (
     <HeJingSection
       className="shijing-hejing__track"

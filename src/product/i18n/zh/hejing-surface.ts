@@ -1,27 +1,11 @@
-// HeJing (合镜) page copy — pattern-reading redesign.
-//
-// zh-only constants, same convention as before. Tone follows the admitted
-// expression boundary: conditional observational language, no fate claims, no
-// scores or ratings, no improvement promises, and no invented shared history
-// without a real user record behind it.
-
-import type { HeJingRelationshipTypeOption } from './hejing-model.ts';
-
-export const HEJING_RELATIONSHIP_TYPES: readonly HeJingRelationshipTypeOption[] = [
-  { id: 'partner', label: '伴侣' },
-  { id: 'family', label: '家人' },
-  { id: 'parent_child', label: '亲子' },
-  { id: 'friend', label: '朋友' },
-  { id: 'collaboration', label: '合作' },
-];
-
-// `亲子` → `亲子关系`, `伴侣` → `伴侣关系`, etc. Presentation-only label.
-export function hejingRelationshipTypeLabel(typeId: string): string {
-  const short = HEJING_RELATIONSHIP_TYPES.find((type) => type.id === typeId)?.label ?? '关系';
-  return `${short}关系`;
-}
-
-export const HEJING_PAGE_COPY = {
+export const ZH_HEJING_SURFACE_COPY = {
+  relationshipTypes: [
+    { id: 'partner', label: '伴侣' }, { id: 'family', label: '家人' },
+    { id: 'parent_child', label: '亲子' }, { id: 'friend', label: '朋友' }, { id: 'collaboration', label: '合作' },
+  ],
+  relationshipDefaultLabel: '关系',
+  relationshipTypeLabel: (label: string) => `${label}关系`,
+  workspace: { selector: (name: string) => `我 + ${name}`, headline: (name: string) => `我与 ${name} 的合镜`, self: '我', other: 'TA', selfRole: '本人', disclaimer: '合镜只使用本人和一个关系人物的出生资料，提出待核对的相处观察假设；现实关系以你的真实记录为准。' },
   eyebrow: 'TWO CHARTS · ONE MIRROR',
   mirrorBadge: '合镜',
   relationshipType: '关系类型',

@@ -9,6 +9,8 @@ import {
 import { generateReading } from '../src/product/astrology/generate-reading.ts';
 import {
   inputsSummaryStaleForSpace,
+  inputsSummaryStalenessForSpace,
+  yuejingInputsSummaryStalenessForActiveSubset,
   yuejingInputsSummaryStaleForActiveSubset,
 } from '../src/product/astrology/inputs-summary-expiry.ts';
 import { resolveCanonicalMirrorWindow } from '../src/product/astrology/mirror-window.ts';
@@ -24,6 +26,7 @@ import {
   validConcernTag,
   validFeatureSnapshot,
   validNatalInputs,
+  validPerson,
   validNianjingOutput,
   validReading,
   validRijingOutput,
@@ -32,8 +35,90 @@ import {
   validYuejingOutput,
 } from './_fixtures.mjs';
 import { MockRuntimeAiClient } from './_mock-runtime-ai-client.mjs';
+import { pruneReadings } from '../src/product/reading/prune-readings.ts';
 
 const TZ = 'Asia/Shanghai';
+
+test('canonical input hashes cover self and related natal inputs for every admitted method', async () => {
+  const now = new Date('2026-09-30T00:30:00Z');
+  const scope = dailyMirrorScope({ date: '2026-09-30' });
+  for (const method of ['bazi_ziping_v1', 'ziwei_sanhe_v1', 'qizheng_siyu_guolao_v1']) {
+    const space = spaceWithActiveTag();
+    space.settings.method_profile_id = method;
+    space.self_subject.natal_inputs.calculation_sex = 'male';
+    space.persons = [validPerson('p_01', { natal_inputs: validNatalInputs({ calculation_sex: 'female' }) })];
+    const generate = (snapshot) => generateReading({
+      id: 'r_hash_coverage', created_at: now.toISOString(), mirror_kind: 'rijing', mirror_scope: scope,
+      related_person_refs: [{ kind: 'person', id: 'p_01' }], concern_tag_refs: ['tag_love'],
+      cited_reading_ids: [], cited_event_memory_refs: [], cited_plan_item_refs: [], space: snapshot,
+    }, { now, runtime_ai_client: new MockRuntimeAiClient({ canned_output_by_kind: { rijing: validRijingOutput() } }) });
+    const baseline = await generate(space);
+    assert.equal(baseline.ok, true, JSON.stringify(baseline));
+    assert.deepEqual(inputsSummaryStalenessForSpace({ reading: baseline.reading, space, now }), { stale: false });
+    for (const change of ['self_time', 'related_time', 'sex', 'latitude']) {
+      const changed = structuredClone(space);
+      const natal = change === 'related_time' ? changed.persons[0].natal_inputs : changed.self_subject.natal_inputs;
+      if (change.endsWith('time')) {
+        natal.birth_datetime_utc = '1990-04-12T00:31:00Z';
+        natal.raw_birth_input.local_time_text = '08:31';
+      } else if (change === 'sex') natal.calculation_sex = 'female';
+      else natal.birth_location.latitude += 0.001;
+      const next = await generate(changed);
+      assert.equal(next.ok, true, JSON.stringify(next));
+      assert.notEqual(next.reading.inputs_summary.input_hash, baseline.reading.inputs_summary.input_hash, `${method}: ${change}`);
+      assert.deepEqual(inputsSummaryStalenessForSpace({ reading: baseline.reading, space: changed, now }), { stale: true, reason: 'input_hash_changed' });
+    }
+    const presentationChange = structuredClone(space);
+    presentationChange.settings.ui_language = 'en';
+    presentationChange.self_subject.natal_inputs.notes = 'A private note';
+    const same = await generate(presentationChange);
+    assert.equal(same.ok, true);
+    assert.equal(same.reading.inputs_summary.input_hash, baseline.reading.inputs_summary.input_hash);
+  }
+});
+
+test('YueJing subset freshness notices natal changes within the same Ziwei birth hour', async () => {
+  const now = new Date('2026-05-25T00:00:00Z');
+  const scope = rolling30DayMirrorScope();
+  const space = spaceWithActiveTag();
+  space.settings.method_profile_id = 'ziwei_sanhe_v1';
+  space.self_subject.natal_inputs.calculation_sex = 'male';
+  const result = await generateReading({
+    id: 'r_yue_natal_hash', created_at: now.toISOString(), mirror_kind: 'yuejing', mirror_scope: scope,
+    related_person_refs: [], concern_tag_refs: ['tag_love'], cited_reading_ids: [],
+    cited_event_memory_refs: [], cited_plan_item_refs: [], space,
+  }, { now, runtime_ai_client: new MockRuntimeAiClient({ canned_output_by_kind: { yuejing: validYuejingOutput(scope) } }) });
+  assert.equal(result.ok, true, JSON.stringify(result));
+  const changed = structuredClone(space);
+  changed.self_subject.natal_inputs.birth_datetime_utc = '1990-04-12T00:31:00Z';
+  changed.self_subject.natal_inputs.raw_birth_input.local_time_text = '08:31';
+  assert.deepEqual(yuejingInputsSummaryStalenessForActiveSubset({
+    reading: result.reading, space: changed, now, active_concern_tag_refs: ['tag_love'],
+  }), { stale: true, reason: 'input_hash_changed' });
+});
+
+test('retention preserves different natal inputs and citations, and dedups the same frozen input', async () => {
+  const now = new Date('2026-09-30T00:30:00Z');
+  const space = spaceWithActiveTag();
+  const scope = dailyMirrorScope({ date: '2026-09-30' });
+  const generate = (id, snapshot) => generateReading({
+    id, created_at: now.toISOString(), mirror_kind: 'rijing', mirror_scope: scope,
+    related_person_refs: [], concern_tag_refs: ['tag_love'], cited_reading_ids: [],
+    cited_event_memory_refs: [], cited_plan_item_refs: [], space: snapshot,
+  }, { now, runtime_ai_client: new MockRuntimeAiClient({ canned_output_by_kind: { rijing: validRijingOutput() } }) });
+  const first = await generate('r_original', space);
+  const changed = structuredClone(space);
+  changed.self_subject.natal_inputs.birth_datetime_utc = '1990-04-12T00:31:00Z';
+  changed.self_subject.natal_inputs.raw_birth_input.local_time_text = '08:31';
+  const second = await generate('r_changed', changed);
+  const repeated = await generate('r_repeated', changed);
+  for (const result of [first, second, repeated]) assert.equal(result.ok, true, JSON.stringify(result));
+  assert.notEqual(first.reading.inputs_summary.input_hash, second.reading.inputs_summary.input_hash);
+  assert.equal(second.reading.inputs_summary.input_hash, repeated.reading.inputs_summary.input_hash);
+  const readings = [first.reading, second.reading, repeated.reading];
+  assert.deepEqual(pruneReadings(readings).map((reading) => reading.id), ['r_original', 'r_repeated']);
+  assert.deepEqual(pruneReadings(readings, [{ source_reading_ids: ['r_changed'], turns: [] }]).map((reading) => reading.id), ['r_original', 'r_changed', 'r_repeated']);
+});
 
 function spaceWithActiveTag() {
   return validShiJingSpace({

@@ -1,17 +1,15 @@
+import { useProductCopy } from '../../i18n/copy.ts';
 import { useMemo } from 'react';
 import type { YueJingCell } from '../../../domain/mirror-output.ts';
-import { TENDENCY_CLASS_LABELS } from '../../i18n/copy.ts';
+
 import { useShijingStore } from '../../state/shijing-store.tsx';
 import {
   classifyDay,
   dayOfMonth,
   deriveYueJingLunisolarMarker,
   dominantTendency,
-  WEEKDAY_HEADERS,
-  WEEKDAY_SHORT,
   weekdayIndexMondayFirst,
 } from './yuejing-model.ts';
-import { YUEJING_COPY } from './yuejing-copy.ts';
 
 export interface YueJingCalendarProps {
   readonly cellsByDate: Map<string, readonly YueJingCell[]>;
@@ -22,6 +20,7 @@ export interface YueJingCalendarProps {
 }
 
 export function YueJingCalendar(props: YueJingCalendarProps) {
+  const YUEJING_COPY = useProductCopy().yuejingSurface;
   const dates = useMemo(
     () => Array.from(props.cellsByDate.keys()).sort(),
     [props.cellsByDate],
@@ -45,7 +44,7 @@ export function YueJingCalendar(props: YueJingCalendarProps) {
   return (
     <section className="shijing-yuejing__calendar" aria-label={YUEJING_COPY.calendar.ariaLabel}>
       <ol className="shijing-yuejing__weekday-row" aria-hidden>
-        {WEEKDAY_HEADERS.map((label) => (
+        {YUEJING_COPY.weekdayHeaders.map((label) => (
           <li key={label}>{label}</li>
         ))}
       </ol>
@@ -86,11 +85,13 @@ interface YueJingDayCardProps {
 }
 
 function YueJingDayCard(props: YueJingDayCardProps) {
+  const TENDENCY_CLASS_LABELS = useProductCopy().tendencyClassLabels;
+  const YUEJING_COPY = useProductCopy().yuejingSurface;
   const { state } = useShijingStore();
   const kind = classifyDay(props.date, props.today);
   const isEmpty = props.entries.length === 0;
   const dominant = isEmpty ? null : dominantTendency(props.entries);
-  const weekday = WEEKDAY_SHORT[weekdayIndexMondayFirst(props.date)];
+  const weekday = YUEJING_COPY.weekdays[weekdayIndexMondayFirst(props.date)];
   const dayNum = dayOfMonth(props.date);
   const marker = deriveYueJingLunisolarMarker(props.date);
 

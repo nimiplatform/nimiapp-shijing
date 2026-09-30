@@ -10,6 +10,7 @@ import {
   MIRROR_SCOPE_KINDS,
 } from '../src/domain/mirror-scope.ts';
 import { validateReading } from '../src/contracts/reading-validator.ts';
+import { validateShiJingSpace } from '../src/contracts/shijing-space-validator.ts';
 import {
   latestMingJingNatalReading,
   latestMingJingRelationshipReading,
@@ -31,7 +32,26 @@ import {
   validRijingOutput,
   validShijingOutput,
   validYuejingOutput,
+  validShiJingSpace,
+  validConcernTag,
 } from './_fixtures.mjs';
+
+test('malformed uncertainty is rejected by Reading and persisted-space validation', () => {
+  const malformed = [undefined, null, [], { confidence: 'medium' },
+    { confidence: 'medium', caveats: 42, data_gaps: [] },
+    { confidence: 'medium', caveats: [], data_gaps: null },
+    { confidence: 'medium', caveats: [false], data_gaps: [] },
+    { confidence: 'medium', caveats: [], data_gaps: [1] },
+    { confidence: 'medium', caveats: [' '], data_gaps: [] },
+    { confidence: 'medium', caveats: [], data_gaps: [''] },
+    { confidence: 'medium', caveats: [], data_gaps: [], extra: true }];
+  for (const uncertainty of malformed) {
+    const reading = validReading({ uncertainty });
+    assert.equal(validateReading(reading).ok, false, JSON.stringify(uncertainty));
+    const space = validShiJingSpace({ readings: [reading], concern_tags: [validConcernTag('tag_love')] });
+    assert.equal(validateShiJingSpace(space).ok, false, JSON.stringify(uncertainty));
+  }
+});
 
 test('mirror_kind/mirror_scope matrix covers all kinds and scopes', () => {
   for (const kind of MIRROR_KINDS) {

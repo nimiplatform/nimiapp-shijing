@@ -1,7 +1,8 @@
+import { useProductCopy, type ProductCopy } from '../../i18n/copy.ts';
 import { useEffect, useMemo, useState } from 'react';
 import type { ConcernTag } from '../../../domain/concern-tag.ts';
 import type { NianJingNature } from '../../../domain/mirror-output.ts';
-import { TENDENCY_CLASS_LABELS } from '../../i18n/copy.ts';
+
 import { trimmedConcernLabel } from '../../concern-tags/concern-presets.ts';
 import {
   buildNianJingAnnualOverview,
@@ -12,13 +13,7 @@ import {
   type NianJingYearModule,
   type NianJingYearSegment,
 } from './nianjing-year-modules.ts';
-import {
-  INFLECTION_KIND_LABELS,
-  NATURE_GUIDANCE,
-  substituteConcernPlaceholder,
-  type SelectedDetail,
-} from './nianjing-view-model.ts';
-import { NIANJING_COPY } from './nianjing-copy.ts';
+import { substituteConcernPlaceholder, type SelectedDetail } from './nianjing-view-model.ts';
 
 const NATURE_LEVEL: Record<NianJingNature, number> = {
   supportive: 78,
@@ -73,15 +68,15 @@ function primaryMonthActive(
   return monthOf(segment.start_date) <= month && month <= monthOf(segment.end_date);
 }
 
-function primarySummaryFor(detail: NianJingSelectedYearDetail): string {
+function primarySummaryFor(detail: NianJingSelectedYearDetail, NIANJING_COPY: ProductCopy['nianjingSurface']): string {
   const primary = detail.concern_cards.find(
     (card) => card.concern_tag_ref === detail.primary_concern_tag_ref,
   );
   return primary?.primary_summary || NIANJING_COPY.yearOverview.selectedSummaryFallback;
 }
 
-function yearNatureLabel(nature: NianJingNature | null): string {
-  return nature ? TENDENCY_CLASS_LABELS[nature] : '未成段';
+function yearNatureLabel(nature: NianJingNature | null, copy: ProductCopy): string {
+  return nature ? copy.tendencyClassLabels[nature] : copy.nianjingSurface.notSegmented;
 }
 
 export function NianJingYearOverview(props: {
@@ -92,6 +87,7 @@ export function NianJingYearOverview(props: {
   readonly focusedTag: ConcernTag | null;
   readonly onSelectDetail: (selection: SelectedDetail) => void;
 }) {
+  const NIANJING_COPY = useProductCopy().nianjingSurface;
   const overviewYears = useMemo(
     () => buildNianJingAnnualOverview(props.overviewModules),
     [props.overviewModules],
@@ -248,11 +244,13 @@ function YearSelector(props: {
   readonly selectedYear: number;
   readonly onSelectYear: (year: number) => void;
 }) {
+  const productCopy = useProductCopy();
+  const NIANJING_COPY = useProductCopy().nianjingSurface;
   return (
     <div className="shijing-nianjing__year-selector" aria-label={NIANJING_COPY.yearOverview.summaryAriaLabel}>
       {props.years.map((year) => {
         const selected = year.year === props.selectedYear;
-        const label = yearNatureLabel(year.primary_nature);
+        const label = yearNatureLabel(year.primary_nature, productCopy);
         return (
           <button
             key={year.year}
@@ -284,8 +282,10 @@ function SelectedYearPanel(props: {
   readonly detailTagsById: ReadonlyMap<string, ConcernTag>;
   readonly onSelectDetail: (selection: SelectedDetail) => void;
 }) {
-  const natureLabel = yearNatureLabel(props.detail.primary_nature);
-  const primarySummary = primarySummaryFor(props.detail);
+  const productCopy = useProductCopy();
+  const NIANJING_COPY = useProductCopy().nianjingSurface;
+  const natureLabel = yearNatureLabel(props.detail.primary_nature, productCopy);
+  const primarySummary = primarySummaryFor(props.detail, NIANJING_COPY);
   return (
     <>
       <section className="shijing-nianjing__year-selected" aria-label={NIANJING_COPY.yearOverview.yearDetailTitle}>
@@ -295,7 +295,7 @@ function SelectedYearPanel(props: {
               {NIANJING_COPY.yearOverview.selectedEyebrow}
             </span>
             <h3>
-              {props.detail.year} 年
+              {NIANJING_COPY.yearLabel(props.detail.year)}
               <span data-nature={props.detail.primary_nature ?? 'empty'}>{natureLabel}</span>
             </h3>
             <p>{primarySummary}</p>
@@ -329,9 +329,11 @@ function ConcernYearCard(props: {
   readonly tag: ConcernTag | null;
   readonly onSelectDetail: (selection: SelectedDetail) => void;
 }) {
+  const productCopy = useProductCopy();
+  const NIANJING_COPY = useProductCopy().nianjingSurface;
   const label = props.tag ? trimmedConcernLabel(props.tag) : props.card.label.replace(/^#/, '');
-  const natureLabel = yearNatureLabel(props.card.primary_nature);
-  const guidance = props.card.primary_nature ? NATURE_GUIDANCE[props.card.primary_nature] : null;
+  const natureLabel = yearNatureLabel(props.card.primary_nature, productCopy);
+  const guidance = props.card.primary_nature ? NIANJING_COPY.natureGuidance[props.card.primary_nature] : null;
   const favorable =
     props.card.driver_guidance.favorable.length > 0
       ? props.card.driver_guidance.favorable.slice(0, 3)
@@ -366,7 +368,7 @@ function ConcernYearCard(props: {
             });
           }}
         >
-          查看相位
+          {NIANJING_COPY.yearOverview.viewPhase}
         </button>
       </header>
       <div className="shijing-nianjing__year-meter-rail" aria-hidden>
@@ -407,6 +409,8 @@ function MonthMarkers(props: {
   readonly tag: ConcernTag | null;
   readonly onSelectDetail: (selection: SelectedDetail) => void;
 }) {
+  const INFLECTION_KIND_LABELS = useProductCopy().nianjingInflectionKindLabels;
+  const NIANJING_COPY = useProductCopy().nianjingSurface;
   const months = Array.from({ length: 12 }, (_, index) => index + 1);
   // Footer note restates the year's inflection markers in plain text
   // (e.g. "3月 大运边界 · 9月 流年切换"). Pulled from the same
@@ -414,7 +418,7 @@ function MonthMarkers(props: {
   const tipLine =
     props.card.month_markers.length > 0
       ? props.card.month_markers
-          .map((marker) => `${marker.month}月 ${INFLECTION_KIND_LABELS[marker.kind]}`)
+          .map((marker) => `${NIANJING_COPY.monthLabel(marker.month)} ${INFLECTION_KIND_LABELS[marker.kind]}`)
           .join('　·　')
       : NIANJING_COPY.yearOverview.noNodes;
   return (

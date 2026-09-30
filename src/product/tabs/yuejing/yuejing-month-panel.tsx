@@ -1,15 +1,15 @@
+import { useProductCopy } from '../../i18n/copy.ts';
 import { useEffect, useMemo } from 'react';
 import { Tooltip } from '@nimiplatform/kit/ui';
 import type { YueJingCell } from '../../../domain/mirror-output.ts';
 import type { ConcernTag } from '../../../domain/concern-tag.ts';
 import type { EventMemory } from '../../../domain/event-memory.ts';
 import type { PlanItem } from '../../../domain/plan-item.ts';
-import { TENDENCY_CLASS_LABELS } from '../../i18n/copy.ts';
+
 import { deriveYueJingMonthInterpretation, YUEJING_MONTH_TENDENCY_CLASSES } from '../yuejing-month-interpretation.ts';
 import { ConcernIcon, concernIconStyle } from './yuejing-calendar.tsx';
 import { CloseIcon } from './yuejing-icons.tsx';
 import { CheckIcon, MonthPhaseGlyph, MonthTendencyGlyph, MonthWindowGlyph } from './yuejing-month-glyphs.tsx';
-import { YUEJING_COPY } from './yuejing-copy.ts';
 
 export function YueJingMonthPanel(props: {
   readonly dates: readonly string[];
@@ -21,6 +21,9 @@ export function YueJingMonthPanel(props: {
   readonly onHighlightDates?: (dates: readonly string[]) => void;
   readonly onSelectDate?: (date: string) => void;
 }) {
+  const TENDENCY_CLASS_LABELS = useProductCopy().tendencyClassLabels;
+  const YUEJING_COPY = useProductCopy().yuejingSurface;
+  const monthLanguage = useProductCopy().yuejingLanguage;
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') props.onClose();
@@ -36,8 +39,8 @@ export function YueJingMonthPanel(props: {
       activeTags: props.activeTags,
       eventMemories: props.eventMemories,
       planItems: props.planItems,
-    }),
-    [props.activeTags, props.cellsByDate, props.dates, props.eventMemories, props.planItems],
+    }, monthLanguage),
+    [props.activeTags, props.cellsByDate, props.dates, props.eventMemories, props.planItems, monthLanguage],
   );
   const hasGeneratedCells = interpretation.generated_day_count > 0;
 

@@ -12,6 +12,7 @@ export type ShijingRuntimeAccessState =
   | 'capability-unavailable';
 
 export type ShijingRuntimeAccessFailure = {
+  readonly code?: string;
   readonly state: ShijingRuntimeAccessState;
   readonly reasonCode: string;
   readonly actionHint: string;
@@ -45,6 +46,8 @@ const RUNTIME_UNAVAILABLE_SESSION_STATES = new Set([
 const ACTION_REQUIRED_REASONS = new Set([
   'account-authentication-required',
   'runtime-account-authentication-required',
+  'runtime-unauthenticated',
+  'unauthenticated',
 ]);
 
 const RUNTIME_UNAVAILABLE_REASONS = new Set([
@@ -68,31 +71,39 @@ export function shijingRuntimeAccessFromSession(
   };
 }
 
+// @nimi-authority: rule.shijing.product.r016
 export function classifyShijingRuntimeAccessFailure(
   error: unknown,
 ): ShijingRuntimeAccessFailure {
   const direct = asRecord(error);
   const message = messageFrom(error);
   const embedded = parseEmbeddedError(message);
+  const envelope = asRecord(direct?.envelope) ?? asRecord(embedded?.envelope);
   const reasonCode = firstText(
     direct?.reasonCode,
-    direct?.code,
     embedded?.reasonCode,
+    envelope?.reasonCode,
+    direct?.code,
     embedded?.code,
+    envelope?.code,
   ) || 'shijing-runtime-access-unavailable';
-  const state = stateForReasonCode(reasonCode);
+  const code = firstText(direct?.code, embedded?.code, envelope?.code);
+  const state = stateForReasonCode(reasonCode) ?? stateForReasonCode(code) ?? 'capability-unavailable';
 
   return {
     state,
     reasonCode,
+    ...(code ? { code } : {}),
     actionHint: firstText(
       direct?.actionHint,
       embedded?.actionHint,
+      envelope?.actionHint,
     ) || actionHintFor(state),
     message,
     retryable: firstBoolean(
       direct?.retryable,
       embedded?.retryable,
+      envelope?.retryable,
     ) ?? state !== 'capability-unavailable',
   };
 }
@@ -104,10 +115,10 @@ function stateForSessionState(sessionState: string): ShijingRuntimeAccessState {
   return 'capability-unavailable';
 }
 
-function stateForReasonCode(reasonCode: string): ShijingRuntimeAccessState {
+function stateForReasonCode(reasonCode: string): ShijingRuntimeAccessState | undefined {
   if (ACTION_REQUIRED_REASONS.has(reasonCode)) return 'action-required';
   if (RUNTIME_UNAVAILABLE_REASONS.has(reasonCode)) return 'runtime-unavailable';
-  return 'capability-unavailable';
+  return undefined;
 }
 
 function actionHintFor(state: ShijingRuntimeAccessState): string {

@@ -1,4 +1,31 @@
-export const YUEJING_COPY = {
+export const ZH_YUEJING_SURFACE_COPY = {
+  generatingDate: (date: string) => `正在推算 ${date}…`,
+  tab: {
+  "done": "已完成",
+  "generate": "生成 30 日",
+  "continue": "继续生成",
+  "previous": "上次生成",
+  "busy": "生成中…",
+  "missingNatal": "请先在「设置 → 本人」中填写出生信息,月镜会据此自动推算。",
+  "missingConcerns": "还没有激活关注",
+  "concernHint": "月镜需要至少一个关注作为镜片，才会自动生成 30 日倾向。",
+  "openConcerns": "去设置关注",
+  "preparing": "正在准备月镜倾向…若长时间未出现,可点击右上「生成 30 日」重试。",
+  "stale": "当前月镜解读已超过 7 天,建议重新生成。",
+  "added": "关注集已新增,新关注尚未推算。点击右上「生成今日」用当前关注集重新生成。",
+  "removed": "已移除部分关注,日历已隐藏对应数据。若想用当前关注集重算,点击右上「生成今日」。",
+  "changed": "关注集已变动,日历已按当前激活关注过滤。点击右上「生成今日」用新关注集重新推算。",
+  "details": "30日行动指南摘要与生成依据"
+},
+  weekdays: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+  weekdayHeaders: ['一', '二', '三', '四', '五', '六', '日'],
+  bodyByTendency: {
+  supportive: '整体助力,今天适合主动推进。',
+  steady: '节奏平稳,适合按部就班的推进。',
+  watch: '需要观察,留意细节与节奏。',
+  blocked: '运势阻滞,宜守不宜攻。',
+  turning: '局面转折,留意拐点信号。',
+},
   todayHero: {
     ariaLabel: '今日总览',
     eyebrow: '今日 · 总览',

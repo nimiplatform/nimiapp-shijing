@@ -12,6 +12,7 @@ import { ShijingLocalDevelopmentStatus } from '../local-development/shijing-loca
 import { shijingLocalAppRuntimePlatform } from '../local-development/shijing-local-app-runtime.ts';
 import { ShijingRuntimeStoragePersistenceClient } from '../persistence/shijing-runtime-storage.ts';
 import { useAppStore } from '../app-shell/app-store.js';
+import { openShijingRuntimeAiRecovery } from '../ai/shijing-ai-recovery.ts';
 
 const shijingPersistenceClient = new ShijingRuntimeStoragePersistenceClient(
   shijingLocalAppRuntimePlatform,
@@ -57,6 +58,7 @@ export function ProductArea() {
           runtimeAiClient={runtimeAiClient}
           conversationChatBridge={conversationChatBridge}
           aiConfigReady={aiConfigReady}
+          openRuntimeAiRecovery={openShijingRuntimeAiRecovery}
         >
           <ShijingShell settingsExtras={settingsExtras} activity={shijingLocalAppRuntimePlatform.activity} />
         </ShijingStoreProvider>

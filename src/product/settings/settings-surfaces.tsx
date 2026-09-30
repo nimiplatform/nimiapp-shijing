@@ -7,9 +7,10 @@
 // No CRM / customer / client / task / project vocabulary appears here.
 
 import type { ShijingSettingsSurfaceId } from '../../contracts/ia-contract.ts';
-import { SETTINGS_SURFACE_LABELS } from '../i18n/copy.ts';
+import { useProductCopy } from '../i18n/copy.ts';
 import { ConcernTagControls } from '../concern-tags/concern-tag-controls.tsx';
 import { MemoryEditor } from '../memories/memory-editor.tsx';
+import { PlanArchive } from '../plans/plan-archive.tsx';
 import { PersonEditor } from '../persons/person-editor.tsx';
 import type { ProfileSensitiveAccess } from '../privacy/profile-sensitive-access.ts';
 import { SelfEditor } from '../self/self-editor.tsx';
@@ -33,11 +34,9 @@ function SurfaceBody(props: {
     case 'concern_tags':
       return <ConcernTagControls />;
     case 'memory_and_plans':
-      // Only past events (记忆) are recorded here. Future plans (PlanItem) are
-      // captured in-context on the 月镜 calendar's future day cells, where the
-      // planned date comes from the cell itself — so this settings surface no
-      // longer carries a separate, decontextualized plan-entry form.
-      return <MemoryEditor />;
+      // Plan entry stays on YueJing dates; Settings only adds cross-period
+      // browsing of saved intentions alongside the existing memory backfill.
+      return <><MemoryEditor /><PlanArchive /></>;
     default:
       return null;
   }
@@ -62,6 +61,7 @@ const SELF_CONTAINED_SURFACES: ReadonlySet<ShijingSettingsSurfaceId> = new Set([
 ]);
 
 export function SettingsSurfaceSection(props: SettingsSurfaceSectionProps) {
+  const copy = useProductCopy();
   const { surface } = props;
   if (SELF_CONTAINED_SURFACES.has(surface)) {
     return (
@@ -73,8 +73,8 @@ export function SettingsSurfaceSection(props: SettingsSurfaceSectionProps) {
     );
   }
   return (
-    <section id={`settings-${surface}`} aria-label={SETTINGS_SURFACE_LABELS[surface]}>
-      <h3>{SETTINGS_SURFACE_LABELS[surface]}</h3>
+    <section id={`settings-${surface}`} aria-label={copy.settingsSurfaceLabels[surface]}>
+      <h3>{copy.settingsSurfaceLabels[surface]}</h3>
       <SurfaceBody
         surface={surface}
         focusTarget={props.focusTarget}

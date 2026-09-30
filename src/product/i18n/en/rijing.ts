@@ -254,6 +254,8 @@ export const EN_RIJING_COPY: ProductCopy['rijing'] = {
     confidencePrefix: 'Confidence',
   },
   dayRite: {
+    rowLabels: { wealth: 'Wealth direction', joy: 'Joy direction', mascot: 'Blessing direction', yang: 'Yang noble direction', fiveElements: 'Nayin', duty: 'Day officer', opposite: 'Clash and direction', star: 'Day guardian' },
+    description: 'General calendar folklore, separate from your natal reading. It does not determine personal tendencies or stages.',
     flipToRiteLabel: 'View almanac',
     flipToOverviewLabel: 'Back to overview',
     flipToRiteAria: "View today's general almanac",

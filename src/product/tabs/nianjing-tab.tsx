@@ -1,3 +1,5 @@
+import { relativeTimeShort } from '../datetime/relative-time.ts';
+import { useProductCopy } from '../i18n/copy.ts';
 // SJG-ASTRO-06 — NianJing phase + inflection mirror screen (W-c04
 // timeline visualization).
 //
@@ -33,7 +35,6 @@ import { inputsSummaryStalenessForSpace } from '../astrology/inputs-summary-expi
 import { newReadingId } from '../ids/index.ts';
 import { subjectMirrorReadiness } from '../subjects/natal-readiness.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
-import { MIRROR_KIND_LABELS } from '../i18n/copy.ts';
 import { longHorizonMirrorScopeNextTenYears } from './mirror-scope-helpers.ts';
 import { ImportToShiJingButton } from './shared/import-to-shijing-button.tsx';
 import { FailureBanner } from './shared/failure-banner.tsx';
@@ -43,7 +44,7 @@ import { nianjingFreshnessView } from './nianjing/nianjing-staleness.ts';
 import { buildNianJingDirectDisplayOutput } from './nianjing/nianjing-direct-output.ts';
 import { NianJingReadyView } from './nianjing/nianjing-ready-view.tsx';
 import { DetailDrawer } from './nianjing/nianjing-detail-drawer.tsx';
-import { nowIso, relativeTimeShort, type SelectedDetail } from './nianjing/nianjing-view-model.ts';
+import { nowIso, type SelectedDetail } from './nianjing/nianjing-view-model.ts';
 import type { ShijingSettingsPageId } from '../../contracts/ia-contract.ts';
 
 export interface NianJingTabProps {
@@ -51,6 +52,8 @@ export interface NianJingTabProps {
 }
 
 export function NianJingTab(props: NianJingTabProps) {
+  const copy = useProductCopy();
+  const tabCopy = copy.nianjingSurface.tab;
   const { state, replace_snapshot, runtime_ai_client } = useShijingStore();
   const [loading, setLoading] = useState(false);
   const [failure, setFailure] = useState<ReadingGenerationFailure | null>(null);
@@ -116,7 +119,7 @@ export function NianJingTab(props: NianJingTabProps) {
         expected_concern_tag_refs: activeTagIds,
       })
     : { stale: false as const };
-  const freshness = nianjingFreshnessView(staleness);
+  const freshness = nianjingFreshnessView(staleness, copy.nianjingSurface.staleMessages);
   const selfNatalReady = subjectMirrorReadiness({
     subject: 'self',
     space: state.snapshot,
@@ -172,24 +175,24 @@ export function NianJingTab(props: NianJingTabProps) {
       ? directDisplay.failure
       : null);
   const importableReadingId = freshness.can_import_to_consultation ? reading?.id ?? null : null;
-  const generatedAgo = reading?.created_at ? relativeTimeShort(reading.created_at) : null;
-  const generatedAgoPrefix = viewingPrevious ? '上一版生成' : '上次生成';
+  const generatedAgo = reading?.created_at ? relativeTimeShort(reading.created_at, copy.relativeTime) : null;
+  const generatedAgoPrefix = viewingPrevious ? tabCopy.previousVersion : tabCopy.previous;
   const actionLabel = loading
-    ? '生成中...'
+    ? tabCopy.busy
     : importableReadingId
-      ? '更新可引用版本'
+      ? tabCopy.update
       : output
-        ? '保存可引用版本'
-        : '生成长程相位';
+        ? tabCopy.save
+        : tabCopy.generate;
 
   return (
     <section
       className="shijing-tab shijing-nianjing"
       data-mirror-kind="nianjing"
-      aria-label={MIRROR_KIND_LABELS.nianjing}
+      aria-label={copy.mirrorKindLabels.nianjing}
     >
       <MirrorPageHeader
-        title={MIRROR_KIND_LABELS.nianjing}
+        title={copy.mirrorKindLabels.nianjing}
         meta={generatedAgo ? <>{generatedAgoPrefix} {generatedAgo}</> : undefined}
         actions={(
           <>
@@ -212,14 +215,14 @@ export function NianJingTab(props: NianJingTabProps) {
             onClick={() => setViewingPrevious((v) => !v)}
             aria-pressed={viewingPrevious}
           >
-            {viewingPrevious ? '回到最新版 →' : '← 还原上一版'}
+            {viewingPrevious ? tabCopy.current : tabCopy.older}
           </button>
         ) : undefined}
       />
 
       {!selfNatalReady ? (
         <p role="status" className="shijing-nianjing__notice">
-          请先在「设置 → 本人」中填写出生信息,年镜会据此自动推算。
+          {tabCopy.missingNatal}
         </p>
       ) : activeTagIds.length === 0 ? (
         <div
@@ -228,27 +231,27 @@ export function NianJingTab(props: NianJingTabProps) {
           className="shijing-nianjing__notice shijing-nianjing__notice--action"
         >
           <span>
-            <strong>还没有激活关注</strong>
-            年镜需要至少一个关注作为长程相位的镜片。
+            <strong>{tabCopy.missingConcerns}</strong>
+            {tabCopy.concernHint}
           </span>
           <button
             type="button"
             className="shijing-nianjing__notice-action"
             onClick={() => props.onRequestOpenSettings?.('concerns')}
           >
-            去设置关注
+            {tabCopy.openConcerns}
           </button>
         </div>
       ) : null}
       {loading ? (
-        <p role="status" className="shijing-nianjing__notice">正在生成长程相位…</p>
+        <p role="status" className="shijing-nianjing__notice">{tabCopy.generating}</p>
       ) : null}
       {!loading && selfNatalReady && !displayFailure && !output && activeTagIds.length > 0 ? (
         <p role="status" className="shijing-nianjing__notice">
-          当前资料还无法推导出长程相位，请先补全本命输入与关注。
+          {tabCopy.insufficient}
         </p>
       ) : null}
-      {displayFailure ? <FailureBanner failure={displayFailure} /> : null}
+      {displayFailure ? <FailureBanner failure={displayFailure} onRetry={handleGenerate} /> : null}
 
       {output ? (
         <NianJingReadyView

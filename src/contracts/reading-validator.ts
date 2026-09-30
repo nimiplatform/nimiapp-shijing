@@ -15,6 +15,7 @@ import {
   validateMirrorScope,
 } from './mirror-scope-validator.ts';
 import { validateMirrorOutput } from './mirror-output-validator.ts';
+import { isRecord, isStringArray } from './mirror-output/common.ts';
 import { READING_OWNER_SCOPED_REMOVED_FIELDS } from './removed-surfaces.ts';
 import { computeCanonicalHash } from '../product/astrology/canonical-hash.ts';
 
@@ -61,6 +62,9 @@ export type ReadingValidationError =
   | { code: 'reading_relationship_natal_output_subject_mismatch' }
   | { code: 'reading_relationship_output_requires_relationship_scope' }
   | { code: 'reading_uncertainty_confidence_invalid'; received: unknown }
+  | { code: 'reading_uncertainty_shape_invalid' }
+  | { code: 'reading_uncertainty_caveats_invalid' }
+  | { code: 'reading_uncertainty_data_gaps_invalid' }
   | { code: 'reading_removed_field_present'; field: string };
 
 export type ReadingValidationResult =
@@ -421,7 +425,14 @@ export function validateReading(reading: Reading): ReadingValidationResult {
   if (reading.cited_plan_item_refs.length > 0 && outputPlanRefs.length === 0) {
     return { ok: false, error: { code: 'reading_output_uncited_plan_influence' } };
   }
-  if (!CONFIDENCE_LEVELS_RUNTIME.has(reading.uncertainty.confidence)) {
+  // @nimi-authority: rule.shijing.astrology.r009
+  const uncertainty = reading.uncertainty;
+  if (!isRecord(uncertainty) || Object.keys(uncertainty).some((key) =>
+    key !== 'confidence' && key !== 'caveats' && key !== 'data_gaps'
+  )) {
+    return { ok: false, error: { code: 'reading_uncertainty_shape_invalid' } };
+  }
+  if (!CONFIDENCE_LEVELS_RUNTIME.has(uncertainty.confidence)) {
     return {
       ok: false,
       error: {
@@ -429,6 +440,12 @@ export function validateReading(reading: Reading): ReadingValidationResult {
         received: reading.uncertainty.confidence,
       },
     };
+  }
+  if (!isStringArray(uncertainty.caveats) || uncertainty.caveats.some((item) => item.trim().length === 0)) {
+    return { ok: false, error: { code: 'reading_uncertainty_caveats_invalid' } };
+  }
+  if (!isStringArray(uncertainty.data_gaps) || uncertainty.data_gaps.some((item) => item.trim().length === 0)) {
+    return { ok: false, error: { code: 'reading_uncertainty_data_gaps_invalid' } };
   }
   // Force shape check on related person refs to subject_ref helpers (no-op
   // unless they collapse to 'self' which is forbidden above).

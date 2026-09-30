@@ -77,7 +77,21 @@ export const READING_GENERATION_FAILURE_KINDS: readonly ReadingGenerationFailure
   'patterns_unavailable',
 ] as const;
 
-export interface ReadingGenerationFailure {
+export interface RuntimeFailureEvidence {
+  readonly runtime_code?: string;
+  readonly reason_code?: string;
+  readonly action_hint?: string;
+}
+
+export type RuntimeAiFailureRecoveryKind =
+  | 'model_configuration'
+  | 'provider_product_activation'
+  | 'runtime_access'
+  | 'retry';
+
+export type OpenRuntimeAiRecovery = (kind: Exclude<RuntimeAiFailureRecoveryKind, 'retry'>) => Promise<void>;
+
+export interface ReadingGenerationFailure extends RuntimeFailureEvidence {
   readonly kind: ReadingGenerationFailureKind;
   readonly mirror_kind: MirrorKind;
   readonly mirror_scope: MirrorScope;

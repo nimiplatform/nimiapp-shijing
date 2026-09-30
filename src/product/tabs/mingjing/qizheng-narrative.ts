@@ -281,28 +281,28 @@ const ZH: Phrases = {
 
 const EN: Phrases = {
   dayNight: { day: 'day chart', night: 'night chart' },
-  mingSuffix: ' · 命主',
+  mingSuffix: ' · chart ruler',
   posShort: {
     七强: 'angular and best placed (七强)',
     次强: 'succedent and solidly usable (次强)',
     闲宫: 'cadent and off-duty, weaker (闲宫)',
   },
   heroFavorablePeak: (label) => `${label} · 七强`,
-  heroFavorableMing: (label) => `${label} · 命主`,
+  heroFavorableMing: (label) => `${label} · chart ruler`,
   heroWatchIdle: (label) => `${label} · 闲宫`,
   heroWatchCluster: (house, count) => `${house}×${count}`,
   basis: (dayNight, asc) => `${dayNight} · Asc ${asc}`,
   chipCount: (house, count) => `${house} ×${count}`,
-  chipMing: (house) => `命主 in ${house}`,
+  chipMing: (house) => `chart ruler in ${house}`,
   chipPeak: (label, house) => `${label} in ${house}`,
   countLabel: (count) => `${count} bodies`,
   emptyCount: 'empty',
   rulerLine: (label, house) => `ruler ${label} → ${house}`,
-  mingZhuLine: 'As your 命主, it carries the through-line of “you” — usually the first thing to read.',
+  mingZhuLine: 'As your chart ruler, it carries the through-line of “you” — usually the first thing to read.',
   siyuLine: 'It is a 四余 shadow star — neither lucky nor unlucky in itself; what matters is how you use it.',
   starDeep: ({ essence, house, theme, strength, isMing, isSiyu }) => {
     const role = isMing
-      ? ' As your 命主, it carries the through-line of “you” — the first thing to read.'
+      ? ' As your chart ruler, it carries the through-line of “you” — the first thing to read.'
       : isSiyu
         ? ' As a 四余 shadow star it is neither lucky nor unlucky in itself; it’s about how you use it.'
         : '';
@@ -321,14 +321,14 @@ const EN: Phrases = {
         : strength === '次强'
           ? 'this house carries solid strength'
           : 'this house is cadent and runs weaker';
-    const mingNote = hasMing ? ' 命主 also lands here, which makes it even more clearly your home turf.' : '';
+    const mingNote = hasMing ? ' chart ruler also lands here, which makes it even more clearly your home turf.' : '';
     return `${house} governs ${theme}. ${count} ${count === 1 ? 'body sits' : 'bodies sit'} here — ${labels.join(', ')}. ${posWord}, and ${crowd} aimed in the right place this is one of the directions most worth deepening.${mingNote}`.trim();
   },
   palaceDeepEmpty: ({ house, theme, ruler }) =>
     `${house} governs ${theme} and is empty — no star sits in it directly. That part of life isn’t blank; read it through where its ruling star falls and how that star fares.${ruler ? ` (${ruler})` : ''}`.trim(),
   heroParagraph: ({ coreHouse, coreTheme, coreCount, mingLabel, mingHouse, mingInCore, peakLabel, peakHouse, peakStrengthLabel, watchHouse, watchLabels }) => {
     const coreClause = coreCount >= 2 ? `${coreCount} of the eleven bodies gather in ${coreHouse} (${coreTheme}), ` : 'the bodies spread fairly evenly, ';
-    const mingClause = mingInCore && coreCount >= 2 ? `命主 ${mingLabel} among them — a clear centre of gravity; ` : `命主 ${mingLabel} sits in ${mingHouse}, setting your core line; `;
+    const mingClause = mingInCore && coreCount >= 2 ? `chart ruler ${mingLabel} among them — a clear centre of gravity; ` : `chart ruler ${mingLabel} sits in ${mingHouse}, setting your core line; `;
     const peakClause = `${peakLabel} then holds ${peakHouse} at the chart’s ${peakStrengthLabel} strength — its most capable single body. `;
     const watchClause = watchLabels.length > 0 ? `Watch ${watchHouse}, where ${watchLabels.join(', ')} pile up — don’t let inner drain become the norm.` : '';
     return `Across the eleven bodies, ${coreClause}${mingClause}${peakClause}${watchClause}`;
@@ -338,13 +338,13 @@ const EN: Phrases = {
       return {
         title: `${house} holds ${count} bodies · centre of gravity`,
         summary: `${labels.join(' · ')} together in ${house}`,
-        deep: `${count} of the eleven bodies fall in ${house}${mingInCore ? `, including your 命主 ${mingLabel}` : ''}. This house governs ${theme}, and the energy is unusually concentrated here — ${house} is the heaviest part of your life. The upside is real abundance and a clear main line; the risk is overthinking and self-drain. The way through is to turn it outward into something visible.`,
+        deep: `${count} of the eleven bodies fall in ${house}${mingInCore ? `, including your chart ruler ${mingLabel}` : ''}. This house governs ${theme}, and the energy is unusually concentrated here — ${house} is the heaviest part of your life. The upside is real abundance and a clear main line; the risk is overthinking and self-drain. The way through is to turn it outward into something visible.`,
       };
     }
     return {
-      title: `命主 holds ${house}`,
-      summary: `命主 ${mingLabel} alone in ${house}`,
-      deep: `Your 命主 ${mingLabel} sits in ${house}, governing ${theme} — this line is the spine of the chart. The bodies are fairly spread, so you aren’t a single-point type but run several lines at once. Lock onto this main line and the rest tends to fall into place.`,
+      title: `chart ruler holds ${house}`,
+      summary: `chart ruler ${mingLabel} alone in ${house}`,
+      deep: `Your chart ruler ${mingLabel} sits in ${house}, governing ${theme} — this line is the spine of the chart. The bodies are fairly spread, so you aren’t a single-point type but run several lines at once. Lock onto this main line and the rest tends to fall into place.`,
     };
   },
   patternPeak: ({ label, planet, house, theme, strengthLabel, isPeak }) => ({
@@ -516,7 +516,7 @@ export function useQizhengNarrative(): QizhengNarrative {
     const mingInCore = core.body_keys.includes(ming);
 
     const subtitleChips = [
-      `命主${mingLabel}`,
+      p.mingZhuLine + mingLabel,
       core.body_keys.length >= 2 ? p.chipCount(core.name, core.body_keys.length) : p.chipMing(mingBody.house_name),
       p.chipPeak(peak.label, peak.house_name),
     ];

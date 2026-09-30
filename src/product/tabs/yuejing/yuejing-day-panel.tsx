@@ -1,18 +1,18 @@
+import { useProductCopy } from '../../i18n/copy.ts';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ConfirmDialog, Tooltip } from '@nimiplatform/kit/ui';
 import type { YueJingCell } from '../../../domain/mirror-output.ts';
 import type { ConcernTag } from '../../../domain/concern-tag.ts';
 import type { EventMemory } from '../../../domain/event-memory.ts';
 import type { PlanItem } from '../../../domain/plan-item.ts';
-import { TENDENCY_CLASS_LABELS } from '../../i18n/copy.ts';
+
 import { newEventMemoryId, newPlanItemId } from '../../ids/index.ts';
 import { useShijingStore } from '../../state/shijing-store.tsx';
 import { persistenceWriteSucceeded } from '../../state/persistence-bridge.ts';
 import { trimmedConcernLabel as yuejingTagLabel } from '../../concern-tags/concern-presets.ts';
 import { AskIcon, ClipboardIcon, CloseIcon, PencilIcon, TrashIcon } from './yuejing-icons.tsx';
-import { classifyDay, deriveYueJingCalendarDetails, nowIso, shortMonthDay, WEEKDAY_SHORT, weekdayIndexMondayFirst, yuejingCellDetail } from './yuejing-model.ts';
+import { classifyDay, deriveYueJingCalendarDetails, nowIso, shortMonthDay, weekdayIndexMondayFirst, yuejingCellDetail } from './yuejing-model.ts';
 import { concernIconStyle, ConcernIcon } from './yuejing-calendar.tsx';
-import { YUEJING_COPY } from './yuejing-copy.ts';
 
 export function YueJingDayPanel(props: {
   readonly date: string;
@@ -22,6 +22,8 @@ export function YueJingDayPanel(props: {
   readonly filterTagId: string | null;
   readonly onClose: () => void;
 }) {
+  const TENDENCY_CLASS_LABELS = useProductCopy().tendencyClassLabels;
+  const YUEJING_COPY = useProductCopy().yuejingSurface;
   const { state, dispatch, replace_snapshot } = useShijingStore();
   const [draft, setDraft] = useState('');
   // In-place editing state for the 已记录 list. `editingId` is the id
@@ -37,7 +39,7 @@ export function YueJingDayPanel(props: {
   const panelRef = useRef<HTMLElement | null>(null);
   const kind = classifyDay(props.date, props.today);
   const isPlan = kind === 'future';
-  const weekday = WEEKDAY_SHORT[weekdayIndexMondayFirst(props.date)];
+  const weekday = YUEJING_COPY.weekdays[weekdayIndexMondayFirst(props.date)];
   const calendarDetails = deriveYueJingCalendarDetails(props.date);
 
   // Reset the draft + edit state whenever the user navigates to a

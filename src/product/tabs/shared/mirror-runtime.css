@@ -137,12 +137,16 @@
 }
 
 .shijing-failure-banner__copy {
+  flex: 1 1 220px;
   min-width: 0;
+  overflow-wrap: anywhere;
   line-height: 1.55;
 }
 
 .shijing-failure-banner code {
   display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   margin-left: 6px;
   font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
   font-size: 11px;

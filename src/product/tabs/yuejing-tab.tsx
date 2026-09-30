@@ -1,3 +1,5 @@
+import { relativeTimeShort } from '../datetime/relative-time.ts';
+import { useProductCopy } from '../i18n/copy.ts';
 // SJG-ASTRO-05 — YueJing rolling 30-day mirror screen.
 //
 // V2 layout (per SJG-DSY-01 mockup):
@@ -35,7 +37,6 @@ import {
   latestReadingByMirrorKind,
 } from '../reading/reading-selectors.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
-import { MIRROR_KIND_LABELS } from '../i18n/copy.ts';
 import { rolling30DayMirrorScopeFromDate } from './mirror-scope-helpers.ts';
 import { classifyMirrorTabState } from './mirror-state.ts';
 import { persistenceReadyForAutoGeneration } from './auto-generation-readiness.ts';
@@ -51,7 +52,6 @@ import {
   latestYuejingReadingForDate,
   nextMissingYuejingDate,
   nowIso,
-  relativeTimeShort,
   shortMonthDay,
   todayLocalDate,
 } from './yuejing/yuejing-model.ts';
@@ -73,6 +73,8 @@ export interface YueJingTabProps {
 }
 
 export function YueJingTab(props: YueJingTabProps) {
+  const copy = useProductCopy();
+  const tabCopy = copy.yuejingSurface.tab;
   const {
     state,
     replace_snapshot,
@@ -304,23 +306,23 @@ export function YueJingTab(props: YueJingTabProps) {
     return 'none';
   }, [reading, activeTagIds, activeTagIdSet]);
   const generatedAgo = latestReading?.created_at
-    ? relativeTimeShort(latestReading.created_at)
+    ? relativeTimeShort(latestReading.created_at, copy.relativeTime)
     : null;
   const generateLabel = nextGenerationDate === null
-    ? '已完成'
+    ? tabCopy.done
     : nextGenerationDate === today
-      ? '生成 30 日'
-      : '继续生成';
+      ? tabCopy.generate
+      : tabCopy.continue;
 
   return (
     <section
       className="shijing-tab shijing-yuejing"
       data-mirror-kind="yuejing"
-      aria-label={MIRROR_KIND_LABELS.yuejing}
+      aria-label={copy.mirrorKindLabels.yuejing}
     >
       <MirrorPageHeader
-        title={MIRROR_KIND_LABELS.yuejing}
-        meta={generatedAgo ? <>上次生成 {generatedAgo}</> : undefined}
+        title={copy.mirrorKindLabels.yuejing}
+        meta={generatedAgo ? <>{tabCopy.previous} {generatedAgo}</> : undefined}
         actions={(
           <>
             {latestReading?.id ? <ImportToShiJingButton readingId={latestReading.id} /> : null}
@@ -328,7 +330,7 @@ export function YueJingTab(props: YueJingTabProps) {
               className="shijing-yuejing__generate"
               disabled={loading || !selfNatalReady || activeTagIds.length === 0 || nextGenerationDate === null}
               busy={loading}
-              busyLabel="生成中…"
+              busyLabel={tabCopy.busy}
               onClick={() => {
                 void handleGenerate(nextGenerationDate ?? today);
               }}
@@ -344,7 +346,7 @@ export function YueJingTab(props: YueJingTabProps) {
        * stays visible underneath. */}
       {!selfNatalReady ? (
         <p role="status" className="shijing-yuejing__notice">
-          请先在「设置 → 本人」中填写出生信息,月镜会据此自动推算。
+          {tabCopy.missingNatal}
         </p>
       ) : activeTagIds.length === 0 ? (
         <div
@@ -353,41 +355,41 @@ export function YueJingTab(props: YueJingTabProps) {
           className="shijing-yuejing__notice shijing-yuejing__notice--action"
         >
           <span>
-            <strong>还没有激活关注</strong>
-            月镜需要至少一个关注作为镜片，才会自动生成 30 日倾向。
+            <strong>{tabCopy.missingConcerns}</strong>
+            {tabCopy.concernHint}
           </span>
           <button
             type="button"
             className="shijing-yuejing__notice-action"
             onClick={() => props.onRequestOpenSettings?.('concerns')}
           >
-            去设置关注
+            {tabCopy.openConcerns}
           </button>
         </div>
       ) : null}
       {tabState.kind === 'loading' ? (
         <p role="status" className="shijing-yuejing__notice">
-          正在推算 {generatingDate ? shortMonthDay(generatingDate) : '月镜'}…
+          {copy.yuejingSurface.generatingDate(generatingDate ? shortMonthDay(generatingDate) : copy.mirrorKindLabels.yuejing)}
         </p>
       ) : null}
       {tabState.kind === 'empty' && selfNatalReady && activeTagIds.length > 0 && !loading ? (
         <p role="status" className="shijing-yuejing__notice">
-          正在准备月镜倾向…若长时间未出现,可点击右上「生成 30 日」重试。
+          {tabCopy.preparing}
         </p>
       ) : null}
-      {tabState.kind === 'failure' ? <FailureBanner failure={tabState.failure} /> : null}
+      {tabState.kind === 'failure' ? <FailureBanner failure={tabState.failure} onRetry={() => { void handleGenerate(); }} /> : null}
       {isReady && tabState.kind === 'ready' && tabState.stale ? (
         <p role="alert" className="shijing-yuejing__stale">
-          当前月镜解读已超过 7 天,建议重新生成。
+          {tabCopy.stale}
         </p>
       ) : null}
       {isReady && tagDriftKind !== 'none' ? (
         <p role="status" className="shijing-yuejing__notice">
           {tagDriftKind === 'added'
-            ? '关注集已新增,新关注尚未推算。点击右上「生成今日」用当前关注集重新生成。'
+            ? tabCopy.added
             : tagDriftKind === 'removed'
-              ? '已移除部分关注,日历已隐藏对应数据。若想用当前关注集重算,点击右上「生成今日」。'
-              : '关注集已变动,日历已按当前激活关注过滤。点击右上「生成今日」用新关注集重新推算。'}
+              ? tabCopy.removed
+              : tabCopy.changed}
         </p>
       ) : null}
 
@@ -426,7 +428,7 @@ export function YueJingTab(props: YueJingTabProps) {
       {/* Details — only when a reading exists (has summary + cite). */}
       {isReady && latestReading && output && filterTagId === null ? (
         <details className="shijing-yuejing__details">
-          <summary>30日行动指南摘要与生成依据</summary>
+          <summary>{tabCopy.details}</summary>
           <p className="shijing-yuejing__summary">{output.summary}</p>
           <CitationDrawer reading={latestReading} />
         </details>

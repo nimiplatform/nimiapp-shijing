@@ -4,6 +4,7 @@ import type { ProductCopy } from '../copy-types.ts';
 import { zhTwelveStageLabel } from '../copy-helpers.ts';
 
 export const ZH_MINGJING_COPY: ProductCopy['mingjing'] = {
+  ageSuffix: '岁',
   title: '命镜',
   eyebrow: '本命盘 · 全局分析',
   subtitle: '一次性的全局命盘解读,基于八字排盘、原局格局、大运结构与流年关键窗口。',

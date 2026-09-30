@@ -18,11 +18,13 @@ import { validConcernTag, validRijingOutput, validShiJingSpace } from '../_fixtu
 import { MockRuntimeAiClient } from '../_mock-runtime-ai-client.mjs';
 import '../../src/styles.css';
 
+const scenario = new URLSearchParams(location.search).get('scenario') ?? 'save';
+
 class TestPersistence extends InMemoryPersistenceAdapter {
   attempts = 0;
   override async save(snapshot: ShiJingSpace): Promise<SaveResult> {
     this.attempts += 1;
-    if (this.attempts === 1) {
+    if (scenario === 'save' && this.attempts === 1) {
       return { ok: false, error: { kind: 'save_write_failed', adapter: 'in_memory', cause: 'injected write failure' } };
     }
     return super.save(snapshot);
@@ -35,9 +37,19 @@ const initial = {
   settings: { ...base.settings, daily_rijing: { enabled: true, time: '08:00' } },
 };
 const persistence = new TestPersistence(initial);
-const observed = { aiCalls: 0, publishedAfterSave: [] as number[] };
+const observed = {
+  aiCalls: 0,
+  publishedAfterSave: [] as number[],
+  recoveryTargets: [] as string[],
+  rejectNavigation: true,
+};
 const runtimeAi = new MockRuntimeAiClient({
   canned_output_by_kind: { rijing: validRijingOutput() },
+  ...(scenario === 'configuration' ? {
+    canned_failure: { kind: 'runtime_unavailable', detail: 'model binding is missing', reason_code: 'AI_CONFIG_TEXT_MODEL_NOT_BOUND' },
+  } : scenario === 'parse' ? {
+    canned_failure: { kind: 'parse_failure', failure: { kind: 'invalid_json', detail: 'invalid candidate' } },
+  } : {}),
   capture: () => { observed.aiCalls += 1; },
 });
 const activity: RiJingActivityPort = {
@@ -45,7 +57,7 @@ const activity: RiJingActivityPort = {
     observed.publishedAfterSave.push(persistence.peek()?.readings.length ?? 0);
   },
 };
-Object.assign(window, { rijingTest: { persistence, observed } });
+Object.assign(window, { rijingTest: { persistence, observed, recoverAi: () => { runtimeAi.options.canned_failure = undefined; } } });
 
 function GenerationStatus() {
   const generation = useRiJingGeneration();
@@ -57,7 +69,15 @@ createRoot(document.getElementById('root')!).render(
   <I18nextProvider i18n={i18n}>
     <NimiThemeProvider accentPack="nimi-accent" defaultScheme="light">
       <TooltipProvider>
-        <ShijingStoreProvider snapshot={initial} persistenceClient={persistence} runtimeAiClient={runtimeAi}>
+        <ShijingStoreProvider
+          snapshot={initial}
+          persistenceClient={persistence}
+          runtimeAiClient={runtimeAi}
+          openRuntimeAiRecovery={async (target) => {
+            observed.recoveryTargets.push(target);
+            if (observed.rejectNavigation) throw new Error('desktop_navigation_denied');
+          }}
+        >
           <RiJingGenerationProvider activity={activity} onOpenRiJing={() => undefined}>
             <GenerationStatus />
             <div className="shijing-shell"><div className="shijing-shell__main"><RiJingTab /></div></div>

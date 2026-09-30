@@ -14,6 +14,7 @@ import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import type { SubjectRef } from '../../domain/subject-ref.ts';
 import { buildAstrologyFeatureSnapshot } from './build-feature-snapshot.ts';
 import { computeCanonicalHash } from './canonical-hash.ts';
+import { readingInputHash } from './reading-input-hash.ts';
 
 const MS_PER_HOUR = 60 * 60 * 1000;
 const MS_PER_DAY = 24 * MS_PER_HOUR;
@@ -138,17 +139,18 @@ export function inputsSummaryStalenessForSpace(
 
   const featureSnapshot = featureResult.value;
   const snapshots = concernTagSnapshots(tagsResult.tags, reading.inputs_summary.captured_at);
-  const currentInputHash = computeCanonicalHash({
-    method_profile: featureSnapshot.method_profile,
+  const currentInputHash = readingInputHash({
+    space,
+    feature_snapshot: featureSnapshot,
     mirror_scope: reading.mirror_scope,
-    canonical_window: featureSnapshot.canonical_window,
     concern_tag_snapshots: snapshots,
     related_person_refs: reading.related_person_refs,
     cited_event_memory_refs: reading.cited_event_memory_refs,
     cited_plan_item_refs: reading.cited_plan_item_refs,
     response_preferences_hash: responsePreferencesHash(space),
   });
-  if (currentInputHash !== reading.inputs_summary.input_hash) {
+  if (!currentInputHash.ok) return { stale: true, reason: 'feature_snapshot_failed' };
+  if (currentInputHash.value !== reading.inputs_summary.input_hash) {
     return { stale: true, reason: 'input_hash_changed' };
   }
 
@@ -229,6 +231,24 @@ export function yuejingInputsSummaryStalenessForActiveSubset(
     method_profile_id: space.settings.method_profile_id,
   });
   if (!featureResult.ok) return { stale: true, reason: 'feature_snapshot_failed' };
+
+  // Keep the original tag snapshots in this comparison so archiving an unrelated
+  // concern does not invalidate remaining cells. Natal and preference changes
+  // still invalidate every cell, including changes within the same Ziwei hour.
+  const currentInputHash = readingInputHash({
+    space,
+    feature_snapshot: featureResult.value,
+    mirror_scope: reading.mirror_scope,
+    concern_tag_snapshots: reading.inputs_summary.mirror_context_snapshot.active_concern_tags,
+    related_person_refs: reading.related_person_refs,
+    cited_event_memory_refs: reading.cited_event_memory_refs,
+    cited_plan_item_refs: reading.cited_plan_item_refs,
+    response_preferences_hash: responsePreferencesHash(space),
+  });
+  if (!currentInputHash.ok) return { stale: true, reason: 'feature_snapshot_failed' };
+  if (currentInputHash.value !== reading.inputs_summary.input_hash) {
+    return { stale: true, reason: 'input_hash_changed' };
+  }
 
   const reusableRefSet = new Set(reusableRefs);
   const storedProjected = projectFeatureSnapshotToConcernRefs(

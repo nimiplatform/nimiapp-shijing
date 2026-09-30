@@ -21,6 +21,7 @@ export function getProductCopy(language: UiLanguage): ProductCopy {
   return PRODUCT_COPY[language];
 }
 
+// @nimi-authority: rule.shijing.data-model.r011
 export function useProductCopy(): ProductCopy {
   const { i18n } = useTranslation();
   return getProductCopy(uiLanguageFromI18nLanguage(i18n.resolvedLanguage ?? i18n.language));

@@ -1,9 +1,9 @@
 // ZH cross-surface product copy.
 
-import type { ProductCopy } from '../copy-types.ts';
+import type { BaseProductCopy } from '../copy-types.ts';
 import { zhSelfRevealSensitiveFailed } from '../copy-helpers.ts';
 
-export const ZH_BASE_COPY: Omit<ProductCopy, 'rijing' | 'dailyRiJing' | 'yuejing' | 'hejing' | 'shijing' | 'mingjing'> = {
+export const ZH_BASE_COPY: BaseProductCopy = {
 brandName: '时镜',
 brandSub: 'ShiJing',
 mirrorKindLabels: {
@@ -96,7 +96,7 @@ settingsSurfaceLabels: {
 settingsPageLabels: {
   profile: '档案',
   concerns: '关注',
-  memory: '重要经历',
+  memory: '发生过的事',
   settings: '设置',
 },
 readinessBlockerLabels: {
@@ -233,6 +233,23 @@ memory: {
   deleteMessage: (body, extra) => `「${body}」将被永久删除，解读时不再引用。${extra}此操作不可撤销。`,
   deleteTitle: '删除这条记录？',
 },
+planArchive: {
+  title: '计划档案',
+  description: '汇总所有已保存的计划。录入与编辑仍在月镜日期中进行；计划记录不代表事情已经发生。',
+  empty: '还没有保存的计划。可以在月镜的未来日期中记下打算。',
+  source: '记录来源',
+  count: (count) => `${count} 条计划`,
+},
+lunarDatePicker: {
+  title: '农历出生日期', placeholder: '选择农历日期', year: '年', month: '月', day: '日',
+  yearAria: '农历年份', monthAria: '农历月份', dayAria: '农历日期', gregorian: '对应公历：',
+  conversionFailed: '无法转换', futureDate: '不能晚于今天', clear: '清除', confirm: '确定',
+  yearLabel: (year, cycle) => `${year}${cycle ? ` ${cycle}` : ''}年`,
+  monthLabel: (label) => label,
+  dayLabel: (label) => label,
+},
+birthTimePicker: { placeholder: '选择时间', hours: '小时', minutes: '分钟', now: '现在', clear: '清空', close: '关闭' },
+relativeTime: { justNow: '刚刚', minutes: (count) => `${count} 分钟前`, hours: (count) => `${count} 小时前`, days: (count) => `${count} 天前` },
 natal: {
   calendar: '出生日期类型',
   sex: '性别',
@@ -364,6 +381,17 @@ aiConfig: {
   modelConfigured: '模型已配置',
 },
 readingFailure: {
+  recovery: {
+    labels: { model_configuration: '检查 AI 模型', provider_product_activation: '检查服务开通或更换模型', runtime_access: '检查 Nimi 访问', retry: '重新生成' },
+    guidance: {
+      model_configuration: '请在 Nimi Desktop 为时镜配置可用的文本模型，完成后回来重新生成。',
+      provider_product_activation: '请在云厂商开通对应服务，或在 Nimi Desktop 为时镜更换已开通的模型，完成后重新生成。',
+      runtime_access: '请在 Nimi Desktop 检查 Runtime、时镜访问权限或安装修复提示，恢复后回来重新生成。',
+      retry: '本次 AI 输出未通过校验，没有保存为解读。可以重新生成；若持续失败，请在 Nimi Desktop 检查时镜的模型。',
+    },
+    opened: '已打开 Nimi Desktop 的时镜入口。如有多个来源，请选择当前正在运行的时镜；完成检查后，回来重新生成。',
+    openFailed: '无法打开 Nimi Desktop，请手动打开并完成检查后重试。',
+  },
   headlines: {
     runtime_ai_failed: '生成失败:Runtime AI 不可用或解析失败。',
     pipeline_stage_failed: '生成失败:推算阶段出错。',
@@ -377,6 +405,13 @@ readingFailure: {
   runtimeProviderProductNotActivated: '生成失败:已绑定模型,但云厂商返回产品或模型服务未开通。请在对应云厂商控制台开通该产品,或切换到已开通的 Runtime 模型后重新生成。',
 },
 citationDrawer: {
+  methodLabels: { bazi_ziping_v1: '八字子平法', ziwei_sanhe_v1: '紫微斗数（三合派）', qizheng_siyu_guolao_v1: '七政四余 / 果老星宗' },
+  referenceLabels: {
+    'rijing.daily_tendency_classification': '日镜每日倾向分类', 'yuejing.daily_tendency_drivers': '月镜每日倾向依据',
+    'nianjing.phase_inflection_derivation': '年镜相位与转折推导', 'shijing.consultation_grounding': '问镜引用解读与问题上下文',
+    'mingjing.natal_projection': '命镜本命盘投影', 'mingjing.ziwei_natal_brief.v1': '命镜紫微本命解读',
+    'mingjing.qizheng_siyu_natal_brief.v1': '命镜七政四余本命解读', 'mingjing.relationship_hepan.v1': '合镜关系合盘依据',
+  },
   ariaLabel: '生成依据',
   summary: '生成依据 / 引用',
   method: '推演方法',

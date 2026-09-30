@@ -1,6 +1,5 @@
-import { HEJING_PAGE_COPY } from './hejing-model.ts';
+import { useProductCopy } from '../../i18n/copy.ts';
 
-const copy = HEJING_PAGE_COPY;
 
 interface HeJingEmptyStateCopyOverride {
   readonly title?: string;
@@ -10,6 +9,7 @@ interface HeJingEmptyStateCopyOverride {
 }
 
 function HeJingMirrorVisual() {
+  const copy = useProductCopy().hejingSurface;
   const c = copy.empty;
   return (
     <svg
@@ -72,6 +72,7 @@ export function HeJingEmptyState({
   readonly onSelectExisting: () => void;
   readonly copyOverride?: HeJingEmptyStateCopyOverride;
 }) {
+  const copy = useProductCopy().hejingSurface;
   const c = { ...copy.empty, ...copyOverride };
   return (
     <div className="shijing-hejing__empty">
@@ -130,6 +131,7 @@ export function HeJingRelationshipTypeEmpty({
   readonly onCreate: () => void;
   readonly onSelectExisting?: () => void;
 }) {
+  const copy = useProductCopy().hejingSurface;
   return (
     <HeJingEmptyState
       onCreate={onCreate}

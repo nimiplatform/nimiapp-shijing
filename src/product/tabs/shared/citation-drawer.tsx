@@ -45,7 +45,7 @@ export function CitationDrawer(props: CitationDrawerProps) {
         <ul>
           {reading.output.citations.map((c, i) => (
             <li key={i}>
-              <strong>{formatCitationMethod(c.method)}</strong> · {formatCitationReference(c.reference)}
+              <strong>{formatCitationMethod(c.method, copy.citationDrawer)}</strong> · {formatCitationReference(c.reference, copy.citationDrawer)}
             </li>
           ))}
         </ul>

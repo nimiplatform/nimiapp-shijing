@@ -1,15 +1,9 @@
+import { useProductCopy } from '../../i18n/copy.ts';
 import { useMemo } from 'react';
 import { Tooltip } from '@nimiplatform/kit/ui';
-import { TENDENCY_CLASS_LABELS } from '../../i18n/copy.ts';
+
 import { trimmedConcernLabel } from '../../concern-tags/concern-presets.ts';
-import {
-  INFLECTION_KIND_LABELS,
-  bandYearRangeLabel,
-  yearOf,
-  type LaneViewModel,
-  type SelectedDetail,
-} from './nianjing-view-model.ts';
-import { NIANJING_COPY } from './nianjing-copy.ts';
+import { bandYearRangeLabel, yearOf, type LaneViewModel, type SelectedDetail } from './nianjing-view-model.ts';
 
 interface NianJingTimelineProps {
   readonly lanes: readonly LaneViewModel[];
@@ -20,6 +14,9 @@ interface NianJingTimelineProps {
 }
 
 export function NianJingTimeline(props: NianJingTimelineProps) {
+  const TENDENCY_CLASS_LABELS = useProductCopy().tendencyClassLabels;
+  const INFLECTION_KIND_LABELS = useProductCopy().nianjingInflectionKindLabels;
+  const NIANJING_COPY = useProductCopy().nianjingSurface;
   const startYear = yearOf(props.horizon.start_date);
   const endYear = yearOf(props.horizon.end_date);
   // One tick per year from (start+1) to end inclusive. The start year
@@ -90,7 +87,7 @@ export function NianJingTimeline(props: NianJingTimelineProps) {
                       data-nature={band.nature}
                       style={{ left: `${left}%`, width: `${width}%` }}
                       aria-label={NIANJING_COPY.timeline.bandAriaLabel(
-                        bandYearRangeLabel(band),
+                        bandYearRangeLabel(band, NIANJING_COPY),
                         natureLabel,
                       )}
                       onClick={() =>
@@ -101,7 +98,7 @@ export function NianJingTimeline(props: NianJingTimelineProps) {
                         {natureLabel}
                       </span>
                       <span className="shijing-nianjing__band-detail">
-                        {bandYearRangeLabel(band)}
+                        {bandYearRangeLabel(band, NIANJING_COPY)}
                       </span>
                     </button>
                   </Tooltip>
@@ -149,15 +146,15 @@ export function NianJingTimeline(props: NianJingTimelineProps) {
       <ul className="shijing-nianjing__timeline-legend" aria-label={NIANJING_COPY.timeline.legendAriaLabel}>
         <li>
           <span className="shijing-nianjing__legend-marker" data-kind="dayun_boundary" aria-hidden />
-          大运边界
+          {INFLECTION_KIND_LABELS.dayun_boundary}
         </li>
         <li>
           <span className="shijing-nianjing__legend-marker" data-kind="annual_transition" aria-hidden />
-          流年切换
+          {INFLECTION_KIND_LABELS.annual_transition}
         </li>
         <li>
           <span className="shijing-nianjing__legend-marker" data-kind="marker_cluster" aria-hidden />
-          多重节点
+          {INFLECTION_KIND_LABELS.marker_cluster}
         </li>
         <li className="shijing-nianjing__legend-now">
           <span className="shijing-nianjing__legend-now-line" aria-hidden />

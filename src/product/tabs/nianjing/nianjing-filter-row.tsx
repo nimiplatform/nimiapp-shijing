@@ -1,10 +1,11 @@
+import { useProductCopy } from '../../i18n/copy.ts';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Tooltip } from '@nimiplatform/kit/ui';
 import type { NianJingNature } from '../../../domain/mirror-output.ts';
 import { CONCERN_TAG_ACTIVE_LIMIT, type ConcernTag } from '../../../domain/concern-tag.ts';
 import { newConcernTagId } from '../../ids/index.ts';
 import { useShijingStore } from '../../state/shijing-store.tsx';
-import { TENDENCY_CLASS_LABELS } from '../../i18n/copy.ts';
+
 import { deriveConcernTagLabelForDisplay, parseConcernTagInput } from '../../concern-tags/concern-tag-parser.ts';
 import {
   CONCERN_PRESETS,
@@ -13,7 +14,6 @@ import {
   trimmedConcernLabel,
 } from '../../concern-tags/concern-presets.ts';
 import { nowIso } from './nianjing-view-model.ts';
-import { NIANJING_COPY } from './nianjing-copy.ts';
 
 export function NianJingFilterRow(props: {
   readonly activeTags: readonly ConcernTag[];
@@ -22,6 +22,8 @@ export function NianJingFilterRow(props: {
   readonly editorOpen?: boolean;
   readonly onEditorOpenChange?: (open: boolean) => void;
 }) {
+  const TENDENCY_CLASS_LABELS = useProductCopy().tendencyClassLabels;
+  const NIANJING_COPY = useProductCopy().nianjingSurface;
   const [localEditorOpen, setLocalEditorOpen] = useState(false);
   const editorOpen = props.editorOpen ?? localEditorOpen;
   function setEditorOpen(next: boolean | ((current: boolean) => boolean)) {
@@ -87,6 +89,7 @@ export function NianJingFilterRow(props: {
 // 关注 — this popover stays small and intent-focused.
 
 function ConcernEditorPopover(props: { readonly onClose: () => void }) {
+  const NIANJING_COPY = useProductCopy().nianjingSurface;
   const { state, replace_snapshot } = useShijingStore();
   const [draftInput, setDraftInput] = useState('');
   const popoverRef = useRef<HTMLDivElement | null>(null);

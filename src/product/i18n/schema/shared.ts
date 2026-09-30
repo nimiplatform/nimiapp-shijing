@@ -25,6 +25,13 @@ export type { PeriodFavor } from '../../../domain/mingjing.ts';
 
 export type LabelMap<K extends string> = Record<K, string>;
 
+export type TranslationShape<T> =
+  T extends (...args: infer Args) => string ? (...args: Args) => string
+    : T extends readonly (infer Item)[] ? readonly TranslationShape<Item>[]
+      : T extends string ? string
+        : T extends object ? { readonly [Key in keyof T]: Key extends 'id' | 'icon' ? T[Key] : TranslationShape<T[Key]> }
+          : T;
+
 export type RiJingEmptyStateCopyKind =
   | 'ready_to_generate'
   | 'profile_incomplete'

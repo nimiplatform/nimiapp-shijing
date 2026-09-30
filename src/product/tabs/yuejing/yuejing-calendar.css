@@ -103,7 +103,7 @@
   margin: 0;
   padding: 0 4px;
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 8px;
   font-size: 12px;
   color: var(--shijing-text-muted);
@@ -115,7 +115,7 @@
 
 .shijing-yuejing .shijing-yuejing__grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 8px;
   margin-top: 0;
 }
@@ -151,6 +151,8 @@
   appearance: none;
   position: relative;
   display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr auto;
   text-align: left;
   width: 100%;
@@ -354,4 +356,52 @@
   border-radius: 999px;
   z-index: 1;
   box-shadow: 0 1px 3px rgba(15, 23, 38, 0.08);
+}
+
+@media (max-width: 640px) {
+  .shijing-yuejing__weekday-row,
+  .shijing-yuejing .shijing-yuejing__grid {
+    gap: 4px;
+  }
+
+  .shijing-yuejing .shijing-yuejing__day-face {
+    min-height: 88px;
+    padding: 18px 4px 6px;
+  }
+
+  .shijing-yuejing__blank {
+    min-height: 88px;
+  }
+
+  .shijing-yuejing__day-weekday {
+    display: none;
+  }
+
+  .shijing-yuejing__day-number-value {
+    font-size: 24px;
+  }
+
+  .shijing-yuejing__day-tendency {
+    max-width: 100%;
+    padding: 2px 4px;
+    font-size: 9px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .shijing-yuejing__day-today-badge {
+    top: 3px;
+    right: 3px;
+    padding: 1px 4px;
+    font-size: 9px;
+  }
+
+  .shijing-yuejing__day-edit-mark {
+    top: 3px;
+    right: 3px;
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+  }
 }

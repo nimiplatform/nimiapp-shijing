@@ -13,6 +13,7 @@ import type {
   RuntimeAiResult,
 } from '../../product/astrology/runtime-ai-client.ts';
 import type { RuntimeAiPromptRequest } from '../../product/astrology/runtime-ai-prompt.ts';
+import { runtimeFailureEvidence } from '../../product/astrology/runtime-ai-client.ts';
 import { shijingLocalAppRuntimePlatform } from '../local-development/shijing-local-app-runtime.ts';
 
 export type ShijingRuntimeAiOptions = {
@@ -82,6 +83,7 @@ export function createShijingRuntimeAiClient(
           failure: {
             kind: 'runtime_unavailable',
             detail: error instanceof Error ? error.message : String(error),
+            ...runtimeFailureEvidence(error),
           },
         };
       }

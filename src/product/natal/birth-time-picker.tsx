@@ -13,6 +13,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { DRUM_ITEM_H, DrumColumn } from './drum-column.tsx';
+import { useProductCopy } from '../i18n/copy.ts';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = Array.from({ length: 60 }, (_, i) => i);
@@ -58,6 +59,7 @@ const BirthTimePickerPanel = forwardRef<HTMLDivElement, BirthTimePickerPanelProp
     { anchorRef, open, hour, minute, hasValue, onHourChange, onMinuteChange, onNow, onClear, onClose },
     ref,
   ) {
+    const copy = useProductCopy().birthTimePicker;
     const [pos, setPos] = useState<{ left: number; top: number; width: number } | null>(null);
 
     useEffect(() => {
@@ -99,7 +101,7 @@ const BirthTimePickerPanel = forwardRef<HTMLDivElement, BirthTimePickerPanelProp
               items={HOURS}
               selected={hour}
               onSelect={onHourChange}
-              label="小时"
+              label={copy.hours}
               renderValue={pad2}
             />
             <div className="flex items-center justify-center px-1 text-[var(--nimi-action-primary-bg)] font-semibold z-[6]">
@@ -109,7 +111,7 @@ const BirthTimePickerPanel = forwardRef<HTMLDivElement, BirthTimePickerPanelProp
               items={MINUTES}
               selected={minute}
               onSelect={onMinuteChange}
-              label="分钟"
+              label={copy.minutes}
               renderValue={pad2}
             />
           </div>
@@ -120,7 +122,7 @@ const BirthTimePickerPanel = forwardRef<HTMLDivElement, BirthTimePickerPanelProp
             onClick={onNow}
             className="rounded-full px-3 py-1 text-[14px] font-medium text-[var(--nimi-action-primary-bg)] transition-colors hover:bg-[var(--nimi-action-ghost-hover)]"
           >
-            现在
+            {copy.now}
           </button>
           <div className="flex items-center gap-1">
             {onClear && hasValue && (
@@ -129,7 +131,7 @@ const BirthTimePickerPanel = forwardRef<HTMLDivElement, BirthTimePickerPanelProp
                 onClick={onClear}
                 className="rounded-full px-3 py-1 text-[14px] font-medium text-[var(--nimi-text-muted)] transition-colors hover:bg-[var(--nimi-action-ghost-hover)]"
               >
-                清空
+                {copy.clear}
               </button>
             )}
             <button
@@ -137,7 +139,7 @@ const BirthTimePickerPanel = forwardRef<HTMLDivElement, BirthTimePickerPanelProp
               onClick={onClose}
               className="rounded-full px-3 py-1 text-[14px] font-medium text-[var(--nimi-text-muted)] transition-colors hover:bg-[var(--nimi-action-ghost-hover)]"
             >
-              关闭
+              {copy.close}
             </button>
           </div>
         </div>
@@ -154,9 +156,11 @@ export interface BirthTimePickerProps {
   readonly className?: string;
   readonly style?: CSSProperties;
   readonly placeholder?: string;
+  readonly disabled?: boolean;
 }
 
-export function BirthTimePicker({ id, value, onChange, className = '', style, placeholder = '选择时间' }: BirthTimePickerProps) {
+export function BirthTimePicker({ id, value, onChange, className = '', style, placeholder, disabled = false }: BirthTimePickerProps) {
+  const copy = useProductCopy().birthTimePicker;
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const parsed = parseHm(value);
@@ -164,6 +168,17 @@ export function BirthTimePicker({ id, value, onChange, className = '', style, pl
   const [dispM, setDispM] = useState(parsed?.m ?? 0);
   const wrapRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const openFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (disabled) {
+      setOpen(false);
+      setMounted(false);
+    }
+    return () => {
+      if (openFrameRef.current !== null) cancelAnimationFrame(openFrameRef.current);
+    };
+  }, [disabled]);
 
   useEffect(() => {
     const p = parseHm(value);
@@ -196,19 +211,29 @@ export function BirthTimePicker({ id, value, onChange, className = '', style, pl
   }, [mounted]);
 
   const openPanel = () => {
+    if (disabled) return;
+    if (openFrameRef.current !== null) cancelAnimationFrame(openFrameRef.current);
     setMounted(true);
-    requestAnimationFrame(() => requestAnimationFrame(() => setOpen(true)));
+    openFrameRef.current = requestAnimationFrame(() => {
+      openFrameRef.current = requestAnimationFrame(() => {
+        openFrameRef.current = null;
+        setOpen(true);
+      });
+    });
   };
   const toggle = () => {
     if (open) setOpen(false);
     else openPanel();
   };
   const handleTriggerClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (disabled) return;
     if (panelRef.current?.contains(event.target as Node)) return;
     toggle();
   };
 
-  const commit = (h: number, m: number) => onChange(`${pad2(h)}:${pad2(m)}`);
+  const commit = (h: number, m: number) => {
+    if (!disabled) onChange(`${pad2(h)}:${pad2(m)}`);
+  };
 
   return (
     <div ref={wrapRef} className="relative">
@@ -217,8 +242,19 @@ export function BirthTimePicker({ id, value, onChange, className = '', style, pl
           id={id}
           type="text"
           readOnly
+          disabled={disabled}
           value={parsed ? `${pad2(parsed.h)}:${pad2(parsed.m)}` : ''}
-          placeholder={placeholder}
+          placeholder={placeholder ?? copy.placeholder}
+          aria-haspopup="dialog"
+          aria-expanded={open && !disabled}
+          onKeyDown={(event) => {
+            if (disabled) return;
+            if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
+              event.preventDefault();
+              if (!open) openPanel();
+            }
+            if (event.key === 'Escape') setOpen(false);
+          }}
           className={`w-full rounded-2xl border border-[var(--nimi-border-subtle)] bg-[var(--nimi-field-bg)] pl-3 pr-9 py-2 text-[14px] cursor-pointer outline-none transition-shadow focus:ring-2 focus:ring-[var(--nimi-ring)] ${className}`}
           style={style}
         />
@@ -229,7 +265,7 @@ export function BirthTimePicker({ id, value, onChange, className = '', style, pl
           />
         </div>
       </div>
-      {mounted &&
+      {mounted && !disabled &&
         createPortal(
           <BirthTimePickerPanel
             ref={panelRef}

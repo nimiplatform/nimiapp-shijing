@@ -1,8 +1,9 @@
+import { useProductCopy } from '../../i18n/copy.ts';
 import { useMemo, useState } from 'react';
 import type { Reading } from '../../../domain/reading.ts';
 import type { NianJingMirrorOutput, NianJingNature } from '../../../domain/mirror-output.ts';
 import type { ConcernTag } from '../../../domain/concern-tag.ts';
-import { TENDENCY_CLASS_LABELS } from '../../i18n/copy.ts';
+
 import { trimmedConcernLabel } from '../../concern-tags/concern-presets.ts';
 import { CitationDrawer } from '../shared/citation-drawer.tsx';
 import { buildNianJingYearModules } from './nianjing-year-modules.ts';
@@ -10,7 +11,6 @@ import { NianJingFilterRow } from './nianjing-filter-row.tsx';
 import { NianJingYearOverview } from './nianjing-year-overview.tsx';
 import { NianJingTimeline } from './nianjing-timeline.tsx';
 import {
-  HERO_BODY_BY_NATURE,
   buildLanes,
   dateToMs,
   dominantCurrentNature,
@@ -19,7 +19,6 @@ import {
   type LaneViewModel,
   type SelectedDetail,
 } from './nianjing-view-model.ts';
-import { NIANJING_COPY } from './nianjing-copy.ts';
 
 interface NianJingReadyViewProps {
   readonly reading: Reading | null;
@@ -147,8 +146,10 @@ function NianJingPhaseHero(props: {
   readonly lanes: readonly LaneViewModel[];
   readonly focusedTag: ConcernTag | null;
 }) {
+  const TENDENCY_CLASS_LABELS = useProductCopy().tendencyClassLabels;
+  const NIANJING_COPY = useProductCopy().nianjingSurface;
   const natureLabel = TENDENCY_CLASS_LABELS[props.nature];
-  const body = HERO_BODY_BY_NATURE[props.nature];
+  const body = NIANJING_COPY.bodyByNature[props.nature];
   const currentYear = yearOf(props.today);
   const horizonLabel = `${yearOf(props.horizon.start_date)}–${yearOf(props.horizon.end_date)}`;
   const eyebrowText = props.focusedTag
@@ -165,7 +166,7 @@ function NianJingPhaseHero(props: {
         <span className="shijing-nianjing__hero-eyebrow">{eyebrowText}</span>
         <div className="shijing-nianjing__hero-nature">
           <strong>{natureLabel}</strong>
-          <small>{currentYear} 年 · {horizonLabel} {NIANJING_COPY.hero.horizonSuffix}</small>
+          <small>{NIANJING_COPY.yearLabel(currentYear)} · {horizonLabel} {NIANJING_COPY.hero.horizonSuffix}</small>
         </div>
         <p className="shijing-nianjing__hero-body">{body}</p>
       </div>

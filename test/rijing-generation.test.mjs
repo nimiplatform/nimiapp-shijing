@@ -46,7 +46,7 @@ function harness(options = {}) {
     generate: async (input) => {
       state.generateCalls += 1;
       if (state.gate) await state.gate;
-      return generateReadingForStorage({ ...input, deps: { runtime_ai_client: ai } });
+      return generateReadingForStorage({ ...input, deps: { runtime_ai_client: ai, now: NOW } });
     },
     save: options.save ?? (async (next) => {
       state.saves.push(next);

@@ -1,3 +1,4 @@
+import { useProductCopy } from '../i18n/copy.ts';
 // HeJing (合镜) workbench — pattern-reading redesign.
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -12,7 +13,6 @@ import { AddPersonDialog } from '../persons/person-editor.tsx';
 import { SjpSelect } from '../components/sjp-select.tsx';
 import { newReadingId } from '../ids/index.ts';
 import { deleteEventMemory } from '../memories/memory-editor-state.ts';
-import { METHOD_LABELS } from '../reading/reading-format.ts';
 import { generateReadingForStorage } from '../reading/generate-and-store.ts';
 import { latestMingJingRelationshipReading } from '../reading/reading-selectors.ts';
 import { persistenceWriteSucceeded } from '../state/persistence-bridge.ts';
@@ -33,8 +33,6 @@ import {
   ICONS,
 } from './hejing/hejing-sections.tsx';
 import {
-  HEJING_PAGE_COPY,
-  HEJING_RELATIONSHIP_TYPES,
   buildHeJingWorkspaceFromPerson,
   hejingMethodSupportState,
   hejingPatternSupportState,
@@ -47,8 +45,6 @@ import {
   type HeJingTrackRecord,
 } from './hejing/hejing-model.ts';
 
-const copy = HEJING_PAGE_COPY;
-
 function nowIso(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
@@ -57,13 +53,16 @@ type HeJingView = 'reading' | 'track';
 
 // @nimi-authority: rule.shijing.ia.r009
 export function HeJingTab() {
+  const productCopy = useProductCopy();
+  const copy = productCopy.hejingSurface;
+  const HEJING_RELATIONSHIP_TYPES = copy.relationshipTypes;
   const { state, replace_snapshot, runtime_ai_client } = useShijingStore();
   const currentMethodProfileId = state.snapshot.settings.method_profile_id ?? DEFAULT_METHOD_PROFILE_ID;
   // Workspaces come from real Persons only — sample workspaces live exclusively
   // in `src/product/dev/` fixtures.
   const workspaces = useMemo(
-    () => state.snapshot.persons.map(buildHeJingWorkspaceFromPerson),
-    [state.snapshot.persons],
+    () => state.snapshot.persons.map((person) => buildHeJingWorkspaceFromPerson(person, copy)),
+    [state.snapshot.persons, copy],
   );
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(
     () =>
@@ -97,7 +96,7 @@ export function HeJingTab() {
     () =>
       HEJING_RELATIONSHIP_TYPES.find((type) => type.id === selectedType)?.label
       ?? HEJING_RELATIONSHIP_TYPES[0].label,
-    [selectedType],
+    [selectedType, HEJING_RELATIONSHIP_TYPES],
   );
   const [view, setView] = useState<HeJingView>('reading');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -151,7 +150,7 @@ export function HeJingTab() {
     () => (selectedPersonRef ? hejingTrackRecords(state.snapshot, selectedPersonRef) : []),
     [state.snapshot, selectedPersonRef],
   );
-  const methodLabel = METHOD_LABELS[currentMethodProfileId];
+  const methodLabel = productCopy.citationDrawer.methodLabels[currentMethodProfileId]!;
   const statusText = (() => {
     if (!relationshipReading || !relationshipOutput) return copy.statusPending;
     if (readingStale) return copy.statusStale;
@@ -355,7 +354,7 @@ export function HeJingTab() {
                       {statusMessage}
                     </p>
                   ) : null}
-                  {failure ? <FailureBanner failure={failure} /> : null}
+                  {failure ? <FailureBanner failure={failure} onRetry={handleGenerateAdvice} /> : null}
                   {failure?.kind === 'patterns_unavailable' ? (
                     <p className="shijing-hejing__failure-guidance">{copy.patternFailureGuidance}</p>
                   ) : null}
@@ -455,10 +454,11 @@ function RelationshipTypeTabs({
   readonly selectedType: HeJingRelationshipType;
   readonly onSelect: (type: HeJingRelationshipType) => void;
 }) {
+  const copy = useProductCopy().hejingSurface;
   return (
     <div className="shijing-hejing__type-tabs" role="group" aria-label={copy.relationshipType}>
       <span>{copy.relationshipType}</span>
-      {HEJING_RELATIONSHIP_TYPES.map((type) => (
+      {copy.relationshipTypes.map((type) => (
         <button
           key={type.id}
           type="button"

@@ -6,6 +6,24 @@ import {
   shijingRuntimeAccessFromSession,
 } from '../src/shell/app-shell/runtime-access-state.ts';
 
+test('owner permission and repair evidence is preserved without reclassifying session posture', () => {
+  for (const code of ['runtime-permission-denied', 'runtime-service-repair-required']) {
+    const session = shijingRuntimeAccessFromSession({ state: 'action-required', reasonCode: code, actionHint: 'owner_recovery', retryable: false });
+    assert.equal(session.state, 'action-required');
+    assert.equal(session.reasonCode, code);
+    assert.equal(session.actionHint, 'owner_recovery');
+    const error = classifyShijingRuntimeAccessFailure(Object.assign(new Error('bounded failure'), {
+      envelope: { code, reasonCode: 'specific-owner-reason', actionHint: 'owner_recovery', retryable: false },
+    }));
+    assert.equal(error.reasonCode, 'specific-owner-reason');
+    assert.equal(error.code, code);
+    assert.equal(error.actionHint, 'owner_recovery');
+    assert.equal(error.retryable, false);
+  }
+  const revoked = shijingRuntimeAccessFromSession({ state: 'revoked', reasonCode: 'session-ended', actionHint: 'retry_same_host', retryable: true });
+  assert.equal(revoked.state, 'access-ended');
+});
+
 test('non-bound session projections classify into App Access posture states', () => {
   const fixtures = [
     ['action-required', 'action-required'],

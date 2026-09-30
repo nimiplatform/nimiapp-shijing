@@ -7,6 +7,11 @@ import type { MingJingCopy } from './schema/mingjing.ts';
 import type { RiJingCopy } from './schema/rijing.ts';
 import type { ShiJingConsultationCopy } from './schema/shijing.ts';
 import type { YueJingCopy } from './schema/yuejing.ts';
+import type { YueJingSurfaceCopy } from './schema/yuejing-surface.ts';
+import type { YueJingMonthLanguageCopy } from './schema/yuejing-language.ts';
+import type { NianJingSurfaceCopy } from './schema/nianjing-surface.ts';
+import type { HeJingSurfaceCopy } from './schema/hejing-surface.ts';
+import type { ZiweiSurfaceCopy } from './schema/ziwei-surface.ts';
 
 export type { BaseProductCopy } from './schema/base.ts';
 export type { DailyRiJingCopy } from './schema/daily-rijing.ts';
@@ -23,4 +28,9 @@ export interface ProductCopy extends BaseProductCopy {
   readonly hejing: HeJingCopy;
   readonly shijing: ShiJingConsultationCopy;
   readonly mingjing: MingJingCopy;
+  readonly yuejingSurface: YueJingSurfaceCopy;
+  readonly yuejingLanguage: YueJingMonthLanguageCopy;
+  readonly nianjingSurface: NianJingSurfaceCopy;
+  readonly hejingSurface: HeJingSurfaceCopy;
+  readonly ziweiSurface: ZiweiSurfaceCopy;
 }

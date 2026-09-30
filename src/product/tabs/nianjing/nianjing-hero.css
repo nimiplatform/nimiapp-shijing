@@ -171,6 +171,13 @@
   background: var(--nianjing-steady);
 }
 
+@media (max-width: 760px) {
+  .shijing-nianjing .shijing-nianjing__hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+}
+
 .shijing-nianjing__hero-row-chip[data-nature="supportive"] .shijing-nianjing__hero-row-chip-dot { background: var(--nianjing-supportive); }
 .shijing-nianjing__hero-row-chip[data-nature="steady"]     .shijing-nianjing__hero-row-chip-dot { background: var(--nianjing-steady); }
 .shijing-nianjing__hero-row-chip[data-nature="watch"]      .shijing-nianjing__hero-row-chip-dot { background: var(--nianjing-watch); }

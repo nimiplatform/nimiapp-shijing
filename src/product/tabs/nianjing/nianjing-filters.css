@@ -243,3 +243,11 @@
 .shijing-nianjing__legend li[data-nature="watch"]      .shijing-nianjing__legend-dot { background: var(--nianjing-watch); }
 .shijing-nianjing__legend li[data-nature="blocked"]    .shijing-nianjing__legend-dot { background: var(--nianjing-blocked); }
 .shijing-nianjing__legend li[data-nature="turning"]    .shijing-nianjing__legend-dot { background: var(--nianjing-turning); }
+
+@media (max-width: 640px) {
+  .shijing-nianjing .shijing-nianjing__legend {
+    flex-wrap: wrap;
+    flex-shrink: 1;
+    gap: 8px 12px;
+  }
+}

@@ -52,7 +52,7 @@ export function MingJingQizhengReadingView({
         </GeneratingButton>
       </section>
 
-      {failure ? <FailureBanner failure={failure} /> : null}
+      {failure ? <FailureBanner failure={failure} onRetry={onGenerate} /> : null}
 
       {output ? (
         <section className="shijing-mingjing-panel shijing-qz-result">

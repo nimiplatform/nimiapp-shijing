@@ -43,6 +43,7 @@ export interface NatalFieldsProps {
   readonly idPrefix: string;
 }
 
+// @nimi-authority: rule.shijing.data-model.r003
 export function NatalFields({ draft, onChange, idPrefix }: NatalFieldsProps) {
   const copy = useProductCopy();
   const id = (suffix: string) => `${idPrefix}-${suffix}`;
@@ -103,7 +104,7 @@ export function NatalFields({ draft, onChange, idPrefix }: NatalFieldsProps) {
             />
           </div>
         ) : (
-          // 农历:保留文本输入(农历日期不是公历日历项)。
+          // 农历日期由专用面板转换为公历，保持原始农历选择。
           <div className="sjp-datepicker">
             <LunarBirthDatePicker
               id={id('date')}
@@ -146,6 +147,7 @@ export function NatalFields({ draft, onChange, idPrefix }: NatalFieldsProps) {
         >
           <BirthTimePicker
             id={id('time')}
+            disabled={timeUnknown}
             value={timeUnknown ? '' : draft.local_time_text}
             onChange={(next) => {
               onChange('local_time_text', next);

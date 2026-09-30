@@ -1,4 +1,5 @@
-// SJG-DATA-05 / SJG-IA-03 — NianJing "发生过的事" recorder.
+import { useProductCopy } from '../../i18n/copy.ts';
+// SJG-DATA-05 / SJG-IA-03 — NianJing {c.heading} recorder.
 //
 // Mounted inside the NianJing phase-band / inflection detail drawer so a past
 // life event can be recorded right where the long-horizon phase that frames it
@@ -13,7 +14,7 @@
 // note instead. The list shows events whose `occurred_at` falls inside the
 // framing range and is tagged with this concern. Save / edit / delete all go
 // through `upsertEventMemory` / `deleteEventMemory` so the validator +
-// concern-tag-ref gates apply. "去问镜问这条" seeds the ShiJing consultation
+// concern-tag-ref gates apply. {c.ask} seeds the ShiJing consultation
 // and jumps there, matching the YueJing day panel.
 
 import { useMemo, useState } from 'react';
@@ -60,18 +61,19 @@ export interface NianJingEventRecorderProps {
   // When recording against an inflection marker the date is fixed to the
   // marker; the picker is hidden and the entry anchors to this day.
   readonly fixedDate?: string;
-  // Heading override — "发生过的事" for a band, "这个拐点前后发生过什么" for a
+  // Heading override — {c.heading} for a band, "这个拐点前后发生过什么" for a
   // marker. Defaults to the band wording.
   readonly heading?: string;
-  // Called after "去问镜问这条" navigates away, so the host drawer can close.
+  // Called after {c.ask} navigates away, so the host drawer can close.
   readonly onNavigatedAway: () => void;
-  // Opens the full-life "发生过的事" archive in Settings — the timeline only
-  // ever shows events inside this phase's window, so "查看全部" routes to the
+  // Opens the full-life {c.heading} archive in Settings — the timeline only
+  // ever shows events inside this phase's window, so {c.all} routes to the
   // complete record list for backfill / review.
   readonly onOpenArchive: () => void;
 }
 
 export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
+  const c = useProductCopy().nianjingSurface.eventRecorder;
   const { state, dispatch, replace_snapshot } = useShijingStore();
   const today = todayIsoDate();
   const tagId = props.concernTag.id;
@@ -178,7 +180,7 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
     props.onNavigatedAway();
   }
 
-  const heading = props.heading ?? '发生过的事';
+  const heading = props.heading ?? c.heading;
 
   return (
     <section className="shijing-nianjing__rec" aria-label={heading}>
@@ -186,20 +188,20 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
 
       {isFuture ? (
         <p className="shijing-nianjing__rec-note">
-          这段相位还未到来,暂时没有可记录的经历。等它发生后,可以回到这里把经历记下来。
+          {c.future}
         </p>
       ) : (
         <>
           <p className="shijing-nianjing__rec-intro">
-            记下这段时间里和「{props.concernTag.label.replace(/^#/, '')}」相关的经历,问镜解读这段相位时可以引用它。
+            {c.intro(props.concernTag.label.replace(/^#/, ''))}
           </p>
           <div className="shijing-nianjing__rec-compose">
             <textarea
               className="shijing-nianjing__rec-textarea"
               value={draft}
               rows={2}
-              placeholder="例如：这段时间换了工作 / 一段关系有了结果……"
-              aria-label="记一笔发生过的事"
+              placeholder={c.placeholder}
+              aria-label={c.recordAria}
               onChange={(e) => {
                 setDraft(e.currentTarget.value);
                 if (error) setError(null);
@@ -217,17 +219,17 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
                   value={draftDate}
                   min={props.rangeStart}
                   max={props.rangeEnd}
-                  aria-label="发生时间"
+                  aria-label={c.date}
                   onChange={(e) => setDraftDate(e.currentTarget.value)}
                 />
               )}
-              <Tooltip content="保存事件" placement="top">
+              <Tooltip content={c.save} placement="top">
                 <button
                   type="button"
                   className="shijing-nianjing__rec-save"
                   onClick={saveNew}
                   disabled={draft.trim().length === 0}
-                  aria-label="保存事件"
+                  aria-label={c.save}
                 >
                   <ArrowUpIcon className="shijing-nianjing__rec-save-icon" />
                 </button>
@@ -239,12 +241,12 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
 
       {error ? (
         <p className="shijing-nianjing__rec-error" role="alert">
-          没能保存,请检查内容后再试一次。<code>（{error}）</code>
+          {c.failed}<code>（{error}）</code>
         </p>
       ) : null}
 
       <div className="shijing-nianjing__rec-list-head">
-        <span>已记录 ({records.length})</span>
+        <span>{c.count(records.length)}</span>
         <button
           type="button"
           className="shijing-nianjing__rec-archive-link"
@@ -253,15 +255,15 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
             props.onNavigatedAway();
           }}
         >
-          查看全部
+          {c.all}
         </button>
       </div>
       {records.length === 0 ? (
         <p className="shijing-nianjing__rec-empty" role="status">
-          这段时间还没有记录。
+          {c.empty}
         </p>
       ) : (
-        <ul className="shijing-nianjing__rec-list" aria-label="已记录的事件">
+        <ul className="shijing-nianjing__rec-list" aria-label={c.listAria}>
           {records.map((m) => {
             const isEditing = editingId === m.id;
             return (
@@ -273,7 +275,7 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
                       value={editDraft}
                       rows={2}
                       autoFocus
-                      aria-label="编辑事件内容"
+                      aria-label={c.editContent}
                       onChange={(e) => setEditDraft(e.currentTarget.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Escape') {
@@ -284,7 +286,7 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
                     />
                     <div className="shijing-nianjing__rec-edit-actions">
                       <button type="button" onClick={cancelEdit}>
-                        取消
+                        {c.cancel}
                       </button>
                       <button
                         type="button"
@@ -294,7 +296,7 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
                         }
                         onClick={() => saveEdit(m)}
                       >
-                        保存
+                        {c.saveEdit}
                       </button>
                     </div>
                   </>
@@ -305,28 +307,28 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
                     </span>
                     <span className="shijing-nianjing__rec-body">{m.body}</span>
                     <div className="shijing-nianjing__rec-actions">
-                      <Tooltip content="去问镜问这条" placement="top">
+                      <Tooltip content={c.ask} placement="top">
                         <button
                           type="button"
-                          aria-label="去问镜问这条"
+                          aria-label={c.ask}
                           onClick={() => askInShiJing(m.id)}
                         >
-                          问
+                          {c.askShort}
                         </button>
                       </Tooltip>
-                      <Tooltip content="编辑" placement="top">
+                      <Tooltip content={c.edit} placement="top">
                         <button
                           type="button"
-                          aria-label="编辑这条事件"
+                          aria-label={c.editAria}
                           onClick={() => startEdit(m)}
                         >
                           ✎
                         </button>
                       </Tooltip>
-                      <Tooltip content="删除" placement="top">
+                      <Tooltip content={c.delete} placement="top">
                         <button
                           type="button"
-                          aria-label="删除这条事件"
+                          aria-label={c.deleteAria}
                           onClick={() => setConfirmingDelete(m)}
                         >
                           ✕
@@ -343,14 +345,14 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
 
       <ConfirmDialog
         open={confirmingDelete !== null}
-        title="删除这条记录？"
+        title={c.deleteTitle}
         message={
           confirmingDelete
-            ? `「${confirmingDelete.body}」将被永久删除，解读这段相位时不再引用。此操作不可撤销。`
+            ? c.deleteMessage(confirmingDelete.body)
             : ''
         }
-        confirmLabel="删除"
-        cancelLabel="取消"
+        confirmLabel={c.delete}
+        cancelLabel={c.cancel}
         confirmTone="danger"
         onConfirm={confirmDelete}
         onClose={() => setConfirmingDelete(null)}

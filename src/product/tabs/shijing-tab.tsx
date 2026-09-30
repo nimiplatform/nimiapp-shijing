@@ -196,8 +196,8 @@ export function ShiJingTab(_props: ShiJingTabProps) {
       ? followUpConversation.source_reading_ids.length > 0
       : sourceReadingIds.length > 0);
 
-  async function handleAsk(e: FormEvent) {
-    e.preventDefault();
+  async function handleAsk(e?: FormEvent) {
+    e?.preventDefault();
     const q = question.trim();
     if (q.length === 0) return;
     if (followUpConversation) {
@@ -473,7 +473,7 @@ export function ShiJingTab(_props: ShiJingTabProps) {
         <div className="shijing-ask__main" data-chat-active={chatActive ? 'true' : 'false'}>
           {chatActive ? (
             <>
-              {failure ? <FailureBanner failure={failure} /> : null}
+              {failure ? <FailureBanner failure={failure} onRetry={handleAsk} /> : null}
               {resultConversation ? (
                 <article className="shijing-ask__result" aria-label={copy.shijing.resultAria}>
                   <ConversationThread
@@ -542,7 +542,7 @@ export function ShiJingTab(_props: ShiJingTabProps) {
                 onRemoveOption={removeArchiveOption}
               />
 
-              {failure ? <FailureBanner failure={failure} /> : null}
+              {failure ? <FailureBanner failure={failure} onRetry={handleAsk} /> : null}
 
               {resultConversation ? (
                 <article className="shijing-ask__result" aria-label={copy.shijing.resultAria}>

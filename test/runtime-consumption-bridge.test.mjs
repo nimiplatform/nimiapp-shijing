@@ -124,5 +124,21 @@ test('typed candidate failures remain Runtime AI failures without fallback', asy
   if (!result.ok) {
     assert.equal(result.failure.kind, 'runtime_unavailable');
     assert.match(result.failure.detail, /AI_CONFIG_NOT_FOUND/u);
+    assert.equal(result.failure.reason_code, 'AI_CONFIG_NOT_FOUND');
   }
+});
+
+test('consultation preserves the owner recovery evidence on a failed candidate', async () => {
+  const bridge = createShijingConversationChatBridge({ getClient: () => ({
+    ai: { text: { async generateCandidate() {
+      throw Object.assign(new Error('bounded failure'), { envelope: {
+        code: 'runtime-permission-denied', reasonCode: 'app-operation-not-covered', actionHint: 'review_permissions',
+      } });
+    } } },
+  }) });
+  const result = await bridge.send({ user_message: 'A question', source_readings: [validReading()], conversation_turns: [] });
+  assert.equal(result.ok, false);
+  assert.equal(result.error.runtime_code, 'runtime-permission-denied');
+  assert.equal(result.error.reason_code, 'app-operation-not-covered');
+  assert.equal(result.error.action_hint, 'review_permissions');
 });

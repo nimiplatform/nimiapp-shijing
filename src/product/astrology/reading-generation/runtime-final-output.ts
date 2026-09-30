@@ -3,7 +3,7 @@ import type { MirrorOutput } from '../../../domain/mirror-output.ts';
 import type { MirrorContextSnapshot, ReadingGenerationFailure } from '../../../domain/reading.ts';
 import { validateMirrorOutput } from '../../../contracts/mirror-output-validator.ts';
 import type { RuntimeAiClient, RuntimeAiFailure, RuntimeAiResult } from '../runtime-ai-client.ts';
-import { isRuntimeAiWordingPatchAppliedSource } from '../runtime-ai-client.ts';
+import { isRuntimeAiWordingPatchAppliedSource, runtimeFailureEvidence } from '../runtime-ai-client.ts';
 import { buildRuntimeAiPromptRequest } from '../runtime-ai-prompt.ts';
 import type { EventMemory } from '../../../domain/event-memory.ts';
 import type { ConcernTag } from '../../../domain/concern-tag.ts';
@@ -123,6 +123,7 @@ export async function buildRuntimeFinalOutput(
         mirror_kind: input.mirror_kind,
         mirror_scope: input.mirror_scope,
         detail: `runtime_exception:${error instanceof Error ? error.message : String(error)}`,
+        ...runtimeFailureEvidence(error),
       },
     };
   }
@@ -134,6 +135,11 @@ export async function buildRuntimeFinalOutput(
         mirror_kind: input.mirror_kind,
         mirror_scope: input.mirror_scope,
         detail: runtimeAiFailureDetail(aiResult.failure),
+        ...(aiResult.failure.kind === 'runtime_unavailable' ? {
+          runtime_code: aiResult.failure.runtime_code,
+          reason_code: aiResult.failure.reason_code,
+          action_hint: aiResult.failure.action_hint,
+        } : {}),
       },
     };
   }

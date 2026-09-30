@@ -57,7 +57,7 @@ export function MingJingReadingView({
         </GeneratingButton>
       </header>
 
-      {failure ? <FailureBanner failure={failure} /> : null}
+      {failure ? <FailureBanner failure={failure} onRetry={onGenerate} /> : null}
 
       {!output && !loading && !failure ? (
         <p className="shijing-mj-reading__empty">{r.empty}</p>
@@ -85,7 +85,7 @@ export function MingJingReadingView({
               <li key={i} className="shijing-mj-reading__strategy">
                 <div className="shijing-mj-reading__phase">
                   <span className="shijing-mj-reading__pillar">{pillarHanzi(s.dayun_pillar)}</span>
-                  <span className="shijing-mj-reading__age">{s.age_range}岁</span>
+                  <span className="shijing-mj-reading__age">{s.age_range}{copy.mingjing.ageSuffix}</span>
                   <span className="shijing-mj-reading__theme">{s.theme}</span>
                 </div>
                 <p className="shijing-mj-reading__strategy-text">{s.strategy}</p>

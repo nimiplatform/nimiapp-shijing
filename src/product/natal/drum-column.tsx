@@ -3,7 +3,7 @@
 // share one identical wheel. Reliable inside the Tauri WebView (scroll-based,
 // not transform-animated). Styling/behaviour are kept verbatim from the kit.
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 export const DRUM_ITEM_H = 28;
 const VISIBLE_ROWS = 3;
@@ -31,6 +31,7 @@ export function DrumColumn({
   const panelHeight = itemHeight * visibleRows;
   const padRows = Math.floor(visibleRows / 2);
   const colRef = useRef<HTMLDivElement>(null);
+  const optionId = useId();
   const scrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wheelCarry = useRef(0);
   const [scrollTop, setScrollTop] = useState(0);
@@ -119,8 +120,23 @@ export function DrumColumn({
       />
       <div
         ref={colRef}
+        role="listbox"
+        aria-label={label}
+        tabIndex={0}
+        aria-activedescendant={`${optionId}-${selected}`}
         className="nimi-date-picker-scroll overflow-y-auto"
         onScroll={handleScroll}
+        onKeyDown={(event) => {
+          const current = items.indexOf(selected);
+          const index = event.key === 'ArrowDown' ? Math.min(items.length - 1, current + 1)
+            : event.key === 'ArrowUp' ? Math.max(0, current - 1)
+              : event.key === 'Home' ? 0
+                : event.key === 'End' ? items.length - 1 : null;
+          if (index === null || items[index] === undefined) return;
+          event.preventDefault();
+          onSelect(items[index]);
+          scrollToIndex(index);
+        }}
         style={{ height: panelHeight, scrollSnapType: 'y mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {Array.from({ length: padRows }).map((_, i) => (
@@ -139,6 +155,8 @@ export function DrumColumn({
           return (
             <div
               key={v}
+              id={`${optionId}-${v}`}
+              role="option"
               onClick={() => {
                 onSelect(v);
                 scrollToIndex(items.indexOf(v), true);
@@ -146,7 +164,7 @@ export function DrumColumn({
               className={`flex items-center justify-center cursor-pointer select-none ${
                 isCentered ? 'text-[var(--nimi-action-primary-bg)]' : 'text-[var(--nimi-text-muted)]'
               }`}
-              aria-selected={isCentered}
+              aria-selected={selected === v}
               style={{
                 height: itemHeight,
                 scrollSnapAlign: 'center',

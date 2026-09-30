@@ -6,7 +6,8 @@ import {
   deriveYueJingCalendarDetails,
   deriveYueJingLunisolarMarker,
 } from '../src/product/tabs/yuejing/yuejing-model.ts';
-import { YUEJING_COPY } from '../src/product/tabs/yuejing/yuejing-copy.ts';
+import { getProductCopy } from '../src/product/i18n/copy.ts';
+const YUEJING_COPY = getProductCopy('zh').yuejingSurface;
 
 const dayPanelSource = readFileSync(
   new URL('../src/product/tabs/yuejing/yuejing-day-panel.tsx', import.meta.url),

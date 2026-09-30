@@ -59,16 +59,16 @@ test('deriveRiJingDailyAlmanac builds a generic almanac from the civil date', ()
   assert.deepEqual(almanac.recommends.slice(0, 4), ['嫁娶', '合帐', '裁衣', '冠笄']);
   assert.deepEqual(almanac.avoids, ['安床', '祈福', '出行', '安葬', '行丧', '开光']);
   assert.deepEqual(almanac.direction_rows, [
-    { label: '财神', value: '北' },
-    { label: '喜神', value: '东北' },
-    { label: '福神', value: '南' },
-    { label: '阳贵', value: '北' },
+    { kind: 'wealth', value: '北' },
+    { kind: 'joy', value: '东北' },
+    { kind: 'mascot', value: '南' },
+    { kind: 'yang', value: '北' },
   ]);
   assert.deepEqual(almanac.foundation_rows, [
-    { label: '五行', value: '大林木' },
-    { label: '建除', value: '闭日' },
-    { label: '冲煞', value: '冲猪 煞东' },
-    { label: '值神', value: '玄武' },
+    { kind: 'fiveElements', value: '大林木' },
+    { kind: 'duty', value: '闭日' },
+    { kind: 'opposite', value: '冲猪 煞东' },
+    { kind: 'star', value: '玄武' },
   ]);
   assert.equal(almanac.pengzu, '己不破券二比并亡 巳不远行财物伏藏');
   assert.equal(almanac.fetus, '占门床 外正南');

@@ -1,13 +1,12 @@
+import { useProductCopy } from '../../i18n/copy.ts';
 // HeJing 待生成视图 — shown when a relationship person exists but no
 // relationship_hepan reading has been generated yet. Ready-to-generate hero
 // plus a pattern-based preview of the sections that will unfold after
 // generation. When the selected method has no admitted pattern rules, the
 // typed gate replaces the generate CTA — the page never auto-switches method.
 
-import { HEJING_PAGE_COPY, type HeJingWorkspace } from './hejing-model.ts';
+import { type HeJingWorkspace } from './hejing-model.ts';
 import { ICONS, PersonCircle } from './hejing-sections.tsx';
-
-const copy = HEJING_PAGE_COPY;
 
 function pendingPreviewIcon(iconId: string) {
   return ICONS[iconId as keyof typeof ICONS] ?? ICONS.patterns;
@@ -26,6 +25,7 @@ export function HeJingPendingView({
   readonly loading: boolean;
   readonly onGenerate: () => void;
 }) {
+  const copy = useProductCopy().hejingSurface;
   return (
     <>
       <section className="shijing-hejing__pending" aria-labelledby="hejing-pending-title">

@@ -3,6 +3,7 @@
 // for 命主/身主/五行局. Renders ZiweiSubjectChart method evidence; read-only.
 
 import type { ZiweiPalace, ZiweiStar, ZiweiSubjectChart } from '../../../domain/algorithm.ts';
+import { useProductCopy } from '../../i18n/copy.ts';
 
 // Fixed grid position (1-indexed row/col) for each earthly branch. The 紫微
 // evidence carries branches as Chinese characters (iztro), so keys are Chinese.
@@ -36,6 +37,7 @@ function StarChip({ star, major }: { star: ZiweiStar; major: boolean }) {
 }
 
 function PalaceCell({ palace }: { palace: ZiweiPalace }) {
+  const copy = useProductCopy().ziweiSurface.route;
   const pos = BRANCH_POS[palace.earthly_branch] ?? { r: 1, c: 1 };
   return (
     <div
@@ -49,7 +51,7 @@ function PalaceCell({ palace }: { palace: ZiweiPalace }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: palace.is_soul ? '#8250df' : '#1f2328' }}>
           {palace.name}
-          {palace.is_body ? <span style={{ fontSize: 9, color: '#bf3989', marginLeft: 3 }}>身</span> : null}
+          {palace.is_body ? <span style={{ fontSize: 9, color: '#bf3989', marginLeft: 3 }}>{copy.bodyRole}</span> : null}
         </span>
         <span style={{ fontSize: 10, color: '#8c959f' }}>
           {palace.decadal_start_age}–{palace.decadal_end_age}
@@ -59,7 +61,7 @@ function PalaceCell({ palace }: { palace: ZiweiPalace }) {
         {palace.major_stars.map((s) => <StarChip key={s.name} star={s} major />)}
         {palace.minor_stars.map((s) => <StarChip key={s.name} star={s} major={false} />)}
         {palace.major_stars.length === 0 && palace.minor_stars.length === 0 ? (
-          <span style={{ fontSize: 11, color: '#bbb' }}>（空宫）</span>
+          <span style={{ fontSize: 11, color: '#bbb' }}>{copy.emptyPalace}</span>
         ) : null}
       </div>
       <div style={{ fontSize: 10, color: '#8c959f', textAlign: 'right', marginTop: 2 }}>
@@ -70,6 +72,7 @@ function PalaceCell({ palace }: { palace: ZiweiPalace }) {
 }
 
 export function ZiweiAstrolabe({ chart }: { chart: ZiweiSubjectChart }) {
+  const copy = useProductCopy().ziweiSurface.route;
   return (
     <div style={{ width: '100%', maxWidth: 560, margin: '0 auto' }}>
       <div
@@ -86,11 +89,11 @@ export function ZiweiAstrolabe({ chart }: { chart: ZiweiSubjectChart }) {
             display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 6, padding: 10,
           }}
         >
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#1f2328' }}>紫微命盘</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#1f2328' }}>{copy.chartTitle}</div>
           <div style={{ fontSize: 12, color: '#424a53', textAlign: 'center', lineHeight: 1.8 }}>
-            <div>五行局 <b>{chart.five_elements_class}</b></div>
-            <div>命主 <b>{chart.soul_star}</b> · 身主 <b>{chart.body_star}</b></div>
-            <div>命宫地支 <b>{chart.soul_palace_branch}</b></div>
+            <div>{copy.basis.fiveElements} <b>{chart.five_elements_class}</b></div>
+            <div>{copy.basis.soulStar} <b>{chart.soul_star}</b> · {copy.basis.bodyStar} <b>{chart.body_star}</b></div>
+            <div>{copy.basis.soulPalace} <b>{chart.soul_palace_branch}</b></div>
           </div>
         </div>
       </div>

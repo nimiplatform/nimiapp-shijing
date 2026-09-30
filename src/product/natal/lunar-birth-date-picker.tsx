@@ -1,15 +1,16 @@
 import {
   forwardRef,
   useEffect,
+  useId,
   useRef,
   useState,
   type CSSProperties,
-  type MouseEvent,
   type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { LunarDay, LunarHour, LunarYear } from 'tyme4ts';
 import { DRUM_ITEM_H, DrumColumn } from './drum-column.tsx';
+import { useProductCopy, type ProductCopy } from '../i18n/copy.ts';
 
 const DEFAULT_MIN_YEAR = 1900;
 const WHEEL_ROWS = 5;
@@ -80,7 +81,7 @@ function getPanelPosition(
   const el = anchorRef.current;
   if (!el) return null;
   const rect = el.getBoundingClientRect();
-  const width = Math.max(rect.width, minimumWidth);
+  const width = Math.min(Math.max(rect.width, minimumWidth), window.innerWidth - 16);
   const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
   const below = rect.bottom + 6;
   const top =
@@ -122,11 +123,11 @@ function lunarDayLabel(year: number, monthWithLeap: number, day: number): string
   }
 }
 
-function lunarYearLabel(year: number): string {
+function lunarYearCycle(year: number): string {
   try {
-    return `${year} ${LunarYear.fromYear(year).getSixtyCycle().getName()}年`;
+    return LunarYear.fromYear(year).getSixtyCycle().getName();
   } catch {
-    return `${year}年`;
+    return '';
   }
 }
 
@@ -183,11 +184,11 @@ function fallbackLunarSelection(minYear: number, maxYear: number): LunarSelectio
   return normalizeLunar({ year, monthWithLeap: 1, day: 1 });
 }
 
-function lunarDisplay(selection: LunarSelection | null): string {
+function lunarDisplay(selection: LunarSelection | null, copy: ProductCopy['lunarDatePicker']): string {
   if (!selection) return '';
   const option = monthOption(selection.year, selection.monthWithLeap);
   if (!option) return '';
-  return `${lunarYearLabel(selection.year)} / ${option.label} / ${lunarDayLabel(selection.year, selection.monthWithLeap, selection.day)}`;
+  return `${copy.yearLabel(selection.year, lunarYearCycle(selection.year))} / ${copy.monthLabel(option.label, option.month, option.isLeap)} / ${copy.dayLabel(lunarDayLabel(selection.year, selection.monthWithLeap, selection.day), selection.day)}`;
 }
 
 function CalendarIcon({ size = 16, className }: { readonly size?: number; readonly className?: string }) {
@@ -200,6 +201,7 @@ function CalendarIcon({ size = 16, className }: { readonly size?: number; readon
 }
 
 interface LunarPanelProps {
+  readonly panelId: string;
   readonly anchorRef: RefObject<HTMLDivElement | null>;
   readonly open: boolean;
   readonly value: LunarSelection | null;
@@ -213,9 +215,10 @@ interface LunarPanelProps {
 
 const LunarBirthDatePanel = forwardRef<HTMLDivElement, LunarPanelProps>(
   function LunarBirthDatePanel(
-    { anchorRef, open, value, minYear, maxYear, maxGregorianDate, allowClear, onCommit, onClear },
+    { panelId, anchorRef, open, value, minYear, maxYear, maxGregorianDate, allowClear, onCommit, onClear },
     ref,
   ) {
+    const copy = useProductCopy().lunarDatePicker;
     const [pos, setPos] = useState<PanelPosition | null>(null);
     const [draft, setDraft] = useState<LunarSelection>(() => value ?? fallbackLunarSelection(minYear, maxYear));
     const monthOptions = lunarMonthOptions(draft.year);
@@ -225,7 +228,10 @@ const LunarBirthDatePanel = forwardRef<HTMLDivElement, LunarPanelProps>(
     const isFuture = gregorianDate ? compareIsoDate(gregorianDate, maxGregorianDate) > 0 : true;
 
     useEffect(() => {
-      setPos(getPanelPosition(anchorRef, 392, PANEL_HEIGHT));
+      const update = () => setPos(getPanelPosition(anchorRef, 392, PANEL_HEIGHT));
+      update();
+      window.addEventListener('resize', update);
+      return () => window.removeEventListener('resize', update);
     }, [anchorRef, open]);
 
     useEffect(() => {
@@ -237,6 +243,11 @@ const LunarBirthDatePanel = forwardRef<HTMLDivElement, LunarPanelProps>(
     return (
       <div
         ref={ref}
+        id={panelId}
+        role="dialog"
+        aria-label={copy.title}
+        aria-hidden={!open}
+        inert={!open}
         className="sjp-birth-wheel-panel sjp-birth-wheel-panel--lunar"
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
@@ -250,13 +261,13 @@ const LunarBirthDatePanel = forwardRef<HTMLDivElement, LunarPanelProps>(
         }}
       >
         <div className="sjp-birth-wheel-panel__head">
-          <span className="sjp-birth-wheel-panel__title">农历出生日期</span>
-          <span className="sjp-birth-wheel-panel__value">{lunarDisplay(draft)}</span>
+          <span className="sjp-birth-wheel-panel__title">{copy.title}</span>
+          <span className="sjp-birth-wheel-panel__value">{lunarDisplay(draft, copy)}</span>
         </div>
         <div className="sjp-birth-wheel-panel__labels" aria-hidden="true">
-          <span>年</span>
-          <span>月</span>
-          <span>日</span>
+          <span>{copy.year}</span>
+          <span>{copy.month}</span>
+          <span>{copy.day}</span>
         </div>
         <div className="sjp-birth-wheel-panel__wheel">
           <div className="sjp-birth-wheel-panel__band" />
@@ -265,7 +276,7 @@ const LunarBirthDatePanel = forwardRef<HTMLDivElement, LunarPanelProps>(
               items={years(minYear, maxYear)}
               selected={draft.year}
               onSelect={(year) => setDraft((prev) => normalizeLunar({ ...prev, year }))}
-              label="农历年份"
+              label={copy.yearAria}
               itemHeight={DRUM_ITEM_H}
               visibleRows={WHEEL_ROWS}
               renderValue={(year) => String(year)}
@@ -275,33 +286,36 @@ const LunarBirthDatePanel = forwardRef<HTMLDivElement, LunarPanelProps>(
               items={monthOptions.map((option) => option.value)}
               selected={draft.monthWithLeap}
               onSelect={(monthWithLeap) => setDraft((prev) => normalizeLunar({ ...prev, monthWithLeap }))}
-              label="农历月份"
+              label={copy.monthAria}
               itemHeight={DRUM_ITEM_H}
               visibleRows={WHEEL_ROWS}
-              renderValue={(monthWithLeap) => monthOption(draft.year, monthWithLeap)?.label ?? String(monthWithLeap)}
+              renderValue={(monthWithLeap) => {
+                const option = monthOption(draft.year, monthWithLeap);
+                return option ? copy.monthLabel(option.label, option.month, option.isLeap) : String(monthWithLeap);
+              }}
             />
             <div className="sjp-birth-wheel-panel__divider" />
             <DrumColumn
               items={dayItems}
               selected={draft.day}
               onSelect={(day) => setDraft((prev) => normalizeLunar({ ...prev, day }))}
-              label="农历日期"
+              label={copy.dayAria}
               itemHeight={DRUM_ITEM_H}
               visibleRows={WHEEL_ROWS}
-              renderValue={(day) => lunarDayLabel(draft.year, draft.monthWithLeap, day)}
+              renderValue={(day) => copy.dayLabel(lunarDayLabel(draft.year, draft.monthWithLeap, day), day)}
             />
           </div>
         </div>
         <div className={`sjp-birth-wheel-panel__preview${isFuture ? ' is-invalid' : ''}`}>
-          对应公历：{gregorianDate ? gregorianDate.replaceAll('-', '/') : '无法转换'}
-          {isFuture ? ' · 不能晚于今天' : ''}
+          {copy.gregorian}{gregorianDate ? gregorianDate.replaceAll('-', '/') : copy.conversionFailed}
+          {isFuture ? ` · ${copy.futureDate}` : ''}
         </div>
         <div className="sjp-birth-wheel-panel__actions">
           <span />
           <div className="sjp-birth-wheel-panel__action-group">
             {allowClear && value ? (
               <button type="button" className="sjp-birth-wheel-panel__text-btn is-muted" onClick={onClear}>
-                清除
+                {copy.clear}
               </button>
             ) : null}
             <button
@@ -321,7 +335,7 @@ const LunarBirthDatePanel = forwardRef<HTMLDivElement, LunarPanelProps>(
                 });
               }}
             >
-              确定
+              {copy.confirm}
             </button>
           </div>
         </div>
@@ -357,6 +371,9 @@ export function LunarBirthDatePicker({
   style,
   minYear = DEFAULT_MIN_YEAR,
 }: LunarBirthDatePickerProps) {
+  const copy = useProductCopy().lunarDatePicker;
+  const panelId = useId();
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -364,7 +381,25 @@ export function LunarBirthDatePicker({
   const maxYear = todayAtNoon().getFullYear();
   const maxGregorianDate = formatIsoDate(todayAtNoon());
   const parsedSelection = parseLunarSelection(lunarYear, lunarMonth, lunarDay, lunarIsLeapMonth);
-  const displayValue = lunarDisplay(parsedSelection);
+  const displayValue = lunarDisplay(parsedSelection, copy);
+
+  useEffect(() => {
+    if (!open) return;
+    const first = panelRef.current?.querySelector<HTMLElement>('[tabindex="0"], button:not(:disabled)');
+    first?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    // The natal editors close on document capture. Consume the inner panel's
+    // Escape at window capture first, independent of listener registration order.
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [open]);
 
   useEffect(() => {
     if (!mounted || open) return;
@@ -393,25 +428,29 @@ export function LunarBirthDatePicker({
     requestAnimationFrame(() => requestAnimationFrame(() => setOpen(true)));
   };
 
-  const toggle = (event: MouseEvent<HTMLDivElement>) => {
-    if (panelRef.current?.contains(event.target as Node)) return;
+  const toggle = () => {
     if (open) setOpen(false);
     else openPanel();
   };
 
   return (
     <div ref={wrapRef} className="relative">
-      <div className="group/field relative flex items-center cursor-pointer" onClick={toggle}>
-        <input
+      <div className="group/field relative flex items-center">
+        <button
+          ref={triggerRef}
           id={id}
-          type="text"
-          readOnly
-          value={displayValue}
-          placeholder="选择农历日期"
-          className={`w-full rounded-2xl border border-[var(--nimi-border-subtle)] bg-[var(--nimi-field-bg)] pl-3 pr-9 py-2 text-[14px] cursor-pointer outline-none transition-shadow focus:ring-2 focus:ring-[var(--nimi-ring)] ${className}`}
+          type="button"
+          onClick={toggle}
+          aria-label={copy.placeholder}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-controls={panelId}
+          className={`w-full rounded-2xl border border-[var(--nimi-border-subtle)] bg-[var(--nimi-field-bg)] pl-3 pr-9 py-2 text-left text-[14px] cursor-pointer outline-none transition-shadow focus:ring-2 focus:ring-[var(--nimi-ring)] ${className}`}
           style={style}
-        />
-        <div className="absolute right-2 flex items-center">
+        >
+          {displayValue || copy.placeholder}
+        </button>
+        <div className="pointer-events-none absolute right-2 flex items-center">
           <CalendarIcon
             size={16}
             className={`transition-colors ${open ? 'text-[var(--nimi-text-primary)]' : 'text-gray-400 group-focus-within/field:text-[var(--nimi-text-primary)]'}`}
@@ -419,12 +458,13 @@ export function LunarBirthDatePicker({
         </div>
       </div>
       {localDateText && parsedSelection ? (
-        <div className="sjp-birth-wheel-trigger-note">对应公历：{localDateText.replaceAll('-', '/')}</div>
+        <div className="sjp-birth-wheel-trigger-note">{copy.gregorian}{localDateText.replaceAll('-', '/')}</div>
       ) : null}
       {mounted &&
         createPortal(
           <LunarBirthDatePanel
             ref={panelRef}
+            panelId={panelId}
             anchorRef={wrapRef}
             open={open}
             value={parsedSelection}
@@ -435,10 +475,12 @@ export function LunarBirthDatePicker({
             onCommit={(next) => {
               onChange(next);
               setOpen(false);
+              triggerRef.current?.focus();
             }}
             onClear={() => {
               onClear?.();
               setOpen(false);
+              triggerRef.current?.focus();
             }}
           />,
           document.body,

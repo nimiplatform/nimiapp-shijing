@@ -1,9 +1,9 @@
+import { useProductCopy } from '../../i18n/copy.ts';
 import type { YueJingCell, TendencyClass } from '../../../domain/mirror-output.ts';
 import type { ConcernTag } from '../../../domain/concern-tag.ts';
-import { TENDENCY_CLASS_LABELS } from '../../i18n/copy.ts';
+
 import { trimmedConcernLabel as yuejingTagLabel } from '../../concern-tags/concern-presets.ts';
-import { dominantTendency, shortMonthDay, TODAY_BODY_BY_TENDENCY, WEEKDAY_SHORT, weekdayIndexMondayFirst } from './yuejing-model.ts';
-import { YUEJING_COPY } from './yuejing-copy.ts';
+import { dominantTendency, shortMonthDay, weekdayIndexMondayFirst } from './yuejing-model.ts';
 
 export function YueJingTodayHero(props: {
   readonly date: string;
@@ -11,10 +11,12 @@ export function YueJingTodayHero(props: {
   readonly activeTags: readonly ConcernTag[];
   readonly onOpenDetails: () => void;
 }) {
+  const TENDENCY_CLASS_LABELS = useProductCopy().tendencyClassLabels;
+  const YUEJING_COPY = useProductCopy().yuejingSurface;
   const dominant = dominantTendency(props.cellsForToday);
   const tendencyLabel = TENDENCY_CLASS_LABELS[dominant];
-  const body = TODAY_BODY_BY_TENDENCY[dominant];
-  const weekday = WEEKDAY_SHORT[weekdayIndexMondayFirst(props.date)];
+  const body = YUEJING_COPY.bodyByTendency[dominant];
+  const weekday = YUEJING_COPY.weekdays[weekdayIndexMondayFirst(props.date)];
 
   return (
     <article

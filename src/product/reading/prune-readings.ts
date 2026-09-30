@@ -3,8 +3,9 @@
 //
 // Two passes, both citation-safe (a Reading cited by a Conversation or by another
 // Reading, e.g. a ShiJing consultation source, is never dropped):
-//   1. dedup by input_hash: regenerating the identical query (same scope + tags +
-//      method + prefs) supersedes the older copy; keep the newest.
+//   1. dedup by input_hash: the same frozen inputs (canonical natal inputs,
+//      scope, captured tags, method, prefs and citations) supersede the older
+//      copy; keep the newest. A later tag capture can produce a distinct hash.
 //   2. cap per method + mirror_kind/scope to the most recent N, so unbounded
 //      distinct-day history still has a ceiling without cross-engine eviction.
 //

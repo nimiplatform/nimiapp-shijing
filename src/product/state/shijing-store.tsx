@@ -17,6 +17,7 @@ import {
 } from 'react';
 
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
+import type { OpenRuntimeAiRecovery } from '../../domain/reading.ts';
 import {
   createInitialState,
   shijingReducer,
@@ -61,6 +62,7 @@ interface ShijingStoreValue {
   // App AIConfig readiness mirrored from the shell app store: null = not yet
   // observed, false = observed not-ready, true = observed ready.
   readonly ai_config_ready: boolean | null;
+  readonly open_runtime_ai_recovery: OpenRuntimeAiRecovery | null;
 }
 
 const ShijingStoreContext = createContext<ShijingStoreValue | null>(null);
@@ -81,6 +83,7 @@ interface ShijingStoreProviderProps {
   readonly conversationChatBridge?: ConversationChatBridge;
   readonly presenceVerificationClient?: PresenceVerificationClient;
   readonly aiConfigReady?: boolean | null;
+  readonly openRuntimeAiRecovery?: OpenRuntimeAiRecovery;
   readonly children: ReactNode;
 }
 
@@ -220,6 +223,7 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
       conversation_chat_bridge: conversationChatBridge,
       presence_verification_client: presenceVerificationClient,
       ai_config_ready: props.aiConfigReady ?? null,
+      open_runtime_ai_recovery: props.openRuntimeAiRecovery ?? null,
     }),
     [
       state,
@@ -231,6 +235,7 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
       conversationChatBridge,
       presenceVerificationClient,
       props.aiConfigReady,
+      props.openRuntimeAiRecovery,
     ],
   );
 

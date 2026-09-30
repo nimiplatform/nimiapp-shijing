@@ -1,3 +1,4 @@
+import { useProductCopy } from '../../i18n/copy.ts';
 // HeJing (合镜) record dialog — "记录一次经历".
 //
 // Replaces the old toast stub with a real dialog modeled on the NianJing event
@@ -28,11 +29,8 @@ import { useShijingStore } from '../../state/shijing-store.tsx';
 import { dailyMirrorScopeForToday } from '../mirror-scope-helpers.ts';
 import {
   buildHeJingEventMemoryDraft,
-  HEJING_PAGE_COPY,
   type HeJingPersonRef,
 } from './hejing-model.ts';
-
-const copy = HEJING_PAGE_COPY;
 
 function nowIso(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -48,6 +46,7 @@ export interface HeJingRecordDialogProps {
 }
 
 export function HeJingRecordDialog(props: HeJingRecordDialogProps) {
+  const copy = useProductCopy().hejingSurface;
   const { state, replace_snapshot } = useShijingStore();
   const [draft, setDraft] = useState('');
   const [draftDate, setDraftDate] = useState(dailyMirrorScopeForToday().date);

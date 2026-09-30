@@ -3,10 +3,8 @@
 // wording, concern text, memories, plans, and natal data stay inside ShiJing.
 
 import type { NimiAppActivityPutInput } from '@nimiplatform/sdk/app';
-import type { MethodProfileId } from '../../domain/algorithm.ts';
 import type { Reading } from '../../domain/reading.ts';
 import type { ProductCopy } from '../i18n/copy.ts';
-import { METHOD_LABELS } from '../reading/reading-format.ts';
 import { rijingDayPillar } from '../tabs/rijing/rijing-daily-almanac.ts';
 
 export const RIJING_ACTIVITY_TYPE = 'nimi.shijing.rijing-reading.v1';
@@ -32,7 +30,7 @@ export function rijingActivityPublication(reading: Reading, copy: ProductCopy): 
     title: copy.dailyRiJing.activity.title(month, day),
     summary: copy.dailyRiJing.activity.summary(
       rijingDayPillar(date) ?? '',
-      METHOD_LABELS[methodId as MethodProfileId] ?? methodId,
+      copy.citationDrawer.methodLabels[methodId] ?? methodId,
     ),
     type: RIJING_ACTIVITY_TYPE,
     data: { date, methodProfileId: methodId },

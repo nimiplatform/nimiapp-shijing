@@ -46,6 +46,11 @@
     align-items: stretch;
   }
 
+  .shijing-hejing__type-tabs {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
   .shijing-hejing__object-select .sjp-select-trigger {
     max-width: none;
     width: 100%;

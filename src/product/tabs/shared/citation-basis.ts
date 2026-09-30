@@ -8,29 +8,12 @@ export interface CitationBasisRow {
 
 type CitationDrawerCopy = BaseProductCopy['citationDrawer'];
 
-const METHOD_LABELS: Record<string, string> = {
-  bazi_ziping_v1: '八字子平法',
-  ziwei_sanhe_v1: '紫微斗数（三合派）',
-  qizheng_siyu_guolao_v1: '七政四余 / 果老星宗',
-};
-
-const REFERENCE_LABELS: Record<string, string> = {
-  'rijing.daily_tendency_classification': '日镜每日倾向分类',
-  'yuejing.daily_tendency_drivers': '月镜每日倾向依据',
-  'nianjing.phase_inflection_derivation': '年镜相位与转折推导',
-  'shijing.consultation_grounding': '问镜引用解读与问题上下文',
-  'mingjing.natal_projection': '命镜本命盘投影',
-  'mingjing.ziwei_natal_brief.v1': '命镜紫微本命解读',
-  'mingjing.qizheng_siyu_natal_brief.v1': '命镜七政四余本命解读',
-  'mingjing.relationship_hepan.v1': '合镜关系合盘依据',
-};
-
-export function formatCitationMethod(method: string): string {
-  return METHOD_LABELS[method] ?? method.replaceAll('_', ' ');
+export function formatCitationMethod(method: string, copy: CitationDrawerCopy): string {
+  return copy.methodLabels[method] ?? method.replaceAll('_', ' ');
 }
 
-export function formatCitationReference(reference: string): string {
-  return REFERENCE_LABELS[reference] ?? reference.replace(/[._-]+/gu, ' ');
+export function formatCitationReference(reference: string, copy: CitationDrawerCopy): string {
+  return copy.referenceLabels[reference] ?? reference.replace(/[._-]+/gu, ' ');
 }
 
 function formatCapturedAt(instant: string): string {
@@ -76,7 +59,7 @@ export function buildCitationBasisRows(reading: Reading, copy: CitationDrawerCop
   return [
     {
       label: copy.method,
-      value: formatCitationMethod(reading.inputs_summary.method_profile.id),
+      value: formatCitationMethod(reading.inputs_summary.method_profile.id, copy),
     },
     basis,
     {

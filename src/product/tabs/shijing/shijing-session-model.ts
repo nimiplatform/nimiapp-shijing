@@ -403,6 +403,9 @@ export function followUpFailureAsReadingFailure(
       mirror_kind: 'shijing',
       mirror_scope: consultationMirrorScopeFor(sourceReadingIds),
       detail: failure.detail,
+      runtime_code: failure.runtime_code,
+      reason_code: failure.reason_code,
+      action_hint: failure.action_hint,
     };
   }
   return {

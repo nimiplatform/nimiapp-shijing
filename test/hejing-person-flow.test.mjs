@@ -1,3 +1,5 @@
+import { getProductCopy } from '../src/product/i18n/copy.ts';
+const hejingCopy = getProductCopy('zh').hejingSurface;
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
@@ -40,7 +42,7 @@ test('HeJing builds a self-plus-person workspace from a newly added Person', asy
     validPerson('p_partner_01', {
       display_name: '阿楠',
       relation: '朋友',
-    }),
+    }), hejingCopy,
   );
 
   assert.equal(workspace.id, 'person:p_partner_01');
@@ -59,7 +61,7 @@ test('HeJing relationship type tabs follow the admitted display order', async ()
   const model = await import('../src/product/tabs/hejing/hejing-model.ts');
 
   assert.deepEqual(
-    model.HEJING_RELATIONSHIP_TYPES.map((type) => [type.id, type.label]),
+    hejingCopy.relationshipTypes.map((type) => [type.id, type.label]),
     [
       ['partner', '伴侣'],
       ['family', '家人'],
@@ -75,9 +77,9 @@ test('HeJing filters workspaces by relationship type without fabricating fallbac
 
   assert.equal(typeof model.hejingWorkspacesForRelationshipType, 'function');
   const workspaces = [
-    model.buildHeJingWorkspaceFromPerson(validPerson('p_partner', { relation: '伴侣' })),
-    model.buildHeJingWorkspaceFromPerson(validPerson('p_family', { relation: '家人' })),
-    model.buildHeJingWorkspaceFromPerson(validPerson('p_child', { relation: '亲子' })),
+    model.buildHeJingWorkspaceFromPerson(validPerson('p_partner', { relation: '伴侣' }), hejingCopy),
+    model.buildHeJingWorkspaceFromPerson(validPerson('p_family', { relation: '家人' }), hejingCopy),
+    model.buildHeJingWorkspaceFromPerson(validPerson('p_child', { relation: '亲子' }), hejingCopy),
   ];
 
   assert.deepEqual(
@@ -102,8 +104,8 @@ test('HeJing restores the latest generated relationship workspace on page open',
 
   const selectedWorkspaceId = model.initialHeJingWorkspaceIdFromReadings({
     workspaces: [
-      model.buildHeJingWorkspaceFromPerson(firstPerson),
-      model.buildHeJingWorkspaceFromPerson(latestPerson),
+      model.buildHeJingWorkspaceFromPerson(firstPerson, hejingCopy),
+      model.buildHeJingWorkspaceFromPerson(latestPerson, hejingCopy),
     ],
     readings: [
       validReading({
@@ -139,7 +141,7 @@ test('HeJing keeps generated-only sections behind the relationship output', () =
 });
 
 test('HeJing never falls back to sample workspaces in the real path', () => {
-  assert.match(hejingTabSource, /state\.snapshot\.persons\.map\(buildHeJingWorkspaceFromPerson\)/u);
+  assert.match(hejingTabSource, /state\.snapshot\.persons\.map\(\(person\) => buildHeJingWorkspaceFromPerson\(person, copy\)\)/u);
   assert.doesNotMatch(hejingTabSource, /HEJING_RELATIONSHIP_WORKSPACES/u);
   assert.doesNotMatch(hejingTabSource, /hejing-sample-space/u);
 });

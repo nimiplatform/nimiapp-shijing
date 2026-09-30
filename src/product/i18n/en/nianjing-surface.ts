@@ -1,0 +1,155 @@
+import type { NianJingSurfaceCopy } from '../schema/nianjing-surface.ts';
+
+export const EN_NIANJING_SURFACE_COPY: NianJingSurfaceCopy = {
+  duration: {
+    years: (count) => `About ${count} year${count === 1 ? '' : 's'}`,
+    months: (count) => `About ${count} months`,
+    days: (count) => `About ${count} days`,
+  },
+  tab: {
+  "previousVersion": "Previous version generated",
+  "previous": "Last generated",
+  "busy": "Generating…",
+  "update": "Update citable version",
+  "save": "Save citable version",
+  "generate": "Generate long-horizon phases",
+  "current": "Return to latest →",
+  "older": "← View previous version",
+  "missingNatal": "Enter your birth data in Settings → Profile. Yearly Mirror uses it to calculate phases.",
+  "missingConcerns": "No active concerns yet",
+  "concernHint": "Activate at least one concern as a lens for long-horizon phases.",
+  "openConcerns": "Set up concerns",
+  "generating": "Generating long-horizon phases…",
+  "insufficient": "The current data cannot derive long-horizon phases. Complete your natal profile and concerns first."
+},
+  eventRecorder: {
+  "heading": "Recorded events",
+  "future": "This phase has not started yet. Return after an event happens to record it here.",
+  "placeholder": "For example: I changed jobs, or a relationship reached a conclusion…",
+  "recordAria": "Record an event that happened",
+  "date": "Event date",
+  "save": "Save event",
+  "failed": "Could not save. Check the content and try again.",
+  "all": "View all records",
+  "empty": "No records in this period yet.",
+  "listAria": "Saved events",
+  "editContent": "Edit event content",
+  "cancel": "Cancel",
+  "saveEdit": "Save",
+  "ask": "Ask about this record",
+  "askShort": "Ask",
+  "edit": "Edit",
+  "editAria": "Edit this event",
+  "delete": "Delete",
+  "deleteAria": "Delete this event",
+  "deleteTitle": "Delete this record?"
+,
+intro: (label) => `Record experiences related to “${label}” in this period. Consultation can cite them when discussing the phase.`, count: (count) => `Saved records (${count})`, deleteMessage: (body) => `“${body}” will be permanently deleted and no longer cited for this phase. This cannot be undone.`
+},
+  staleMessages: { age: 'This long-horizon reading is over 30 days old. Generate again.', mirror_scope_changed: 'The Yearly Mirror window changed. Generate a new reading.', concern_tag_missing: 'Your concerns changed. Generate a new reading.', event_memory_refs_changed: 'Referenced records changed. Generate a new reading.', feature_snapshot_failed: 'The current data cannot verify the old reading. Correct the data and generate again.', input_hash_changed: 'Inputs changed. Generate a new Yearly Mirror reading.', feature_snapshot_hash_changed: 'Calculation evidence changed. Generate a new reading.' },
+  notSegmented: 'No phase yet',
+  yearLabel: (year) => String(year),
+  monthLabel: (month) => `Month ${month}`,
+  bodyByNature: { supportive: 'Long-term support offers room to take initiative.', steady: 'Follow your direction with steady steps.', watch: 'Observe changes in rhythm and outside conditions.', blocked: 'Conserve resources and wait for constraints to ease.', turning: 'Watch for inflection signals and useful windows.' },
+  inflectionDescriptions: { dayun_boundary: 'DaYun is a long-term cycle that changes roughly every ten years. This boundary marks the transition between periods and their leading themes.', annual_transition: 'The annual cycle moves from one Ganzhi year to the next, changing the year’s overall context and opportunity windows.', monthly_transition: 'The monthly cycle shifts at solar-term boundaries, offering cues for shorter-term decisions and changes of pace.', marker_cluster: 'Markers from different cycles appear near each other. Their combined timing identifies a particularly salient window.' },
+  yearOverview: {
+    viewPhase: 'View phase',
+    ariaLabel: 'Yearly Mirror annual overview', title: 'Annual overview', subtitle: 'Start with the overall annual rhythm', summaryAriaLabel: 'Overall annual overview', summaryMeta: 'Leading phase',
+    summaryCardAriaLabel: (year, nature) => `${year} overall annual ${nature}`, focusAriaLabel: 'Annual views by concern', focusTitle: 'My concerns', focusSubtitle: 'Explore each concern',
+    focusedSubtitle: (label) => `${label}: annual view`, concern: 'Concern', now: 'Now', pathTitle: 'Annual rhythm · phase guide', pathSubtitle: 'Explore ten years, then select a year for details',
+    pathLegendAriaLabel: 'Concern guide legend', selectedEyebrow: 'SELECTED YEAR · LEADING PHASE', selectedSummaryFallback: 'No phase summary is available for this year.',
+    selectedMeta: 'Leading phase', yearDetailTitle: 'Annual phase details', favorable: 'Supports', guarded: 'Needs care', monthNodes: 'Key months', noNodes: 'No salient nodes this year',
+    basisTitle: 'Long-horizon summary · evidence', basisSubtitle: 'How these observations were derived',
+    basisLabels: { phase_band: 'Phase band', dayun_boundary: 'DaYun boundary', annual_transition: 'Annual transition', monthly_transition: 'Monthly transition', marker_cluster: 'Marker cluster' },
+    basisSummary: (count, first) => first ? `${count} evidence entries · ${first}` : `${count} structured evidence entries`,
+    phaseAriaLabel: (year, label, nature) => `${year} ${label} ${nature} phase`, markersAriaLabel: (year, label) => `${year} ${label} inflection points`,
+  },
+  natureGuidance: {
+    supportive: {
+      oneLine: 'More outside opportunities offer room to advance {concern}.',
+      meaning: 'A supportive phase for {concern}: explore connections, resources, and practical opportunities without assuming every opening will work.',
+      keywords: ['Take initiative', 'Resources', 'Opportunities', 'Connections'],
+      suggestions: [
+        { title: 'Start a considered initiative', description: 'Bring a prepared idea forward and test it in practice.' },
+        { title: 'Seek collaboration', description: 'Contact relevant people and explore available support.' },
+        { title: 'Explore {concern}', description: 'Try a useful direction or a new way of expressing your work.' },
+      ],
+      cautions: [
+        { title: 'Keep the pace sustainable', description: 'Supportive conditions do not remove uncertainty. Leave room to check results.' },
+        { title: 'Respect your limits', description: 'Choose the opportunities you can support without overcommitting.' },
+      ],
+    },
+    steady: {
+      oneLine: '{concern} benefits from a consistent direction and small steps.',
+      meaning: 'A steadier phase for {concern}: maintain useful routines and let progress accumulate rather than forcing a sudden breakthrough.',
+      keywords: ['Consistency', 'Small steps', 'Maintain', 'Accumulation'],
+      suggestions: [
+        { title: 'Maintain useful routines', description: 'Continue the actions that already produce reliable results.' },
+        { title: 'Improve the details', description: 'Use the steadier rhythm to refine weak spots and practical arrangements.' },
+        { title: 'Build a longer foundation', description: 'Invest effort in repeatable actions for {concern}.' },
+      ],
+      cautions: [
+        { title: 'Avoid unnecessary disruption', description: 'Check what a change would improve before replacing a working routine.' },
+        { title: 'Stay attentive', description: 'A steady phase still needs observation and periodic review.' },
+      ],
+    },
+    watch: {
+      oneLine: 'Observe {concern} carefully before deciding on a direction.',
+      meaning: 'An observation phase for {concern}: collect feedback, check uncertain details, and leave enough time for a considered decision.',
+      keywords: ['Observation', 'Feedback', 'Details', 'Calibration'],
+      suggestions: [
+        { title: 'Collect feedback', description: 'Look for repeated signals rather than treating one response as a conclusion.' },
+        { title: 'Check uncertain details', description: 'Clarify missing information and confirm assumptions before committing.' },
+        { title: 'Calibrate the pace', description: 'Use smaller steps in {concern} while the situation becomes clearer.' },
+      ],
+      cautions: [
+        { title: 'Avoid rushed conclusions', description: 'A short-term signal may reflect circumstances rather than a lasting pattern.' },
+        { title: 'Seek another perspective', description: 'Check your interpretation against evidence that could challenge it.' },
+      ],
+    },
+    blocked: {
+      oneLine: 'Protect your position and conserve resources in {concern}.',
+      meaning: 'A more constrained phase for {concern}: progression may take more effort. Review commitments, preserve what works, and leave room for conditions to change.',
+      keywords: ['Conserve', 'Review', 'Reduce strain', 'Keep room'],
+      suggestions: [
+        { title: 'Narrow the focus', description: 'Keep core goals and reduce peripheral demands on your resources.' },
+        { title: 'Strengthen the foundation', description: 'Use the time for learning, review, and practical preparation.' },
+        { title: 'Protect what works', description: 'Maintain key relationships and resources while evaluating major changes.' },
+      ],
+      cautions: [
+        { title: 'Avoid forcing the situation', description: 'Pushing through constraints may increase strain; a pause can be useful.' },
+        { title: 'Watch emotional decisions', description: 'Give major commitments time for review when frustration is high.' },
+      ],
+    },
+    turning: {
+      oneLine: '{concern} is in transition, offering a window to review direction.',
+      meaning: 'A turning phase for {concern}: older patterns may change before a new rhythm settles. Consider both opportunities and uncertainties before deciding.',
+      keywords: ['Direction', 'Transition', 'Windows', 'Letting go'],
+      suggestions: [
+        { title: 'Review your direction', description: 'Reassess goals and consider what needs adjustment.' },
+        { title: 'Make considered choices', description: 'Clarify the tradeoffs instead of postponing every decision.' },
+        { title: 'Release what no longer helps', description: 'Review habits and commitments to make room for a more useful approach.' },
+      ],
+      cautions: [
+        { title: 'Do not force the old rhythm', description: 'Recognize changes and check which parts of the previous approach still fit.' },
+        { title: 'Discuss your interpretation', description: 'A trusted perspective can help you notice blind spots during a transition.' },
+      ],
+    },
+  },
+  timeline: {
+    emptyNotice: 'No phase bands are available for these filters.', ariaLabel: 'Long-horizon phase bands and inflection points by concern', now: 'Now', currentSuffix: ' phase', clickToView: 'View details',
+    bandAriaLabel: (range, nature) => `${range} ${nature} phase; view details`, markerAriaLabel: (date, kind) => `${date} ${kind}; view details`, legendAriaLabel: 'Inflection points and current time legend',
+  },
+  readyView: { footerSummary: 'Long-horizon summary and evidence' },
+  hero: { ariaLabel: 'Current long-horizon phase', focusedEyebrow: (label) => `${label} · NOW`, defaultEyebrow: 'CURRENT PHASE · NOW', horizonSuffix: 'outlook', rowsAriaLabel: 'Current phase for each concern' },
+  filter: { toolbarAriaLabel: 'Concern filters and phase legend', concernLegend: 'Concerns', all: 'All', manageConcerns: '✎ Edit concerns', legendAriaLabel: 'Phase legend' },
+  concernEditor: {
+    ariaLabel: 'Manage concerns', title: 'Manage concerns', subtitle: 'Each active concern has its own phase bands and inflection points on the timeline.',
+    activeHeading: 'Active', addableHeading: 'Available', remove: 'Remove', add: 'Add', addLimitTitle: (limit) => `Active limit reached (${limit})`, customPlaceholder: 'A custom concern, such as study or a new business',
+  },
+  detailDrawer: {
+    close: 'Close', detailSuffix: 'details', phaseSuffix: ' phase', mainline: 'Main thread', signalsAriaLabel: 'Signals during this phase', worthRemembering: (duration) => `Signals to remember across ${duration}`,
+    guidanceTitle: 'Ways to use this time', guardrailsTitle: 'Boundaries to keep', timePrefix: 'Time', basis: (label) => `Based on “${label}” and Yearly Mirror phase changes`,
+    inflectionQuestion: (kind) => `What does ${kind} mean?`, promptTitle: 'This observation', impactWindow: 'Influence window', eventRecorderHeading: 'What happened around this inflection point?',
+  },
+};

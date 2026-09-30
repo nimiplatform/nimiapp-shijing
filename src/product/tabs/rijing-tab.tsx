@@ -128,7 +128,6 @@ function failureActionFor(
       onClick: () => onRequestOpenSettings?.('settings', 'method_profile'),
     };
   }
-  if (failure.kind !== 'runtime_ai_failed') return undefined;
   return undefined;
 }
 
@@ -337,7 +336,7 @@ export function RiJingTab(props: RiJingTabProps) {
       ) : null}
       {dailyNote ? <p role="status">{dailyNote}</p> : null}
       {tabState.kind === 'failure' ? (
-        <FailureBanner failure={tabState.failure} action={failureAction} />
+        <FailureBanner failure={tabState.failure} action={failureAction} onRetry={handleGenerate} />
       ) : null}
       <RiJingHero
         content={hero}

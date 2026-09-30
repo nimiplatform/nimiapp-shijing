@@ -65,7 +65,7 @@ units:
   - id: definition.shijing.product.protected-session-failure
     kind: definition
     title: Protected session failure
-    meaning: Before positive protected admission, the production renderer has one typed fail-close surface with recovery classes login-required, runtime-unavailable, permission-denied, repair-required, and capability-unavailable.
+    meaning: Before positive protected admission, the production renderer has one typed fail-close surface projecting current SDK session and error evidence into action-required, access-ended, runtime-unavailable, or capability-unavailable posture; owner reasonCode and actionHint form a separate recovery layer, including permission and repair evidence, without inferring login from every required action or permission denial from every ended session.
   - id: definition.shijing.product.daily-rijing-run
     kind: definition
     title: Daily RiJing run
@@ -234,7 +234,7 @@ units:
     kind: rule
     title: Protected session failure
     modality: must
-    statement: Before positive protected admission, the production renderer exposes exactly one typed fail-close surface with recovery classes login-required, runtime-unavailable, permission-denied, repair-required, and capability-unavailable; it shows the stable reason code and recovery action, supports retry, keeps every product operation disabled, and renders no login page, local-data fallback, pseudo account, product shell, or simulated success.
+    statement: Before positive protected admission, the production renderer exposes one typed fail-close surface with action-required, access-ended, runtime-unavailable, or capability-unavailable posture derived from current public SDK session and error projections; it preserves and displays stable owner reasonCode and actionHint, including permission and repair evidence, supports same-host retry, keeps every product operation disabled, and renders no login page, local-data fallback, pseudo account, product shell, or simulated success; posture and recovery reason remain separate, and action-required is not equated to login-required nor revoked to permission-denied without explicit owner evidence.
     condition: When protected ShiJing admission is not positively established.
     failure: Render only the typed protected-session failure surface and keep all product operations disabled.
     relations:

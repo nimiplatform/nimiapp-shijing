@@ -115,7 +115,9 @@
       "action-required": "Finish the sign-in or confirmation in Nimi Desktop, then retry here — the same host restores access.",
       "access-ended": "Access ended or the signed-in account changed. Retry here, or relaunch ShiJing from Nimi Desktop; the platform re-establishes access.",
       "runtime-unavailable": "Start the Nimi Runtime from Nimi Desktop, then retry here — the same host restores access.",
-      "capability-unavailable": "Retry here. If this state persists, relaunch ShiJing from Nimi Desktop."
+      "capability-unavailable": "Retry here. If this state persists, relaunch ShiJing from Nimi Desktop.",
+      "permission-denied": "Nimi reported an access permission denial. Review ShiJing permissions in Nimi Desktop and follow the platform recovery instructions before retrying.",
+      "repair-required": "Nimi reported a repair requirement. Follow the installation or Runtime repair instructions in Nimi Desktop, then reopen ShiJing."
     },
     "technicalDetails": "Technical details",
     "retry": "Retry",

@@ -47,23 +47,18 @@ test('zh shijing tab and page title use 问镜 copy', () => {
 
 test('cross-mirror ask entrypoints use 问镜 naming', () => {
   const yuejingCopySource = readFileSync(
-    new URL('../src/product/tabs/yuejing/yuejing-copy.ts', import.meta.url),
+    new URL('../src/product/i18n/zh/yuejing-surface.ts', import.meta.url),
     'utf8',
   );
   const nianjingRecorderSource = readFileSync(
     new URL('../src/product/tabs/nianjing/nianjing-event-recorder.tsx', import.meta.url),
     'utf8',
   );
-  const readingFormatSource = readFileSync(
-    new URL('../src/product/reading/reading-format.ts', import.meta.url),
-    'utf8',
-  );
 
   assert.match(yuejingCopySource, /askThisRecord:\s*'去问镜问这条'/u);
   assert.doesNotMatch(yuejingCopySource, /去时镜问这条/u);
-  assert.match(nianjingRecorderSource, /Tooltip content="去问镜问这条"/u);
+  assert.match(nianjingRecorderSource, /Tooltip content=\{c\.ask\}/u);
   assert.doesNotMatch(nianjingRecorderSource, /去时镜问这条/u);
-  assert.match(readingFormatSource, /shijing:\s*'问镜'/u);
 });
 
 test('shell lazy-loads the independent HeJing tab', () => {

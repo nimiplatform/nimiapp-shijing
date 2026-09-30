@@ -4,8 +4,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { deriveYueJingMonthInterpretation } from '../src/product/tabs/yuejing-month-interpretation.ts';
-import { CONCERN_ACTION_BY_LABEL } from '../src/product/tabs/yuejing/yuejing-month-language.ts';
-import { YUEJING_COPY } from '../src/product/tabs/yuejing/yuejing-copy.ts';
+
+import { getProductCopy } from '../src/product/i18n/copy.ts';
+const YUEJING_COPY = getProductCopy('zh').yuejingSurface;
+const CONCERN_ACTION_BY_LABEL = getProductCopy('zh').yuejingLanguage.actionByLabel;
 
 const tabSource = readFileSync(
   new URL('../src/product/tabs/yuejing-tab.tsx', import.meta.url),
@@ -16,7 +18,7 @@ const interpretationSource = readFileSync(
   'utf8',
 );
 const monthPanelLanguageSource = readFileSync(
-  new URL('../src/product/tabs/yuejing/yuejing-month-language.ts', import.meta.url),
+  new URL('../src/product/i18n/zh/yuejing-language.ts', import.meta.url),
   'utf8',
 );
 const monthPanelSource = readFileSync(
@@ -24,7 +26,7 @@ const monthPanelSource = readFileSync(
   'utf8',
 );
 const monthPanelCopySource = readFileSync(
-  new URL('../src/product/tabs/yuejing/yuejing-copy.ts', import.meta.url),
+  new URL('../src/product/i18n/zh/yuejing-surface.ts', import.meta.url),
   'utf8',
 );
 const monthPanelSurface = `${tabSource}\n${interpretationSource}\n${monthPanelLanguageSource}\n${monthPanelSource}\n${monthPanelCopySource}`;
@@ -188,7 +190,7 @@ test('YueJing action guide derives the requested window and concern action dates
     dates,
     cellsByDate,
     activeTags: actionGuideTags,
-  });
+  }, getProductCopy('zh').yuejingLanguage);
 
   assert.equal(interpretation.range_label, '7月5日–8月3日');
   assert.equal(interpretation.primary, 'supportive');
@@ -228,4 +230,29 @@ test('YueJing action guide derives the requested window and concern action dates
 
 test('YueJing 30-day drawer copy avoids absolute prediction wording', () => {
   assert.doesNotMatch(monthPanelSurface, /必然|一定|注定/);
+});
+
+test('changing monthly presentation language preserves tendencies, counts, references and action dates', () => {
+  const { dates, cellsByDate } = actionGuideFixture();
+  const input = { dates, cellsByDate, activeTags: actionGuideTags };
+  const before = structuredClone(input);
+  const zh = deriveYueJingMonthInterpretation(input, getProductCopy('zh').yuejingLanguage);
+  const en = deriveYueJingMonthInterpretation(input, getProductCopy('en').yuejingLanguage);
+  const windows = (items) => items.map((item) => ({
+    tendency: item.tendency, target_dates: item.target_dates,
+    date_ranges: item.date_ranges.map(({ start_date, end_date, dates }) => ({ start_date, end_date, dates })),
+  }));
+  const calculations = (result) => ({
+    primary: result.primary, counts: result.counts, day_counts: result.day_counts,
+    day_series: result.day_series, generated_day_count: result.generated_day_count,
+    phases: result.phases.map((phase) => phase.tendency), windows: windows(result.key_windows),
+    concerns: result.concern_interpretations.map((item) => ({
+      id: item.tag.id, primary: item.primary, counts: item.counts, generated_days: item.generated_days,
+      windows: windows(item.key_windows), action_dates: item.action_items.map((action) => action.target_dates),
+    })),
+  });
+  assert.deepEqual(calculations(en), calculations(zh));
+  assert.deepEqual(input, before);
+  assert.notEqual(en.mainline.body, zh.mainline.body);
+  assert.equal(en.mainline.title, '30-day main thread');
 });
