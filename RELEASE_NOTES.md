@@ -1,3 +1,7 @@
+## 0.1.10 · Published platform dependencies
+
+Uses public npm SDK 0.21.0, Kit/native 0.19.3, App Tools 0.12.1 and nimi-coding 0.6.5 with frozen registry lockfiles. Local Nimi tarball overrides are removed; Desktop-supervised development and installed Apps use the same published carrier.
+
 # 时镜 ShiJing 0.1.10 源码候选
 
 日镜增加应用打开期间的每日定时生成和保存后的活动摘要。本次审计修复接通 AI 失败恢复入口，补齐 Reading 不确定性字段校验与本命输入哈希，并完善中英文界面、计划只读档案及农历键盘操作。现有日镜通用黄历保留为辅助历法民俗参考，不参与个人解读或确定性判断。

@@ -20,7 +20,7 @@ i18n.use(initReactI18next).init({
   fallbackLng: 'en',
   interpolation: { escapeValue: false },
   react: { useSuspense: false },
-  initImmediate: false,
+  initAsync: false,
 });
 
 export { i18n };

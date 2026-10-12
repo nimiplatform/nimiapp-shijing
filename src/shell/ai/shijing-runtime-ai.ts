@@ -33,6 +33,16 @@ export async function generateShijingTextCandidate(
       { role: 'user', text: input.user },
     ],
   });
+  if (result.finishReason !== 'stop') {
+    throw Object.assign(new Error(result.finishReason === 'content-filter'
+      ? 'Runtime filtered the response; no complete interpretation is available.'
+      : 'Runtime stopped before completing the interpretation.'), {
+      reasonCode: result.finishReason === 'content-filter'
+        ? 'ai-content-filter-blocked' : 'ai-text-output-incomplete',
+      actionHint: 'inspect_reason_code_and_retry_with_corrected_request',
+      traceId: result.traceId,
+    });
+  }
   return result.text;
 }
 

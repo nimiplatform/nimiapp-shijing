@@ -43,15 +43,15 @@
   },
   "dependencies": {
     "astronomy-engine": "^2.1.19",
-    "i18next": "^25.10.10",
+    "i18next": "^26.4.2",
     "iztro": "^2.5.8",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-i18next": "^16.6.6",
+    "react-i18next": "^17.0.0",
     "tyme4ts": "^1.5.0",
     "zustand": "^5.0.13",
-    "@nimiplatform/sdk": "^0.16.0",
-    "@nimiplatform/kit": "^0.13.0"
+    "@nimiplatform/sdk": "^0.21.0",
+    "@nimiplatform/kit": "^0.19.0"
   },
   "devDependencies": {
     "@electron/packager": "^20.3.0",
@@ -60,8 +60,8 @@
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.1",
-    "electron": "42.5.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "electron": "^44.5.1",
     "esbuild": "^0.28.0",
     "eslint": "^10.4.0",
     "globals": "^17.6.0",
@@ -69,10 +69,10 @@
     "tailwindcss": "^4.3.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.4",
-    "vite": "^7.3.6",
+    "vite": "^8.3.3",
     "yaml": "^2.9.0",
-    "@nimiplatform/app-tools": "^0.9.0",
-    "@nimiplatform/nimi-coding": "0.6.3"
+    "@nimiplatform/app-tools": "^0.12.1",
+    "@nimiplatform/nimi-coding": "0.6.5"
   },
   "author": "Nimi Team",
   "license": "MIT"
