@@ -1,5 +1,15 @@
 # nimiapp-shijing
 
+## Published dependency and Catalog acceptance (2026-10-13)
+
+Current public release: [0.1.10](https://github.com/nimiplatform/nimiapp-shijing/releases/tag/v0.1.10); [Registry admission #84](https://github.com/nimiplatform/nimi-app-registry/pull/84) is merged for macOS arm64 and Windows x64. Frozen locks use published SDK 0.21.0, Kit/native 0.19.3, App Tools 0.12.1 and nimi-coding 0.6.5; no local Nimi archive or source-link resolution is required.
+
+Repository checks and managed production builds, package provenance and immutable Release checks passed for both declared targets. Actual Catalog download, installation and AI acceptance ran on macOS arm64 through source Nimi Home and its matching protected Runtime (Nimi main 35498102b). Runtime identity and App Access checks remain enforced.
+
+The Catalog package saved synthetic birth data (1988-01-01 12:00, Shanghai), computed the deterministic chart and generated a real AI 命镜 interpretation. Birth data and the complete interpretation survived a full Home stop/launch.
+
+**NOT-VERIFIED:** Windows GUI installation and AI use. Other mirror workflows and the unknown-birth-time journey were not rerun. This verifies software execution, not the factual validity of astrology.
+
 专业AI个人命理解读伙伴
 
 时镜 (ShiJing) — A personal astrology reading companion grounded in classical
