@@ -1,3 +1,4 @@
+import { ShijingNavigationProvider } from './product/navigation/app-navigation.tsx';
 // Renderer dev preview — mounts the product UI with a dev-only local account projection.
 // Loaded from `dev-preview.html` only. Production entry remains
 // `index.html` → `src/main.tsx`.
@@ -34,12 +35,12 @@ function DevApp() {
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <I18nextProvider i18n={i18n}>
+    <ShijingNavigationProvider><I18nextProvider i18n={i18n}>
       <NimiThemeProvider accentPack="nimi-accent" defaultScheme="light">
         <TooltipProvider>
           <DevApp />
         </TooltipProvider>
       </NimiThemeProvider>
-    </I18nextProvider>
+    </I18nextProvider></ShijingNavigationProvider>
   </React.StrictMode>,
 );

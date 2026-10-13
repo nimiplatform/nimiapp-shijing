@@ -11,12 +11,15 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { ActionMenu, type NimiMenuItem } from '@nimiplatform/kit/ui';
 import { useShijingStore } from '../state/shijing-store.tsx';
 import { PrimaryTabBar } from '../navigation/tab-router.tsx';
+import { useShijingDestination, useShijingNavigation } from '../navigation/app-navigation.tsx';
 import type {
   SettingsPageExtraModule,
   ShijingSettingsFocusTarget,
 } from '../settings/settings-page-view.tsx';
 import {
   SHIJING_SETTINGS_PAGES,
+  SHIJING_IA_TABS,
+  type ShijingTabId,
   type ShijingSettingsPageId,
 } from '../../contracts/ia-contract.ts';
 import { useProductCopy } from '../i18n/copy.ts';
@@ -81,17 +84,18 @@ export interface ShijingShellProps {
   readonly activity?: RiJingActivityPort | null;
 }
 
-interface ActiveSettingsPageState {
-  readonly pageId: ShijingSettingsPageId;
-  readonly focusTarget?: ShijingSettingsFocusTarget | null;
-}
-
 export function ShijingShell(props: ShijingShellProps) {
-  const { state, dispatch, replace_snapshot, persistence_status } = useShijingStore();
+  const { state, replace_snapshot, persistence_status } = useShijingStore();
+  const { open, navigation } = useShijingNavigation();
+  const destination = useShijingDestination();
+  const activeTab = destination.id === 'settings' ? null : destination.id;
+  const activePage = destination.id === 'settings' ? { pageId: destination.page!, focusTarget: destination.focusTarget } : null;
+  // Keep visited business workspaces mounted; their drafts/jobs stay App-owned.
+  const [visited, setVisited] = useState<ReadonlySet<ShijingTabId>>(() => new Set(activeTab ? [activeTab] : []));
+  useEffect(() => { if (activeTab) setVisited(previous => previous.has(activeTab) ? previous : new Set([...previous, activeTab])); }, [activeTab]);
   usePersistedUiLanguageSync();
   const copy = useProductCopy();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activePage, setActivePage] = useState<ActiveSettingsPageState | null>(null);
   const [startupGuideDismissed, setStartupGuideDismissed] = useState(
     () => initialMingJingStartupGuideDismissed(state.snapshot),
   );
@@ -122,7 +126,7 @@ export function ShijingShell(props: ShijingShellProps) {
     pageId: ShijingSettingsPageId,
     focusTarget?: ShijingSettingsFocusTarget | null,
   ) {
-    setActivePage({ pageId, focusTarget: focusTarget ?? null });
+    open({ id: 'settings', page: pageId, ...(focusTarget ? { focusTarget } : {}) });
     setMenuOpen(false);
   }
 
@@ -137,13 +141,12 @@ export function ShijingShell(props: ShijingShellProps) {
   }
 
   function openRiJing() {
-    setActivePage(null);
-    dispatch({ type: 'tab/activate', tab: 'rijing' });
+    open({ id: 'rijing' });
   }
 
   return (
     <RiJingGenerationProvider activity={props.activity ?? null} onOpenRiJing={openRiJing}>
-      <div className="shijing-shell" data-active-tab={state.active_tab}>
+      <div className="shijing-shell" data-active-tab={activeTab ?? 'settings'}>
         <header className="shijing-topbar">
           <div className="shijing-topbar__brand">
             <span className="shijing-topbar__wordmark">{copy.brandName}</span>
@@ -212,19 +215,22 @@ export function ShijingShell(props: ShijingShellProps) {
               </p>
             }
           >
-            {shouldGatePrimaryTabForIntake(state.snapshot, state.active_tab) ? (
+            {activeTab && shouldGatePrimaryTabForIntake(state.snapshot, activeTab) ? (
               <MingJingIntakeGate
-                gatedTab={state.active_tab}
-                onGoToMingJing={() => dispatch({ type: 'tab/activate', tab: 'mingjing' })}
+                gatedTab={activeTab}
+                onGoToMingJing={() => open({ id: 'mingjing' })}
               />
-            ) : (
-              renderActiveTab(
-                state.active_tab,
+            ) : null}
+            {SHIJING_IA_TABS.filter(tab => (visited.has(tab.id) || activeTab === tab.id) && !shouldGatePrimaryTabForIntake(state.snapshot, tab.id)).map(tab => (
+              <div key={tab.id} hidden={activeTab !== tab.id} className="shijing-mirror-workspace">
+              {renderActiveTab(
+                tab.id,
                 (page, focusTarget) => openPage(page ?? 'profile', focusTarget),
                 startupGuideDismissed,
                 () => setStartupGuideDismissed(true),
-              )
-            )}
+              )}
+              </div>
+            ))}
           </Suspense>
         </main>
         {activePage ? (
@@ -238,8 +244,8 @@ export function ShijingShell(props: ShijingShellProps) {
             <SettingsPageView
               pageId={activePage.pageId}
               focusTarget={activePage.focusTarget}
-              onBack={() => setActivePage(null)}
-              onNavigate={(pageId) => setActivePage({ pageId, focusTarget: null })}
+              onBack={() => { if (navigation.getSnapshot().canGoBack) void navigation.back(); else open({ id: 'mingjing' }); }}
+              onNavigate={(pageId) => openPage(pageId)}
               settingsExtras={props.settingsExtras ?? null}
             />
           </Suspense>

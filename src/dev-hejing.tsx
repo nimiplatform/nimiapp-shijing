@@ -1,3 +1,4 @@
+import { ShijingNavigationProvider } from './product/navigation/app-navigation.tsx';
 // TEMP visual harness for the redesigned HeJing (Relationship Mirror) tab.
 // Mounts the real HeJingTab through real CSS with no Tauri runtime and no
 // backend bootstrap, so the redesign can be screenshotted end to end. Loaded
@@ -54,12 +55,12 @@ function DevHeJing() {
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <I18nextProvider i18n={i18n}>
+    <ShijingNavigationProvider><I18nextProvider i18n={i18n}>
       <NimiThemeProvider accentPack="nimi-accent" defaultScheme="light">
         <TooltipProvider>
           <DevHeJing />
         </TooltipProvider>
       </NimiThemeProvider>
-    </I18nextProvider>
+    </I18nextProvider></ShijingNavigationProvider>
   </React.StrictMode>,
 );

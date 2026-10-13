@@ -42,6 +42,7 @@ export const EN_SHIJING_COPY: ProductCopy['shijing'] = {
   send: 'Send',
   thinking: 'Thinking...',
   resultAria: 'Reading result',
+  positionUnavailable: 'This conversation is unavailable. Go back or start a new question.',
   archive: {
     aria: 'Question archive lens',
     addPrefix: 'Add to concern',

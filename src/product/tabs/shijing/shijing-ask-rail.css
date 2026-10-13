@@ -16,6 +16,8 @@
   min-height: 0;
 }
 
+.shijing-ask__layout[data-rail-visible="false"] { grid-template-columns: minmax(0, 1fr); }
+
 /* ----- History rail (flush sidebar + right hairline, full height) ----- */
 
 .shijing-ask__rail {

@@ -23,6 +23,7 @@ import type { EventMemory } from '../../domain/event-memory.ts';
 import { useRiJingGeneration } from '../daily-rijing/rijing-generation-provider.tsx';
 import { planRiJing } from '../reading/rijing-plan.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
+import { useShijingNavigation } from '../navigation/app-navigation.tsx';
 import { useProductCopy, type ProductCopy } from '../i18n/copy.ts';
 import { classifyMirrorTabState } from './mirror-state.ts';
 import {
@@ -139,6 +140,7 @@ export interface RiJingTabProps {
 }
 
 export function RiJingTab(props: RiJingTabProps) {
+  const { rijingPageRequest, consumeRijingPageRequest } = useShijingNavigation();
   const copy = useProductCopy();
   const { state, persistence_status, persistence_client } = useShijingStore();
   const generation = useRiJingGeneration();
@@ -193,9 +195,10 @@ export function RiJingTab(props: RiJingTabProps) {
   // already attempted, or while another generation runs.
   const requestGeneration = generation.request;
   useEffect(() => {
-    if (!persistenceReady || !readiness.ok || activeTagIds.length === 0 || currentReading) return;
+    if (!rijingPageRequest || !persistenceReady || !readiness.ok || activeTagIds.length === 0) return;
+    if (!consumeRijingPageRequest(rijingPageRequest) || currentReading) return;
     void requestGeneration('page');
-  }, [requestGeneration, persistenceReady, readiness.ok, activeTagIds.length, currentReading, plan.signature]);
+  }, [rijingPageRequest, consumeRijingPageRequest, requestGeneration, persistenceReady, readiness.ok, activeTagIds.length, currentReading, plan.signature]);
 
   function handleGenerate() {
     if (loading || !manualGenerationReady) return;

@@ -46,6 +46,7 @@ import {
 } from '../privacy/presence-verification.ts';
 import { describePersistenceError } from '../persistence/persistence-error-detail.ts';
 import { useProductCopy } from '../i18n/copy.ts';
+import { useShijingNavigation } from '../navigation/app-navigation.tsx';
 
 type ShijingTransientAction = Exclude<ShijingAction, { readonly type: 'snapshot/replace' }>;
 type InitialPersistenceLoadState = 'pending' | 'ready' | 'failed';
@@ -88,6 +89,7 @@ interface ShijingStoreProviderProps {
 }
 
 export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
+  const { initialize } = useShijingNavigation();
   const [state, rawDispatch] = useReducer(
     shijingReducer,
     createInitialState(props.snapshot),
@@ -113,6 +115,7 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
 
   useEffect(() => {
     if (!props.persistenceClient) {
+      initialize(props.snapshot);
       saverRef.current = null;
       lastSavedRef.current = null;
       setInitialPersistenceLoadState('ready');
@@ -133,11 +136,12 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
         rawDispatch({
           type: 'snapshot/replace',
           snapshot: outcome.snapshot,
-          default_tab_policy: 'derive',
         });
         lastSavedRef.current = outcome.snapshot;
+        initialize(outcome.snapshot);
       } else if (outcome.status.kind === 'loaded') {
         lastSavedRef.current = props.snapshot;
+        initialize(props.snapshot);
       }
       setPersistenceStatus(outcome.status);
       setInitialPersistenceLoadState(outcome.status.kind === 'loaded' ? 'ready' : 'failed');
@@ -149,7 +153,7 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
       saverRef.current = null;
       lastSavedRef.current = null;
     };
-  }, [props.persistenceClient, props.persistenceDebounceMs, props.snapshot]);
+  }, [props.persistenceClient, props.persistenceDebounceMs, props.snapshot, initialize]);
 
   const replaceSnapshot = useCallback(async (snapshot: ShiJingSpace): Promise<PersistenceLifecycleStatus> => {
     const client = props.persistenceClient;

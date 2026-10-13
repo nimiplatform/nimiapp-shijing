@@ -1,5 +1,6 @@
 // @nimi-authority: rule.shijing.product.r015
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { app, BrowserWindow, ipcMain, Menu, protocol, session, webContents } from 'electron';
 import { configureNimiElectronAppHostProfile } from '@nimiplatform/kit/shell/electron/host-profile';
@@ -13,7 +14,8 @@ try {
 }
 
 const {
-  createNimiElectronStandardApplicationMenuTemplate,
+  createNimiElectronAppChromeHost,
+  createNimiElectronAppChromeWindowOptions,
   isAllowedElectronRendererUrl,
   registerNimiElectronAppAssetProtocolScheme,
   registerNimiElectronAppBridge,
@@ -34,7 +36,12 @@ const rendererDistUrl = pathToFileURL(rendererDistIndex).toString();
 const developmentRendererUrl = readDevelopmentRendererUrl();
 
 app.setName('ShiJing');
-installShijingStandardApplicationMenu();
+const appPackage = JSON.parse(readFileSync(path.join(appRoot, 'package.json'), 'utf8')) as { version: string; license: string };
+const chromeHost = createNimiElectronAppChromeHost({
+  metadata: { name: '时镜 ShiJing', version: appPackage.version, license: appPackage.license },
+  allowedRendererUrls: [activeRendererUrl()], app,
+  menu: { buildFromTemplate: template => Menu.buildFromTemplate(template as Electron.MenuItemConstructorOptions[]), setApplicationMenu: menu => Menu.setApplicationMenu(menu as Electron.Menu | null) },
+});
 configureShijingElectronChromiumRuntime();
 registerNimiElectronAppAssetProtocolScheme(protocol);
 
@@ -42,6 +49,7 @@ void app.whenReady().then(bootstrapElectron).catch(handleElectronStartupFailure)
 
 async function bootstrapElectron(): Promise<void> {
   registerNimiElectronAppBridge({
+    chromeHost,
     appId: SHIJING_APP_ID,
     allowedRendererUrls: [activeRendererUrl()],
     assetMediaPlatform: { protocol, webRequest: session.defaultSession.webRequest, webContents },
@@ -79,12 +87,6 @@ function configureShijingElectronChromiumRuntime(): void {
   app.commandLine.appendSwitch('disable-background-networking');
 }
 
-function installShijingStandardApplicationMenu(): void {
-  Menu.setApplicationMenu(Menu.buildFromTemplate(
-    createNimiElectronStandardApplicationMenuTemplate({ appName: 'ShiJing' }),
-  ));
-}
-
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
@@ -93,6 +95,7 @@ app.on('window-all-closed', () => {
 
 async function createMainWindow(): Promise<BrowserWindow> {
   const window = new BrowserWindow({
+    ...createNimiElectronAppChromeWindowOptions(process.platform),
     width: 1320,
     height: 900,
     minWidth: 390,
@@ -106,11 +109,14 @@ async function createMainWindow(): Promise<BrowserWindow> {
       sandbox: true,
     },
   });
+  chromeHost.bindWindow(window);
   hardenShijingWindowChrome(window);
   secureShijingWindow(window);
   await window.loadURL(activeRendererUrl());
   return window;
 }
+
+app.on('will-quit', () => chromeHost.dispose());
 
 function activeRendererUrl(): string {
   return developmentRendererUrl || rendererDistUrl;

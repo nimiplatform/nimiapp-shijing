@@ -6,6 +6,7 @@ import {
   type ShijingPrimaryTabId,
 } from './tab-descriptor.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
+import { useShijingDestination, useShijingNavigation } from './app-navigation.tsx';
 import { useProductCopy } from '../i18n/copy.ts';
 import { hasCompletedMingJingStartupIntake } from '../onboarding/startup-intake.ts';
 
@@ -14,7 +15,9 @@ export interface PrimaryTabBarProps {
 }
 
 export function PrimaryTabBar(_props: PrimaryTabBarProps) {
-  const { state, dispatch } = useShijingStore();
+  const { state } = useShijingStore();
+  const { open } = useShijingNavigation();
+  const destination = useShijingDestination();
   const copy = useProductCopy();
   const intakePending = !hasCompletedMingJingStartupIntake(state.snapshot);
   return (
@@ -23,8 +26,8 @@ export function PrimaryTabBar(_props: PrimaryTabBarProps) {
         <button
           key={tab.id}
           type="button"
-          aria-current={state.active_tab === tab.id ? 'page' : undefined}
-          onClick={() => dispatch({ type: 'tab/activate', tab: tab.id })}
+          aria-current={destination.id === tab.id ? 'page' : undefined}
+          onClick={() => open({ id: tab.id })}
           data-mirror-kind={tab.id}
           data-intake-gated={intakePending && tab.id !== 'mingjing' ? '' : undefined}
         >

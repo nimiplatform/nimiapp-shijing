@@ -9,78 +9,37 @@ import {
   shijingReducer,
 } from '../src/product/state/shijing-state.ts';
 import { buildEmptyShiJingSpace } from '../src/product/dev/initial-space.ts';
+import { createShijingNavigation } from '../src/product/navigation/destinations.ts';
 import { validShiJingSpace, validConcernTag } from './_fixtures.mjs';
 
-test('initial state activates MingJing while startup intake is incomplete', () => {
+test('business snapshots contain no writable primary position and do not change navigation', async () => {
+  const navigation = createShijingNavigation();
+  await navigation.push({ id: 'shijing', conversationId: 'actual-reference' });
+  const current = navigation.getSnapshot().current;
   const state = createInitialState(buildEmptyShiJingSpace('u_startup'));
-  assert.equal(state.active_tab, 'mingjing');
-  assert.equal(state.snapshot_status.kind, 'valid');
+  const next = shijingReducer(state, { type: 'snapshot/replace', snapshot: validShiJingSpace({ concern_tags: [validConcernTag('tag_career')] }) });
+  assert.equal('active_tab' in next, false);
+  assert.equal('active_tab_selection' in next, false);
+  assert.equal(next.snapshot_status.kind, 'valid');
+  assert.equal(navigation.getSnapshot().current, current);
+  navigation.dispose();
 });
 
-test('initial state activates RiJing after startup intake is complete', () => {
-  const state = createInitialState(validShiJingSpace({
-    concern_tags: [validConcernTag('tag_career')],
-  }));
-  assert.equal(state.active_tab, 'rijing');
-  assert.equal(state.snapshot_status.kind, 'valid');
-});
-
-test('startup snapshot/replace re-derives default tab while the user has not navigated', () => {
-  const state = createInitialState(buildEmptyShiJingSpace('u_startup'));
-  const completed = validShiJingSpace({
-    concern_tags: [validConcernTag('tag_career')],
-  });
-
-  const next = shijingReducer(state, {
-    type: 'snapshot/replace',
-    snapshot: completed,
-    default_tab_policy: 'derive',
-  });
-
-  assert.equal(next.active_tab, 'rijing');
-});
-
-test('local snapshot/replace keeps the current tab instead of forcing a default jump', () => {
-  const state = createInitialState(buildEmptyShiJingSpace('u_startup'));
-  const completed = validShiJingSpace({
-    concern_tags: [validConcernTag('tag_career')],
-  });
-
-  const next = shijingReducer(state, { type: 'snapshot/replace', snapshot: completed });
-
-  assert.equal(next.active_tab, 'mingjing');
-});
-
-test('startup snapshot/replace preserves an explicit user tab choice', () => {
-  const state = shijingReducer(
-    createInitialState(buildEmptyShiJingSpace('u_startup')),
-    { type: 'tab/activate', tab: 'shijing' },
-  );
-  const completed = validShiJingSpace({
-    concern_tags: [validConcernTag('tag_career')],
-  });
-
-  const next = shijingReducer(state, {
-    type: 'snapshot/replace',
-    snapshot: completed,
-    default_tab_policy: 'derive',
-  });
-
-  assert.equal(next.active_tab, 'shijing');
-});
-
-test('tab/activate switches to admitted tab ids', () => {
-  const state = createInitialState(validShiJingSpace());
-  for (const tab of ALL_TAB_IDS) {
-    const next = shijingReducer(state, { type: 'tab/activate', tab });
-    assert.equal(next.active_tab, tab);
+test('six canonical destinations, dates, settings and explicit unavailable conversation refs share one history', async () => {
+  const navigation = createShijingNavigation();
+  for (const id of ALL_TAB_IDS) assert.equal((await navigation.push({ id })).status === 'invalid', false);
+  await navigation.push({ id: 'yuejing', date: '2026-10-13' });
+  await navigation.push({ id: 'shijing', conversationId: 'not-currently-retained' });
+  await navigation.push({ id: 'settings', page: 'settings', focusTarget: 'method_profile' });
+  await navigation.back(); assert.equal(navigation.getSnapshot().current.destination.conversationId, 'not-currently-retained');
+  await navigation.back(); assert.equal(navigation.getSnapshot().current.destination.date, '2026-10-13');
+  await navigation.forward(); assert.equal(navigation.getSnapshot().current.destination.id, 'shijing');
+  const entry = navigation.getSnapshot().current;
+  for (const invalid of [{ id: 'today' }, { id: 'yuejing', date: '2026-02-30' }, { id: 'shijing', conversationId: 'record', newQuestion: true }, { id: 'settings', page: 'profile', focusTarget: 'method_profile' }, { id: 'shijing', transcript: ['business data'] }]) {
+    assert.equal((await navigation.push(invalid)).status, 'invalid'); assert.equal(navigation.getSnapshot().current, entry);
   }
-});
-
-test('tab/activate ignores unknown tab id', () => {
-  const state = createInitialState(validShiJingSpace());
-  const next = shijingReducer(state, { type: 'tab/activate', tab: 'today' });
-  assert.equal(next, state);
+  navigation.reset({ id: 'mingjing' }); assert.equal(navigation.getSnapshot().canGoBack, false);
+  navigation.dispose();
 });
 
 test('snapshot/replace surfaces invalid snapshot as snapshot_status.invalid', () => {

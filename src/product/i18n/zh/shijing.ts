@@ -42,6 +42,7 @@ export const ZH_SHIJING_COPY: ProductCopy['shijing'] = {
   send: '发送',
   thinking: '正在思考…',
   resultAria: '解读结果',
+  positionUnavailable: '这条会话不可用。可以后退，或开始新提问。',
   archive: {
     aria: '提问归入关注',
     addPrefix: '归入关注',

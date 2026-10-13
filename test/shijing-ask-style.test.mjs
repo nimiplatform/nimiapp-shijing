@@ -287,7 +287,7 @@ test('Ask ShiJing immediately previews a submitted question in the chat thread',
   assert.match(shijingTabSource, /buildPendingConversationPreview/);
   assert.match(
     shijingTabSource,
-    /const resultConversation = pendingConversation \?\? \(draftingNewQuestion \? null : selectedConversation \?\? newestConversation\);/,
+    /const resultConversation = pendingConversation \?\? \(draftingNewQuestion \? null : selectedConversationId \? selectedConversation : newestConversation\);/,
   );
   assert.match(
     shijingTabSource,
@@ -357,10 +357,10 @@ test('Ask ShiJing composer submits on plain Enter from the textarea', () => {
 });
 
 test('Ask ShiJing chat controls match the Codex-style compact composer chrome', () => {
-  assert.match(shijingTabSource, /const \[draftingNewQuestion, setDraftingNewQuestion\]/);
+  assert.match(shijingTabSource, /const draftingNewQuestion = position\.id === 'shijing'/);
   assert.match(shijingTabSource, /className="shijing-ask__new-question"/);
-  assert.match(shijingTabSource, /setDraftingNewQuestion\(true\)/);
-  assert.match(shijingTabSource, /setDraftingNewQuestion\(false\)/);
+  assert.match(shijingTabSource, /owner\.open\(\{ id: 'shijing', newQuestion: true \}\)/);
+  assert.match(shijingTabSource, /conversationId: id/);
   assert.match(shijingTabSource, /aria-label=\{copy\.shijing\.newQuestionAria\}/);
   assert.match(shijingTabSource, /<ArrowUpIcon className="shijing-ask__submit-icon" \/>/);
   assert.doesNotMatch(shijingTabSource, /<span className="shijing-ask__submit-icon" aria-hidden>[\s\S]*?↑[\s\S]*?<\/span>/);

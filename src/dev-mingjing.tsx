@@ -1,3 +1,4 @@
+import { ShijingNavigationProvider } from './product/navigation/app-navigation.tsx';
 // TEMP visual harness for the redesigned 命镜 (Destiny Mirror) tab.
 // Mounts the REAL MingJingTab over a seeded real natal chart (1990-04-12 08:30
 // male, Asia/Shanghai → 丁未日) through the real CSS, with in-memory persistence
@@ -70,8 +71,8 @@ function DevMingJing() {
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <I18nextProvider i18n={i18n}>
+    <ShijingNavigationProvider><I18nextProvider i18n={i18n}>
       <DevMingJing />
-    </I18nextProvider>
+    </I18nextProvider></ShijingNavigationProvider>
   </React.StrictMode>,
 );

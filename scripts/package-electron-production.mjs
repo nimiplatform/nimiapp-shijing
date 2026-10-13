@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { packager } from '@electron/packager';
 import { build } from 'esbuild';
+import { stageProductionDependencyInputs } from './package-dependency-staging.mjs';
 
 const APP_EXECUTABLE_NAME = "nimiapp-shijing-shell";
 const APP_PRODUCT_NAME = "时镜 ShiJing";
@@ -76,7 +77,7 @@ try {
 
   await mkdir(path.join(productionSourceRoot, 'dist-electron'), { recursive: true });
   await copyFile(path.join(appRoot, 'package.json'), path.join(productionSourceRoot, 'package.json'));
-  await copyFile(path.join(appRoot, 'pnpm-lock.yaml'), path.join(productionSourceRoot, 'pnpm-lock.yaml'));
+  await stageProductionDependencyInputs(appRoot, productionSourceRoot);
   await cp(path.join(appRoot, 'dist'), path.join(productionSourceRoot, 'dist'), { recursive: true, force: false });
   await copyFile(path.join(appRoot, 'dist-electron', 'main.js'), path.join(productionSourceRoot, 'dist-electron', 'main.js'));
   await copyFile(path.join(appRoot, 'dist-electron', 'preload.cjs'), path.join(productionSourceRoot, 'dist-electron', 'preload.cjs'));
@@ -87,6 +88,7 @@ try {
   delete productionManifest.devDependencies;
   await writeFile(productionManifestPath, `${JSON.stringify(productionManifest, null, 2)}\n`);
   await rm(path.join(productionSourceRoot, 'pnpm-lock.yaml'));
+  await rm(path.join(productionSourceRoot, 'pnpm-workspace.yaml'));
 
   const nativeDestination = MACOS_BUILD
     ? path.join(stagingRoot, 'nimi-native', 'protected-local')

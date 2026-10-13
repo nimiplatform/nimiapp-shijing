@@ -1,3 +1,4 @@
+import { ShijingNavigationProvider } from './product/navigation/app-navigation.tsx';
 // Dev-only visual fixture for the 问镜 empty and chat layouts. The conversation
 // below is sample content; this entry has no Runtime or persistence adapter
 // and does not verify generation. Loaded only from dev-wenjing.html.
@@ -98,12 +99,12 @@ function DevWenJing() {
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <I18nextProvider i18n={i18n}>
+    <ShijingNavigationProvider><I18nextProvider i18n={i18n}>
       <NimiThemeProvider accentPack="nimi-accent" defaultScheme="light">
         <TooltipProvider>
           <DevWenJing />
         </TooltipProvider>
       </NimiThemeProvider>
-    </I18nextProvider>
+    </I18nextProvider></ShijingNavigationProvider>
   </React.StrictMode>,
 );

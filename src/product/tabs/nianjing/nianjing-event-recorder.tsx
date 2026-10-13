@@ -29,6 +29,7 @@ import {
   upsertEventMemory,
 } from '../../memories/memory-editor-state.ts';
 import { useShijingStore } from '../../state/shijing-store.tsx';
+import { useShijingNavigation } from '../../navigation/app-navigation.tsx';
 import { persistenceWriteSucceeded } from '../../state/persistence-bridge.ts';
 import { ArrowUpIcon } from '../shijing/shijing-icons.tsx';
 import { dailyMirrorScopeForToday } from '../mirror-scope-helpers.ts';
@@ -75,6 +76,7 @@ export interface NianJingEventRecorderProps {
 export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
   const c = useProductCopy().nianjingSurface.eventRecorder;
   const { state, dispatch, replace_snapshot } = useShijingStore();
+  const { open } = useShijingNavigation();
   const today = todayIsoDate();
   const tagId = props.concernTag.id;
 
@@ -176,7 +178,7 @@ export function NianJingEventRecorder(props: NianJingEventRecorderProps) {
 
   function askInShiJing(id: string) {
     dispatch({ type: 'shijing/seed-memory', memory_id: id });
-    dispatch({ type: 'tab/activate', tab: 'shijing' });
+    open({ id: 'shijing', newQuestion: true });
     props.onNavigatedAway();
   }
 

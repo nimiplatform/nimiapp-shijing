@@ -8,6 +8,7 @@ import type { PlanItem } from '../../../domain/plan-item.ts';
 
 import { newEventMemoryId, newPlanItemId } from '../../ids/index.ts';
 import { useShijingStore } from '../../state/shijing-store.tsx';
+import { useShijingNavigation } from '../../navigation/app-navigation.tsx';
 import { persistenceWriteSucceeded } from '../../state/persistence-bridge.ts';
 import { trimmedConcernLabel as yuejingTagLabel } from '../../concern-tags/concern-presets.ts';
 import { AskIcon, ClipboardIcon, CloseIcon, PencilIcon, TrashIcon } from './yuejing-icons.tsx';
@@ -25,6 +26,7 @@ export function YueJingDayPanel(props: {
   const TENDENCY_CLASS_LABELS = useProductCopy().tendencyClassLabels;
   const YUEJING_COPY = useProductCopy().yuejingSurface;
   const { state, dispatch, replace_snapshot } = useShijingStore();
+  const { open } = useShijingNavigation();
   const [draft, setDraft] = useState('');
   // In-place editing state for the 已记录 list. `editingId` is the id
   // of the EventMemory / PlanItem currently being edited; `editDraft`
@@ -194,7 +196,7 @@ export function YueJingDayPanel(props: {
     } else {
       dispatch({ type: 'shijing/seed-memory', memory_id: recordId });
     }
-    dispatch({ type: 'tab/activate', tab: 'shijing' });
+    open({ id: 'shijing', newQuestion: true });
     props.onClose();
   }
 

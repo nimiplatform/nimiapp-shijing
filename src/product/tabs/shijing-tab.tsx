@@ -12,6 +12,8 @@
 // readings (design-system: ShiJing) and the generation依据 drawer.
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { Button, InlineAlert } from '@nimiplatform/kit/ui';
+import { useShijingDestination, useShijingNavigation } from '../navigation/app-navigation.tsx';
 import type { ShiJingMirrorOutput } from '../../domain/mirror-output.ts';
 import type { ReadingGenerationFailure } from '../../domain/reading.ts';
 import type { Conversation, ConversationTurn } from '../../domain/conversation.ts';
@@ -74,10 +76,11 @@ export function ShiJingTab(_props: ShiJingTabProps) {
   const [failure, setFailure] = useState<ReadingGenerationFailure | null>(null);
   const [question, setQuestion] = useState('');
   const [search, setSearch] = useState('');
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const owner = useShijingNavigation(), position = useShijingDestination();
+  const selectedConversationId = position.id === 'shijing' ? position.conversationId ?? null : null;
   const [pendingConversation, setPendingConversation] = useState<Conversation | null>(null);
   const [pendingTurnIds, setPendingTurnIds] = useState<readonly string[]>([]);
-  const [draftingNewQuestion, setDraftingNewQuestion] = useState(false);
+  const draftingNewQuestion = position.id === 'shijing' && position.newQuestion === true;
   const [selectedArchiveConcernIds, setSelectedArchiveConcernIds] = useState<string[]>([]);
   const [dismissedArchiveConcernIds, setDismissedArchiveConcernIds] = useState<string[]>([]);
   const [selectedFilterConcernIds, setSelectedFilterConcernIds] = useState<string[]>([]);
@@ -176,7 +179,9 @@ export function ShiJingTab(_props: ShiJingTabProps) {
   const selectedConversation = selectedConversationId
     ? conversations.find((c) => c.id === selectedConversationId) ?? null
     : null;
-  const resultConversation = pendingConversation ?? (draftingNewQuestion ? null : selectedConversation ?? newestConversation);
+  const selectedConversationUnavailable = selectedConversationId !== null && selectedConversation === null;
+  const resultConversation = pendingConversation ?? (draftingNewQuestion ? null : selectedConversationId ? selectedConversation : newestConversation);
+  useEffect(() => { owner.setRailAvailable(position.id === 'shijing' && !selectedConversationUnavailable); return () => owner.setRailAvailable(false); }, [position.id, selectedConversationUnavailable, owner.setRailAvailable]);
   const followUpConversation =
     pendingConversation == null && !draftingNewQuestion && resultConversation != null && importedIds.length === 0 && seedCount === 0
       ? resultConversation
@@ -198,6 +203,11 @@ export function ShiJingTab(_props: ShiJingTabProps) {
 
   async function handleAsk(e?: FormEvent) {
     e?.preventDefault();
+    const submittedEntry = owner.navigation.getSnapshot();
+    const selectSavedConversation = (conversationId: string) => {
+      const current = owner.navigation.getSnapshot();
+      if (current.generation === submittedEntry.generation && current.current.key === submittedEntry.current.key) void owner.navigation.replace({ id: 'shijing', conversationId });
+    };
     const q = question.trim();
     if (q.length === 0) return;
     if (followUpConversation) {
@@ -241,8 +251,7 @@ export function ShiJingTab(_props: ShiJingTabProps) {
       if (!persistenceWriteSucceeded(persistence)) return;
       setPendingConversation(null);
       setPendingTurnIds([]);
-      setSelectedConversationId(followUpConversation.id);
-      setDraftingNewQuestion(false);
+      selectSavedConversation(followUpConversation.id);
       return;
     }
     if (sourceReadingIds.length === 0) return;
@@ -265,7 +274,6 @@ export function ShiJingTab(_props: ShiJingTabProps) {
     });
     setPendingConversation(pending.conversation);
     setPendingTurnIds(pending.pendingTurnIds);
-    setDraftingNewQuestion(false);
     setLoading(true);
     setFailure(null);
     setQuestion('');
@@ -333,8 +341,7 @@ export function ShiJingTab(_props: ShiJingTabProps) {
     setPendingTurnIds([]);
     setSelectedArchiveConcernIds([]);
     setDismissedArchiveConcernIds([]);
-    setSelectedConversationId(convId);
-    setDraftingNewQuestion(false);
+    selectSavedConversation(convId);
     dispatch({ type: 'shijing/clear-import-bus' });
     dispatch({ type: 'shijing/clear-seed-memory' });
     dispatch({ type: 'shijing/clear-seed-plan' });
@@ -381,8 +388,7 @@ export function ShiJingTab(_props: ShiJingTabProps) {
   function startNewQuestion() {
     setPendingConversation(null);
     setPendingTurnIds([]);
-    setDraftingNewQuestion(true);
-    setSelectedConversationId(null);
+    owner.open({ id: 'shijing', newQuestion: true });
     setQuestion('');
     setSelectedArchiveConcernIds([]);
     setDismissedArchiveConcernIds([]);
@@ -440,11 +446,15 @@ export function ShiJingTab(_props: ShiJingTabProps) {
   function selectConversation(id: string) {
     setPendingConversation(null);
     setPendingTurnIds([]);
-    setDraftingNewQuestion(false);
-    setSelectedConversationId(id);
+    owner.open({ id: 'shijing', conversationId: id });
     setQuestion('');
     setFailure(null);
   }
+
+  if (selectedConversationUnavailable) return <section className="shijing-tab shijing-shijing" data-mirror-kind="shijing"><InlineAlert tone="warning">
+    <p>{copy.shijing.positionUnavailable}</p>
+    <Button onClick={() => owner.open({ id: 'shijing', newQuestion: true })}>{copy.shijing.newQuestion}</Button>
+  </InlineAlert></section>;
 
   return (
     <section
@@ -452,8 +462,8 @@ export function ShiJingTab(_props: ShiJingTabProps) {
       data-mirror-kind="shijing"
       aria-label={copy.mirrorKindLabels.shijing}
     >
-      <div className="shijing-ask__layout">
-        <ShiJingHistoryRail
+      <div className="shijing-ask__layout" data-rail-visible={owner.sidebarVisible}>
+        {owner.sidebarVisible ? <ShiJingHistoryRail
           search={search}
           filterOpen={filterOpen}
           selectedFilterConcernIds={selectedFilterConcernIds}
@@ -468,7 +478,7 @@ export function ShiJingTab(_props: ShiJingTabProps) {
           onToggleFilterConcern={toggleFilterConcern}
           onStartNewQuestion={startNewQuestion}
           onSelectConversation={selectConversation}
-        />
+        /> : null}
 
         <div className="shijing-ask__main" data-chat-active={chatActive ? 'true' : 'false'}>
           {chatActive ? (

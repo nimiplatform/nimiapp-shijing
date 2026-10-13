@@ -37,6 +37,7 @@ import {
   latestReadingByMirrorKind,
 } from '../reading/reading-selectors.ts';
 import { useShijingStore } from '../state/shijing-store.tsx';
+import { useShijingDestination, useShijingNavigation } from '../navigation/app-navigation.tsx';
 import { rolling30DayMirrorScopeFromDate } from './mirror-scope-helpers.ts';
 import { classifyMirrorTabState } from './mirror-state.ts';
 import { persistenceReadyForAutoGeneration } from './auto-generation-readiness.ts';
@@ -73,6 +74,7 @@ export interface YueJingTabProps {
 }
 
 export function YueJingTab(props: YueJingTabProps) {
+  const position = useShijingDestination(), owner = useShijingNavigation();
   const copy = useProductCopy();
   const tabCopy = copy.yuejingSurface.tab;
   const {
@@ -91,7 +93,11 @@ export function YueJingTab(props: YueJingTabProps) {
   // Lifted so the day-detail panel can render at the YueJingTab level
   // (full-viewport right-side drawer) instead of being trapped inside
   // the calendar grid as an inline row-spanning element.
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const selectedDate = position.id === 'yuejing' ? position.date ?? null : null;
+  const setSelectedDate = (date: string | null) => {
+    const current = owner.navigation.getSnapshot().current.destination;
+    if (current.id === 'yuejing') owner.open({ ...current, date: date ?? undefined });
+  };
 
   const today = todayLocalDate();
   const activeTags = useMemo(

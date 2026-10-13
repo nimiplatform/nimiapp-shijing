@@ -26,6 +26,9 @@
   background: var(--shijing-surface-canvas);
 }
 
+.shijing-mirror-workspace { height: 100%; min-height: 0; }
+.shijing-mirror-workspace[hidden] { display: none; }
+
 /* ----- Integrated top bar (brand + six-tab mirror nav + account) ----- */
 
 .shijing-topbar {
