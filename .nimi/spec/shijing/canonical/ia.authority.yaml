@@ -182,3 +182,15 @@ units:
     relations:
       - type: applies_to
         target: definition.shijing.ia.rijing-almanac
+  - id: rule.shijing.ia.r011
+    kind: rule
+    title: Single position and optional consultation rail
+    modality: must
+    statement: One standard Kit navigation controller owns the six ordered primary destinations, secondary Settings page/focus, and typed date or consultation references; current position alone derives primary highlight and rendered page. Writable shell activePage and reducer active_tab are removed; business reducers, Reading records and algorithms retain ownership. Only the existing Consultation Mirror session rail exposes optional fold, hiding fold button, menu and shortcut help on all other pages. Back, forward and fold never generate, recompute, write a Reading or send consultation work; new windows and invalidated protected scopes create fresh in-memory history and preserve App-owned business persistence.
+    condition: Whenever an App consumes standard Kit navigation or chrome.
+    failure: Reject the invalid declaration or transition before executing it; retain the previous valid state and surface the typed failure.
+    relations:
+      - type: applies_to
+        target: definition.shijing.ia.primary-navigation
+      - type: applies_to
+        target: definition.shijing.ia.secondary-settings
