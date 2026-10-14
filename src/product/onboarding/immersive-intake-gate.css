@@ -357,10 +357,6 @@
   color: #f2eedd;
 }
 
-.shijing-shell:has(.shijing-intake-hero) .shijing-topbar__tagline {
-  color: rgba(240, 242, 230, 0.55);
-}
-
 .shijing-shell:has(.shijing-intake-hero) .shijing-primary-tabbar button {
   color: rgba(238, 242, 232, 0.64);
 }

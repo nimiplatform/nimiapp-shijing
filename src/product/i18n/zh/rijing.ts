@@ -14,7 +14,7 @@ export const ZH_RIJING_COPY: ProductCopy['rijing'] = {
   headlineFallback: '尚未生成今日日镜',
   leaningFallback: '平稳',
   eyebrow: '今日总览',
-  defaultReminder: '今日可以稳定推进，仍记得在动作前再做一次"是否真的准备好了"的确认。',
+  defaultReminder: "今日适合稳步推进，行动前不妨再确认一次：真的准备好了吗？",
   defaultConfidenceNote: '推演基于完整资料，结论可作为节奏参考。',
   confidenceLabels: {
     high: '较高',
@@ -45,11 +45,11 @@ export const ZH_RIJING_COPY: ProductCopy['rijing'] = {
     persistence_pending: {
       description: '正在加载本地数据，完成后才能生成今日日镜。',
       confidence_note: '本地快照尚未就绪。',
-      reminder: '等待本地数据加载完成，可以避免覆盖尚未读取的快照。',
+      reminder: "请等待本地数据加载完成，以免覆盖原有记录。",
     },
     persistence_failed: {
       description: '本地数据读写失败，日镜已停止生成以保护快照一致性。',
-      confidence_note: '本地持久化不可用。',
+      confidence_note: "本地数据存储当前不可用。",
       reminder: '请到设置检查隐私与本地数据，再重新生成今日日镜。',
     },
   },
@@ -67,12 +67,12 @@ export const ZH_RIJING_COPY: ProductCopy['rijing'] = {
   },
   refreshAria: {
     loading: '生成中…',
-    persistenceFailed: '本地数据读写失败,请先在设置中处理',
-    persistencePending: '本地数据加载中,暂不能生成今日',
-    profileIncomplete: '资料还不足以生成今日',
+    persistenceFailed: "本地数据读写失败，请先在设置中处理",
+    persistencePending: "本地数据加载中，暂不能生成今日",
+    profileIncomplete: "资料尚不完整，无法生成今日日镜",
     missingFocus: '去设置关注，激活一个关注后生成日镜',
-    regenerate: '重新生成今日',
-    refresh: '刷新今日',
+    regenerate: "重新生成今日日镜",
+    refresh: "刷新今日日镜",
   },
   emptyTagsTitle: '还没有激活关注',
   emptyTagsStatus: '日镜需要至少一个关注作为镜片，才会生成今天的判断。',
@@ -155,8 +155,8 @@ export const ZH_RIJING_COPY: ProductCopy['rijing'] = {
         body: '补充后即可生成今日日镜。',
       },
       natal_inputs_invalid: {
-        title: '资料完整度：本人生辰待建立',
-        body: '补充后即可生成今日日镜。',
+        title: "资料完整度：生辰资料待核对",
+        body: "核对并完善本人生辰后，即可生成今日日镜。",
       },
       scaffold_default_natal_inputs: {
         title: '资料完整度：本人生辰待建立',
@@ -175,16 +175,16 @@ export const ZH_RIJING_COPY: ProductCopy['rijing'] = {
         body: '请切换到当前功能已支持的推演方法后再生成。',
       },
       mingjing_route_unavailable: {
-        title: '当前命镜路线尚未接入',
-        body: '请切换到已实现的命镜路线后再查看。',
+        title: "当前命镜路线暂不可用",
+        body: "请先切换到已支持的命镜路线后再查看。",
       },
       birth_precision_rough_year_for_mirror: {
-        title: '资料完整度：出生时间需补到月或日',
-        body: '当前仅约到年，非本命解读会受限。',
+        title: "资料完整度：出生时间需精确到月或日",
+        body: "目前仅填到出生年份，本命以外的解读会受限。",
       },
       birth_precision_rough_month_for_dayun: {
-        title: '资料完整度：出生时间建议补到日',
-        body: '当前仅约到月，需要大运的判断会偏移。',
+        title: "资料完整度：出生时间建议精确到日",
+        body: "目前仅填到出生月份，涉及大运的判断可能存在偏差。",
       },
       calculation_sex_unspecified_for_dayun: {
         title: '资料完整度：性别待补充',
@@ -206,7 +206,7 @@ export const ZH_RIJING_COPY: ProductCopy['rijing'] = {
     allLabel: '全部',
     filterAria: '按关注视角筛选',
     manage: '编辑关注',
-    editorSubtitle: '激活的关注会进入日镜生成与今日关注分镜；已生成读数保留当时快照，下一次生成会使用新的关注。',
+    editorSubtitle: "已激活的关注会用于生成今日日镜与各关注分镜。当前已生成的内容会保留原样，更改将在下一次生成时生效。",
     expandAria: (name) => `展开「${name}」分镜`,
   },
   evidence: {
@@ -270,16 +270,16 @@ export const ZH_RIJING_COPY: ProductCopy['rijing'] = {
     badGodsTitle: '凶神宜忌',
     hoursTitle: '时辰吉凶',
     unavailableTitle: '当日黄历不可用',
-    unavailableBody: '当前日期无法被日历算法识别，因此不展示替代或伪造的黄历内容。',
+    unavailableBody: "日历算法无法识别当前日期，因此不提供替代或虚构的黄历内容。",
   },
   intakeHero: {
     ariaLabel: '日镜建档引导',
     eyebrow: 'DAILY MIRROR',
     titleLead: '在时光中，',
     titleEmphasis: '看见今天的自己',
-    body: '日镜，从你的出生资料出发，解析今日的能量流转与生活节奏。在变化的日子里，找到属于自己的方向。',
+    body: "日镜从你的出生信息出发，解析今日的能量流转与生活节奏，在变化的日子里找到属于自己的方向。",
     action: '前往命镜建档',
-    subnote: '完成个人命盘，开启你的时光之旅',
+    subnote: "建立个人命盘，开启你的时光之旅",
     footer: '每一个今天，都是通往更好自己的起点。',
   },
 };

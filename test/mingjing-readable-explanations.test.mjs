@@ -76,9 +76,9 @@ test('MingJing liunian cards lead with plain-language guidance and collapse evid
   assert.doesNotMatch(source, /shijing-liunian__nature/u);
 
   assert.match(i18nCopySource, /这里不是给每一年打分/u);
-  assert.match(i18nCopySource, /适合主动推进、稳步积累、放缓观察、守住边界或处理转折/u);
-  assert.match(i18nCopySource, /查看算法依据/u);
-  assert.match(i18nCopySource, /为什么被标出来/u);
+  assert.match(i18nCopySource, /适合主动推进、稳步积累、放缓观察、守住边界，还是应对转折/u);
+  assert.match(i18nCopySource, /查看推演依据/u);
+  assert.match(i18nCopySource, /具体依据/u);
 });
 
 test('MingJing dayun explains twelve-stage terms that users may misread', () => {

@@ -8,7 +8,7 @@ export const EN_MINGJING_COPY: ProductCopy['mingjing'] = {
   title: 'Destiny Mirror',
   eyebrow: 'Natal chart · whole-life reading',
   subtitle:
-    'A one-time whole-life chart reading: pillar layout, original structure, DaYun arc, and the key future-year windows.',
+    "A full natal-chart reading: pillar layout, core structure, DaYun arc, and key future-year windows.",
   loadingStatus: 'Casting the natal chart…',
   failureTitle: 'Chart could not be cast',
   hero: {
@@ -22,31 +22,31 @@ export const EN_MINGJING_COPY: ProductCopy['mingjing'] = {
     seeStages: 'See each life stage →',
   },
   readiness: {
-    title: 'Complete the birth data before the Destiny Mirror',
+    title: "Complete birth data before using Destiny Mirror",
     button: 'Complete birth data',
-    fallback: 'Birth data must be completed first.',
+    fallback: "Please complete your birth data first.",
     reasons: {
-      subject_missing: 'No self profile yet — the chart cannot be cast.',
-      natal_inputs_invalid: 'Birth data is incomplete; please complete it first.',
-      scaffold_default_natal_inputs: 'Still a placeholder birth record — enter the real birth data first.',
+      subject_missing: "No personal profile yet—create one first to cast your chart.",
+      natal_inputs_invalid: "Your birth data is incomplete. Please fill in the missing details first.",
+      scaffold_default_natal_inputs: "This profile still uses placeholder birth data. Please enter your actual birth details first.",
       birth_precision_unknown: 'Birth-time precision is unknown; a full chart cannot be cast.',
-      birth_location_unresolved: 'Birth place is still the default — complete place and time zone first.',
-      method_profile_unsupported_for_feature: 'The selected method does not support the current Destiny Mirror natal chart yet. Switch to BaZi Ziping first.',
-      mingjing_route_unavailable: 'The selected method route is not implemented for Destiny Mirror yet. Switch to an implemented route first.',
-      birth_time_required_for_method: 'The Destiny Mirror needs an exact birth time (to the hour).',
-      birth_precision_rough_year_for_mirror: 'Birth time is only to the year; four pillars cannot be cast.',
-      birth_precision_rough_month_for_dayun: 'Birth time is only to the month; DaYun cannot be derived.',
-      calculation_sex_unspecified_for_dayun: 'Calculation sex (for DaYun direction) is missing — complete it first.',
+      birth_location_unresolved: "Birthplace is still set to the default. Please set your actual birthplace and time zone first.",
+      method_profile_unsupported_for_feature: "The selected method isn’t supported in Destiny Mirror yet. Please switch to BaZi Ziping.",
+      mingjing_route_unavailable: "This method route isn’t available in Destiny Mirror yet. Please switch to a supported route.",
+      birth_time_required_for_method: "Destiny Mirror requires a birth time accurate to the hour.",
+      birth_precision_rough_year_for_mirror: "Birth time is only accurate to the year, so the four pillars cannot be cast.",
+      birth_precision_rough_month_for_dayun: "Birth time is only accurate to the month, so DaYun cannot be calculated.",
+      calculation_sex_unspecified_for_dayun: "Sex for chart calculation (used for DaYun direction) is missing—please set it first.",
     },
   },
   paipan: {
     title: 'Pillar Layout',
     intro: 'Four pillars, ten gods, hidden stems, nayin, twelve stages, and 空亡 (void).',
     explanation:
-      'The four pillars record the stems and branches for birth year, month, day, and hour. The Day pillar / Day Master identifies the subject; the other pillars present structure at different time positions. The rows below expose ten-god, nayin, stage, hidden-stem, and void data.',
+      "The four pillars record the Heavenly Stems and Earthly Branches for your birth year, month, day, and hour. The Day Stem is the Day Master, the chart’s marker for you. Below are the Ten Gods, Nayin, Twelve Stages, Hidden Stems, and Void (空亡) for each pillar.",
     sectionTitle: 'Natal chart',
     sectionIntro:
-      'The four pillars record the stem-branch structure for birth year, month, day, and hour. The Day stem is the Day Master marker; the other positions show relation, element, and hidden-stem context.',
+      "The four pillars show the stem-branch structure of your birth year, month, day, and hour. The Day Stem marks the Day Master (you), while the other positions show elemental relations and hidden stems.",
     roles: { year: 'Year / roots', month: 'Month / context', day: 'Day Master', hour: 'Hour / later arc' },
     dayBadge: 'Day Master',
     expand: 'Show full layout (hidden stems · nayin · stages · void)',
@@ -70,7 +70,7 @@ export const EN_MINGJING_COPY: ProductCopy['mingjing'] = {
   fiveElements: {
     title: 'Five-Element Balance',
     explanation:
-      'Bar height indicates the relative concentration of each element in the chart. This distribution is not a score; it provides context for identifying emphasis, relative scarcity, and later useful / adverse element judgments.',
+      "Bar height shows the relative weight of each element in your chart. Rather than a score, this distribution highlights where energy is concentrated or scarce, providing context for evaluating favorable and unfavorable elements.",
     labels: { wood: 'Wood', fire: 'Fire', earth: 'Earth', metal: 'Metal', water: 'Water' },
     dominant: 'Strongest',
     weakest: 'Weakest',
@@ -80,7 +80,7 @@ export const EN_MINGJING_COPY: ProductCopy['mingjing'] = {
   geju: {
     title: 'Original Structure',
     explanation:
-      'This section combines the layout into a readable judgment: day-master strength shows capacity, pattern shows default style, useful/favourable/avoid elements show where to lean or restrain, and branch relations show inner tension.',
+      "This section synthesizes the chart into a structural reading: Day Master strength reflects core capacity, Pattern indicates your natural style, favorable and unfavorable elements show where to lean in or hold back, and branch relations reveal internal tension.",
     strengthLabel: 'Day-master strength',
     supportRatioLabel: 'Support ratio',
     patternLabel: 'Pattern',
@@ -100,10 +100,10 @@ export const EN_MINGJING_COPY: ProductCopy['mingjing'] = {
   dayun: {
     title: 'DaYun Arc',
     explanation:
-      'DaYun presents long-term background phases at roughly decade scale. MingJing keeps the complete chart sequence; detailed future-year reading belongs in NianJing.',
+      "DaYun outlines long-term life phases in roughly ten-year arcs. MingJing presents the full sequence across your chart, while NianJing covers detailed year-by-year readings.",
     sectionTitle: 'DaYun Chart Sequence',
     sectionIntro:
-      'Each DaYun phase covers roughly ten years. Color indicates phase nature; You are here marks the active long-term phase.',
+      "Each DaYun phase spans about ten years. Colors show the nature of each phase, and “You are here” marks your current phase.",
     introSegments: ({ currentNatureLabel, highlightAge }) => {
       const out: { text: string; tone?: 'current' | 'highlight' }[] = [
         { text: 'This keeps the complete DaYun sequence as a professional natal-chart structure. ' },
@@ -146,23 +146,23 @@ export const EN_MINGJING_COPY: ProductCopy['mingjing'] = {
         正印: 'Zhengyin is active: mentors, learning, credentials, and systemic protection stand out.',
         偏印: 'Pianyin is active: intuition, redirection, independent judgment, and non-standard paths increase.',
         食神: 'Shishen is active: expression, output, care, and steady creativity are amplified.',
-        伤官: 'Shangguan is active: self-expression, anti-rule pressure, and technical edge become sharper.',
-        比肩: 'Bijian is active: autonomy, peer competition, and personal boundaries move forward.',
-        劫财: 'Jiecai is active: cooperation, allocation, competition, and resource sharing need proportion.',
+        伤官: "Shangguan is active: self-expression, the urge to challenge conventions, and your technical edge become sharper.",
+        比肩: "Bijian is active: autonomy, peer competition, and personal boundaries come to the fore.",
+        劫财: "Jiecai is active: cooperation, allocation, competition, and resource sharing call for clear boundaries and balance.",
       };
       const natureNotes: Record<string, string> = {
         Supportive: 'This phase can borrow momentum more easily; push resources, capability, and stable relationships forward.',
         Watch: 'Do not force it. Carry less alone and borrow more structure: reliable people and stable systems matter more than going solo.',
         Blocked: 'Resistance is heavier here. Protect boundaries and rhythm before expanding.',
         Steady: 'Volatility is lower here. Build foundations and let long-term habits settle.',
-        Turning: 'A real switch is active here. Watch where the change comes from before deciding whether to turn or contract.',
+        Turning: "This chart marks a transition here. Consider where change may be coming from before deciding whether to pivot or consolidate.",
       };
       const next = input.nextStartAge ? `After this, age ${input.nextStartAge} opens the next rhythm.` : '';
       const relation = input.relationText ? `${input.relationText}.` : '';
       const terrainNote = input.terrain === '死'
         ? 'Si is a twelve-stage term for closure and old-pattern release; it is not a death or lifespan claim.'
         : `The twelve-stage position is ${enTwelveStageLabel(input.terrain)}.`;
-      return `${tenGodNotes[input.tenGod] ?? `${input.tenGod} is active; this phase turns around that theme.`}${input.current ? 'You are here. ' : ''}${natureNotes[input.nature] ?? 'Use effort according to this phase quality.'}${relation}${next}${terrainNote} Technically this combines ${input.tenGod}, ${enTwelveStageLabel(input.terrain)}, and ${input.favor}.`;
+      return `${tenGodNotes[input.tenGod] ?? `${input.tenGod} is active; this phase turns around that theme.`}${input.current ? 'You are here. ' : ''}${natureNotes[input.nature] ?? "Align your efforts with the nature of this phase."}${relation}${next}${terrainNote} Technically this combines ${input.tenGod}, ${enTwelveStageLabel(input.terrain)}, and ${input.favor}.`;
     },
     cols: {
       age: 'Age',
@@ -177,11 +177,11 @@ export const EN_MINGJING_COPY: ProductCopy['mingjing'] = {
   },
   liunian: {
     title: 'Key Year Windows',
-    intro: 'This is not a score for every year. It pulls out the future stretches that need planning ahead.',
+    intro: "Rather than scoring every year, this highlights the future windows worth planning around.",
     explanation:
-      'The colour shows the overall tendency of this stretch: push, consolidate, slow down, hold boundaries, or handle a turn. Pillars, branch relations, and favourable/adverse evidence are shown only as algorithmic evidence, never as destiny scores.',
+      "Colors indicate the overall tendency of each window: push ahead, consolidate, slow down, hold boundaries, or navigate a turn. Pillars, branch relations, and favorable or adverse indicators are shown only as algorithmic basis, never as destiny scores.",
     sectionTitle: 'Year stretches to plan around',
-    sectionIntro: 'Read whether this stretch asks for action, steadiness, or caution first, then expand the evidence only if needed.',
+    sectionIntro: "Start by reading whether a window calls for action, steadiness, or caution, then expand the algorithmic evidence whenever needed.",
     detailToggle: 'View algorithm evidence',
     horizon: (start, end) => `Future window ${start}–${end}`,
     salienceLabels: { high: 'Prioritise', medium: 'Keep in view' },
@@ -199,7 +199,7 @@ export const EN_MINGJING_COPY: ProductCopy['mingjing'] = {
     eyebrow: 'AI reading · grounded in your history',
     coreTitle: 'Core character & long-term strategy',
     explanation:
-      'This module calls Runtime AI to translate the deterministic chart, phase structure, and recorded events into a structured reading. If runtime fails, the failure state is shown and no substitute content is generated.',
+      "This module uses Runtime AI to synthesize your deterministic chart, life phases, and recorded events into a structured reading. If Runtime AI fails, the error state is shown directly and no fallback content is generated.",
     coreLabels: {
       personality: 'Temperament',
       strengths: 'Strengths',
@@ -304,10 +304,10 @@ export const EN_MINGJING_COPY: ProductCopy['mingjing'] = {
     viewToggleAria: 'Switch between plain reading and raw data',
     explainerTitle: 'What this method looks at',
     explainerBody:
-      'QiZheng SiYu (also called GuoLao) is a classical Chinese star method. It projects the sky overhead at the moment of your birth into one chart: it reads where the eleven bodies fall across the twelve houses of life, drawing out your gifts, lessons and rhythm.',
-    qizhengCardTitle: 'seven real bodies',
+      "QiZheng SiYu (also called GuoLao) is a classical Chinese astrological method. Its chart places seven celestial bodies and four calculated points across twelve houses, offering a traditional lens on life’s themes and rhythms.",
+    qizhengCardTitle: "Seven celestial bodies",
     qizhengCardBody: 'Sun · Moon · Mercury · Venus · Mars · Jupiter · Saturn (the lights plus the five planets)',
-    siyuCardTitle: 'four invisible shadow stars',
+    siyuCardTitle: "Four invisible shadow stars",
     siyuCardBody: 'LuoHou · JiDu · YueBei · ZiQi (clues derived from the lunar orbit)',
     explainerHint: 'Dashed terms can be hovered or tapped for a definition. Technical terms are annotated in place.',
     chartTitle: 'Chart wheel',
@@ -336,9 +336,9 @@ export const EN_MINGJING_COPY: ProductCopy['mingjing'] = {
   },
   events: {
     title: 'Calibrate the chart with your past',
-    intro: 'Recorded life events (work, relationships, relocation, major decisions, and similar milestones) are placed on the DaYun and key-year timeline.',
+    intro: "Add past milestones—career moves, relationships, relocations, or major decisions—to see where they land on your DaYun and annual timeline.",
     explanation:
-      'Historical events are mapped to DaYun and key-year positions to inspect the relationship between event timing and chart phases. These records affect explanation grounding only; they do not rewrite the chart.',
+      "Mapping past events onto your DaYun and annual pillars helps you see how real-life turning points align with your chart’s phases. These records only ground the reading in your lived experience—they never alter the chart itself.",
     dateLabel: 'Date',
     datePlaceholder: 'yyyy/mm/dd',
     bodyLabel: 'Event',
@@ -349,26 +349,26 @@ export const EN_MINGJING_COPY: ProductCopy['mingjing'] = {
     delete: 'Delete',
     dayunColumn: 'DaYun',
     liunianColumn: 'Year pillar',
-    preGenHint: 'Below is the deterministic timeline placement; after you generate the reading, the AI weaves these into a closer narrative.',
+    preGenHint: "Below is where each event lands on your chart timeline. When you generate a reading, the AI weaves these milestones into a more personal narrative.",
   },
   rectify: {
     title: 'Birth-Time Rectification',
-    intro: 'When birth hour is uncertain, recorded events can be used to rank deterministic candidate hours.',
-    howItWorks: 'The hour affects DaYun start age and transition years. The system tests 12 candidate hours and compares their DaYun / year timelines with recorded events; the corrected field is the birth-hour input, not the chart rules.',
-    needMoreEvents: 'Record at least 2 major life events (job change, a relationship beginning/ending, relocation, a big decision…) to rectify.',
-    unsupportedCalendar: 'Rectification currently supports Gregorian birth dates.',
-    sexRequired: 'Set the calculation sex (for DaYun direction) first.',
+    intro: "If your birth hour is uncertain, compare candidate-hour charts against the life events you have recorded. The ranking reflects the method’s rules; it cannot confirm your actual birth time.",
+    howItWorks: "Your birth hour affects when each DaYun begins and shifts. We test all 12 traditional hours against your recorded events to see which timeline aligns best. Adopting a match simply updates your birth-hour input—the underlying chart rules stay the same.",
+    needMoreEvents: "Record at least 2 major life events (such as a job change, relationship milestone, relocation, or big decision) to compare candidate birth hours.",
+    unsupportedCalendar: "Birth-time rectification currently requires a Gregorian birth date.",
+    sexRequired: "Select a calculation sex first (needed to determine DaYun direction).",
     confidenceLabel: 'Confidence',
     confidenceValues: { high: 'High', medium: 'Medium', low: 'Low' },
-    lowConfidenceCaveat: 'The 时辰 are hard to separate — add more events (especially turning points) to improve accuracy.',
+    lowConfidenceCaveat: "The candidate birth hours are hard to distinguish—add more past events, especially major turning points, to help tell them apart.",
     recommended: 'Recommended',
     fitLabel: 'Fit',
     startAge: (age) => `Starts DaYun at ${age}`,
     hourPillarLabel: 'Hour pillar',
     alignedLabel: 'Aligned events',
     adopt: 'Use this birth time',
-    entryLive: 'Doubt the result? Back-solve and correct your birth hour from major life events →',
-    entryBlocked: 'Don’t know the exact hour? Back-solve it from life events →',
+    entryLive: "Unsure of your birth hour? Compare candidate charts with past events →",
+    entryBlocked: "Don’t know your exact birth hour? Explore candidate-hour charts →",
     earlyZi: 'early 子时',
     lateZi: 'late 子时',
     shichenSuffix: '时',

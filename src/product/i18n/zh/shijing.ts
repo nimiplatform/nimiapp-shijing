@@ -4,11 +4,11 @@ import type { ProductCopy } from '../copy-types.ts';
 
 export const ZH_SHIJING_COPY: ProductCopy['shijing'] = {
   composerPlaceholder: [
-    '接下来一个月，我该不该换工作?',
-    '这段关系现在最需要注意什么?',
-    '最近反复焦虑，是阶段变化还是方向不清?',
+    "接下来一个月，我该不该换工作？",
+    "这段关系现在最需要注意什么？",
+    "最近反复焦虑，是阶段变化还是方向不清？",
   ].join('\n'),
-  unrecordedQuestion: '(未记录问题)',
+  unrecordedQuestion: "（未记录问题）",
   sessionGroups: {
     today: '今天',
     week: '本周',
@@ -47,7 +47,7 @@ export const ZH_SHIJING_COPY: ProductCopy['shijing'] = {
     aria: '提问归入关注',
     addPrefix: '归入关注',
     addAria: (label) => `归入关注 ${label}`,
-    removeAria: (label) => `移除归入关注 ${label}`,
+    removeAria: (label) => `取消归入关注 ${label}`,
     filterButton: '筛选关注',
     filterButtonActive: (count) => `筛选关注，已选 ${count} 项`,
     filterMenuAria: '按关注筛选提问记录',
@@ -60,10 +60,10 @@ export const ZH_SHIJING_COPY: ProductCopy['shijing'] = {
   context: {
     aria: '上下文焦点',
     title: '上下文焦点',
-    description: '当前激活的关注会自动影响本次问镜解读。',
+    description: "当前启用的关注会自动纳入本次问镜解读。",
     empty: '未设置关注',
     manage: '编辑关注',
-    editorSubtitle: '激活的关注会进入本次问镜上下文，生成时作为引用语境冻结。',
+    editorSubtitle: "已启用的关注会纳入本次问镜背景，并在生成解读时固定为当时的参考语境。",
   },
   answerFields: {
     riskLevel: '风险等级',

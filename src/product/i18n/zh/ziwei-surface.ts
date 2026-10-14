@@ -16,7 +16,7 @@ export const ZH_ZIWEI_SURFACE_COPY = {
   interpretationTitle: '宫位解读',
   decadeTitle: '大限指引',
   decadeEmpty: '生成解读后，这里会显示该大限的主题与行动建议。',
-  soulRole: '命主宫',
+  soulRole: "命宫",
   bodyRole: '身宫',
   selectedRole: '当前查看',
   basis: {

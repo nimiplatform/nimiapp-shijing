@@ -48,9 +48,9 @@ const RELATIONSHIP_OUTPUT: MingJingRelationshipMirrorOutput = {
     basis_time_zone: 'Asia/Shanghai',
   },
   overview: {
-    title: '默契、推动与节奏拉扯:三个值得观察的相处模式',
+    title: "默契、推动与节奏拉扯：三个值得观察的相处模式",
     summary:
-      '这份解读从两张命盘里选出了三个最值得观察的相处模式:近距离相处里的天然默契,一方推动、一方接住的互动惯性,以及作息节奏上反复出现的拉扯。它们只是观察假设,是否符合你们的真实经历,需要以你的记录核对。',
+      "这份解读从两张命盘中提炼出三个最值得留意的相处模式：近距离相处时的天然默契，一方推动、一方承接的互动惯性，以及作息节奏上反复出现的拉扯。它们只是盘面给出的观察假设，是否贴合你们的真实经历，还需要结合你的相处记录来印证。",
     keywords: ['相处默契', '推动与接住', '节奏拉扯'],
   },
   patterns: [
@@ -107,7 +107,7 @@ const RELATIONSHIP_OUTPUT: MingJingRelationshipMirrorOutput = {
         'bazi:relationship.period.self.annual_transition@2026-02-04T00:00:00Z',
         'bazi:relationship.period.person:p_snow_dev.annual_transition@2026-02-04T00:00:00Z',
       ],
-      summary: '2026 年的证据偏向平稳:保持规律的沟通节奏,不默认对方已经听懂,重要约定落到具体确认。',
+      summary: "2026 年的整体信号偏向平稳：保持规律的沟通节奏，别默认对方已经听懂，重要约定记得落到具体确认。",
     },
   },
   action: {

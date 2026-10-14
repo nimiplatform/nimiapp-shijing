@@ -20,11 +20,11 @@ export const EN_NIANJING_SURFACE_COPY: NianJingSurfaceCopy = {
   "concernHint": "Activate at least one concern as a lens for long-horizon phases.",
   "openConcerns": "Set up concerns",
   "generating": "Generating long-horizon phases…",
-  "insufficient": "The current data cannot derive long-horizon phases. Complete your natal profile and concerns first."
+  "insufficient": "Not enough information to map your long-horizon phases yet. Please complete your birth profile and active concerns first."
 },
   eventRecorder: {
   "heading": "Recorded events",
-  "future": "This phase has not started yet. Return after an event happens to record it here.",
+  "future": "This phase hasn’t started yet. Once it’s underway, you can log real-life events here as they happen.",
   "placeholder": "For example: I changed jobs, or a relationship reached a conclusion…",
   "recordAria": "Record an event that happened",
   "date": "Event date",
@@ -44,9 +44,9 @@ export const EN_NIANJING_SURFACE_COPY: NianJingSurfaceCopy = {
   "deleteAria": "Delete this event",
   "deleteTitle": "Delete this record?"
 ,
-intro: (label) => `Record experiences related to “${label}” in this period. Consultation can cite them when discussing the phase.`, count: (count) => `Saved records (${count})`, deleteMessage: (body) => `“${body}” will be permanently deleted and no longer cited for this phase. This cannot be undone.`
+intro: (label) => `Log events related to “${label}” during this period so consultations can reference them when discussing this phase.`, count: (count) => `Saved records (${count})`, deleteMessage: (body) => `“${body}” will be permanently deleted and no longer cited for this phase. This cannot be undone.`
 },
-  staleMessages: { age: 'This long-horizon reading is over 30 days old. Generate again.', mirror_scope_changed: 'The Yearly Mirror window changed. Generate a new reading.', concern_tag_missing: 'Your concerns changed. Generate a new reading.', event_memory_refs_changed: 'Referenced records changed. Generate a new reading.', feature_snapshot_failed: 'The current data cannot verify the old reading. Correct the data and generate again.', input_hash_changed: 'Inputs changed. Generate a new Yearly Mirror reading.', feature_snapshot_hash_changed: 'Calculation evidence changed. Generate a new reading.' },
+  staleMessages: { age: 'This long-horizon reading is over 30 days old. Generate again.', mirror_scope_changed: 'The Yearly Mirror window changed. Generate a new reading.', concern_tag_missing: 'Your concerns changed. Generate a new reading.', event_memory_refs_changed: 'Referenced records changed. Generate a new reading.', feature_snapshot_failed: 'The current data cannot verify the old reading. Correct the data and generate again.', input_hash_changed: 'Inputs changed. Generate a new Yearly Mirror reading.', feature_snapshot_hash_changed: "Underlying chart data has changed. Generate a new reading to refresh." },
   notSegmented: 'No phase yet',
   yearLabel: (year) => String(year),
   monthLabel: (month) => `Month ${month}`,
@@ -86,7 +86,7 @@ intro: (label) => `Record experiences related to “${label}” in this period. 
       suggestions: [
         { title: 'Maintain useful routines', description: 'Continue the actions that already produce reliable results.' },
         { title: 'Improve the details', description: 'Use the steadier rhythm to refine weak spots and practical arrangements.' },
-        { title: 'Build a longer foundation', description: 'Invest effort in repeatable actions for {concern}.' },
+        { title: "Build a lasting foundation", description: 'Invest effort in repeatable actions for {concern}.' },
       ],
       cautions: [
         { title: 'Avoid unnecessary disruption', description: 'Check what a change would improve before replacing a working routine.' },
@@ -118,7 +118,7 @@ intro: (label) => `Record experiences related to “${label}” in this period. 
       ],
       cautions: [
         { title: 'Avoid forcing the situation', description: 'Pushing through constraints may increase strain; a pause can be useful.' },
-        { title: 'Watch emotional decisions', description: 'Give major commitments time for review when frustration is high.' },
+        { title: "Watch out for emotional decisions", description: "When frustration runs high, give yourself time to review before making major commitments." },
       ],
     },
     turning: {

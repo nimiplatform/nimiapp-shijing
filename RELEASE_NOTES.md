@@ -1,18 +1,24 @@
-## 0.1.10 · Published platform dependencies
+## Current source — public platform packages
+
+The current source uses the published SDK 0.21.0, Kit/native 0.21.0, App Tools 0.13.0, and Nimi Coding 0.6.5. Dependencies resolve directly from public registries without local archive overrides. Run `pnpm install --frozen-lockfile` to install the locked versions. Earlier release checks below apply only to their recorded dependency combinations.
+
+## 0.1.10 · Recorded published platform dependencies
 
 Uses public npm SDK 0.21.0, Kit/native 0.19.3, App Tools 0.12.1 and nimi-coding 0.6.5 with frozen registry lockfiles. Local Nimi tarball overrides are removed; Desktop-supervised development and installed Apps use the same published carrier.
 
-# 时镜 ShiJing 0.1.10 源码候选
+# 时镜 0.1.10 源码候选 · 早期开发记录
+
+> 以下保留该版本早期候选的功能与验证记录，依赖组合描述的是当时环境。当前源码的依赖与安装限制见本页顶部 Current source；依赖升级本身不代表下方未验证流程已重验。
 
 日镜增加应用打开期间的每日定时生成和保存后的活动摘要。本次审计修复接通 AI 失败恢复入口，补齐 Reading 不确定性字段校验与本命输入哈希，并完善中英文界面、计划只读档案及农历键盘操作。现有日镜通用黄历保留为辅助历法民俗参考，不参与个人解读或确定性判断。
 
 当前开发依赖组合为 App Tools 0.9 / SDK 0.16 / Kit 0.13，使用完整本地 npm 归档与必需的 Electron Host-profile。正式公开发行仍需切换到 registry 解析并通过既有发行门禁；这份源码说明不表示 0.1.10 已发布或获得 Catalog 准入。
 
-# 历史版本：时镜 ShiJing 0.1.9
+# 历史版本：时镜 0.1.9
 
 补充受众、应用内 AI 文字输出及出生坐标、健康/财务咨询数据的事实声明，供支持该字段的 Nimi 展示。保留 SDK 0.11 / Kit 0.7 配对；不新增业务能力或运行门禁，仍不提供医疗诊断。发行与 Catalog 准入独立进行，声明不构成安全认证。
 
-# 历史版本：时镜 ShiJing 0.1.8
+# 历史版本：时镜 0.1.8
 
 本次候选版本接入 Nimi App v2 发行信息协议：
 

@@ -20,7 +20,6 @@ import type {
 
 export interface BaseProductCopy {
 readonly brandName: string;
-readonly brandSub: string;
 readonly mirrorKindLabels: LabelMap<MirrorKind>;
 // Primary-tab labels keyed by tab id. Distinct from mirrorKindLabels: 命镜 is a
 // primary tab (SJG-IA-08) but not a MirrorKind in the natal-projection layer.

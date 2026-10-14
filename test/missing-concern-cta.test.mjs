@@ -52,7 +52,7 @@ test('NianJing missing natal inputs use the same readable notice pattern as YueJ
   assert.match(nianjingTabSource, /mirror_kind: 'nianjing'/);
   assert.match(
     readI18nSource(),
-    /请先在「设置 → 本人」中填写出生信息,年镜会据此自动推算。/,
+    /请先在「设置 → 本人」中填写出生信息，年镜会据此自动推算。/,
   );
   assert.match(nianjingTabSource, /tabCopy\.missingNatal/);
   assert.match(

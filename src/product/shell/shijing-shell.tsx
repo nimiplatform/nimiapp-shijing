@@ -150,9 +150,6 @@ export function ShijingShell(props: ShijingShellProps) {
         <header className="shijing-topbar">
           <div className="shijing-topbar__brand">
             <span className="shijing-topbar__wordmark">{copy.brandName}</span>
-            <span className="shijing-topbar__tagline" aria-hidden>
-              SHIJING · OS
-            </span>
           </div>
           <PrimaryTabBar />
           <div className="shijing-topbar__method">

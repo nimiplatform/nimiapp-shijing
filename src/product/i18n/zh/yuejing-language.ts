@@ -38,7 +38,7 @@ export const ZH_YUEJING_LANGUAGE_COPY: YueJingMonthLanguageCopy = {
   turning: {
     tagline: '留意拐点，预留调整',
     body: '本期有转向信号，旧节奏可能需要重新评估，调整时记得预留空间。',
-    mainline: '本轮有转向信号，旧节奏可能需要被重新评估。',
+    mainline: "本轮有转向信号，旧节奏可能需要重新评估。",
     best_for: ['复盘方向', '调整策略', '记录变化', '重排节奏'],
     avoid_tags: ['沿用旧办法', '仓促承诺', '忽略变化信号'],
     suitable: '适合记录变化点，判断它来自机会、边界变化还是节奏切换。',
@@ -49,7 +49,7 @@ export const ZH_YUEJING_LANGUAGE_COPY: YueJingMonthLanguageCopy = {
   blocked: {
     tagline: '稳住为先，收束止损',
     body: '本期阻力偏重，优先把重心放在止损、复核和保留余地上。',
-    mainline: '本轮阻力偏重，优先级应放在止损、复核和保存余地。',
+    mainline: "本轮阻力偏重，重心应放在止损、复核和保留余地上。",
     best_for: ['止损', '复核', '降负荷', '保留余地'],
     avoid_tags: ['硬碰硬', '冲动承诺', '高消耗投入'],
     suitable: '适合收束高消耗事项、复核关键材料、延后非必要承诺。',
@@ -142,7 +142,7 @@ export const ZH_YUEJING_LANGUAGE_COPY: YueJingMonthLanguageCopy = {
 },
   genericAction: {
   axis: '节奏',
-  summary: '以稳定节奏为主，把这个关注的关键动作安排在合适的窗口。',
+  summary: "以稳定节奏为主，将当前关注事项的关键动作安排在合适的时间窗口。",
   actions: [
     { source: 'primary', label: '推进本期最重要的一件事' },
     { source: 'caution', label: '先观察反馈再做判断' },
@@ -202,7 +202,7 @@ export const ZH_YUEJING_LANGUAGE_COPY: YueJingMonthLanguageCopy = {
     summary: '以稳健为主，理性安排现金流与重要的资源决定。',
     actions: [
       { source: 'supportive', label: '推进稳妥回款与资源整理' },
-      { source: 'caution', label: '复核合同、报价与冲动消费' },
+      { source: 'caution', label: "复核合同与报价，克制冲动消费" },
       { source: 'turning', label: '复盘收入结构或分配方式变化' },
     ],
     reminders: [
@@ -243,7 +243,7 @@ export const ZH_YUEJING_LANGUAGE_COPY: YueJingMonthLanguageCopy = {
   date: (month, day) => `${month}月${day}日`,
   labels: { phase: '时间阶段', phaseNumber: (n) => `第${n}阶段`, currentWindow: '当前窗口', mainline: '30 日主线',
     push: '适合推进', watch: '先观察', turn: '可能转向', pushWindow: '主动推进窗口', watchWindow: '放慢判断窗口', turnWindow: '转向信号窗口',
-    pushCaution: '不适合只凭单日助力连续加码，推进后要留下确认点。', watchCaution: '不适合急着定性或逼出结果，先等连续信号出现。', turnCaution: '不适合用旧节奏处理新反馈，保留调整空间。', missingConcern: '适合先补齐这个关注在当前窗口的生成结果，再纳入整月判断。',
+    pushCaution: '不适合只凭单日助力连续加码，推进后要留下确认点。', watchCaution: '不适合急着定性或逼出结果，先等连续信号出现。', turnCaution: '不适合用旧节奏处理新反馈，保留调整空间。', missingConcern: "适合先补齐该关注在当前窗口的推算结果，再纳入整月判断。",
     blockedRange: (text, range) => `${text} 阻力集中在 ${range}，这些日期不要硬推。`,
     rangeList: (ranges, hasMore) => `${ranges.join('、')}${hasMore ? ' 等' : ''}`,
     basis: (range, days, tags, cells) => [`${range} 内已生成 ${days}/30 日，覆盖 ${tags} 个激活关注。`,`主线来自 ${cells} 条逐日关注结果的聚合，不使用分数、排名或趋势曲线。`,'已有事件记忆和未来计划只在被对应 Reading 引用或日期落入窗口时参与解读，不会被补写成未发生的事实。','底层命理依据保留在生成链路与单日依据中，本页只展示可执行节奏。'],

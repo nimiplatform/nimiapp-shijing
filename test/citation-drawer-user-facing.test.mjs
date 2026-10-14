@@ -24,7 +24,7 @@ test('citation drawer basis rows use user-facing labels instead of internal prov
 
   assert.match(text, /推演方法: 八字子平法/);
   assert.match(text, /问镜依据: 引用 2 份已生成解读/);
-  assert.match(text, /依据冻结:/);
+  assert.match(text, /冻结时间:/);
   assert.match(text, /本地校验:/);
 
   for (const internal of [

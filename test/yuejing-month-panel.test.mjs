@@ -112,12 +112,12 @@ function actionGuideFixture() {
 
 test('YueJing 30-day drawer is positioned as an action guide, not a long report', () => {
   for (const label of [
-    '30日行动指南',
+    '30 日行动指南',
     '行动导向的解读，聚焦你接下来该做什么。',
     '本期结论',
     '三个关键窗口',
     '我的关注行动',
-    '30日详细节奏',
+    '30 日详细节奏',
     '每日分布',
     '生成依据',
   ]) {

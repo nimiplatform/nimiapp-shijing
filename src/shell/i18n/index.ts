@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import en from '../locales/en.json';
 import zh from '../locales/zh.json';
+import { getProductCopy, uiLanguageFromI18nLanguage } from '../../product/i18n/copy.ts';
 
 const resources = {
   en: { translation: en as Record<string, unknown> },
@@ -22,5 +23,16 @@ i18n.use(initReactI18next).init({
   react: { useSuspense: false },
   initAsync: false,
 });
+
+// @nimi-authority: rule.shijing.data-model.r011
+function syncDocumentBrand(language: string): void {
+  if (typeof document === 'undefined') return;
+  const uiLanguage = uiLanguageFromI18nLanguage(language);
+  document.title = getProductCopy(uiLanguage).brandName;
+  document.documentElement.lang = uiLanguage;
+}
+
+syncDocumentBrand(i18n.resolvedLanguage ?? i18n.language);
+i18n.on('languageChanged', syncDocumentBrand);
 
 export { i18n };

@@ -131,7 +131,7 @@ test('HeJing per-pattern 解读依据 drawer shows method, verbatim evidence, ru
   assert.match(hejingSectionsSource, /basis\.title/u);
   assert.match(hejingSectionsSource, /basis\.body/u);
   assert.match(hejingSectionsSource, /copy\.basisLimitation/u);
-  assert.match(hejingContentSource, /依据存在并不自动证明解释成立/u);
+  assert.match(hejingContentSource, /有推演依据，并不代表解释在现实中一定成立/u);
   // driver_refs stay opaque: the UI never parses them.
   assert.doesNotMatch(hejingSectionsSource, /driver_refs/u);
   assert.doesNotMatch(hejingTabSource, /driver_refs/u);
@@ -187,7 +187,7 @@ test('HeJing track view lists real records with badges, note and empty state', (
   assert.match(hejingSectionsSource, /copy\.trackEventBadge/u);
   assert.match(hejingSectionsSource, /copy\.trackPlanBadge/u);
   assert.match(hejingSectionsSource, /copy\.trackEmptyTitle/u);
-  assert.match(hejingContentSource, /不代表对方参与、确认或收到通知/u);
+  assert.match(hejingContentSource, /不表示对方已参与、确认或收到通知/u);
 });
 
 test('HeJing pattern gate replaces the generate CTA for methods without admitted pattern rules', () => {
@@ -195,7 +195,7 @@ test('HeJing pattern gate replaces the generate CTA for methods without admitted
   assert.match(hejingTabSource, /hejingPatternSupportState\(currentMethodProfileId\)/u);
   assert.match(hejingTabSource, /patternSupported=\{patternSupport\.supported\}/u);
   assert.match(hejingPendingSource, /shijing-hejing__pattern-unsupported/u);
-  assert.match(hejingContentSource, /该方法暂无准入的合镜模式规则/u);
+  assert.match(hejingContentSource, /当前命理方法暂不支持相处模式解读/u);
   // No silent method auto-switching.
   assert.doesNotMatch(hejingTabSource, /method_profile_id = 'bazi_ziping_v1'/u);
 });

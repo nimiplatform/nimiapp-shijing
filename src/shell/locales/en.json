@@ -8,7 +8,7 @@
     "sessionReady": "Connected",
     "sessionActionRequired": "Action required in Nimi Desktop",
     "sessionUnavailable": "Unavailable",
-    "sessionPending": "Nimi access is not fully established yet. Finish the required action in Nimi Desktop, then refresh in place — the same host restores access.",
+    "sessionPending": "Nimi access isn't ready yet. Complete the required step in Nimi Desktop, then refresh here to reconnect through the same host.",
     "aiConfig": "ShiJing AI configuration",
     "aiConfigChecking": "Checking model configuration",
     "aiConfigReadyLocal": "Local model ready",
@@ -18,8 +18,8 @@
     "aiConfigBlocked": "Selected model is blocked",
     "aiConfigUnavailable": "Model state unavailable",
     "configureAI": "Configure AI model",
-    "accessIssue": "Nimi access could not be refreshed. Retry in place; the same host re-establishes access.",
-    "aiConfigIssue": "ShiJing's AI configuration could not be refreshed. Nimi access remains connected; configure the model in Nimi Desktop, then retry here.",
+    "accessIssue": "Couldn't refresh Nimi access. Try again here to reconnect through the same host.",
+    "aiConfigIssue": "Couldn't refresh ShiJing's AI configuration. Nimi access is still connected—configure the model in Nimi Desktop, then try again here.",
     "technicalDetails": "Technical details",
     "modelConfig": {
       "title": "Models",
@@ -45,7 +45,7 @@
       "clearLabel": "Clear configuration",
       "clearingLabel": "Clearing…",
       "conflictLabel": "Configuration changed elsewhere",
-      "conflictDescription": "Your draft was preserved. Review the latest committed configuration, then save again to retry.",
+      "conflictDescription": "Your draft is still here. Check the latest saved configuration, then save again.",
       "conflictCurrentLabel": "Current revision {{revision}}: {{summary}}",
       "advancedLabel": "Advanced",
       "advancedHint": "Required model capabilities and default parameters are saved with these model settings.",
@@ -70,7 +70,7 @@
       "cloudConnectorPickerLabel": "Cloud Connector",
       "cloudConnectorPickerPlaceholder": "Select a configured Connector",
       "cloudConnectorSelectionRequired": "Select a configured Connector before choosing a model.",
-      "cloudNoConnectorsLabel": "No configured Cloud Connector is available.",
+      "cloudNoConnectorsLabel": "No configured Cloud Connectors available.",
       "openCloudConnectorsLabel": "Configure Cloud Connectors",
       "cloudImplementationLabel": "Cloud service",
       "cloudImplementationPlaceholder": "Choose a cloud service",
@@ -79,7 +79,7 @@
       "cloudTargetDialogTitle": "Choose a cloud model",
       "cloudTargetDialogDescription": "Choose the provider model for this Connector.",
       "cloudNoticeLabel": "Cloud execution",
-      "cloudNoticeDescription": "Requests may leave this device and incur provider charges.",
+      "cloudNoticeDescription": "Requests may send relevant context to the cloud provider and incur charges.",
       "cloudConnectorLabel": "Configured Connector",
       "cloudConnectorPlaceholder": "Choose a connector",
       "cloudLoadFailed": "Cloud service, model, or account choices could not be loaded.",
@@ -97,12 +97,12 @@
       "cancelLabel": "Cancel",
       "confirmSelectionLabel": "Use selection",
       "capabilityTextGenerateLabel": "Text generation",
-      "capabilityTextGenerateDescription": "Model capability ShiJing uses to generate reading and reply text"
+      "capabilityTextGenerateDescription": "Used by ShiJing to generate readings and replies"
     }
   },
   "Shell": {
     "language": "Language",
-    "accessEyebrow": "Declarative App Access",
+    "accessEyebrow": "Nimi Access",
     "accessTitle": "ShiJing cannot reach Nimi right now",
     "accessDetail": "ShiJing keeps running and your local data stays put. Nimi access is established by the platform through declarative App Access; there is no in-app sign-in or direct-connect fallback.",
     "accessState": {
@@ -113,11 +113,11 @@
     },
     "accessAction": {
       "action-required": "Finish the sign-in or confirmation in Nimi Desktop, then retry here — the same host restores access.",
-      "access-ended": "Access ended or the signed-in account changed. Retry here, or relaunch ShiJing from Nimi Desktop; the platform re-establishes access.",
-      "runtime-unavailable": "Start the Nimi Runtime from Nimi Desktop, then retry here — the same host restores access.",
+      "access-ended": "Your session ended or the signed-in account changed. Retry here, or reopen ShiJing from Nimi Desktop to reconnect.",
+      "runtime-unavailable": "Start Nimi Runtime in Nimi Desktop, then retry here to reconnect.",
       "capability-unavailable": "Retry here. If this state persists, relaunch ShiJing from Nimi Desktop.",
-      "permission-denied": "Nimi reported an access permission denial. Review ShiJing permissions in Nimi Desktop and follow the platform recovery instructions before retrying.",
-      "repair-required": "Nimi reported a repair requirement. Follow the installation or Runtime repair instructions in Nimi Desktop, then reopen ShiJing."
+      "permission-denied": "Nimi declined this access request. Check the session status and recovery prompts in Nimi Desktop, then try again.",
+      "repair-required": "Nimi needs to repair the installation or Runtime. Follow the repair instructions in Nimi Desktop, then reopen ShiJing."
     },
     "technicalDetails": "Technical details",
     "retry": "Retry",

@@ -47,7 +47,6 @@
       "^[a-z][a-z0-9]*(?:_[a-z0-9]+)+$",
       "^(high|medium|low|active|archived|manual|rijing|yuejing|nianjing|shijing)$",
       "^中$",
-      "^SHIJING · OS$",
       "^T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
     ],
     "nonUiSources": {

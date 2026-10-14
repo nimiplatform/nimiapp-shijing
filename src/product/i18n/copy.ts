@@ -29,7 +29,6 @@ export function useProductCopy(): ProductCopy {
 
 // Static zh copy exports for non-hook code paths and explicitly tracked known-debt surfaces.
 export const BRAND_NAME = ZH_COPY.brandName;
-export const BRAND_SUB = ZH_COPY.brandSub;
 export const MIRROR_KIND_LABELS = ZH_COPY.mirrorKindLabels;
 export const TAB_LABELS = ZH_COPY.tabLabels;
 export const TENDENCY_CLASS_LABELS = ZH_COPY.tendencyClassLabels;

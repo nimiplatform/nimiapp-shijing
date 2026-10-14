@@ -54,7 +54,7 @@
   min-width: 0;
 }
 
-/* Logo box retired — the brand is now `wordmark + tagline`. Rule
+/* Logo box retired — the brand is now a single wordmark. Rule
  * retained as `display: none` so any straggler markup is hidden until
  * removed entirely. */
 .shijing-topbar__logo {
@@ -67,15 +67,6 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--shijing-text-primary);
-}
-
-.shijing-topbar__tagline {
-  font-family: "Inter", "Helvetica Neue", system-ui, sans-serif;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.24em;
-  color: var(--shijing-text-muted);
-  text-transform: uppercase;
 }
 
 .shijing-topbar__account {
