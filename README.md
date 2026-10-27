@@ -1,3 +1,9 @@
+Current development dependencies are SDK 0.22.2, Kit/native 0.22.1, App Tools 0.14.0 and Nimi Coding 0.7.0. The checked-in pnpm lock resolves these packages from the public registry. Run `pnpm install --frozen-lockfile`, `pnpm exec nimi-app check`, then `pnpm dev` with a matching source-built Nimi Runtime and Home. App versions and published App releases are unchanged. Earlier versioned notes retain their original acceptance scope. Home uses the App-owned root `NIMI_APP.md`; this README remains developer documentation.
+
+Upgrade verification: public-registry installation, frozen-lockfile installation, App Tools checks and the applicable type/Host build checks passed. Desktop-supervised macOS development opened the existing daily reading and navigation. New model-output journeys and packaged installation were not rerun; earlier evidence below retains its stated versions and scope.
+
+[App introduction and usage](NIMI_APP.md)
+
 # 时镜 (ShiJing)
 
 > 专业 AI 个人命理解读伙伴，融汇传统干支节气与现代心智反思。
@@ -88,3 +94,5 @@ pnpm exec nimi-app pack --target windows-x86_64 --production
 - **Registry 准入**: [#84](https://github.com/nimiplatform/nimi-app-registry/pull/84) (macOS arm64 与 Windows x64)
 - **原有记录的依赖组合**: SDK 0.21.0, Kit/native 0.19.3, App Tools 0.12.1, Nimi Coding 0.6.5
 - **原有发布记录中的验证路径**: macOS arm64 目录安装、生辰数据记录（1988-01-01 12:00 上海）、确定性排盘计算、AI 命镜解读生成以及冷启动数据持久化验证通过。（Windows GUI 安装标记为 `NOT-VERIFIED`）。
+
+**Local chrome teardown patch — 2026-10-26.** The explicit `pnpm-workspace.yaml` override selects the complete Kit 0.21.1 development archive at `.nimi/local/platform-icons/nimiplatform-kit-0.21.1-chrome.tgz`. It backports canonical fix `6b3ef1116` onto published Kit 0.21.0: window/WebContents destruction cleanup is idempotent and never reads a destroyed BrowserWindow getter. SDK 0.21, public chrome declarations and native carrier dependencies retain their existing versions. This archive is unpublished; clean development checkouts need the same complete archive, and production preflight still requires registry resolutions. App-specific business journeys and Windows interaction with this patch remain NOT-VERIFIED.

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="60 36 1140 1140">
+  <title>ShiJing artwork without the macOS background plate</title>
+  <!-- Preserve the existing clock artwork; only its surrounding platform tile is excluded. -->
+  <defs><clipPath id="clock"><ellipse cx="630" cy="606" rx="492" ry="477"/></clipPath></defs>
+  <image width="1280" height="1280" href="../src-tauri/icons/icon-source.png" clip-path="url(#clock)"/>
+</svg>

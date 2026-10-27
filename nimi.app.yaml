@@ -11,8 +11,7 @@ local_development:
     renderer_origin: http://127.0.0.1:1430
 metadata:
   summary: 结合四柱与节气等确定性排盘，提供个人节律观察与解读。
-  icon: src-tauri/icons/icon.png
-  readme: APP_GUIDE.md
+  icon: assets/app-artwork.png
   release_notes: RELEASE_NOTES.md
   author: Nimi Team
   homepage_url: https://github.com/nimiplatform/nimiapp-shijing
