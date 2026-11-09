@@ -80,11 +80,11 @@ test('ShiJing mounts its covered self-owner AIConfig editor without a Desktop wr
     import.meta.url,
   ), 'utf8');
   assert.match(source, /ModelConfigAIConfigSurface/u);
-  assert.match(source, /shijingLocalAppRuntimePlatform\.aiConfig\.overwrite/u);
-  assert.match(source, /shijingLocalAppRuntimePlatform\.aiConfig\.listOptions/u);
+  assert.match(source, /scope\.client\.aiConfig\.overwrite/u);
+  assert.match(source, /scope\.client\.aiConfig\.listOptions/u);
   assert.match(
     source,
-    /applyAIConfigSnapshot\(acknowledgedSnapshot\)[\s\S]*refreshAIConfigEffectiveSelections\(result\.revision\)/u,
+    /applyAIConfigSnapshot\([\s\S]*refreshAIConfigEffectiveSelections\(result\.revision\)/u,
   );
   assert.match(source, /capabilityContracts=\{\['text\.generate'\]\}/u);
   assert.doesNotMatch(source, /loadoutRef/u);

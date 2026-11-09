@@ -1,4 +1,4 @@
-import type { NimiLocalAppClient } from '@nimiplatform/sdk/app';
+import type { NimiAppScope } from '@nimiplatform/kit/core/app-session';
 import type { MirrorKind } from '../../domain/mirror-scope.ts';
 import {
   createConversationChatBridge,
@@ -14,10 +14,10 @@ import type {
 } from '../../product/astrology/runtime-ai-client.ts';
 import type { RuntimeAiPromptRequest } from '../../product/astrology/runtime-ai-prompt.ts';
 import { runtimeFailureEvidence } from '../../product/astrology/runtime-ai-client.ts';
-import { shijingLocalAppRuntimePlatform } from '../local-development/shijing-local-app-runtime.ts';
 
 export type ShijingRuntimeAiOptions = {
-  readonly getClient?: () => NimiLocalAppClient;
+  readonly client: NimiAppScope['client'];
+  readonly signal: AbortSignal;
 };
 
 export async function generateShijingTextCandidate(
@@ -26,13 +26,15 @@ export async function generateShijingTextCandidate(
     readonly user: string;
   },
 ): Promise<string> {
-  const client = input.getClient?.() ?? shijingLocalAppRuntimePlatform;
+  input.signal.throwIfAborted();
+  const client = input.client;
   const result = await client.ai.text.generateCandidate({
     messages: [
       { role: 'system', text: input.system },
       { role: 'user', text: input.user },
     ],
   });
+  input.signal.throwIfAborted();
   if (result.finishReason !== 'stop') {
     throw Object.assign(new Error(result.finishReason === 'content-filter'
       ? 'Runtime filtered the response; no complete interpretation is available.'
@@ -47,7 +49,7 @@ export async function generateShijingTextCandidate(
 }
 
 export function createShijingConversationTextGenerator(
-  options: ShijingRuntimeAiOptions = {},
+  options: ShijingRuntimeAiOptions,
 ): RuntimeTextGenerator {
   return async function generateConversationText(
     request: RuntimeTextGeneratorRequest,
@@ -63,7 +65,7 @@ export function createShijingConversationTextGenerator(
 }
 
 export function createShijingConversationChatBridge(
-  options: ShijingRuntimeAiOptions = {},
+  options: ShijingRuntimeAiOptions,
 ): ConversationChatBridge {
   return createConversationChatBridge({
     generator: createShijingConversationTextGenerator(options),
@@ -73,7 +75,7 @@ export function createShijingConversationChatBridge(
 // @nimi-authority: rule.shijing.product.r011
 // @nimi-authority: rule.shijing.astrology.r011
 export function createShijingRuntimeAiClient(
-  options: ShijingRuntimeAiOptions = {},
+  options: ShijingRuntimeAiOptions,
 ): RuntimeAiClient {
   return {
     async generate(

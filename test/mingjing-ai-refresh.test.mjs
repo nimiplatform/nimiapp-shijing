@@ -76,34 +76,13 @@ test('generation gates still block the refresh', () => {
   );
 });
 
-test('app store exposes tri-state AIConfig readiness', () => {
-  const appStore = read('src/shell/app-shell/app-store.ts');
-  assert.match(appStore, /aiConfigReady: boolean \| null/);
-  assert.match(appStore, /setAiConfigReady: \(ready: boolean \| null\) => void/);
-  assert.match(appStore, /aiConfigReady: null/);
-});
-
-test('bootstrap mirrors projected AIConfig readiness into the app store', () => {
-  const bootstrap = read('src/shell/infra/shijing-bootstrap.ts');
-  assert.match(bootstrap, /projectShijingAIConfig/);
-  assert.match(bootstrap, /store\.setAiConfigReady\(projectShijingAIConfig\(aiConfigSnapshot\)\.state === 'ready'\)/);
-  assert.match(bootstrap, /store\.setAiConfigReady\(null\)/);
-});
-
-test('settings card publishes in-app AI setup readiness without waiting for a poll', () => {
-  const status = read('src/shell/local-development/shijing-local-development-status.tsx');
-  assert.match(status, /useAppStore\.getState\(\)\.setAiConfigReady\(evidence\.state === 'ready'\)/);
-  assert.match(status, /useAppStore\.getState\(\)\.setAiConfigReady\(null\)/);
-});
-
 test('AIConfig readiness reaches the product store context', () => {
   const provider = read('src/product/state/shijing-store.tsx');
   const productArea = read('src/shell/routes/product-area.tsx');
   assert.match(provider, /ai_config_ready: boolean \| null/);
   assert.match(provider, /aiConfigReady\?: boolean \| null/);
   assert.match(provider, /ai_config_ready: props\.aiConfigReady \?\? null/);
-  assert.match(productArea, /useAppStore\(\(state\) => state\.aiConfigReady\)/);
-  assert.match(productArea, /aiConfigReady=\{aiConfigReady\}/);
+    assert.match(productArea, /aiConfigReady=\{aiConfigReady\}/);
 });
 
 test('MingJing tab refreshes and announces on the AI-ready edge', () => {

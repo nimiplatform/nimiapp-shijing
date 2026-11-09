@@ -1,0 +1,3 @@
+.shijing-web-account { display: flex; flex: none; justify-content: flex-end; padding: 8px 16px; border-bottom: 1px solid var(--nimi-border-default); }
+.shijing-web-account:empty { display: none; }
+@media (max-width: 640px) { .shijing-web-account > div { flex-wrap: wrap; justify-content: flex-end; } }

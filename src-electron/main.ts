@@ -22,7 +22,8 @@ const {
 } = await import('@nimiplatform/kit/shell/electron/main');
 
 const SHIJING_APP_ID = 'nimi.shijing';
-const SESSION_INVALIDATED_CHANNEL = 'shijing:session-invalidated';
+let resettingRenderer = false;
+let quitting = false;
 declare const __NIMI_ELECTRON_PRODUCTION__: boolean;
 const IS_PRODUCTION_BUNDLE = typeof __NIMI_ELECTRON_PRODUCTION__ !== 'undefined'
   && __NIMI_ELECTRON_PRODUCTION__;
@@ -58,12 +59,7 @@ async function bootstrapElectron(): Promise<void> {
     allowedRendererUrls: [activeRendererUrl()],
     assetMediaPlatform: { protocol, webRequest: session.defaultSession.webRequest, webContents },
     ipcMain,
-    // The renderer stops the ended session's work and asks to reopen.
-    onSessionInvalidated: () => {
-      for (const window of BrowserWindow.getAllWindows()) {
-        if (!window.isDestroyed()) window.webContents.send(SESSION_INVALIDATED_CHANNEL);
-      }
-    },
+    onSessionInvalidated: resetAccountScopedRenderer,
   });
 
   await createMainWindow();
@@ -92,10 +88,22 @@ function configureShijingElectronChromiumRuntime(): void {
 }
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  if (process.platform !== 'darwin' && !resettingRenderer) {
     app.quit();
   }
 });
+app.on('before-quit', () => { quitting = true; });
+
+// Retire old timers and pending callbacks before binding another account.
+function resetAccountScopedRenderer(): void {
+  const windows = BrowserWindow.getAllWindows();
+  if (quitting || !windows.length) return;
+  resettingRenderer = true;
+  try {
+    for (const window of windows) window.destroy();
+    void createMainWindow().catch(handleElectronStartupFailure);
+  } finally { resettingRenderer = false; }
+}
 
 async function createMainWindow(): Promise<BrowserWindow> {
   const window = new BrowserWindow({
@@ -117,7 +125,8 @@ async function createMainWindow(): Promise<BrowserWindow> {
   chromeHost.bindWindow(window);
   hardenShijingWindowChrome(window);
   secureShijingWindow(window);
-  await window.loadURL(activeRendererUrl());
+  try { await window.loadURL(activeRendererUrl()); }
+  catch (error) { if (!window.isDestroyed()) throw error; }
   return window;
 }
 

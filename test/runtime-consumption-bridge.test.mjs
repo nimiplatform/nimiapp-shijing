@@ -53,7 +53,7 @@ test('ShiJing text generation uses one bounded App self candidate request', asyn
   const client = clientReturning('candidate text', calls);
 
   const text = await generateShijingTextCandidate({
-    getClient: () => client,
+    client: client, signal: new AbortController().signal,
     system: 'system contract',
     user: 'user evidence',
   });
@@ -72,7 +72,7 @@ test('ShiJing text generation uses one bounded App self candidate request', asyn
 test('Runtime wording applies the direct candidate without Agent framing', async () => {
   const calls = [];
   const client = clientReturning(JSON.stringify(rijingPatch()), calls);
-  const runtimeAI = createShijingRuntimeAiClient({ getClient: () => client });
+  const runtimeAI = createShijingRuntimeAiClient({ client: client, signal: new AbortController().signal });
 
   const result = await runtimeAI.generate('rijing', promptRequest());
 
@@ -88,7 +88,7 @@ test('Runtime wording applies the direct candidate without Agent framing', async
 test('ShiJing-owned consultation remains grounded and uses no Runtime Agent conversation', async () => {
   const calls = [];
   const client = clientReturning('Grounded ShiJing answer.', calls);
-  const bridge = createShijingConversationChatBridge({ getClient: () => client });
+  const bridge = createShijingConversationChatBridge({ client: client, signal: new AbortController().signal });
 
   const result = await bridge.send({
     user_message: 'What should I focus on?',
@@ -106,7 +106,7 @@ test('ShiJing-owned consultation remains grounded and uses no Runtime Agent conv
 
 test('typed candidate failures remain Runtime AI failures without fallback', async () => {
   const runtimeAI = createShijingRuntimeAiClient({
-    getClient: () => ({
+    client: {
       ai: {
         text: {
           async generateCandidate() {
@@ -116,7 +116,7 @@ test('typed candidate failures remain Runtime AI failures without fallback', asy
           },
         },
       },
-    }),
+    }, signal: new AbortController().signal,
   });
 
   const result = await runtimeAI.generate('rijing', promptRequest());
@@ -129,13 +129,13 @@ test('typed candidate failures remain Runtime AI failures without fallback', asy
 });
 
 test('consultation preserves the owner recovery evidence on a failed candidate', async () => {
-  const bridge = createShijingConversationChatBridge({ getClient: () => ({
+  const bridge = createShijingConversationChatBridge({ client: {
     ai: { text: { async generateCandidate() {
       throw Object.assign(new Error('bounded failure'), { envelope: {
         code: 'runtime-permission-denied', reasonCode: 'app-operation-not-covered', actionHint: 'review_permissions',
       } });
     } } },
-  }) });
+  }, signal: new AbortController().signal });
   const result = await bridge.send({ user_message: 'A question', source_readings: [validReading()], conversation_turns: [] });
   assert.equal(result.ok, false);
   assert.equal(result.error.runtime_code, 'runtime-permission-denied');

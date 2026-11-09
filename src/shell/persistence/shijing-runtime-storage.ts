@@ -1,4 +1,4 @@
-import type { NimiLocalAppClient } from '@nimiplatform/sdk/app';
+import type { NimiAppScope } from '@nimiplatform/kit/core/app-session';
 import { validateShiJingSpace } from '../../contracts/shijing-space-validator.ts';
 import type { ShiJingSpace } from '../../domain/shijing-space.ts';
 import type {
@@ -11,35 +11,37 @@ import { normalizeShijingLocalAppError } from '../local-development/shijing-loca
 
 export const SHIJING_SPACE_STORAGE_PATH = 'product/shijing-space.json';
 
-type ShijingStorageClient = Pick<NimiLocalAppClient, 'storage'>;
+type ShijingStorageScope = { client: Pick<NimiAppScope['client'], 'storage'>; signal: AbortSignal };
 
 // @nimi-authority: rule.nimi.sdks.feature-clients.r035
 // @nimi-authority: rule.shijing.data-model.r002
 export class ShijingRuntimeStoragePersistenceClient implements PersistenceClient {
   readonly adapter_kind = 'nimi_storage' as const;
-  private readonly client: ShijingStorageClient;
+  private readonly scope: ShijingStorageScope;
   private readonly relativePath: string;
 
   constructor(
-    client: ShijingStorageClient,
+    scope: ShijingStorageScope,
     relativePath = SHIJING_SPACE_STORAGE_PATH,
   ) {
-    this.client = client;
+    this.scope = scope;
     this.relativePath = relativePath;
   }
 
   async load(): Promise<LoadResult> {
     let value: unknown;
     try {
-      const result = await this.client.storage.assets.read({ relativePath: this.relativePath });
+      this.scope.signal.throwIfAborted();
+      const result = await this.scope.client.storage.assets.read({ relativePath: this.relativePath });
       const decoder = new TextDecoder('utf-8', { fatal: true });
       let text = '';
-      for await (const chunk of result.body) text += decoder.decode(chunk, { stream: true });
+      for await (const chunk of result.body) { this.scope.signal.throwIfAborted(); text += decoder.decode(chunk, { stream: true }); }
+      this.scope.signal.throwIfAborted();
       text += decoder.decode();
       value = JSON.parse(text);
     } catch (error) {
       const evidence = normalizeShijingLocalAppError(error);
-      if (evidence.code === 'not-found') {
+      if (!this.scope.signal.aborted && (evidence.code === 'not-found' || evidence.reasonCode === 'APP_STORAGE_ENTRY_NOT_FOUND')) {
         return { ok: true, snapshot: null };
       }
       return {
@@ -78,12 +80,14 @@ export class ShijingRuntimeStoragePersistenceClient implements PersistenceClient
       };
     }
     try {
-      await this.client.storage.assets.write({
+      this.scope.signal.throwIfAborted();
+      await this.scope.client.storage.assets.write({
         relativePath: this.relativePath,
         body: new TextEncoder().encode(JSON.stringify(snapshot)),
         mediaType: 'application/json',
         overwrite: true,
       });
+      this.scope.signal.throwIfAborted();
       return { ok: true };
     } catch (error) {
       return {
@@ -99,7 +103,9 @@ export class ShijingRuntimeStoragePersistenceClient implements PersistenceClient
 
   async clear(): Promise<ClearResult> {
     try {
-      await this.client.storage.assets.remove(this.relativePath);
+      this.scope.signal.throwIfAborted();
+      await this.scope.client.storage.assets.remove(this.relativePath);
+      this.scope.signal.throwIfAborted();
       return { ok: true };
     } catch (error) {
       return {

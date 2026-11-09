@@ -81,7 +81,7 @@ test('Nimi storage adapter round-trips a complete snapshot larger than the JSON 
     },
     },
   };
-  const adapter = new ShijingRuntimeStoragePersistenceClient({ storage });
+  const adapter = new ShijingRuntimeStoragePersistenceClient({ client: { storage }, signal: new AbortController().signal });
   const initial = await adapter.load();
   assert.deepEqual(initial, { ok: true, snapshot: null });
 
@@ -101,7 +101,7 @@ test('Nimi storage adapter round-trips a complete snapshot larger than the JSON 
 });
 
 test('Nimi storage adapter rejects an invalid persisted root', async () => {
-  const adapter = new ShijingRuntimeStoragePersistenceClient({
+  const adapter = new ShijingRuntimeStoragePersistenceClient({ client: {
     storage: {
       assets: {
         async read() {
@@ -111,7 +111,7 @@ test('Nimi storage adapter rejects an invalid persisted root', async () => {
         },
       },
     },
-  });
+  }, signal: new AbortController().signal });
 
   const loaded = await adapter.load();
   assert.equal(loaded.ok, false);

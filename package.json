@@ -39,29 +39,33 @@
     "spec:authority:compile": "nimicoding authority compile .nimi/spec",
     "eval:wording": "node scripts/wording-eval/run.mjs",
     "eval:wording:score": "node scripts/wording-eval/score.mjs",
-    "postinstall": "install-electron"
+    "postinstall": "install-electron",
+    "dev:web": "nimi-app dev --platform web",
+    "dev:web-renderer": "vite --config vite.web.config.ts --mode web",
+    "build:web": "pnpm run typecheck:renderer && vite build --config vite.web.config.ts --mode web"
   },
   "dependencies": {
+    "@nimiplatform/kit": "^0.22.1",
+    "@nimiplatform/sdk": "^0.22.2",
     "astronomy-engine": "^2.1.19",
     "i18next": "^26.4.2",
     "iztro": "^2.5.8",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-i18next": "^17.0.0",
-    "tyme4ts": "^1.5.0",
-    "zustand": "^5.0.13",
-    "@nimiplatform/sdk": "^0.22.2",
-    "@nimiplatform/kit": "^0.22.1"
+    "tyme4ts": "^1.5.0"
   },
   "devDependencies": {
     "@electron/packager": "^20.3.0",
     "@eslint/js": "^10.0.1",
+    "@nimiplatform/app-tools": "^0.14.0",
+    "@nimiplatform/nimi-coding": "0.7.0",
     "@tailwindcss/vite": "^4.3.0",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.1.2",
-    "electron": "^44.5.1",
+    "electron": "^45.0.0",
     "esbuild": "^0.28.0",
     "eslint": "^10.4.0",
     "globals": "^17.6.0",
@@ -70,9 +74,7 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.4",
     "vite": "^8.3.3",
-    "yaml": "^2.9.0",
-    "@nimiplatform/app-tools": "^0.14.0",
-    "@nimiplatform/nimi-coding": "0.7.0"
+    "yaml": "^2.9.0"
   },
   "author": "Nimi Team",
   "license": "MIT"

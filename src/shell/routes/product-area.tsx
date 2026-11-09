@@ -1,4 +1,6 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { NimiAppScope } from '@nimiplatform/kit/core/app-session';
+import { projectShijingAIConfig } from '../ai/shijing-ai-config.ts';
 import { useTranslation } from 'react-i18next';
 import { buildEmptyShiJingSpace } from '../../product/dev/initial-space.ts';
 import { ShijingShell } from '../../product/shell/shijing-shell.tsx';
@@ -9,35 +11,42 @@ import {
   createShijingRuntimeAiClient,
 } from '../ai/shijing-runtime-ai.ts';
 import { ShijingLocalDevelopmentStatus } from '../local-development/shijing-local-development-status.tsx';
-import { shijingLocalAppRuntimePlatform } from '../local-development/shijing-local-app-runtime.ts';
 import { ShijingRuntimeStoragePersistenceClient } from '../persistence/shijing-runtime-storage.ts';
-import { useAppStore } from '../app-shell/app-store.js';
 import { openShijingRuntimeAiRecovery } from '../ai/shijing-ai-recovery.ts';
 
-const shijingPersistenceClient = new ShijingRuntimeStoragePersistenceClient(
-  shijingLocalAppRuntimePlatform,
-);
 
 /**
  * This route is reachable only after the protected local-app carrier reports
- * a session-bound development process. Product data uses the same Runtime-owned
+ * an admitted connection. Product data uses the same Runtime-owned
  * current-account-plus-Registered-App-Subject partition as installed Apps.
  */
 // @nimi-authority: rule.shijing.product.r002
-export function ProductArea() {
+export function ProductArea({ scope, openOwnerConfiguration }: { scope: NimiAppScope; openOwnerConfiguration?: () => Promise<void> }) {
   const { t } = useTranslation();
-  const aiConfigReady = useAppStore((state) => state.aiConfigReady);
+  const [aiConfigReady, setAiConfigReady] = useState<boolean | null>(null);
+  const shijingPersistenceClient = useMemo(() => new ShijingRuntimeStoragePersistenceClient(scope), [scope]);
+  const activity = useMemo(() => ({ async put(input: Parameters<typeof scope.client.activity.put>[0]) {
+    scope.signal.throwIfAborted();
+    const result = await scope.client.activity.put(input);
+    scope.signal.throwIfAborted();
+    return result;
+  } }), [scope]);
+  useEffect(() => {
+    let live = true;
+    void scope.client.aiConfig.get().then(snapshot => { if (live && !scope.signal.aborted) setAiConfigReady(projectShijingAIConfig(snapshot).state === 'ready'); }).catch(() => { if (live && !scope.signal.aborted) setAiConfigReady(null); });
+    return () => { live = false; };
+  }, [scope]);
   const snapshot = useMemo(
     () => buildEmptyShiJingSpace('local-development-space'),
     [],
   );
   const runtimeAiClient = useMemo(
-    () => createShijingRuntimeAiClient(),
-    [],
+    () => createShijingRuntimeAiClient(scope),
+    [scope],
   );
   const conversationChatBridge = useMemo(
-    () => createShijingConversationChatBridge(),
-    [],
+    () => createShijingConversationChatBridge(scope),
+    [scope],
   );
   // The development-session status (session + App AIConfig) lives inside the
   // 设置 settings sub-page as an injected module, not above the product shell.
@@ -45,9 +54,9 @@ export function ProductArea() {
     () => ({
       targetId: 'settings-local-development',
       navLabel: t('LocalDevelopment.aiConfig'),
-      content: <ShijingLocalDevelopmentStatus />,
+      content: <ShijingLocalDevelopmentStatus scope={scope} onReadinessChange={setAiConfigReady} openOwnerConfiguration={openOwnerConfiguration} />,
     }),
-    [t],
+    [t, scope, openOwnerConfiguration],
   );
   return (
     <div className="shijing-local-development-shell" data-testid="shijing-product-area">
@@ -60,7 +69,7 @@ export function ProductArea() {
           aiConfigReady={aiConfigReady}
           openRuntimeAiRecovery={openShijingRuntimeAiRecovery}
         >
-          <ShijingShell settingsExtras={settingsExtras} activity={shijingLocalAppRuntimePlatform.activity} />
+          <ShijingShell settingsExtras={settingsExtras} activity={activity} />
         </ShijingStoreProvider>
       </ShellLayout>
     </div>

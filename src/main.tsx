@@ -1,25 +1,9 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { I18nextProvider } from 'react-i18next';
-import { NimiThemeProvider, NimiToaster, TooltipProvider } from '@nimiplatform/kit/ui';
-import { installNimiShellRuntimeBridge } from '@nimiplatform/kit/shell/renderer/bridge';
-import { App } from './shell/App.js';
-import { i18n } from './shell/i18n/index.js';
-import { installShijingGlobalErrorLogging } from './shell/infra/renderer-log.js';
-import './styles.css';
-
-installShijingGlobalErrorLogging();
+import { createDesktopNimiAppSession } from '@nimiplatform/kit/auth/app/desktop';
+import { installNimiShellRuntimeBridge, openDesktopIntent } from '@nimiplatform/kit/shell/renderer/bridge';
+import { mountShijing } from './shell/mount-shijing.js';
 installNimiShellRuntimeBridge();
-
-createRoot(document.getElementById('root') as HTMLElement).render(
-  <React.StrictMode>
-    <I18nextProvider i18n={i18n}>
-      <NimiThemeProvider accentPack="nimi-accent" defaultScheme="light">
-        <TooltipProvider>
-          <App />
-          <NimiToaster />
-        </TooltipProvider>
-      </NimiThemeProvider>
-    </I18nextProvider>
-  </React.StrictMode>,
-);
+const dispose = mountShijing(createDesktopNimiAppSession(), { kind: 'desktop', async openConfiguration() {
+  const result = await openDesktopIntent({ intent: { kind: 'open-apps', appId: 'nimi.shijing', section: 'ai-models' } });
+  if (result.status === 'rejected') throw Object.assign(new Error(result.reasonCode), { reasonCode: result.reasonCode, actionHint: result.actionHint });
+} });
+if (import.meta.hot) import.meta.hot.dispose(dispose);

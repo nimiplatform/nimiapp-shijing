@@ -61,12 +61,13 @@ test('renderer consumes the App self text candidate path without portable author
   const productArea = read('src/shell/routes/product-area.tsx');
   const runtimeAI = read('src/shell/ai/shijing-runtime-ai.ts');
 
-  assert.match(runtime, /createNimiClient/);
-  assert.match(runtime, /createNimiLocalAppStandardShellSurface/);
+  assert.match(read('src/main.tsx'), /createDesktopNimiAppSession/);
+  assert.match(read('src/main.web.tsx'), /createWebNimiAppSession/);
+  assert.match(runtime, /extractNimiErrorFields/);
   assert.doesNotMatch(runtime, /SHIJING_AGENTS_INTERACT_PERMISSION|agents\.interact|permissions\./);
-  assert.match(status, /auth\.status/);
+  assert.doesNotMatch(status, /auth\.status/);
   assert.match(status, /aiConfig\.get/);
-  assert.match(status, /openDesktopIntent/);
+  assert.match(read('src/main.tsx'), /openDesktopIntent/);
   assert.doesNotMatch(status, /agents\.listReferences|selectedAgentHandle/);
   assert.doesNotMatch(status, /permissions\.|agents\.interact/);
   assert.match(
@@ -100,7 +101,7 @@ test('local development status renders inside the settings page, not above the p
   assert.match(productArea, /targetId: 'settings-local-development'/);
   assert.match(productArea, /<ShijingShell settingsExtras=\{settingsExtras\}[^>]*\/>/);
   // Saved RiJing Readings are published through the SDK App activity client.
-  assert.match(productArea, /activity=\{shijingLocalAppRuntimePlatform\.activity\}/);
+  assert.match(productArea, /activity=\{activity\}/);
   assert.doesNotMatch(productArea, /^\s*<ShijingLocalDevelopmentStatus \/>$/m);
   assert.match(shell, /settingsExtras=\{props\.settingsExtras \?\? null\}/);
   assert.match(settingsPage, /extras\.targetId/);
@@ -129,22 +130,6 @@ test('local development status renders inside the settings page, not above the p
     styles,
     /\.shijing-local-development\s*\{[^}]*max-height/s,
   );
-});
-
-test('session loss clears stale status and unmounts the product gate', () => {
-  const boundary = read('src/shell/app-shell/runtime-access-boundary.tsx');
-  const bootstrap = read('src/shell/infra/shijing-bootstrap.ts');
-  const status = read('src/shell/local-development/shijing-local-development-status.tsx');
-
-  assert.match(boundary, /setInterval\(revalidate, 5_000\)/);
-  assert.match(boundary, /addEventListener\('focus', revalidate\)/);
-  assert.match(bootstrap, /store\.setBootstrapReady\(false\)/);
-  assert.match(bootstrap, /applyShijingSessionFailure/);
-  assert.match(bootstrap, /aiConfig\.get\(\)/);
-  assert.match(status, /setSession\(null\)/);
-  assert.match(status, /setAIConfig\(null\)/);
-  assert.match(status, /applyShijingSessionProjection\(nextSession\)/);
-  assert.match(status, /applyShijingSessionFailure\(error\)/);
 });
 
 test('app-managed Runtime model and self-auth paths are removed', () => {
