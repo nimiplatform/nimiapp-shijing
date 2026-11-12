@@ -6,7 +6,7 @@ import { App } from './App.js';
 import { i18n } from './i18n/index.js';
 import { installShijingGlobalErrorLogging } from './infra/renderer-log.js';
 import '../styles.css';
-export type ShijingPlatform = { kind: 'desktop'; openConfiguration(): Promise<void> } | { kind: 'web' };
+export type ShijingPlatform = { kind: 'desktop'; openConfiguration(): Promise<void> } | { kind: 'web' | 'mobile' };
 export function mountShijing(session: NimiAppSession, platform: ShijingPlatform) {
   installShijingGlobalErrorLogging();
   const root = createRoot(document.getElementById('root')!);

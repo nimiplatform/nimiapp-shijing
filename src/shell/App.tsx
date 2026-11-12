@@ -21,6 +21,6 @@ function AppFrame({ platform }: { platform: ShijingPlatform }) {
       navigation={owner.navigation} navigationEnabled={ready}
       sidebar={ready && destination.id === 'shijing' && owner.railAvailable ? { visible: owner.sidebarVisible, onVisibleChange: owner.setSidebarVisible } : undefined} />
       : <header className="shijing-web-account"><NimiAccountControl language={language} hideSignedOut /></header>}
-    <div className="shijing-window-content"><RuntimeAccessBoundary platform={platform} /></div>
+    <div className={`shijing-window-content${ready ? '' : ' shijing-window-content--gated'}`}><RuntimeAccessBoundary platform={platform} /></div>
   </div>;
 }

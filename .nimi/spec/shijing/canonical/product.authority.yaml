@@ -182,7 +182,7 @@ units:
     kind: rule
     title: Runtime calculation boundary
     modality: must
-    statement: AI access uses only the public SDK text-candidate operation supplied by the admitted Kit Desktop or Web App session under runtime.consume and the canonical nimi.shijing App AIConfig; ordinary renderer, Tauri, or Electron Runtime bridges, public gRPC, localhost endpoints, private or unadmitted App Runtime clients, LocalAgent references, Agent conversations, and shared Agent AIConfig are not ShiJing AI transports; Runtime AI performs wording and consultation over deterministic feature snapshots and does not calculate pillars, DaYun, true solar time, stage labels, key windows, YueJing tendency classes, NianJing phase bands, or NianJing inflection points.
+    statement: AI access uses only the public SDK text-candidate operation supplied by the admitted Kit Desktop, Web or Android App session under runtime.consume and the canonical nimi.shijing App AIConfig; ordinary renderer, Tauri, or Electron Runtime bridges, public gRPC, localhost endpoints, private or unadmitted App Runtime clients, LocalAgent references, Agent conversations, and shared Agent AIConfig are not ShiJing AI transports; Runtime AI performs wording and consultation over deterministic feature snapshots and does not calculate pillars, DaYun, true solar time, stage labels, key windows, YueJing tendency classes, NianJing phase bands, or NianJing inflection points.
     condition: Whenever ShiJing requests AI wording or consultation.
     failure: Keep generation unavailable and surface a typed Runtime or configuration failure without invoking an unadmitted transport, LocalAgent conversation, shared Agent configuration, or calculation fallback.
     relations:
@@ -234,7 +234,7 @@ units:
     kind: rule
     title: Protected session failure
     modality: must
-    statement: Before admitted connection, ShiJing uses the Kit App access gate and preserves the public owner reasonCode and actionHint in its technical recovery details; Desktop follows Home account management and same-host recheck, while Web uses official Nimi login and direct reconnection. Every product operation remains unmounted, with no local-data fallback, pseudo account, or simulated success. Connection failure is not automatically identity revocation, permission denial or a request to repeat prior business work.
+    statement: Before admitted connection, ShiJing uses the Kit App access gate and preserves the public owner reasonCode and actionHint in its technical recovery details; Desktop follows Home account management and same-host recheck, while Web and Android use official Nimi login and direct reconnection. Every product operation remains unmounted, with no local-data fallback, pseudo account, or simulated success. Connection failure is not automatically identity revocation, permission denial or a request to repeat prior business work.
     condition: When a ShiJing App connection is not positively established.
     failure: Render only the shared gated access view and keep all product operations disabled.
     relations:

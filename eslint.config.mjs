@@ -9,6 +9,9 @@ export default defineConfig([
   globalIgnores([
     'dist/**',
     'dist-web/**',
+    'dist-mobile/**',
+    'android/**/build/**',
+    'android/app/src/main/assets/public/**',
     'dist-electron/**',
     'dist-electron-package/**',
     'artifacts/**',

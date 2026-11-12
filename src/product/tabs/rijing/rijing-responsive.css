@@ -50,18 +50,20 @@
 
 @media (max-width: 640px) {
   .shijing-onboarding {
-    min-height: calc(100dvh - 112px);
-    padding: 12px 0 18px;
+    min-height: 0;
+    padding: 4px 0 18px;
   }
 
   .shijing-onboarding__surface {
-    width: calc(100% - 20px);
-    max-height: calc(100dvh - 114px);
-    gap: 18px;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    gap: 16px;
   }
 
   .shijing-onboarding__intro h1 {
-    font-size: 34px;
+    font-size: 30px;
+    line-height: 1.2;
   }
 
   .shijing-onboarding__lede {
@@ -70,18 +72,20 @@
   }
 
   .shijing-onboarding__steps {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .shijing-onboarding__steps button {
     grid-template-columns: auto 1fr;
     min-height: 50px;
-    padding: 0 14px;
+    padding: 8px 10px;
+    gap: 4px 8px;
   }
 
   .shijing-onboarding__steps small {
     grid-column: 2;
     justify-self: start;
+    white-space: normal;
   }
 
   .shijing-onboarding__actions {
@@ -106,8 +110,9 @@
   }
 
   .shijing-onboarding__workbench {
-    min-height: min(480px, calc(100dvh - 320px));
-    padding: 18px;
+    min-height: 0;
+    grid-template-rows: auto auto auto;
+    padding: 16px;
     border-radius: 20px;
     overflow: visible;
   }
@@ -118,7 +123,22 @@
     gap: 6px;
   }
 
+  .shijing-onboarding__stage {
+    overflow: visible;
+    scrollbar-gutter: auto;
+  }
+
+  .shijing-onboarding .shijing-settings-page--styled .sjp-card--inline-self-editor {
+    min-height: 0;
+    padding: 12px;
+  }
+
+  .shijing-onboarding .shijing-settings-page--styled .sjp-inline-self-form {
+    padding: 0;
+  }
+
   .shijing-onboarding__mobile-confirm {
+    min-height: 44px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -133,8 +153,22 @@
     padding: 26px 22px 22px;
   }
 
+  /* The hidden almanac must not stretch the overview on a narrow screen. */
+  .shijing-rijing__hero-face[aria-hidden="true"] {
+    display: none;
+  }
+
+  .shijing-rijing__hero .shijing-rijing__hero-face[aria-hidden="false"] {
+    transform: none;
+    transition: none;
+  }
+
+  .shijing-rijing__hero-stage {
+    margin-top: 42px;
+  }
+
   .shijing-tab .shijing-rijing__hero-flip {
-    min-height: 34px;
+    min-height: 44px;
     padding: 0 10px 0 12px;
     font-size: 12px;
     gap: 6px;

@@ -175,9 +175,6 @@ export function SelfEditor({
   if (inlineEditor) {
     return (
       <section className="sjp-card sjp-card--inline-self-editor" aria-label={copy.self.editDialog}>
-        <header className="sjp-inline-self-editor__head">
-          <h2>{copy.self.editDialog}</h2>
-        </header>
         <form
           className="sjp-drawer__body sjp-grid sjp-inline-self-form"
           onSubmit={(e) => {

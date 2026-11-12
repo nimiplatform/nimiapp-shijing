@@ -101,6 +101,7 @@ export function ShijingShell(props: ShijingShellProps) {
   );
   const accountRef = useRef<HTMLDivElement>(null);
   const accountName = props.account?.name?.trim() ?? '';
+  const showAccountAvatar = Boolean(accountName || props.account?.avatarUrl);
 
   // Dropdown affordances: dismiss the avatar menu on Escape or on a click
   // outside the account cluster.
@@ -167,22 +168,24 @@ export function ShijingShell(props: ShijingShellProps) {
               className={
                 accountName
                   ? 'shijing-topbar__avatar-button'
-                  : 'shijing-topbar__avatar-button shijing-topbar__avatar-button--anonymous'
+                  : showAccountAvatar
+                    ? 'shijing-topbar__avatar-button shijing-topbar__avatar-button--anonymous'
+                    : 'shijing-topbar__avatar-button shijing-topbar__avatar-button--settings'
               }
               aria-expanded={menuOpen}
               aria-haspopup="menu"
               aria-label={
-                accountName ? `${copy.shell.accountMenu} - ${accountName}` : copy.shell.accountMenu
+                accountName ? `${copy.shell.accountMenu} - ${accountName}` : copy.shell.settingsMenu
               }
               onClick={() => setMenuOpen((v) => !v)}
             >
-              <span className="shijing-topbar__avatar" aria-hidden>
+              {showAccountAvatar ? <span className="shijing-topbar__avatar" aria-hidden>
                 {props.account?.avatarUrl ? (
                   <img src={props.account.avatarUrl} alt="" />
                 ) : (
                   avatarInitial(accountName)
                 )}
-              </span>
+              </span> : <span>{copy.shell.settingsMenu}</span>}
               {accountName ? (
                 <span className="shijing-topbar__account-name">{accountName}</span>
               ) : null}

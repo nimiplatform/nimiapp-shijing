@@ -58,6 +58,12 @@ function chunkForModule(id: string): string | undefined {
 export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss()],
+  optimizeDeps: { entries: ['index.html'] },
+  server: {
+    watch: {
+      ignored: ['**/dist-mobile/**', '**/android/**/build/**', '**/android/app/src/main/assets/public/**'],
+    },
+  },
   resolve: {
     alias: [
       { find: /^react$/, replacement: appReact },

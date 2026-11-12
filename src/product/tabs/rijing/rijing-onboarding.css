@@ -325,23 +325,8 @@
   min-height: 100%;
 }
 
-.shijing-onboarding .shijing-settings-page--styled .sjp-inline-self-editor__head {
-  margin: 0;
-  padding: 0 0 18px;
-  border-bottom: 1px solid color-mix(in srgb, var(--shijing-text-primary) 7%, transparent);
-}
-
-.shijing-onboarding .shijing-settings-page--styled .sjp-inline-self-editor__head h2 {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1.2;
-  color: var(--shijing-text-primary);
-  letter-spacing: 0;
-}
-
 .shijing-onboarding .shijing-settings-page--styled .sjp-inline-self-form {
-  padding: 22px 0 0;
+  padding: 0;
   overflow: visible;
 }
 

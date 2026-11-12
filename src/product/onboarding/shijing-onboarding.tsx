@@ -118,6 +118,11 @@ export function ShijingOnboarding(props: ShijingOnboardingProps) {
               aria-hidden={activePanel !== 'profile'}
             >
               <SelfEditor mode="inline-editor" />
+              {!selfReadiness.ok ? (
+                <p className="sjp-alert" role="status">
+                  {copy.mingjing.readiness.reasons[selfReadiness.reason] ?? copy.mingjing.readiness.fallback}
+                </p>
+              ) : null}
             </div>
             <div
               className="shijing-onboarding__panel"

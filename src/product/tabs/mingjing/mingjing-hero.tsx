@@ -74,7 +74,7 @@ export function MingJingHero({
                 {pillarHanzi(current.pillar)}
               </span>
               <span className="shijing-mj-hero__stage-text">
-                {m.hero.dayunWord} · {m.dayun.ageRange(current.start_age, current.end_age)}{m.ageSuffix}
+                {m.hero.dayunWord} · {m.dayun.ageRange(current.start_age, current.end_age)}
               </span>
               <span className="shijing-mj-hero__stage-badge" data-nature={current.nature}>
                 {tendencyLabels[current.nature]}

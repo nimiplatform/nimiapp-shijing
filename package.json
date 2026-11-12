@@ -43,9 +43,17 @@
     "dev:web": "nimi-app dev --platform web",
     "dev:web-renderer": "vite --config vite.web.config.ts --mode web",
     "build:web": "pnpm run typecheck:renderer && vite build --config vite.web.config.ts --mode web",
-    "build:web:release": "pnpm run typecheck:renderer && vite build --config vite.web.config.ts --mode web-release"
+    "build:web:release": "pnpm run typecheck:renderer && vite build --config vite.web.config.ts --mode web-release",
+    "build:mobile": "pnpm run typecheck:renderer && vite build --config vite.mobile.config.ts",
+    "sync:android": "pnpm run build:mobile && cap sync android",
+    "dev:android": "pnpm run sync:android && cap run android --no-sync",
+    "dev:mobile": "nimi-app dev --platform mobile"
   },
   "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.6.0",
     "@nimiplatform/kit": "^0.23.0",
     "@nimiplatform/sdk": "^0.23.0",
     "astronomy-engine": "^2.1.19",
@@ -57,6 +65,7 @@
     "tyme4ts": "^1.5.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.6.0",
     "@electron/packager": "^20.3.0",
     "@eslint/js": "^10.0.1",
     "@nimiplatform/app-tools": "^0.15.0",

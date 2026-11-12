@@ -293,7 +293,7 @@ body {
 .shijing-local-development-shell {
   display: grid;
   grid-template-rows: minmax(0, 1fr);
-  height: 100vh;
+  height: 100%;
   min-height: 0;
   overflow: hidden;
 }

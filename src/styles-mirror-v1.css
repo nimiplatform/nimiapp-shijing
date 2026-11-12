@@ -155,6 +155,14 @@
   padding: 3px;
 }
 
+.shijing-topbar__avatar-button--settings {
+  min-height: 40px;
+  padding: 8px 12px;
+  color: var(--shijing-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .shijing-shell__error {
   grid-column: 1 / -1;
   margin: 12px 24px;
@@ -415,6 +423,27 @@
 }
 
 @media (max-width: 640px) {
+  .shijing-topbar__avatar-button {
+    min-height: 44px;
+  }
+
+  .shijing-primary-tabbar {
+    gap: 4px;
+  }
+
+  .shijing-primary-tabbar button {
+    flex: 1 0 auto;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px 8px 12px;
+    white-space: nowrap;
+  }
+
+  .shijing-primary-tabbar button::after {
+    left: 8px;
+    right: 8px;
+  }
+
   .shijing-shell__main {
     padding: 18px 16px 32px;
   }

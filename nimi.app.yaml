@@ -7,6 +7,8 @@ app_access:
   - runtime.consume
   - app.activity
 local_development:
+  mobile:
+    command: pnpm run dev:android
   electron:
     renderer_origin: http://127.0.0.1:1430
   web:
