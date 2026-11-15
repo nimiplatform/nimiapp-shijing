@@ -12,13 +12,11 @@ local_development:
   electron:
     renderer_origin: http://127.0.0.1:1430
   web:
-    origin: https://127.0.0.1:4476
-    redirect_uri: https://127.0.0.1:4476/
-    client_id: nimi.shijing.web.dev
-    realm_environment_id: dev
-    realm_url: http://127.0.0.1:3002
-    official_web_url: http://localhost:3000
     command: pnpm run dev:web-renderer
+    local:
+      origin: https://127.0.0.1:4476
+      redirect_uri: https://127.0.0.1:4476/
+      client_id: nimi.shijing.web.dev
 metadata:
   summary: 结合四柱与节气等确定性排盘，提供个人节律观察与解读。
   icon: assets/app-artwork.png
