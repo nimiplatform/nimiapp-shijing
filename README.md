@@ -1,8 +1,8 @@
 ## Hosted Web release
 
-The public product ID is `nimi.shijing`, with the reserved slug `shijing`. The intended introduction is `https://nimi.ai/apps/shijing` and the reviewed production source uses `https://shijing.nimi.xyz/`. A protected `web-v<version>` tag builds the static `dist-web` directory, pins its code and lazy assets to that version, and publishes the exact ZIP with GitHub provenance. Production opening requires a Registry maintainer to approve the concrete Web release, followed by platform deployment. A desktop release does not grant this source.
+ShiJing uses product ID `nimi.shijing` and slug `shijing`. Its intended introduction is `https://nimi.ai/apps/shijing`, and its Web release builds for `https://shijing.nimi.xyz/`. A protected `web-v<version>` tag builds the static `dist-web` directory, pins its code and lazy assets to that version, and publishes the exact ZIP with GitHub provenance. Opening the Web app from the public site requires a Registry maintainer to approve the concrete release and the platform to deploy it.
 
-Run `pnpm install --frozen-lockfile` and `pnpm run build:web:release` using the exact published dependencies in the lockfile. Before the candidate packages are public, the equivalent verified local tarballs can be used for development. Source login and Home confirmation remain real prerequisites. From an empty Web store, complete intake, save a usable 日镜 reading and then ask in 问镜. The model-configuration recovery action on the Web opens ShiJing's own AI settings.
+The lockfile uses the public npm releases of SDK `0.24.0-rc.10`, Kit and its native packages `0.24.0-rc.16`, and App Tools `0.16.0-rc.9`. Run `pnpm install --frozen-lockfile`, `pnpm run check:platform` and `pnpm run build:web:release`. Runtime access requires Nimi login and first confirmation in Home. From an empty Web store, complete intake, save a usable 日镜 reading and then ask in 问镜. The model-configuration recovery action on the Web opens ShiJing's own AI settings.
 
 ## Local cohort record — 2026-11-15
 
