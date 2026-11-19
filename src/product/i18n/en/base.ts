@@ -383,10 +383,10 @@ readingFailure: {
   recovery: {
     labels: { model_configuration: 'Check AI model', provider_product_activation: 'Check activation or switch model', runtime_access: 'Check Nimi access', retry: 'Generate again' },
     guidance: {
-      model_configuration: 'Configure an available text model for ShiJing in Nimi Desktop, then return and generate again.',
-      provider_product_activation: 'Activate the provider service, or select an activated model for ShiJing in Nimi Desktop, then generate again.',
+      model_configuration: 'Choose an available text model for ShiJing, then return and generate again.',
+      provider_product_activation: 'Activate the provider service, or select an activated model in ShiJing’s AI settings, then generate again.',
       runtime_access: "Check Runtime status, ShiJing host access, or installation repair instructions in Nimi Desktop, then return and generate again.",
-      retry: 'The AI output did not pass validation and was not saved as a reading. Generate again; if this persists, check ShiJing’s model in Nimi Desktop.',
+      retry: 'The AI output did not pass validation and was not saved as a reading. Generate again; if this persists, check ShiJing’s AI settings.',
     },
     opened: 'The ShiJing entry was opened in Nimi Desktop. If several sources appear, choose the one currently running. After checking it, return and generate again.',
     openFailed: 'Could not open Nimi Desktop. Open it manually and complete the checks before retrying.',

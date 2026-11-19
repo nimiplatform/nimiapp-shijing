@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { NimiAppScope } from '@nimiplatform/kit/core/app-session';
 import { projectShijingAIConfig } from '../ai/shijing-ai-config.ts';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,8 @@ import {
 } from '../ai/shijing-runtime-ai.ts';
 import { ShijingLocalDevelopmentStatus } from '../local-development/shijing-local-development-status.tsx';
 import { ShijingRuntimeStoragePersistenceClient } from '../persistence/shijing-runtime-storage.ts';
+import type { ShijingPlatform } from '../mount-shijing.js';
+import { useShijingNavigation } from '../../product/navigation/app-navigation.tsx';
 import { openShijingRuntimeAiRecovery } from '../ai/shijing-ai-recovery.ts';
 
 
@@ -21,8 +23,11 @@ import { openShijingRuntimeAiRecovery } from '../ai/shijing-ai-recovery.ts';
  * current-account-plus-Registered-App-Subject partition as installed Apps.
  */
 // @nimi-authority: rule.shijing.product.r002
-export function ProductArea({ scope, openOwnerConfiguration }: { scope: NimiAppScope; openOwnerConfiguration?: () => Promise<void> }) {
+export function ProductArea({ scope, platform }: { scope: NimiAppScope; platform: ShijingPlatform }) {
+  const openOwnerConfiguration = platform.kind === 'desktop' ? platform.openConfiguration : undefined;
   const { t } = useTranslation();
+  const { open } = useShijingNavigation();
+  const openModelSettings = useCallback(() => open({ id: 'settings', page: 'settings', focusTarget: 'ai_configuration' }), [open]);
   const [aiConfigReady, setAiConfigReady] = useState<boolean | null>(null);
   const shijingPersistenceClient = useMemo(() => new ShijingRuntimeStoragePersistenceClient(scope), [scope]);
   const activity = useMemo(() => ({ async put(input: Parameters<typeof scope.client.activity.put>[0]) {
@@ -67,7 +72,8 @@ export function ProductArea({ scope, openOwnerConfiguration }: { scope: NimiAppS
           runtimeAiClient={runtimeAiClient}
           conversationChatBridge={conversationChatBridge}
           aiConfigReady={aiConfigReady}
-          openRuntimeAiRecovery={openShijingRuntimeAiRecovery}
+          openRuntimeAiRecovery={platform.kind === 'desktop' ? openShijingRuntimeAiRecovery : undefined}
+          openModelSettings={platform.kind === 'desktop' ? undefined : openModelSettings}
         >
           <ShijingShell settingsExtras={settingsExtras} activity={activity} />
         </ShijingStoreProvider>

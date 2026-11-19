@@ -1,4 +1,5 @@
 app_id: nimi.shijing
+public_slug: shijing
 display_name: 时镜
 version: 0.1.11
 profile: standalone

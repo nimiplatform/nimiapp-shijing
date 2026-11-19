@@ -1,4 +1,10 @@
-## Current local cohort — 2026-11-15
+## Hosted Web release
+
+The public product ID is `nimi.shijing`, with the reserved slug `shijing`. The intended introduction is `https://nimi.ai/apps/shijing` and the reviewed production source uses `https://shijing.nimi.xyz/`. A protected `web-v<version>` tag builds the static `dist-web` directory, pins its code and lazy assets to that version, and publishes the exact ZIP with GitHub provenance. Production opening requires a Registry maintainer to approve the concrete Web release, followed by platform deployment. A desktop release does not grant this source.
+
+Run `pnpm install --frozen-lockfile` and `pnpm run build:web:release` using the exact published dependencies in the lockfile. Before the candidate packages are public, the equivalent verified local tarballs can be used for development. Source login and Home confirmation remain real prerequisites. From an empty Web store, complete intake, save a usable 日镜 reading and then ask in 问镜. The model-configuration recovery action on the Web opens ShiJing's own AI settings.
+
+## Local cohort record — 2026-11-15
 
 ShiJing remains **0.1.11** with the original product and data format. Complete SDK **0.24.0-rc.2**, Kit **0.24.0-rc.4**, Windows native **0.24.0-rc.1** and App Tools **0.16.0-rc.2** archives are selected from `.nimi/local/packages/integration-20261114-android-http-rc.4` through explicit overrides and the lockfile. Kit's declaration remains `^0.24.0-rc.1`; the override selects rc.4. Nimi Coding 0.7.0 and Electron 45 remain. Old archives are preserved. The installed Android plugin now uses `CoordinationHttpClient`, whose existing platform tests cover fresh connections after idle without retry, cookies or redirects; this does not assign a cause to every historical connection error.
 

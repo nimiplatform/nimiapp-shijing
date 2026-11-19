@@ -34,6 +34,7 @@ test('six canonical destinations, dates, settings and explicit unavailable conve
   await navigation.back(); assert.equal(navigation.getSnapshot().current.destination.conversationId, 'not-currently-retained');
   await navigation.back(); assert.equal(navigation.getSnapshot().current.destination.date, '2026-10-13');
   await navigation.forward(); assert.equal(navigation.getSnapshot().current.destination.id, 'shijing');
+  assert.equal((await navigation.push({ id: 'settings', page: 'settings', focusTarget: 'ai_configuration' })).status, 'committed');
   const entry = navigation.getSnapshot().current;
   for (const invalid of [{ id: 'today' }, { id: 'yuejing', date: '2026-02-30' }, { id: 'shijing', conversationId: 'record', newQuestion: true }, { id: 'settings', page: 'profile', focusTarget: 'method_profile' }, { id: 'shijing', transcript: ['business data'] }]) {
     assert.equal((await navigation.push(invalid)).status, 'invalid'); assert.equal(navigation.getSnapshot().current, entry);

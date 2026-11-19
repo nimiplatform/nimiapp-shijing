@@ -22,7 +22,7 @@ export function createShijingNavigation() {
       : input.id === 'shijing' ? ['id', 'conversationId', 'newQuestion'] : ['id'];
     if (Object.keys(input).some(key => !keys.includes(key))) throw new Error('Unsupported ShiJing position parameter.');
     if (input.id === 'settings' && !SHIJING_SETTINGS_PAGES.some(page => page.id === input.page)) throw new Error('Unknown Settings page.');
-    if (input.focusTarget !== undefined && !['self_profile_editor','method_profile','privacy_local_data'].includes(String(input.focusTarget))) throw new Error('Unknown Settings focus.');
+    if (input.focusTarget !== undefined && !['self_profile_editor','method_profile','privacy_local_data','ai_configuration'].includes(String(input.focusTarget))) throw new Error('Unknown Settings focus.');
     if (input.focusTarget === 'self_profile_editor' && input.page !== 'profile' || input.focusTarget && input.focusTarget !== 'self_profile_editor' && input.page !== 'settings') throw new Error('Settings focus belongs to another page.');
     if (input.date !== undefined && (typeof input.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/u.test(input.date) || Number.isNaN(Date.parse(input.date)) || new Date(input.date).toISOString().slice(0,10) !== input.date)) throw new Error('Invalid day reference.');
     if (input.conversationId !== undefined && (typeof input.conversationId !== 'string' || !input.conversationId.trim() || input.conversationId.length > 512)) throw new Error('Invalid record reference.');

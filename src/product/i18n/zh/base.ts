@@ -383,10 +383,10 @@ readingFailure: {
   recovery: {
     labels: { model_configuration: '检查 AI 模型', provider_product_activation: '检查服务开通或更换模型', runtime_access: '检查 Nimi 访问', retry: '重新生成' },
     guidance: {
-      model_configuration: '请在 Nimi Desktop 为时镜配置可用的文本模型，完成后回来重新生成。',
-      provider_product_activation: '请在云厂商开通对应服务，或在 Nimi Desktop 为时镜更换已开通的模型，完成后重新生成。',
+      model_configuration: '请为时镜选择可用的文本模型，完成后回来重新生成。',
+      provider_product_activation: '请在云厂商开通对应服务，或在时镜的 AI 配置中更换已开通的模型，完成后重新生成。',
       runtime_access: '请在 Nimi Desktop 检查 Runtime、时镜访问权限或安装修复提示，恢复后回来重新生成。',
-      retry: '本次 AI 输出未通过校验，没有保存为解读。可以重新生成；若持续失败，请在 Nimi Desktop 检查时镜的模型。',
+      retry: '本次 AI 输出未通过校验，没有保存为解读。可以重新生成；若持续失败，请检查时镜的 AI 配置。',
     },
     opened: '已打开 Nimi Desktop 的时镜入口。如有多个来源，请选择当前正在运行的时镜；完成检查后，回来重新生成。',
     openFailed: '无法打开 Nimi Desktop，请手动打开并完成检查后重试。',

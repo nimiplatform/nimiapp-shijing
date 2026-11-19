@@ -11,7 +11,7 @@ for (const platform of ['web', 'mobile']) {
     const result = await build({
       root,
       configFile: path.join(root, `vite.${platform}.config.ts`),
-      mode: platform,
+      mode: platform === 'web' ? 'web-release' : platform,
       logLevel: 'silent',
       build: { write: false, minify: false },
     });

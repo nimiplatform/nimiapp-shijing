@@ -20,7 +20,7 @@ export interface FailureBannerProps {
 
 export function FailureBanner(props: FailureBannerProps) {
   const copy = useProductCopy();
-  const { open_runtime_ai_recovery } = useShijingStore();
+  const { open_runtime_ai_recovery, open_model_settings } = useShijingStore();
   const [opening, setOpening] = useState(false);
   const [navigationError, setNavigationError] = useState<string | null>(null);
   const [opened, setOpened] = useState(false);
@@ -28,6 +28,8 @@ export function FailureBanner(props: FailureBannerProps) {
   const recoveryCopy = copy.readingFailure.recovery;
   const action = props.action ?? (recovery === 'retry' && props.onRetry
     ? { label: recoveryCopy.labels.retry, onClick: props.onRetry }
+    : open_model_settings && (recovery === 'model_configuration' || recovery === 'provider_product_activation')
+      ? { label: recoveryCopy.labels[recovery], onClick: open_model_settings }
     : recovery && recovery !== 'retry' && open_runtime_ai_recovery
       ? {
           label: recoveryCopy.labels[recovery],

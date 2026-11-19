@@ -41,6 +41,7 @@ import { UiLanguageSwitch } from './ui-language-switch.tsx';
 export type ShijingSettingsFocusTarget =
   | 'self_profile_editor'
   | 'method_profile'
+  | 'ai_configuration'
   | 'privacy_local_data';
 
 // Host-injected extra module rendered as the last row on the 设置 sub-page.
@@ -55,6 +56,7 @@ export interface SettingsPageExtraModule {
 
 const SETTINGS_FOCUS_TARGET_IDS: Partial<Record<ShijingSettingsFocusTarget, string>> = {
   method_profile: 'settings-method-profile',
+  ai_configuration: 'settings-local-development',
   privacy_local_data: 'settings-privacy-local-data',
 };
 

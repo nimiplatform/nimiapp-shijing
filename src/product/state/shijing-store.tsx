@@ -64,6 +64,7 @@ interface ShijingStoreValue {
   // observed, false = observed not-ready, true = observed ready.
   readonly ai_config_ready: boolean | null;
   readonly open_runtime_ai_recovery: OpenRuntimeAiRecovery | null;
+  readonly open_model_settings: (() => void) | null;
 }
 
 const ShijingStoreContext = createContext<ShijingStoreValue | null>(null);
@@ -85,6 +86,7 @@ interface ShijingStoreProviderProps {
   readonly presenceVerificationClient?: PresenceVerificationClient;
   readonly aiConfigReady?: boolean | null;
   readonly openRuntimeAiRecovery?: OpenRuntimeAiRecovery;
+  readonly openModelSettings?: () => void;
   readonly children: ReactNode;
 }
 
@@ -228,6 +230,7 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
       presence_verification_client: presenceVerificationClient,
       ai_config_ready: props.aiConfigReady ?? null,
       open_runtime_ai_recovery: props.openRuntimeAiRecovery ?? null,
+      open_model_settings: props.openModelSettings ?? null,
     }),
     [
       state,
@@ -240,6 +243,7 @@ export function ShijingStoreProvider(props: ShijingStoreProviderProps) {
       presenceVerificationClient,
       props.aiConfigReady,
       props.openRuntimeAiRecovery,
+      props.openModelSettings,
     ],
   );
 

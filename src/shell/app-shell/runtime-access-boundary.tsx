@@ -24,6 +24,6 @@ export function RuntimeAccessBoundary({ platform }: { platform: ShijingPlatform 
     </AmbientBackground>;
   }
   return <NimiAppAccessGate language={language} title={getProductCopy(language).brandName} externalAccountControl={platform.kind !== 'desktop'} fallback={platform.kind === 'desktop' ? nativeFailure : undefined}>
-    {scope => <ProductArea scope={scope} openOwnerConfiguration={platform.kind === 'desktop' ? platform.openConfiguration : undefined} />}
+    {scope => <ProductArea scope={scope} platform={platform} />}
   </NimiAppAccessGate>;
 }
