@@ -68,7 +68,7 @@
     "@capacitor/cli": "8.6.0",
     "@electron/packager": "^20.3.0",
     "@eslint/js": "^10.0.1",
-    "@nimiplatform/app-tools": "0.16.0-rc.9",
+    "@nimiplatform/app-tools": "0.16.0-rc.12",
     "@nimiplatform/nimi-coding": "0.7.0",
     "@tailwindcss/vite": "^4.3.0",
     "@types/node": "^24.10.1",

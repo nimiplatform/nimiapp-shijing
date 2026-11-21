@@ -25,6 +25,81 @@ metadata:
   author: Nimi Team
   homepage_url: https://github.com/nimiplatform/nimiapp-shijing
   support_url: https://github.com/nimiplatform/nimiapp-shijing/issues
+  storefront:
+    category: lifestyle
+    default_locale: zh
+    locales:
+      zh:
+        tags:
+          - 四柱紫微
+          - 节律观察
+          - 六镜洞察
+          - 本地隐私
+        highlights:
+          - title: 确定性排盘底座
+            description: 结合四柱子平、紫微斗数与二十四节气真太阳时算法，先算准客观盘面，再结合模型解读。
+          - title: 六大透镜全周期观照
+            description: 覆盖日镜、月镜、年镜、命镜、合镜与问镜，从每日节奏到长期拐点一目了然。
+          - title: 关系双盘互动解析
+            description: 引入家人、伴侣或合作伙伴命盘，识别相处默契、互动惯性与关键摩擦窗口。
+          - title: 本地私有存档可控
+            description: 生辰资料、排盘结果与问镜对话保存在你的主 PC 私有存储中，支持随时永久删除。
+      en:
+        display_name: ShiJing
+        summary: Deterministic Four Pillars, Ziwei, and 24 Solar Terms chart calculations paired with AI-assisted personal rhythm reflection.
+        introduction: NIMI_APP.en.md
+        tags:
+          - Four Pillars
+          - Personal Rhythm
+          - Six Mirrors
+          - Local-First
+        highlights:
+          - title: Deterministic Chart Engine
+            description: Computes Four Pillars (Bazi), Ziwei, and 24 Solar Terms deterministically before layering AI semantic reflection.
+          - title: Six Mirrors Across Time
+            description: Move seamlessly across Daily, Monthly, Yearly, Destiny, Relationship, and Consultation mirrors.
+          - title: Two-Chart Relationship Lens
+            description: Compare birth charts with family, partners, or collaborators to surface resonance and friction windows.
+          - title: Private Local Archives
+            description: Birth profiles, charts, and consultations stay in Nimi private storage on your PC with full deletion control.
+    media:
+      cover:
+        path: assets/storefront/cover-zh.webp
+        locales:
+          en: assets/storefront/cover-en.webp
+      gallery:
+        - id: natal-bazi
+          kind: image
+          path: assets/storefront/mingjing-bazi-zh.webp
+          locales:
+            en: assets/storefront/mingjing-bazi-en.webp
+          caption:
+            zh: 命镜（八字子平）：本命格局总览、喜用五行与当前大运阶段
+            en: "Destiny Mirror (BaZi): whole-chart overview, favorable elements, and current DaYun stage"
+        - id: natal-ziwei
+          kind: image
+          path: assets/storefront/mingjing-ziwei-zh.webp
+          locales:
+            en: assets/storefront/mingjing-ziwei-en.webp
+          caption:
+            zh: 命镜（紫微斗数）：十二宫位星曜排盘与交互式宫位详情解读
+            en: "Destiny Mirror (Ziwei): 12-palace deterministic natal chart with interactive palace details"
+        - id: relationship-mirror
+          kind: image
+          path: assets/storefront/hejing-zh.webp
+          locales:
+            en: assets/storefront/hejing-en.webp
+          caption:
+            zh: 合镜：双盘关系概览、相处模式假设与互动节奏提示
+            en: "Relationship Mirror: two-chart overview, interaction patterns, and pacing guidance"
+        - id: inquiry-mirror
+          kind: image
+          path: assets/storefront/wenjing-zh.webp
+          locales:
+            en: assets/storefront/wenjing-en.webp
+          caption:
+            zh: 问镜：结合个人盘面与关注主题展开多轮反思对话
+            en: "Consultation Mirror: multi-turn reflective dialogue grounded in your chart and focus topics"
 capability_contract_refs:
   - text.generate
 required_standardized_feature_refs: []
