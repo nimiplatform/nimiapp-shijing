@@ -39,7 +39,7 @@ const RETIRED_PATTERNS = [
 
 test('retired permission-regime vocabulary never reappears in app sources', () => {
   const offenders = [];
-  for (const scope of ['src', 'src-electron']) {
+  for (const scope of ['src']) {
     for (const file of walk(path.join(root, scope))) {
       const text = readFileSync(file, 'utf8');
       for (const pattern of RETIRED_PATTERNS) {

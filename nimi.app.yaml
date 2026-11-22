@@ -1,9 +1,16 @@
 app_id: nimi.shijing
 public_slug: shijing
 display_name: 时镜
-version: 0.1.11
+version: 0.1.12
 profile: standalone
 manifest_role: submitted-input
+desktop:
+  window:
+    width: 1320
+    height: 900
+    min_width: 390
+    min_height: 620
+    title_bar_style: hidden
 app_access:
   - runtime.consume
   - app.activity

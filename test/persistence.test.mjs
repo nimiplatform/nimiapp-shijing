@@ -25,10 +25,6 @@ import {
   validShiJingSpace,
 } from './_fixtures.mjs';
 
-const ELECTRON_MAIN_SOURCE = readFileSync(
-  new URL('../src-electron/main.ts', import.meta.url),
-  'utf8',
-);
 const APP_SOURCE = readFileSync(
   new URL('../src/shell/App.tsx', import.meta.url),
   'utf8',
@@ -47,8 +43,6 @@ test('installed production entry delegates persistence to rootless Nimi storage'
     existsSync(new URL('../src/shell/persistence/shijing-runtime-storage.ts', import.meta.url)),
     true,
   );
-  assert.doesNotMatch(ELECTRON_MAIN_SOURCE, /storage_read_json|storage_write_json|storage_remove_json/);
-  assert.doesNotMatch(ELECTRON_MAIN_SOURCE, /StandardAppStorageRoot|DataRootBinding/);
   assert.doesNotMatch(APP_SOURCE, /ProductArea|IndexedDBPersistenceAdapter|InMemoryPersistenceAdapter/);
 });
 

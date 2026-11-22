@@ -17,7 +17,7 @@
 
 | Layer | Technology | Location |
 |-------|-----------|----------|
-| Desktop shell | Electron | `src-electron/` |
+| Desktop carrier | Nimi shared managed desktop carrier (`managed-web-pnpm-vite`, `desktop-universal`) | `nimi.app.yaml` (`desktop.window`) |
 | Frontend | React 19 + Vite 7 | `src/shell/renderer/` |
 | Persistence | Complete JSON snapshot through public SDK streamed App-private assets | `src/shell/persistence/`, `src/product/persistence/` |
 | Astrology pipeline | Pure-TS deterministic v1 (`bazi_ganzhi_jieqi_dayun_v1`) | `src/product/astrology/` |

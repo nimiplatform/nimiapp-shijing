@@ -6,16 +6,23 @@ function read(relativePath) {
   return readFileSync(new URL(`../${relativePath}`, import.meta.url), 'utf8');
 }
 
-test('manifest declares App Access with the minimal domain set on the Desktop-supervised Electron development path', () => {
+test('manifest declares App Access with the minimal domain set on the shared managed desktop carrier', () => {
   const manifest = read('nimi.app.yaml');
+  const buildProfile = read('.nimi/config/build-profile.yaml');
   const appIdentity = read('.nimi/config/app-identity.yaml');
   const submission = read('.nimi/admission/submission.yaml');
   const packageJson = JSON.parse(read('package.json'));
-  const electronMain = read('src-electron/main.ts');
 
   assert.match(manifest, /^app_id: nimi\.shijing$/m);
   assert.match(manifest, /^profile: standalone$/m);
   assert.match(manifest, /^manifest_role: submitted-input$/m);
+  assert.match(manifest, /^desktop:$/m);
+  assert.match(manifest, /^\s{2}window:$/m);
+  assert.match(manifest, /^\s{4}width: 1320$/m);
+  assert.match(manifest, /^\s{4}height: 900$/m);
+  assert.match(manifest, /^\s{4}min_width: 390$/m);
+  assert.match(manifest, /^\s{4}min_height: 620$/m);
+  assert.match(manifest, /^\s{4}title_bar_style: hidden$/m);
   assert.match(manifest, /^app_access:$/m);
   assert.match(manifest, /^\s{2}- runtime\.consume$/m);
   assert.doesNotMatch(manifest, /agent\.local|agent\.configure/);
@@ -26,16 +33,20 @@ test('manifest declares App Access with the minimal domain set on the Desktop-su
     manifest,
     /schema_version|permissions:|execution_profile_ref|workspace-app|agents\.interact/,
   );
+  assert.match(buildProfile, /^build_profile_ref: managed-web-pnpm-vite$/m);
+  assert.match(buildProfile, /^\s{2}desktop-universal:$/m);
+  assert.match(buildProfile, /^\s{4}payload_path: dist\/renderer$/m);
+  assert.match(buildProfile, /^\s{4}runtime_entry: payload\/index\.html$/m);
   assert.match(appIdentity, /^app_id: nimi\.shijing$/m);
   assert.match(appIdentity, /^tauri_identifier: ai\.nimi\.apps\.nimi\.shijing$/m);
   assert.match(submission, /^app_id: nimi\.shijing$/m);
   assert.match(submission, /^profile: standalone$/m);
   assert.match(submission, /^tauri_identifier: ai\.nimi\.apps\.nimi\.shijing$/m);
   assert.equal(existsSync(new URL('../.nimi/scaffold.lock.json', import.meta.url)), false);
-  assert.doesNotMatch(electronMain, /onProtectedSessionFailure/);
+  assert.equal(existsSync(new URL('../src-electron', import.meta.url)), false);
   assert.equal(packageJson.scripts.dev, 'nimi-app dev --shell electron');
   assert.equal(packageJson.scripts['dev:renderer'], 'vite --host 127.0.0.1 --port 1430 --strictPort');
-  assert.equal(packageJson.scripts['dev:electron'], 'nimi-app dev --shell electron');
+  assert.equal(packageJson.scripts['dev:electron'], undefined);
   assert.equal(packageJson.scripts['dev:tauri'], undefined);
   assert.equal(packageJson.scripts['acceptance:electron'], undefined);
   assert.equal(packageJson.scripts['acceptance:tauri'], undefined);
@@ -46,13 +57,9 @@ test('manifest declares App Access with the minimal domain set on the Desktop-su
   assert.equal(packageJson.scripts.pack, 'nimi-app pack');
   assert.equal(packageJson.scripts.doctor, undefined);
   assert.equal(packageJson.scripts['prepare:workspace-surfaces'], undefined);
-  assert.match(packageJson.scripts['build:electron'], /tsc -p tsconfig\.electron\.json/);
-  assert.match(packageJson.scripts['build:electron'], /bundle-electron-preload\.mjs/);
-  assert.doesNotMatch(packageJson.scripts['build:electron'], /prepare:workspace-surfaces|build:sdk|build:kit/);
-  assert.doesNotMatch(
-    electronMain,
-    /NIMI_SHIJING_ELECTRON_ACCEPTANCE_CDP_PORT|remote-debugging-(?:address|port)/,
-  );
+  assert.equal(packageJson.scripts['build:electron'], undefined);
+  assert.equal(packageJson.devDependencies.electron, undefined);
+  assert.equal(packageJson.devDependencies['@electron/packager'], undefined);
 });
 
 test('renderer consumes the App self text candidate path without portable authority', () => {

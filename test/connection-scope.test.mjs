@@ -1,8 +1,5 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFileSync } from 'node:fs';
-import vm from 'node:vm';
-import ts from 'typescript';
 import { generateShijingTextCandidate, createShijingRuntimeAiClient } from '../src/shell/ai/shijing-runtime-ai.ts';
 import { ShijingRuntimeStoragePersistenceClient } from '../src/shell/persistence/shijing-runtime-storage.ts';
 import { validShiJingSpace } from './_fixtures.mjs';
@@ -42,19 +39,4 @@ test('remote missing storage is empty while an interrupted read never becomes an
   assert.deepEqual(await adapter.load(), { ok: true, snapshot: null });
   controller.abort();
   assert.equal((await adapter.load()).ok, false);
-});
-
-test('native invalidation destroys old renderer work before creating a fresh window', () => {
-  const source = readFileSync(new URL('../src-electron/main.ts', import.meta.url), 'utf8');
-  const parsed = ts.createSourceFile('main.ts', source, ts.ScriptTarget.Latest, true);
-  const reset = parsed.statements.find(n => ts.isFunctionDeclaration(n) && n.name?.text === 'resetAccountScopedRenderer');
-  const js = ts.transpileModule(reset.getText(parsed), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
-  const order = [], old = { destroy() { order.push('destroy'); } };
-  const context = { quitting: false, resettingRenderer: false, BrowserWindow: { getAllWindows: () => [old] },
-    createMainWindow: async () => { order.push('create'); }, handleElectronStartupFailure: error => { throw error; } };
-  vm.runInNewContext(js + '; resetAccountScopedRenderer();', context);
-  assert.deepEqual(order, ['destroy', 'create']); assert.equal(context.resettingRenderer, false);
-  context.quitting = true;
-  vm.runInNewContext(js + '; resetAccountScopedRenderer();', context);
-  assert.deepEqual(order, ['destroy', 'create']);
 });

@@ -61,7 +61,7 @@ export default defineConfig({
   optimizeDeps: { entries: ['index.html'] },
   server: {
     watch: {
-      ignored: ['**/dist-mobile/**', '**/android/**/build/**', '**/android/app/src/main/assets/public/**'],
+      ignored: ['**/dist/**', '**/dist-mobile/**', '**/android/**/build/**', '**/android/app/src/main/assets/public/**'],
     },
   },
   resolve: {
@@ -73,6 +73,8 @@ export default defineConfig({
     dedupe: ['react', 'react-dom', 'react/jsx-runtime'],
   },
   build: {
+    outDir: 'dist/renderer',
+    emptyOutDir: true,
     chunkSizeWarningLimit: 3000,
     rollupOptions: {
       output: {

@@ -15,21 +15,21 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Because `pnpm dev` is a blocking process, open a separate terminal to run checks, target builds, and packaging on the matching host OS (`windows-x86_64` on Windows; replace with `macos-aarch64` on Apple Silicon macOS):
+Because `pnpm dev` is a blocking process, open a separate terminal to run checks, target builds, and packaging for the `desktop-universal` target:
 
 ```bash
 pnpm check
 pnpm exec nimi-app check
-pnpm exec nimi-app build --target windows-x86_64
-pnpm exec nimi-app pack --target windows-x86_64
+pnpm exec nimi-app build --target desktop-universal
+pnpm exec nimi-app pack --target desktop-universal
 ```
 
 For production verification and packaging, pass `--production`:
 
 ```bash
 pnpm exec nimi-app check --production
-pnpm exec nimi-app build --target windows-x86_64 --production
-pnpm exec nimi-app pack --target windows-x86_64 --production
+pnpm exec nimi-app build --target desktop-universal --production
+pnpm exec nimi-app pack --target desktop-universal --production
 ```
 
 Current App Tools schemas may retain `cargo_package_name` and `tauri_identifier` metadata fields; they do not select the shell or provide a Tauri runtime path.

@@ -20,65 +20,39 @@ function readJson(relativePath) {
   return JSON.parse(read(relativePath));
 }
 
-test('ShiJing ships a real Electron shell wired to the supervised development path', () => {
+test('ShiJing targets the shared managed-web desktop carrier without a bundled Electron shell', () => {
+  assert.equal(SHIJING_APP_ID, 'nimi.shijing');
+  assert.equal(SHIJING_TAURI_IDENTIFIER, 'ai.nimi.apps.nimi.shijing');
   for (const relativePath of [
-    'src-electron/main.ts',
-    'src-electron/preload.cts',
+    'src-electron',
     'scripts/bundle-electron-preload.mjs',
-    'scripts/ensure-dev-renderer-port.mjs',
+    'scripts/clean-electron-production.mjs',
+    'scripts/package-electron-production.mjs',
     'tsconfig.electron.json',
+    'scripts/runtime-app-storage-projection.mjs',
+    'scripts/acceptance-electron.test.mjs',
+    'scripts/acceptance-tauri.test.mjs',
   ]) {
-    assert.equal(existsSync(rootPath(relativePath)), true, `${relativePath} should exist`);
+    assert.equal(existsSync(rootPath(relativePath)), false, `${relativePath} should not exist`);
   }
-  assert.equal(existsSync(rootPath('src-electron/runtime-auth.ts')), false);
-  assert.equal(existsSync(rootPath('scripts/runtime-app-storage-projection.mjs')), false);
-  // App-local acceptance harnesses are retired: acceptance runs as the
-  // platform-supervised journey (nimi-app dev --shell electron + CDP), not as
-  // app-owned playwright probes of protected surfaces.
-  assert.equal(existsSync(rootPath('scripts/acceptance-electron.test.mjs')), false);
-  assert.equal(existsSync(rootPath('scripts/acceptance-tauri.test.mjs')), false);
+  assert.equal(existsSync(rootPath('scripts/ensure-dev-renderer-port.mjs')), true);
 
   const packageJson = readJson('package.json');
+  assert.equal(packageJson.main, undefined);
   assert.equal(packageJson.scripts.dev, 'nimi-app dev --shell electron');
   assert.equal(packageJson.scripts['dev:shell'], 'nimi-app dev');
-  assert.equal(packageJson.scripts['dev:electron'], 'nimi-app dev --shell electron');
-  // Tauri is not an admitted local-development carrier; only Electron is.
+  assert.equal(packageJson.scripts['dev:electron'], undefined);
   assert.equal(packageJson.scripts['dev:tauri'], undefined);
   assert.equal(packageJson.scripts['acceptance:electron'], undefined);
   assert.equal(packageJson.scripts['acceptance:tauri'], undefined);
-  assert.match(packageJson.devDependencies.playwright || '', /^\^?1\.61\./);
+  assert.equal(packageJson.devDependencies.electron, undefined);
+  assert.equal(packageJson.devDependencies['@electron/packager'], undefined);
   assert.equal(packageJson.devDependencies['@grpc/grpc-js'], undefined);
-});
+  assert.match(packageJson.devDependencies.playwright || '', /^\^?1\.61\./);
 
-test('Electron registers only the fixed Kit app host', () => {
-  const mainSource = read('src-electron/main.ts');
-  const preloadSource = read('src-electron/preload.cts');
-
-  assert.equal(SHIJING_APP_ID, 'nimi.shijing');
-  assert.equal(SHIJING_TAURI_IDENTIFIER, 'ai.nimi.apps.nimi.shijing');
-  assert.match(mainSource, /registerNimiElectronAppBridge/);
-  assert.match(mainSource, /registerNimiElectronAppAssetProtocolScheme\(protocol\)/);
-  assert.match(mainSource, /appId:\s*SHIJING_APP_ID/);
-  assert.match(mainSource, /allowedRendererUrls:\s*\[activeRendererUrl\(\)\]/);
-  assert.match(
-    mainSource,
-    /assetMediaPlatform:\s*\{\s*protocol,\s*webRequest:\s*session\.defaultSession\.webRequest,\s*webContents\s*\}/,
-  );
-  assert.doesNotMatch(mainSource, /registerNimiElectronRuntimeBridge/);
-  assert.doesNotMatch(mainSource, /runtimeEndpoint|allowedOrigins|standardShellHost/);
-  assert.doesNotMatch(mainSource, /createNimiElectronInstalledHost|capabilitySetRef|commandHandlers/);
-  assert.doesNotMatch(mainSource, /createNimiElectronFileAIConfigStore|createElectronShellFileProtocolHost/);
-  assert.doesNotMatch(mainSource, /trustedRuntimeMetadataProvider|additionalArguments/);
-  assert.doesNotMatch(mainSource, /NIMI_RUNTIME_GRPC_ADDR|NIMI_APP_LAUNCH_NONCE|NIMI_APP_DURABLE_DATA_ROOT/);
-  assert.match(mainSource, /--nimi-dev-renderer-url=/);
-  assert.match(mainSource, /contextIsolation:\s*true/);
-  assert.match(mainSource, /nodeIntegration:\s*false/);
-  assert.match(mainSource, /sandbox:\s*true/);
-  assert.match(mainSource, /minWidth:\s*390/);
-  assert.match(mainSource, /setWindowOpenHandler/);
-  assert.match(mainSource, /will-navigate/);
-  assert.match(preloadSource, /@nimiplatform\/kit\/shell\/electron\/preload-cjs/);
-  assert.match(preloadSource, /installNimiElectronRuntimeBridge/);
+  const viteConfig = read('vite.config.ts');
+  assert.match(viteConfig, /outDir:\s*'dist\/renderer'/);
+  assert.match(viteConfig, /emptyOutDir:\s*true/);
 });
 
 test('app-owned development runners are removed', () => {

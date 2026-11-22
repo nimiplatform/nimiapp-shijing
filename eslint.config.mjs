@@ -12,8 +12,6 @@ export default defineConfig([
     'dist-mobile/**',
     'android/**/build/**',
     'android/app/src/main/assets/public/**',
-    'dist-electron/**',
-    'dist-electron-package/**',
     'artifacts/**',
     '.codex-artifacts/**',
     '.nimi/local/**',
@@ -35,35 +33,6 @@ export default defineConfig([
         tsconfigRootDir: import.meta.dirname,
       },
       globals: {
-        ...globals.browser,
-      },
-    },
-    rules: {
-      '@typescript-eslint/ban-ts-comment': 'error',
-      'prefer-const': 'error',
-      'no-console': 'error',
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-          caughtErrorsIgnorePattern: '^_',
-        },
-      ],
-    },
-  },
-  {
-    files: ['src-electron/**/*.{ts,cts}'],
-    languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-      parserOptions: {
-        project: './tsconfig.electron.json',
-        tsconfigRootDir: import.meta.dirname,
-      },
-      globals: {
-        ...globals.node,
         ...globals.browser,
       },
     },
